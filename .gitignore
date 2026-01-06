@@ -1,0 +1,29 @@
+# Laravel
+sobat-api/vendor/
+sobat-api/node_modules/
+sobat-api/.env
+sobat-api/storage/*.key
+sobat-api/storage/logs/
+sobat-api/storage/framework/cache/
+sobat-api/storage/framework/sessions/
+sobat-api/storage/framework/views/
+sobat-api/bootstrap/cache/
+sobat-api/public/storage
+sobat-api/public/hot
+
+# Next.js
+sobat-web/node_modules/
+sobat-web/.next/
+sobat-web/out/
+sobat-web/build/
+sobat-web/.env*.local
+
+# General
+.DS_Store
+*.log
+*.pem
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
