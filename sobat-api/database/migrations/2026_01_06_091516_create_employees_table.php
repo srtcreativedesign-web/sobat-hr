@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('employees', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->unsignedBigInteger('user_id');
             $table->string('employee_code')->unique();
             $table->string('full_name');
             $table->string('email')->unique();
@@ -21,7 +21,7 @@ return new class extends Migration
             $table->text('address')->nullable();
             $table->date('birth_date')->nullable();
             $table->enum('gender', ['male', 'female']);
-            $table->foreignId('organization_id')->constrained()->onDelete('cascade');
+            $table->unsignedBigInteger('organization_id');
             $table->string('position');
             $table->string('level')->nullable(); // Junior, Senior, Manager, dll
             $table->decimal('basic_salary', 15, 2)->default(0);

@@ -17,20 +17,9 @@ return new class extends Migration
             $table->time('start_time');
             $table->time('end_time');
             $table->integer('grace_period')->default(15); // minutes
-            $table->foreignId('organization_id')->nullable()->constrained()->onDelete('cascade');
+            $table->unsignedBigInteger('organization_id')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-        });
-        
-        // Pivot table for employee shifts
-        Schema::create('employee_shift', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('employee_id')->constrained()->onDelete('cascade');
-            $table->foreignId('shift_id')->constrained()->onDelete('cascade');
-            $table->date('effective_date');
-            $table->timestamps();
-            
-            $table->index(['employee_id', 'effective_date']);
         });
     }
 

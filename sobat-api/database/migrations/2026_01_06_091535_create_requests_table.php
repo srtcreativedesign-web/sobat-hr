@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('requests', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('employee_id')->constrained()->onDelete('cascade');
+            $table->unsignedBigInteger('employee_id');
             $table->enum('type', ['leave', 'overtime', 'reimbursement', 'resignation']);
             $table->text('reason');
             $table->json('payload')->nullable(); // Polymorphic data: {start_date, end_date, amount, etc}

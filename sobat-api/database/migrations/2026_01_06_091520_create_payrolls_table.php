@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('payrolls', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('employee_id')->constrained()->onDelete('cascade');
+            $table->unsignedBigInteger('employee_id');
             $table->string('period'); // YYYY-MM format
             $table->decimal('basic_salary', 15, 2);
             $table->decimal('allowances', 15, 2)->default(0); // Tunjangan

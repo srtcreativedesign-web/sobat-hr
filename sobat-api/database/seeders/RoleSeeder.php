@@ -15,18 +15,22 @@ class RoleSeeder extends Seeder
         $roles = [
             [
                 'name' => 'super_admin',
+                'display_name' => 'Super Admin',
                 'description' => 'Super Administrator with full access to all features',
             ],
             [
                 'name' => 'admin_cabang',
+                'display_name' => 'Admin Cabang',
                 'description' => 'Branch Administrator with access to branch operations',
             ],
             [
                 'name' => 'manager',
+                'display_name' => 'Manager',
                 'description' => 'Manager with approval permissions',
             ],
             [
                 'name' => 'staff',
+                'display_name' => 'Staff',
                 'description' => 'Regular staff/employee with basic access',
             ],
         ];

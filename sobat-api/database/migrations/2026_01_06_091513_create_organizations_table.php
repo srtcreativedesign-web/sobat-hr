@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('type'); // HQ, Branch, Department, Team
-            $table->foreignId('parent_id')->nullable()->constrained('organizations')->onDelete('cascade');
+            $table->unsignedBigInteger('parent_id')->nullable();
             $table->text('address')->nullable();
             $table->string('city')->nullable();
             $table->timestamps();

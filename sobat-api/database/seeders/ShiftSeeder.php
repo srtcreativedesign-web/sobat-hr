@@ -13,8 +13,8 @@ class ShiftSeeder extends Seeder
      */
     public function run(): void
     {
-        $jakartaBranch = Organization::where('code', 'JKT')->first();
-        $surabayaBranch = Organization::where('code', 'SBY')->first();
+        $jakartaBranch = Organization::where('name', 'Jakarta Branch')->first();
+        $surabayaBranch = Organization::where('name', 'Surabaya Branch')->first();
 
         // Jakarta - Regular Shift
         Shift::create([
@@ -22,7 +22,6 @@ class ShiftSeeder extends Seeder
             'organization_id' => $jakartaBranch->id,
             'start_time' => '09:00:00',
             'end_time' => '18:00:00',
-            'days' => json_encode(['monday', 'tuesday', 'wednesday', 'thursday', 'friday']),
         ]);
 
         // Jakarta - Night Shift
@@ -31,7 +30,6 @@ class ShiftSeeder extends Seeder
             'organization_id' => $jakartaBranch->id,
             'start_time' => '21:00:00',
             'end_time' => '06:00:00',
-            'days' => json_encode(['monday', 'tuesday', 'wednesday', 'thursday', 'friday']),
         ]);
 
         // Surabaya - Regular Shift
@@ -40,7 +38,6 @@ class ShiftSeeder extends Seeder
             'organization_id' => $surabayaBranch->id,
             'start_time' => '08:00:00',
             'end_time' => '17:00:00',
-            'days' => json_encode(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']),
         ]);
     }
 }

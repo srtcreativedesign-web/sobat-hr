@@ -15,52 +15,43 @@ class OrganizationSeeder extends Seeder
         // Headquarters
         $hq = Organization::create([
             'name' => 'PT SOBAT Indonesia',
-            'code' => 'HQ',
             'type' => 'headquarters',
             'address' => 'Jakarta, Indonesia',
-            'phone' => '021-12345678',
-            'email' => 'hq@sobat.co.id',
+            'city' => 'Jakarta',
         ]);
 
         // Branches
         $jakartaBranch = Organization::create([
             'name' => 'Jakarta Branch',
-            'code' => 'JKT',
             'type' => 'branch',
             'parent_id' => $hq->id,
             'address' => 'Jakarta Selatan',
-            'phone' => '021-11111111',
-            'email' => 'jakarta@sobat.co.id',
+            'city' => 'Jakarta',
         ]);
 
         $surabayaBranch = Organization::create([
             'name' => 'Surabaya Branch',
-            'code' => 'SBY',
             'type' => 'branch',
             'parent_id' => $hq->id,
             'address' => 'Surabaya',
-            'phone' => '031-22222222',
-            'email' => 'surabaya@sobat.co.id',
+            'city' => 'Surabaya',
         ]);
 
         // Departments under Jakarta Branch
         Organization::create([
             'name' => 'IT Department',
-            'code' => 'JKT-IT',
             'type' => 'department',
             'parent_id' => $jakartaBranch->id,
         ]);
 
         Organization::create([
             'name' => 'HR Department',
-            'code' => 'JKT-HR',
             'type' => 'department',
             'parent_id' => $jakartaBranch->id,
         ]);
 
         Organization::create([
             'name' => 'Finance Department',
-            'code' => 'JKT-FIN',
             'type' => 'department',
             'parent_id' => $jakartaBranch->id,
         ]);
