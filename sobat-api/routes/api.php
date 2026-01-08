@@ -54,7 +54,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Payroll routes
     Route::apiResource('payrolls', App\Http\Controllers\Api\PayrollController::class);
+    Route::get('/payrolls/template/download', [App\Http\Controllers\Api\PayrollController::class, 'downloadTemplate']);
     Route::post('/payrolls/import', [App\Http\Controllers\Api\PayrollController::class, 'import']);
+    Route::post('/payrolls/import/save', [App\Http\Controllers\Api\PayrollController::class, 'saveImport']);
     Route::post('/payrolls/calculate', [App\Http\Controllers\Api\PayrollController::class, 'calculate']);
     Route::patch('/payrolls/{id}/status', [App\Http\Controllers\Api\PayrollController::class, 'updateStatus']);
     Route::get('/payrolls/{id}/payslip', [App\Http\Controllers\Api\PayrollController::class, 'generatePayslip']);

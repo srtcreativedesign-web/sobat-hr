@@ -1,4 +1,4 @@
-'use client';
+ 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -24,12 +24,13 @@ interface Payroll {
 
 export default function PayrollPage() {
   const router = useRouter();
-  const { user, isAuthenticated, checkAuth } = useAuthStore();
+  const { isAuthenticated, checkAuth } = useAuthStore();
   const [payrolls, setPayrolls] = useState<Payroll[]>([]);
   const [loading, setLoading] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [parsedRows, setParsedRows] = useState<any[]>([]);
 
   useEffect(() => {
     checkAuth();
@@ -71,6 +72,7 @@ export default function PayrollPage() {
 
     try {
       setUploadProgress(0);
+      setParsedRows([]);
       const response = await apiClient.post('/payrolls/import', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -83,10 +85,16 @@ export default function PayrollPage() {
         },
       });
 
-      alert('Import berhasil!');
-      setShowUploadModal(false);
-      setSelectedFile(null);
-      fetchPayrolls();
+      const data = response.data;
+      if (data && Array.isArray(data.rows)) {
+        setParsedRows(data.rows);
+        setUploadProgress(100);
+      } else {
+        alert(data.message || 'Import berhasil');
+        setShowUploadModal(false);
+        setSelectedFile(null);
+        fetchPayrolls();
+      }
     } catch (error: any) {
       alert(error.response?.data?.message || 'Import gagal');
     }
@@ -125,86 +133,47 @@ export default function PayrollPage() {
               </h1>
               <p className="text-gray-600 mt-1">Kelola data payroll dan slip gaji karyawan</p>
             </div>
-            <button
-              onClick={() => setShowUploadModal(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#1A4D2E] to-[#2d7a4a] text-white rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-[1.02]"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              Import Excel
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await apiClient.get('/payrolls/template/download', {
+                      responseType: 'blob',
+                    });
+                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', `Template_Import_Payroll_${new Date().toISOString().split('T')[0]}.xlsx`);
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                  } catch (error) {
+                    alert('Gagal download template');
+                  }
+                }}
+                className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-[#1A4D2E] text-[#1A4D2E] rounded-xl font-semibold hover:bg-[#1A4D2E] hover:text-white transition-all transform hover:scale-[1.02]"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Download Template
+              </button>
+              <button
+                onClick={() => setShowUploadModal(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#1A4D2E] to-[#2d7a4a] text-white rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-[1.02]"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                Import Excel
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="p-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600">Total Payroll</p>
-                <p className="text-3xl font-bold text-[#1A4D2E] mt-2">{payrolls.length}</p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#1A4D2E] to-[#2d7a4a] flex items-center justify-center">
-                <svg className="w-6 h-6 text-[#49FFB8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600">Pending</p>
-                <p className="text-3xl font-bold text-yellow-600 mt-2">
-                  {payrolls.filter(p => p.status === 'pending').length}
-                </p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600">Approved</p>
-                <p className="text-3xl font-bold text-blue-600 mt-2">
-                  {payrolls.filter(p => p.status === 'approved').length}
-                </p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600">Paid</p>
-                <p className="text-3xl font-bold text-green-600 mt-2">
-                  {payrolls.filter(p => p.status === 'paid').length}
-                </p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Payroll Table */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
           <div className="p-6 border-b border-gray-200">
@@ -217,9 +186,6 @@ export default function PayrollPage() {
             </div>
           ) : payrolls.length === 0 ? (
             <div className="text-center py-12">
-              <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
               <p className="text-gray-500">Belum ada data payroll</p>
               <p className="text-gray-400 text-sm mt-1">Upload file Excel untuk memulai</p>
             </div>
@@ -231,8 +197,10 @@ export default function PayrollPage() {
                     <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">Employee</th>
                     <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">Period</th>
                     <th className="text-right py-4 px-6 text-sm font-semibold text-gray-600">Basic Salary</th>
-                    <th className="text-right py-4 px-6 text-sm font-semibold text-gray-600">Allowances</th>
-                    <th className="text-right py-4 px-6 text-sm font-semibold text-gray-600">Deductions</th>
+                    <th className="text-right py-4 px-6 text-sm font-semibold text-gray-600">Overtime</th>
+                    <th className="text-right py-4 px-6 text-sm font-semibold text-gray-600">BPJS Health</th>
+                    <th className="text-right py-4 px-6 text-sm font-semibold text-gray-600">BPJS TK</th>
+                    <th className="text-right py-4 px-6 text-sm font-semibold text-gray-600">PPh21</th>
                     <th className="text-right py-4 px-6 text-sm font-semibold text-gray-600">Net Salary</th>
                     <th className="text-center py-4 px-6 text-sm font-semibold text-gray-600">Status</th>
                     <th className="text-center py-4 px-6 text-sm font-semibold text-gray-600">Actions</th>
@@ -242,19 +210,16 @@ export default function PayrollPage() {
                   {payrolls.map((payroll) => (
                     <tr key={payroll.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="py-4 px-6">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900">{payroll.employee.full_name}</p>
-                          <p className="text-xs text-gray-500">{payroll.employee.employee_code}</p>
-                        </div>
+                        <p className="text-sm font-semibold text-gray-900">{payroll.employee.full_name}</p>
                       </td>
-                      <td className="py-4 px-6">
-                        <p className="text-sm text-gray-900">
-                          {new Date(payroll.period_start).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}
-                        </p>
+                      <td className="py-4 px-6 text-sm text-gray-900">
+                        {new Date(payroll.period_start).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}
                       </td>
                       <td className="py-4 px-6 text-right text-sm text-gray-900">{formatCurrency(payroll.basic_salary)}</td>
-                      <td className="py-4 px-6 text-right text-sm text-green-600">+{formatCurrency(payroll.allowances)}</td>
-                      <td className="py-4 px-6 text-right text-sm text-red-600">-{formatCurrency(payroll.deductions)}</td>
+                      <td className="py-4 px-6 text-right text-sm text-green-600">{formatCurrency(payroll.allowances || 0)}</td>
+                      <td className="py-4 px-6 text-right text-sm text-red-600">{formatCurrency(payroll.deductions || 0)}</td>
+                      <td className="py-4 px-6 text-right text-sm text-red-600">{formatCurrency((payroll as any).bpjs_employment || 0)}</td>
+                      <td className="py-4 px-6 text-right text-sm text-red-600">{formatCurrency((payroll as any).tax || 0)}</td>
                       <td className="py-4 px-6 text-right text-sm font-semibold text-gray-900">{formatCurrency(payroll.net_salary)}</td>
                       <td className="py-4 px-6 text-center">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBadge(payroll.status)}`}>
@@ -262,19 +227,30 @@ export default function PayrollPage() {
                         </span>
                       </td>
                       <td className="py-4 px-6 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                          </button>
-                          <button className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                            </svg>
-                          </button>
-                        </div>
+                        <button
+                          onClick={async () => {
+                            try {
+                              const response = await apiClient.get(`/payrolls/${payroll.id}/slip`, {
+                                responseType: 'blob',
+                              });
+                              const url = window.URL.createObjectURL(new Blob([response.data]));
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.setAttribute('download', `Slip_Gaji_${payroll.employee.full_name}_${new Date(payroll.period_start).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}.pdf`);
+                              document.body.appendChild(link);
+                              link.click();
+                              link.remove();
+                            } catch (error) {
+                              alert('Gagal download slip gaji');
+                            }
+                          }}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Download Slip Gaji (AI-Enhanced)"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -314,7 +290,7 @@ export default function PayrollPage() {
                 <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#49FFB8] transition-colors">
                   <input
                     type="file"
-                    accept=".xlsx,.xls"
+                    accept=".xlsx,.xls,.csv"
                     onChange={handleFileChange}
                     className="hidden"
                     id="file-upload"
@@ -328,7 +304,7 @@ export default function PayrollPage() {
                     ) : (
                       <>
                         <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
-                        <p className="text-xs text-gray-400 mt-1">Excel files only (.xlsx, .xls)</p>
+                        <p className="text-xs text-gray-400 mt-1">Excel/CSV files (.xlsx, .xls, .csv)</p>
                       </>
                     )}
                   </label>
@@ -346,7 +322,7 @@ export default function PayrollPage() {
                     <div
                       className="bg-gradient-to-r from-[#1A4D2E] to-[#49FFB8] h-2 rounded-full transition-all duration-300"
                       style={{ width: `${uploadProgress}%` }}
-                    ></div>
+                    />
                   </div>
                 </div>
               )}
@@ -372,12 +348,85 @@ export default function PayrollPage() {
                 </button>
               </div>
 
-              {/* Info */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-xs text-blue-700">
-                  <strong>Format Excel akan ditentukan kemudian.</strong> Saat ini sistem akan menerima file untuk testing flow upload.
-                </p>
-              </div>
+              {/* Parsed Preview */}
+              {parsedRows.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="text-sm font-semibold mb-2">Preview Data ({parsedRows.length} baris)</h4>
+                  <div className="max-h-64 overflow-auto border rounded-lg">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          {Object.keys(parsedRows[0]).slice(0, 8).map((col) => (
+                            <th key={col} className="text-left p-2 font-medium text-gray-600">{col}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {parsedRows.map((row: any, idx: number) => (
+                          <tr key={idx} className="even:bg-white odd:bg-gray-50">
+                            {Object.keys(parsedRows[0]).slice(0, 8).map((col) => (
+                              <td key={col} className="p-2">{row[col] ?? '-'}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="mt-4 flex gap-3">
+                    <button
+                      onClick={() => {
+                        setParsedRows([]);
+                        setSelectedFile(null);
+                        setUploadProgress(0);
+                      }}
+                      className="px-4 py-2 border rounded-lg"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const response = await apiClient.post('/payrolls/import/save', {
+                            rows: parsedRows,
+                          });
+                          const data = response.data;
+                          
+                          // Show detailed results
+                          let message = `Import selesai!\n\nTotal: ${data.summary.total}\nBerhasil: ${data.summary.saved}\nGagal: ${data.summary.failed}`;
+                          
+                          if (data.failed && data.failed.length > 0) {
+                            message += '\n\nBaris yang gagal:';
+                            data.failed.slice(0, 5).forEach((fail: any) => {
+                              message += `\n- Row ${fail.row}: ${fail.employee_name} - ${fail.reason}`;
+                            });
+                            if (data.failed.length > 5) {
+                              message += `\n... dan ${data.failed.length - 5} lainnya (lihat console)`;
+                            }
+                            console.log('All failed rows:', data.failed);
+                          }
+                          
+                          alert(message);
+                          
+                          // Close modal and refresh only if some succeeded
+                          if (data.summary.saved > 0) {
+                            setShowUploadModal(false);
+                            setParsedRows([]);
+                            setSelectedFile(null);
+                            setUploadProgress(0);
+                            fetchPayrolls();
+                          }
+                        } catch (error: any) {
+                          alert(error.response?.data?.message || 'Gagal menyimpan data');
+                          console.error('Save error:', error.response?.data);
+                        }
+                      }}
+                      className="px-4 py-2 bg-gradient-to-r from-[#1A4D2E] to-[#2d7a4a] text-white rounded-lg"
+                    >
+                      Save to DB
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
