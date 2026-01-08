@@ -117,7 +117,63 @@ class EmployeeSeeder extends Seeder
             'basic_salary' => 7000000,
             'join_date' => '2022-06-01',
             'employment_status' => 'contract',
-            'contract_end_date' => '2026-06-01',
+            'contract_end_date' => '2026-02-01',
+            'status' => 'active',
+        ]);
+
+        // Additional contract employees expiring soon
+        $organizations = Organization::all();
+        
+        // Create a temporary user for contract employees
+        $michaelUser = User::create([
+            'name' => 'Michael Johnson',
+            'email' => 'michael.johnson@sobat.co.id',
+            'password' => bcrypt('password123'),
+            'role_id' => Role::where('name', 'staff')->first()->id,
+        ]);
+
+        Employee::create([
+            'user_id' => $michaelUser->id,
+            'organization_id' => $jakartaBranch->id,
+            'employee_code' => 'EMP006',
+            'full_name' => 'Michael Johnson',
+            'email' => 'michael.johnson@sobat.co.id',
+            'phone' => '081234567895',
+            'address' => 'Jakarta',
+            'birth_date' => '1990-04-18',
+            'gender' => 'male',
+            'position' => 'Marketing Specialist',
+            'level' => 'Junior',
+            'basic_salary' => 7500000,
+            'join_date' => '2024-01-15',
+            'employment_status' => 'contract',
+            'contract_end_date' => '2026-01-15',
+            'status' => 'active',
+        ]);
+
+        $sarahUser = User::create([
+            'name' => 'Sarah Williams',
+            'email' => 'sarah.williams@sobat.co.id',
+            'password' => bcrypt('password123'),
+            'role_id' => Role::where('name', 'staff')->first()->id,
+        ]);
+
+        Employee::create([
+            'user_id' => $sarahUser->id,
+            'organization_id' => $surabayaBranch->id,
+            'employee_code' => 'EMP007',
+            'full_name' => 'Sarah Williams',
+            'email' => 'sarah.williams@sobat.co.id',
+            'phone' => '081234567896',
+            'address' => 'Surabaya',
+            'birth_date' => '1993-08-22',
+            'gender' => 'female',
+            'position' => 'Accountant',
+            'level' => 'Junior',
+            'basic_salary' => 7000000,
+            'join_date' => '2024-01-20',
+            'employment_status' => 'contract',
+            'contract_end_date' => '2026-01-20',
             'status' => 'active',
         ]);
     }

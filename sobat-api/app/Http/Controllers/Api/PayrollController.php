@@ -12,22 +12,45 @@ class PayrollController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Payroll::with('employee');
+        $query = Payroll::with(['employee']);
 
+        // Filter by status
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by employee
         if ($request->has('employee_id')) {
             $query->where('employee_id', $request->employee_id);
         }
 
-        if ($request->has('month') && $request->has('year')) {
-            $query->where('period_month', $request->month)
-                  ->where('period_year', $request->year);
-        }
+        $payrolls = $query->orderBy('period', 'desc')
+            ->get();
 
-        $payrolls = $query->orderBy('period_year', 'desc')
-            ->orderBy('period_month', 'desc')
-            ->paginate(20);
-
-        return response()->json($payrolls);
+        return response()->json([
+            'data' => $payrolls->map(function ($payroll) {
+                // Parse period (YYYY-MM format)
+                $periodDate = $payroll->period . '-01';
+                $periodStart = date('Y-m-01', strtotime($periodDate));
+                $periodEnd = date('Y-m-t', strtotime($periodDate));
+                
+                return [
+                    'id' => $payroll->id,
+                    'employee' => [
+                        'employee_code' => $payroll->employee->employee_code ?? 'N/A',
+                        'full_name' => $payroll->employee->full_name ?? 'Unknown',
+                    ],
+                    'period_start' => $periodStart,
+                    'period_end' => $periodEnd,
+                    'basic_salary' => (float) $payroll->basic_salary,
+                    'allowances' => (float) $payroll->allowances,
+                    'deductions' => (float) $payroll->total_deductions,
+                    'gross_salary' => (float) $payroll->gross_salary,
+                    'net_salary' => (float) $payroll->net_salary,
+                    'status' => $payroll->status === 'draft' ? 'pending' : $payroll->status,
+                ];
+            }),
+        ]);
     }
 
     public function store(Request $request)
@@ -218,5 +241,65 @@ class PayrollController extends Controller
         }
 
         return $yearlyTax / 12; // Monthly tax
+    }
+
+    /**
+     * Import payroll from Excel
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls|max:10240', // 10MB max
+        ]);
+
+        $file = $request->file('file');
+        
+        // Store file temporarily
+        $path = $file->store('payroll_imports', 'local');
+
+        // TODO: Implement Excel parsing logic
+        // This will be implemented after format is finalized
+
+        return response()->json([
+            'message' => 'File uploaded successfully. Import logic will be implemented after format confirmation.',
+            'file_name' => $file->getClientOriginalName(),
+            'file_size' => $file->getSize(),
+            'stored_path' => $path,
+        ]);
+    }
+
+    /**
+     * Update payroll status
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:pending,approved,paid',
+        ]);
+
+        $payroll = Payroll::findOrFail($id);
+        $payroll->status = $request->status;
+        $payroll->save();
+
+        return response()->json([
+            'message' => 'Payroll status updated successfully',
+            'data' => $payroll,
+        ]);
+    }
+
+    /**
+     * Generate payslip PDF
+     */
+    public function generatePayslip($id)
+    {
+        $payroll = Payroll::with(['employee'])->findOrFail($id);
+
+        // TODO: Implement PDF generation
+        // This will be implemented after payslip template is finalized
+
+        return response()->json([
+            'message' => 'Payslip generation will be implemented',
+            'payroll_id' => $id,
+        ]);
     }
 }

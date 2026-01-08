@@ -14,7 +14,7 @@ class Employee extends Model
         'organization_id',
         'role_id',
         'shift_id',
-        'employee_number',
+        'employee_code',
         'full_name',
         'email',
         'phone',
@@ -25,7 +25,7 @@ class Employee extends Model
         'department',
         'base_salary',
         'status',
-        'contract_type',
+        'employment_status',
         'contract_end_date',
     ];
 

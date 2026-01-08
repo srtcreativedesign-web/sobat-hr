@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Login</title>
+</head>
+<body>
+    <h1>Test Login API</h1>
+    <div>
+        <input type="email" id="email" value="admin@sobat.co.id" placeholder="Email">
+        <input type="password" id="password" value="password123" placeholder="Password">
+        <button onclick="testLogin()">Login</button>
+    </div>
+    <pre id="result"></pre>
+
+    <script>
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultEl = document.getElementById('result');
+            
+            resultEl.textContent = 'Loading...';
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                resultEl.textContent = JSON.stringify(data, null, 2);
+                
+                if (response.ok) {
+                    alert('Login Success!');
+                } else {
+                    alert('Login Failed: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                resultEl.textContent = 'Error: ' + error.message;
+                console.error('Login error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

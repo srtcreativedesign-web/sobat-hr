@@ -3,7 +3,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  role: string;
+  role: Role | string;
   role_id: number;
   employee?: Employee;
   created_at?: string;
@@ -64,6 +64,7 @@ export interface Organization {
 export interface Role {
   id: number;
   name: string;
+  display_name: string;
   description?: string;
   created_at?: string;
   updated_at?: string;

@@ -136,4 +136,46 @@ class DashboardController extends Controller
             'data' => $heatmapData,
         ]);
     }
+
+    /**
+     * Get employees with contracts expiring within 30 days
+     */
+    public function contractExpiring(Request $request)
+    {
+        $days = (int) $request->get('days', 30);
+        $now = Carbon::now();
+
+        $employees = Employee::where('status', 'active')
+            ->where('employment_status', 'contract')
+            ->whereNotNull('contract_end_date')
+            ->whereDate('contract_end_date', '<=', $now->copy()->addDays($days))
+            ->whereDate('contract_end_date', '>=', $now)
+            ->with(['user', 'organization'])
+            ->orderBy('contract_end_date', 'asc')
+            ->get()
+            ->map(function ($employee) use ($now) {
+                $daysRemaining = Carbon::parse($employee->contract_end_date)->diffInDays($now);
+                return [
+                    'id' => $employee->id,
+                    'employee_code' => $employee->employee_code,
+                    'user' => [
+                        'name' => $employee->full_name,
+                        'email' => $employee->email,
+                    ],
+                    'position' => $employee->position,
+                    'organization' => [
+                        'name' => $employee->organization->name ?? 'N/A',
+                    ],
+                    'contract_end_date' => $employee->contract_end_date,
+                    'days_remaining' => $daysRemaining,
+                ];
+            });
+
+        return response()->json([
+            'total' => $employees->count(),
+            'data' => [
+                'employees' => $employees,
+            ],
+        ]);
+    }
 }

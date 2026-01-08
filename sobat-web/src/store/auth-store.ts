@@ -32,6 +32,8 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         try {
           set({ isLoading: true });
+          
+          // Direct Bearer token authentication with Sanctum
           const response = await apiClient.post(API_ENDPOINTS.AUTH.LOGIN, {
             email,
             password,
@@ -39,7 +41,11 @@ export const useAuthStore = create<AuthState>()(
 
           const { access_token, user } = response.data;
 
-          // Save to localStorage
+          if (!access_token || !user) {
+            throw new Error('Invalid response from server');
+          }
+
+          // Save authentication data
           localStorage.setItem(STORAGE_KEYS.TOKEN, access_token);
           localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
 
@@ -49,7 +55,7 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false,
           });
-        } catch (error) {
+        } catch (error: any) {
           set({ isLoading: false });
           throw error;
         }

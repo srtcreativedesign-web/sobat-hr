@@ -11,30 +11,31 @@ class Payroll extends Model
 
     protected $fillable = [
         'employee_id',
-        'period_month',
-        'period_year',
-        'base_salary',
+        'period',
+        'basic_salary',
         'allowances',
         'overtime_pay',
-        'deductions',
-        'bpjs_health',
-        'bpjs_employment',
-        'tax_pph21',
+        'gross_salary',
+        'bpjs_kesehatan',
+        'bpjs_ketenagakerjaan',
+        'pph21',
+        'other_deductions',
+        'total_deductions',
         'net_salary',
         'status',
         'paid_at',
     ];
 
     protected $casts = [
-        'period_month' => 'integer',
-        'period_year' => 'integer',
-        'base_salary' => 'decimal:2',
+        'basic_salary' => 'decimal:2',
         'allowances' => 'decimal:2',
         'overtime_pay' => 'decimal:2',
-        'deductions' => 'decimal:2',
-        'bpjs_health' => 'decimal:2',
-        'bpjs_employment' => 'decimal:2',
-        'tax_pph21' => 'decimal:2',
+        'gross_salary' => 'decimal:2',
+        'bpjs_kesehatan' => 'decimal:2',
+        'bpjs_ketenagakerjaan' => 'decimal:2',
+        'pph21' => 'decimal:2',
+        'other_deductions' => 'decimal:2',
+        'total_deductions' => 'decimal:2',
         'net_salary' => 'decimal:2',
         'paid_at' => 'datetime',
     ];
@@ -47,3 +48,4 @@ class Payroll extends Model
         return $this->belongsTo(Employee::class);
     }
 }
+
