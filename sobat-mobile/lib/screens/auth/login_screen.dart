@@ -72,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF49FFB8).withOpacity(0.3),
+                          color: const Color(0xFF49FFB8).withAlpha(77),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -96,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text(
                     'Human Resource Management System',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withAlpha(230),
                         ),
                   ),
                   const SizedBox(height: 48),
@@ -104,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Login Card
                   Card(
                     elevation: 8,
-                    shadowColor: Colors.black.withOpacity(0.2),
+                    shadowColor: Colors.black.withAlpha(51),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -192,10 +192,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                     padding: const EdgeInsets.all(12),
                                     margin: const EdgeInsets.only(bottom: 16),
                                     decoration: BoxDecoration(
-                                      color: AppTheme.error.withOpacity(0.1),
+                                      color: AppTheme.error.withAlpha(26),
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border.all(
-                                        color: AppTheme.error.withOpacity(0.3),
+                                        color: AppTheme.error.withAlpha(77),
                                       ),
                                     ),
                                     child: Row(
@@ -237,7 +237,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF1A4D2E).withOpacity(0.3),
+                                        color: const Color(0xFF1A4D2E).withAlpha(77),
                                         blurRadius: 8,
                                         offset: const Offset(0, 4),
                                       ),
