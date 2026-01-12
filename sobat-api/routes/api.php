@@ -79,6 +79,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Staff Invitation routes (Admin only)
     Route::middleware('role:super_admin,admin_cabang')->group(function () {
         Route::post('/staff/import', [App\Http\Controllers\StaffInvitationController::class, 'import']);
+        Route::get('/staff/invitations', [App\Http\Controllers\StaffInvitationController::class, 'index']);
+        Route::get('/staff/invitations/export', [App\Http\Controllers\StaffInvitationController::class, 'export']);
         Route::post('/staff/invite/execute', [App\Http\Controllers\StaffInvitationController::class, 'execute']);
     });
 });

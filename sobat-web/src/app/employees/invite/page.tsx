@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import apiClient from '@/lib/api-client';
 import DashboardLayout from '@/components/DashboardLayout';
+import InvitationList from '@/components/InvitationList';
 
 interface PreviewRow {
   rowIndex: number;
@@ -19,6 +20,7 @@ export default function InviteStaffPage() {
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -97,6 +99,7 @@ export default function InviteStaffPage() {
       setPreview([]);
       setSelectedRows(new Set());
       setFile(null);
+      setRefreshTrigger(prev => prev + 1); // Trigger update list
 
     } catch (error: any) {
       console.error('Invite error:', error);
@@ -207,7 +210,6 @@ export default function InviteStaffPage() {
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Temp Password</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Issues</th>
                   </tr>
@@ -227,7 +229,6 @@ export default function InviteStaffPage() {
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">{row.name}</td>
                       <td className="px-6 py-4 text-sm text-gray-500">{row.email}</td>
-                      <td className="px-6 py-4 text-sm font-mono text-gray-400">{row.temporary_password}</td>
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold ${row.valid
                           ? 'bg-green-100 text-green-700'
@@ -246,6 +247,9 @@ export default function InviteStaffPage() {
             </div>
           </div>
         )}
+
+        {/* Invitation List (Manual Links) */}
+        <InvitationList refreshTrigger={refreshTrigger} />
       </div>
     </DashboardLayout>
   );

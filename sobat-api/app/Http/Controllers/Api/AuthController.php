@@ -31,26 +31,26 @@ class AuthController extends Controller
                 ], 401);
             }
 
-        // Delete old tokens
-        $user->tokens()->delete();
+            // Delete old tokens
+            $user->tokens()->delete();
 
-        // Create new token
-        $token = $user->createToken('auth_token')->plainTextToken;
+            // Create new token
+            $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Login successful',
-            'data' => [
-                'access_token' => $token,
-                'token_type' => 'Bearer',
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->role->name ?? null,
+            return response()->json([
+                'success' => true,
+                'message' => 'Login successful',
+                'data' => [
+                    'access_token' => $token,
+                    'token_type' => 'Bearer',
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'role' => $user->role?->name ?? null,
+                    ]
                 ]
-            ]
-        ]);
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -87,7 +87,7 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => $user->role->name ?? null,
+                'role' => $user->role?->name ?? null,
             ]
         ], 201);
     }
@@ -116,7 +116,7 @@ class AuthController extends Controller
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
-            'role' => $user->role->name ?? null,
+            'role' => $user->role?->name ?? null,
             'employee' => $user->employee,
         ]);
     }

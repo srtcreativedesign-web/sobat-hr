@@ -6,10 +6,25 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use App\Models\Invitation;
+use App\Exports\InvitationsExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 class StaffInvitationController extends Controller
 {
+    public function export()
+    {
+        return Excel::download(new InvitationsExport, 'pending_invitations.xlsx');
+    }
+
+    public function index(Request $request)
+    {
+        $invitations = \App\Models\Invitation::where('status', 'pending')
+            ->orderBy('created_at', 'desc')
+            ->paginate(100);
+
+        return response()->json($invitations);
+    }
+
     public function import(Request $request)
     {
         $request->validate([
@@ -100,11 +115,13 @@ class StaffInvitationController extends Controller
 
     public function execute(Request $request)
     {
+        \Illuminate\Support\Facades\Log::info('Execute invitation endpoint hit', ['payload' => $request->all()]);
+
         $request->validate([
             'rows' => 'required|array',
             'rows.*.name' => 'required|string',
             'rows.*.email' => 'required|email',
-            'rows.*.temporary_password' => 'required|string',
+            // 'rows.*.temporary_password' => 'required|string', // Not mandatory for invitation table
         ]);
 
         $rows = $request->input('rows');
@@ -114,50 +131,49 @@ class StaffInvitationController extends Controller
 
         foreach ($rows as $row) {
             try {
-                // Check if user already exists
+                // Check if email already in Users OR Invitations
                 if (\App\Models\User::where('email', $row['email'])->exists()) {
                     $failedCount++;
-                    $errors[] = "Email {$row['email']} already registered";
+                    $errors[] = "Email {$row['email']} already registered as user";
                     continue;
                 }
 
-                // Create User
-                // RoleSeeder uses 'name', not 'slug'
-                $staffRole = \App\Models\Role::where('name', 'staff')->first();
-                $roleId = $staffRole ? $staffRole->id : 2; // Fallback to 2
+                // Check pending invitations
+                $existingInvite = \App\Models\Invitation::where('email', $row['email'])
+                    ->where('status', 'pending')
+                    ->first();
 
-                $user = \App\Models\User::create([
+                if ($existingInvite) {
+                    $failedCount++;
+                    $errors[] = "Email {$row['email']} already has pending invitation";
+                    continue;
+                }
+
+                // Create Invitation Record
+                $invite = \App\Models\Invitation::create([
+                    'email' => $row['email'],
                     'name' => $row['name'],
-                    'email' => $row['email'],
-                    'password' => \Illuminate\Support\Facades\Hash::make($row['temporary_password']),
-                    'role_id' => $roleId,
+                    'token' => Str::random(32), // Unique token for registration link
+                    'status' => 'pending',
+                    'payload' => json_encode($row),
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
 
-                // Create Employee record
-                // Fallback to first organization if ID 1 doesn't exist
-                $defaultOrg = \App\Models\Organization::first();
-                $orgId = $defaultOrg ? $defaultOrg->id : 1;
-
-                \App\Models\Employee::create([
-                    'user_id' => $user->id,
-                    'organization_id' => $orgId,
-                    'role_id' => $roleId,
-                    'full_name' => $row['name'],
-                    'email' => $row['email'],
-                    'employee_code' => 'EMP-' . strtoupper(Str::random(6)),
-                    'status' => 'active',
-                    'join_date' => now(),
-                ]);
+                \Illuminate\Support\Facades\Log::info('Invitation created', ['id' => $invite->id, 'email' => $invite->email]);
 
                 $successCount++;
             } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Invitation failed', ['email' => $row['email'], 'error' => $e->getMessage()]);
                 $failedCount++;
-                $errors[] = "Failed to create {$row['email']}: " . $e->getMessage();
+                $errors[] = "Failed to invite {$row['email']}: " . $e->getMessage();
             }
         }
 
+        \Illuminate\Support\Facades\Log::info('Execute invitation finished', ['success' => $successCount, 'failed' => $failedCount]);
+
         return response()->json([
-            'message' => "Successfully invited {$successCount} staff members.",
+            'message' => "Successfully queued {$successCount} invitations.",
             'failed' => $failedCount,
             'errors' => $errors
         ]);
