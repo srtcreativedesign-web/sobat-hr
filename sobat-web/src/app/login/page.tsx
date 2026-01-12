@@ -21,7 +21,16 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      router.push('/dashboard');
+
+      // Smart Redirect based on Role
+      const user = useAuthStore.getState().user;
+      const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name;
+
+      if (roleName === 'staff') {
+        router.push('/attendance');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err: any) {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {

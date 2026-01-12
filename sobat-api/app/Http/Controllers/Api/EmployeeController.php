@@ -28,9 +28,9 @@ class EmployeeController extends Controller
         // Search by name or employee number
         if ($request->has('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('full_name', 'like', "%{$search}%")
-                  ->orWhere('employee_number', 'like', "%{$search}%");
+                    ->orWhere('employee_code', 'like', "%{$search}%");
             });
         }
 
@@ -89,36 +89,72 @@ class EmployeeController extends Controller
 
         // Map incoming keys to actual DB columns where names differ
         $data = [];
-        if (isset($validated['user_id'])) $data['user_id'] = $validated['user_id'];
-        if (isset($validated['organization_id'])) $data['organization_id'] = $validated['organization_id'];
-        if (isset($validated['role_id'])) $data['role_id'] = $validated['role_id'];
+        if (isset($validated['user_id']))
+            $data['user_id'] = $validated['user_id'];
+        if (isset($validated['organization_id']))
+            $data['organization_id'] = $validated['organization_id'];
+        if (isset($validated['role_id']))
+            $data['role_id'] = $validated['role_id'];
         // support both employee_number and employee_code from clients
-        if (isset($validated['employee_number'])) $data['employee_code'] = $validated['employee_number'];
-        if (isset($validated['employee_code'])) $data['employee_code'] = $validated['employee_code'];
+        if (isset($validated['employee_number']))
+            $data['employee_code'] = $validated['employee_number'];
+        if (isset($validated['employee_code']))
+            $data['employee_code'] = $validated['employee_code'];
         $data['full_name'] = $validated['full_name'];
-        if (isset($validated['email'])) $data['email'] = $validated['email'];
-        if (isset($validated['phone'])) $data['phone'] = $validated['phone'];
-        if (isset($validated['address'])) $data['address'] = $validated['address'];
-        if (isset($validated['date_of_birth'])) $data['birth_date'] = $validated['date_of_birth'];
-        if (isset($validated['birth_date'])) $data['birth_date'] = $validated['birth_date'];
-        if (isset($validated['join_date'])) $data['join_date'] = $validated['join_date'];
-        if (isset($validated['position'])) $data['position'] = $validated['position'];
-        if (isset($validated['level'])) $data['level'] = $validated['level'];
-        if (isset($validated['base_salary'])) $data['basic_salary'] = $validated['base_salary'];
-        if (isset($validated['basic_salary'])) $data['basic_salary'] = $validated['basic_salary'];
-        if (isset($validated['contract_end_date'])) $data['contract_end_date'] = $validated['contract_end_date'];
-        if (isset($validated['contract_type'])) $data['employment_status'] = $validated['contract_type'];
-        if (isset($validated['employment_status'])) $data['employment_status'] = $validated['employment_status'];
-        if (isset($validated['status'])) $data['status'] = $validated['status'];
+        if (isset($validated['email']))
+            $data['email'] = $validated['email'];
+        if (isset($validated['phone']))
+            $data['phone'] = $validated['phone'];
+        if (isset($validated['address']))
+            $data['address'] = $validated['address'];
+        if (isset($validated['date_of_birth']))
+            $data['birth_date'] = $validated['date_of_birth'];
+        if (isset($validated['birth_date']))
+            $data['birth_date'] = $validated['birth_date'];
+        if (isset($validated['join_date']))
+            $data['join_date'] = $validated['join_date'];
+        if (isset($validated['position']))
+            $data['position'] = $validated['position'];
+        if (isset($validated['level']))
+            $data['level'] = $validated['level'];
+        if (isset($validated['base_salary']))
+            $data['basic_salary'] = $validated['base_salary'];
+        if (isset($validated['basic_salary']))
+            $data['basic_salary'] = $validated['basic_salary'];
+        if (isset($validated['contract_end_date']))
+            $data['contract_end_date'] = $validated['contract_end_date'];
+        if (isset($validated['contract_type']))
+            $data['employment_status'] = $validated['contract_type'];
+        if (isset($validated['employment_status']))
+            $data['employment_status'] = $validated['employment_status'];
+        if (isset($validated['status']))
+            $data['status'] = $validated['status'];
 
         // New additional fields added by migration (same names)
         $extraFields = [
-            'place_of_birth','ktp_address','current_address','gender','religion','marital_status','ptkp_status',
-            'nik','npwp','bank_account_number','bank_account_name','father_name','mother_name','spouse_name',
-            'family_contact_number','education','supervisor_name','supervisor_position','photo_path'
+            'place_of_birth',
+            'ktp_address',
+            'current_address',
+            'gender',
+            'religion',
+            'marital_status',
+            'ptkp_status',
+            'nik',
+            'npwp',
+            'bank_account_number',
+            'bank_account_name',
+            'father_name',
+            'mother_name',
+            'spouse_name',
+            'family_contact_number',
+            'education',
+            'supervisor_name',
+            'supervisor_position',
+            'photo_path'
         ];
         foreach ($extraFields as $f) {
-            if (isset($validated[$f])) $data[$f] = $validated[$f];
+            if (isset($validated[$f]))
+                $data[$f] = $validated[$f];
         }
 
         // If user_id not provided, link created employee to the authenticated user when available
@@ -156,7 +192,7 @@ class EmployeeController extends Controller
         // Check if employee with same full_name already exists
         // If yes, update existing record instead of creating duplicate
         $existingEmployee = Employee::where('full_name', $data['full_name'])->first();
-        
+
         if ($existingEmployee) {
             // Update existing employee
             $existingEmployee->update($data);
@@ -230,33 +266,69 @@ class EmployeeController extends Controller
 
         // Map validated to actual DB columns similar to store()
         $data = [];
-        if (isset($validated['organization_id'])) $data['organization_id'] = $validated['organization_id'];
-        if (isset($validated['role_id'])) $data['role_id'] = $validated['role_id'];
-        if (isset($validated['employee_number'])) $data['employee_code'] = $validated['employee_number'];
-        if (isset($validated['employee_code'])) $data['employee_code'] = $validated['employee_code'];
-        if (isset($validated['full_name'])) $data['full_name'] = $validated['full_name'];
-        if (isset($validated['email'])) $data['email'] = $validated['email'];
-        if (isset($validated['phone'])) $data['phone'] = $validated['phone'];
-        if (isset($validated['address'])) $data['address'] = $validated['address'];
-        if (isset($validated['date_of_birth'])) $data['birth_date'] = $validated['date_of_birth'];
-        if (isset($validated['birth_date'])) $data['birth_date'] = $validated['birth_date'];
-        if (isset($validated['join_date'])) $data['join_date'] = $validated['join_date'];
-        if (isset($validated['position'])) $data['position'] = $validated['position'];
-        if (isset($validated['level'])) $data['level'] = $validated['level'];
-        if (isset($validated['base_salary'])) $data['basic_salary'] = $validated['base_salary'];
-        if (isset($validated['basic_salary'])) $data['basic_salary'] = $validated['basic_salary'];
-        if (isset($validated['contract_end_date'])) $data['contract_end_date'] = $validated['contract_end_date'];
-        if (isset($validated['contract_type'])) $data['employment_status'] = $validated['contract_type'];
-        if (isset($validated['employment_status'])) $data['employment_status'] = $validated['employment_status'];
-        if (isset($validated['status'])) $data['status'] = $validated['status'];
+        if (isset($validated['organization_id']))
+            $data['organization_id'] = $validated['organization_id'];
+        if (isset($validated['role_id']))
+            $data['role_id'] = $validated['role_id'];
+        if (isset($validated['employee_number']))
+            $data['employee_code'] = $validated['employee_number'];
+        if (isset($validated['employee_code']))
+            $data['employee_code'] = $validated['employee_code'];
+        if (isset($validated['full_name']))
+            $data['full_name'] = $validated['full_name'];
+        if (isset($validated['email']))
+            $data['email'] = $validated['email'];
+        if (isset($validated['phone']))
+            $data['phone'] = $validated['phone'];
+        if (isset($validated['address']))
+            $data['address'] = $validated['address'];
+        if (isset($validated['date_of_birth']))
+            $data['birth_date'] = $validated['date_of_birth'];
+        if (isset($validated['birth_date']))
+            $data['birth_date'] = $validated['birth_date'];
+        if (isset($validated['join_date']))
+            $data['join_date'] = $validated['join_date'];
+        if (isset($validated['position']))
+            $data['position'] = $validated['position'];
+        if (isset($validated['level']))
+            $data['level'] = $validated['level'];
+        if (isset($validated['base_salary']))
+            $data['basic_salary'] = $validated['base_salary'];
+        if (isset($validated['basic_salary']))
+            $data['basic_salary'] = $validated['basic_salary'];
+        if (isset($validated['contract_end_date']))
+            $data['contract_end_date'] = $validated['contract_end_date'];
+        if (isset($validated['contract_type']))
+            $data['employment_status'] = $validated['contract_type'];
+        if (isset($validated['employment_status']))
+            $data['employment_status'] = $validated['employment_status'];
+        if (isset($validated['status']))
+            $data['status'] = $validated['status'];
 
         $extraFields = [
-            'place_of_birth','ktp_address','current_address','gender','religion','marital_status','ptkp_status',
-            'nik','npwp','bank_account_number','bank_account_name','father_name','mother_name','spouse_name',
-            'family_contact_number','education','supervisor_name','supervisor_position','photo_path'
+            'place_of_birth',
+            'ktp_address',
+            'current_address',
+            'gender',
+            'religion',
+            'marital_status',
+            'ptkp_status',
+            'nik',
+            'npwp',
+            'bank_account_number',
+            'bank_account_name',
+            'father_name',
+            'mother_name',
+            'spouse_name',
+            'family_contact_number',
+            'education',
+            'supervisor_name',
+            'supervisor_position',
+            'photo_path'
         ];
         foreach ($extraFields as $f) {
-            if (isset($validated[$f])) $data[$f] = $validated[$f];
+            if (isset($validated[$f]))
+                $data[$f] = $validated[$f];
         }
 
         $employee->update($data);
@@ -281,12 +353,12 @@ class EmployeeController extends Controller
     public function attendances(string $id, Request $request)
     {
         $employee = Employee::findOrFail($id);
-        
+
         $query = $employee->attendances();
 
         if ($request->has('month') && $request->has('year')) {
             $query->whereMonth('date', $request->month)
-                  ->whereYear('date', $request->year);
+                ->whereYear('date', $request->year);
         }
 
         $attendances = $query->orderBy('date', 'desc')->paginate(31);
@@ -300,7 +372,7 @@ class EmployeeController extends Controller
     public function payrolls(string $id, Request $request)
     {
         $employee = Employee::findOrFail($id);
-        
+
         $payrolls = $employee->payrolls()
             ->orderBy('period_month', 'desc')
             ->orderBy('period_year', 'desc')

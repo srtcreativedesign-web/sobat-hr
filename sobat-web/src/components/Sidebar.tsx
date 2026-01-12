@@ -27,6 +27,7 @@ export default function Sidebar() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
         </svg>
       ),
+      roles: ['super_admin', 'admin_cabang'],
     },
     {
       name: 'Employees',
@@ -189,8 +190,8 @@ export default function Sidebar() {
               key={item.href}
               onClick={() => router.push(item.href)}
               className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 relative overflow-hidden ${isActive
-                  ? 'bg-[#49FFB8] text-[#1A4D2E] shadow-[0_0_20px_rgba(73,255,184,0.3)] font-bold'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                ? 'bg-[#49FFB8] text-[#1A4D2E] shadow-[0_0_20px_rgba(73,255,184,0.3)] font-bold'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
                 } ${isCollapsed ? 'justify-center' : ''}`}
             >
               {isActive && (

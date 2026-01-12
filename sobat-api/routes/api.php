@@ -82,5 +82,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/staff/invitations', [App\Http\Controllers\StaffInvitationController::class, 'index']);
         Route::get('/staff/invitations/export', [App\Http\Controllers\StaffInvitationController::class, 'export']);
         Route::post('/staff/invite/execute', [App\Http\Controllers\StaffInvitationController::class, 'execute']);
+
     });
 });
+
+// Public invitation routes
+Route::get('/staff/invite/verify/{token}', [App\Http\Controllers\StaffInvitationController::class, 'verifyToken']);
+Route::post('/staff/invite/accept', [App\Http\Controllers\StaffInvitationController::class, 'accept']);

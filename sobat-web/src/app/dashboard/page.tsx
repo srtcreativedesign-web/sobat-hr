@@ -51,9 +51,16 @@ export default function DashboardPage() {
     };
 
     if (isAuthenticated) {
+      // Role Check
+      const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name; // Handle object or string
+      if (roleName === 'staff') {
+        router.push('/attendance');
+        return;
+      }
+
       fetchContractExpiring();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user, router]);
 
   if (!isAuthenticated) {
     return null;

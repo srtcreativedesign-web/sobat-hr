@@ -178,4 +178,98 @@ class StaffInvitationController extends Controller
             'errors' => $errors
         ]);
     }
+
+    public function verifyToken($token)
+    {
+        $token = trim($token);
+
+        // DEBUG: First check if token exists AT ALL
+        $anyInvite = Invitation::where('token', $token)->first();
+
+        if (!$anyInvite) {
+            \Illuminate\Support\Facades\Log::warning('Token completely not found', ['token' => $token]);
+            return response()->json(['valid' => false, 'message' => 'Token not found in database.'], 404);
+        }
+
+        // DEBUG: Check status
+        if ($anyInvite->status !== 'pending') {
+            \Illuminate\Support\Facades\Log::warning('Token found but status not pending', ['status' => $anyInvite->status]);
+            return response()->json(['valid' => false, 'message' => "Token found but status is '{$anyInvite->status}' (expected 'pending')."], 400);
+        }
+
+        return response()->json([
+            'valid' => true,
+            'name' => $anyInvite->name,
+            'email' => $anyInvite->email,
+        ]);
+    }
+
+    public function accept(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $invitation = Invitation::where('token', $request->token)
+            ->where('status', 'pending')
+            ->first();
+
+        if (!$invitation) {
+            return response()->json(['message' => 'Invitation invalid or expired.'], 404);
+        }
+
+        \DB::beginTransaction();
+        try {
+            // 1. Get Default Role & Organization
+            $role = \App\Models\Role::where('name', 'staff')->first();
+            $org = \App\Models\Organization::first(); // Fallback to first org
+
+            // 2. Create User
+            $user = \App\Models\User::create([
+                'name' => $invitation->name,
+                // 'username' => explode('@', $invitation->email)[0], // removed as username is not in fillable
+                'email' => $invitation->email,
+                'password' => \Illuminate\Support\Facades\Hash::make($request->password),
+                'role_id' => $role ? $role->id : 1, // Fallback ID 1
+            ]);
+
+            // 3. Create Employee Profile
+            \App\Models\Employee::create([
+                'user_id' => $user->id,
+                'organization_id' => $org ? $org->id : 1,
+                'employee_code' => 'EMP-' . str_pad($user->id, 4, '0', STR_PAD_LEFT),
+                'full_name' => $user->name, // Added full_name
+                'email' => $user->email, // Added email
+                'position' => 'Staff', // Default position
+                'phone' => '-', // Default placeholder
+                'address' => '-', // Default placeholder
+                'join_date' => now(), // Fixed typo from joined_date
+                'birth_date' => '1990-01-01', // Default placeholder
+                'basic_salary' => 0, // Default placeholder
+                'status' => 'active',
+            ]);
+
+            // 4. Update Invitation
+            $invitation->update([
+                'status' => 'accepted',
+                'registered_at' => now(),
+            ]);
+
+            // 5. Generate Auth Token
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            \DB::commit();
+
+            return response()->json([
+                'message' => 'Account activated successfully.',
+                'token' => $token,
+                'user' => $user
+            ]);
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            return response()->json(['message' => 'Failed to activate account: ' . $e->getMessage()], 500);
+        }
+    }
 }
