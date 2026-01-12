@@ -3,6 +3,13 @@
 @tailwind utilities;
 
 :root {
+  /* Brand Colors */
+  --forest-green: #1A4D2E;
+  --neon-mint: #49FFB8;
+  --dark-forest: #0d2618;
+  --light-mint: #2d7a4a;
+  
+  /* Semantic Colors */
   --background: #ffffff;
   --foreground: #171717;
 }
@@ -20,8 +27,36 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+/* Glassmorphism Utilities */
+.glass-panel {
+  @apply bg-white/95 backdrop-blur-md border border-gray-100 shadow-xl;
+}
+
+.glass-card {
+  @apply bg-white/80 backdrop-blur-sm border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300;
+}
+
+/* Custom Gradients */
+.gradient-text {
+  @apply bg-gradient-to-r from-[#1A4D2E] to-[#2d7a4a] bg-clip-text text-transparent;
+}
+
+.gradient-bg {
+  @apply bg-gradient-to-r from-[#1A4D2E] to-[#2d7a4a];
+}
+
+/* Animations */
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
   }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out forwards;
 }

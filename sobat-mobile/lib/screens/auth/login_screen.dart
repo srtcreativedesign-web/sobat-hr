@@ -12,8 +12,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: 'admin@sobat.co.id');
-  final _passwordController = TextEditingController(text: 'password123');
+  final _emailController = TextEditingController(text: 'elian@sobat.co.id');
+  final _passwordController = TextEditingController(text: 'staff123');
   bool _obscurePassword = true;
 
   @override
@@ -92,13 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Human Resource Management System',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withAlpha(230),
-                        ),
-                  ),
+                  const SizedBox(height: 24),
                   const SizedBox(height: 48),
 
                   // Login Card
@@ -237,7 +231,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF1A4D2E).withA(0.3),
+                                        color: const Color(0xFF1A4D2E).withValues(alpha: 0.3),
                                         blurRadius: 8,
                                         offset: const Offset(0, 4),
                                       ),
@@ -309,14 +303,21 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Email: admin@sobat.co.id\nPassword: password123',
+                          'Email: elian@sobat.co.id\nPassword: password123',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                               ),
                           textAlign: TextAlign.center,
                         ),
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pushNamed('/signup');
+                    },
+                    child: const Text('Belum punya akun? Daftar', style: TextStyle(color: Colors.white)),
                   ),
                 ],
               ),

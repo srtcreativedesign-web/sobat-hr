@@ -1,0 +1,459 @@
+import 'dart:io';
+import 'dart:ui';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../config/api_config.dart';
+import '../../config/theme.dart';
+import '../../services/auth_service.dart';
+
+class EditProfileScreen extends StatefulWidget {
+  const EditProfileScreen({super.key});
+
+  @override
+  State<EditProfileScreen> createState() => _EditProfileScreenState();
+}
+
+class _EditProfileScreenState extends State<EditProfileScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final AuthService _authService = AuthService();
+
+  // Basic fields
+  final TextEditingController _nameCtrl = TextEditingController();
+  final TextEditingController _emailCtrl = TextEditingController();
+  final TextEditingController _phoneCtrl = TextEditingController();
+
+  // Employee fields
+  final TextEditingController _employeeIdCtrl = TextEditingController();
+  final TextEditingController _placeOfBirthCtrl = TextEditingController();
+  DateTime? _dateOfBirth;
+  final TextEditingController _ktpAddressCtrl = TextEditingController();
+  final TextEditingController _currentAddressCtrl = TextEditingController();
+  String? _gender;
+  String? _religion;
+  String? _maritalStatus;
+  String? _ptkpStatus;
+  final TextEditingController _nikCtrl = TextEditingController();
+  final TextEditingController _npwpCtrl = TextEditingController();
+  final TextEditingController _bankAccCtrl = TextEditingController();
+  final TextEditingController _bankAccNameCtrl = TextEditingController();
+  final TextEditingController _fatherNameCtrl = TextEditingController();
+  final TextEditingController _motherNameCtrl = TextEditingController();
+  final TextEditingController _spouseNameCtrl = TextEditingController();
+  final TextEditingController _familyContactCtrl = TextEditingController();
+  String? _education;
+  final TextEditingController _departmentCtrl = TextEditingController();
+  final TextEditingController _positionCtrl = TextEditingController();
+  final TextEditingController _supervisorNameCtrl = TextEditingController();
+  final TextEditingController _supervisorPositionCtrl = TextEditingController();
+  // UI helpers
+  String? _department;
+  String? _position;
+
+  final List<String> _departmentOptions = [
+    'Wrapping', 'Refleksi', 'Celullar', 'Minimarket', 'HANS', 'Food & Beverages',
+    'Human Resources Development', 'Business Development', 'Finance, Accounting, & Tax',
+    'Training & Development', 'Internal Keuangan', 'Project', 'Money Changer', 'Yang lain',
+  ];
+
+  final List<String> _positionOptions = [
+    'Direktur Utama', 'Direktur Operasional', 'Direktur Keuangan', 'Konsultan',
+    'Manager Non-Operational', 'Manager Operational', 'Manager Keuangan', 'Assistant Manager',
+    'Supervisor', 'Team Leader', 'Staff Office/Admin', 'Crew/Staff Operational',
+    'Cleaning Service', 'Teknisi', 'Security', 'Driver', 'Yang lain',
+  ];
+
+  final List<String> _ptkpOptions = [
+    'TK0', 'TK1', 'TK2', 'TK3', 'K0', 'K1', 'K2', 'K3', 'K/I/0', 'K/I/1', 'K/I/2', 'K/I/3'
+  ];
+
+  bool _saving = false;
+  int? _employeeRecordId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitial();
+  }
+
+  Future<void> _loadInitial() async {
+    final current = await _authService.getCurrentUser();
+    if (current != null) {
+      // top-level user fields
+      _nameCtrl.text = current['name'] ?? '';
+      _emailCtrl.text = current['email'] ?? '';
+      _phoneCtrl.text = current['phone'] ?? '';
+
+      // employee sub-object may exist
+      final emp = current['employee'] ?? current['employee_data'] ?? current['employee_record'];
+      if (emp != null && emp is Map<String, dynamic>) {
+        _employeeRecordId = emp['id'] as int?;
+        _employeeIdCtrl.text = emp['employee_code'] ?? emp['employee_id'] ?? '';
+        _placeOfBirthCtrl.text = emp['place_of_birth'] ?? '';
+        if (emp['date_of_birth'] != null) {
+          try {
+            _dateOfBirth = DateTime.parse(emp['date_of_birth']);
+          } catch (_) {}
+        }
+        _ktpAddressCtrl.text = emp['ktp_address'] ?? '';
+        _currentAddressCtrl.text = emp['current_address'] ?? '';
+        _gender = emp['gender'];
+        _religion = emp['religion'];
+        _maritalStatus = emp['marital_status'];
+        _ptkpStatus = emp['ptkp_status'];
+        _nikCtrl.text = emp['nik'] ?? '';
+        _npwpCtrl.text = emp['npwp'] ?? '';
+        _bankAccCtrl.text = emp['bank_account_number'] ?? '';
+        _bankAccNameCtrl.text = emp['bank_account_name'] ?? '';
+        _fatherNameCtrl.text = emp['father_name'] ?? '';
+        _motherNameCtrl.text = emp['mother_name'] ?? '';
+        _spouseNameCtrl.text = emp['spouse_name'] ?? '';
+        _familyContactCtrl.text = emp['family_contact_number'] ?? '';
+        _education = emp['education'] ?? '';
+        _department = emp['department'] ?? null;
+        _position = emp['position'] ?? null;
+        _departmentCtrl.text = emp['department'] ?? '';
+        _positionCtrl.text = emp['position'] ?? '';
+        _supervisorNameCtrl.text = emp['supervisor_name'] ?? '';
+        _supervisorPositionCtrl.text = emp['supervisor_position'] ?? '';
+      }
+      setState(() {});
+    }
+  }
+
+  Future<void> _pickDateOfBirth() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dateOfBirth ?? DateTime(now.year - 25),
+      firstDate: DateTime(1900),
+      lastDate: now,
+    );
+    if (picked != null) setState(() => _dateOfBirth = picked);
+  }
+
+  Widget _sectionCard(Widget child) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.white.withValues(alpha: 0.06), Colors.white.withValues(alpha: 0.02)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _saving = true);
+
+    final payload = {
+      'full_name': _nameCtrl.text.trim(),
+      'email': _emailCtrl.text.trim(),
+      'phone': _phoneCtrl.text.trim(),
+      'employee_code': _employeeIdCtrl.text.trim(),
+      'place_of_birth': _placeOfBirthCtrl.text.trim(),
+      'date_of_birth': _dateOfBirth?.toIso8601String(),
+      'ktp_address': _ktpAddressCtrl.text.trim(),
+      'current_address': _currentAddressCtrl.text.trim(),
+      'gender': _gender,
+      'religion': _religion,
+      'marital_status': _maritalStatus,
+      'ptkp_status': _ptkpStatus,
+      'nik': _nikCtrl.text.trim(),
+      'npwp': _npwpCtrl.text.trim(),
+      'bank_account_number': _bankAccCtrl.text.trim(),
+      'bank_account_name': _bankAccNameCtrl.text.trim(),
+      'father_name': _fatherNameCtrl.text.trim(),
+      'mother_name': _motherNameCtrl.text.trim(),
+      'spouse_name': _spouseNameCtrl.text.trim(),
+      'family_contact_number': _familyContactCtrl.text.trim(),
+      'education': _education,
+      'department': _departmentCtrl.text.trim(),
+      'position': _positionCtrl.text.trim(),
+      'supervisor_name': _supervisorNameCtrl.text.trim(),
+      'supervisor_position': _supervisorPositionCtrl.text.trim(),
+    };
+
+    // Debug: print payload and target id to console
+    print('EditProfile: saving employeeRecordId=$_employeeRecordId payload=${payload.toString()}');
+
+    try {
+      if (_employeeRecordId != null) {
+        await _authService.updateEmployee(_employeeRecordId!, payload);
+      } else {
+        await _authService.createEmployee(payload);
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profil berhasil disimpan')));
+        Navigator.of(context).pop(true);
+      }
+    } catch (e, st) {
+      // Log full error and stacktrace for debugging
+      print('EditProfile: save failed -> $e');
+      print('EditProfile: stacktrace -> $st');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal menyimpan: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _emailCtrl.dispose();
+    _phoneCtrl.dispose();
+    _employeeIdCtrl.dispose();
+    _placeOfBirthCtrl.dispose();
+    _ktpAddressCtrl.dispose();
+    _currentAddressCtrl.dispose();
+    _nikCtrl.dispose();
+    _npwpCtrl.dispose();
+    _bankAccCtrl.dispose();
+    _bankAccNameCtrl.dispose();
+    _fatherNameCtrl.dispose();
+    _motherNameCtrl.dispose();
+    _spouseNameCtrl.dispose();
+    _familyContactCtrl.dispose();
+    _departmentCtrl.dispose();
+    _positionCtrl.dispose();
+    _supervisorNameCtrl.dispose();
+    _supervisorPositionCtrl.dispose();
+    // no-op for _department/_position strings
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Edit Profil'),
+        actions: [
+          TextButton(
+            onPressed: _saving ? null : _save,
+            child: _saving
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Text('Simpan', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header inputs
+              _sectionCard(
+                Column(
+                  children: [
+                    TextFormField(
+                      controller: _nameCtrl,
+                      decoration: const InputDecoration(prefixIcon: Icon(Icons.person), labelText: 'Nama Lengkap'),
+                      validator: (v) => (v == null || v.isEmpty) ? 'Nama wajib diisi' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _emailCtrl,
+                            decoration: const InputDecoration(prefixIcon: Icon(Icons.email), labelText: 'Email'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _phoneCtrl,
+                            decoration: const InputDecoration(prefixIcon: Icon(Icons.phone), labelText: 'Nomor HP'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Personal data
+              _sectionCard(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text('Data Pribadi', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: TextFormField(controller: _employeeIdCtrl, decoration: const InputDecoration(labelText: 'NIK Karyawan'))),
+                        const SizedBox(width: 12),
+                        Expanded(child: TextFormField(controller: _placeOfBirthCtrl, decoration: const InputDecoration(labelText: 'Tempat Lahir'))),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: _pickDateOfBirth,
+                      child: InputDecorator(
+                        decoration: const InputDecoration(prefixIcon: Icon(Icons.calendar_today), labelText: 'Tanggal Lahir'),
+                        child: Text(_dateOfBirth == null ? '-' : DateFormat.yMMMMd('id_ID').format(_dateOfBirth!)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(controller: _ktpAddressCtrl, decoration: const InputDecoration(prefixIcon: Icon(Icons.home), labelText: 'Alamat KTP')),
+                    const SizedBox(height: 12),
+                    TextFormField(controller: _currentAddressCtrl, decoration: const InputDecoration(prefixIcon: Icon(Icons.location_on), labelText: 'Alamat Domisili')),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: _gender,
+                      decoration: const InputDecoration(prefixIcon: Icon(Icons.wc), labelText: 'Jenis Kelamin'),
+                      items: const [
+                        DropdownMenuItem(value: 'male', child: Text('Laki-laki')),
+                        DropdownMenuItem(value: 'female', child: Text('Perempuan')),
+                      ],
+                      onChanged: (v) => setState(() => _gender = v),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: _religion,
+                      decoration: const InputDecoration(prefixIcon: Icon(Icons.account_balance), labelText: 'Agama'),
+                      items: const [
+                        DropdownMenuItem(value: 'Islam', child: Text('Islam')),
+                        DropdownMenuItem(value: 'Kristen', child: Text('Kristen')),
+                        DropdownMenuItem(value: 'Katolik', child: Text('Katolik')),
+                        DropdownMenuItem(value: 'Hindu', child: Text('Hindu')),
+                        DropdownMenuItem(value: 'Buddha', child: Text('Buddha')),
+                        DropdownMenuItem(value: 'Konghucu', child: Text('Konghucu')),
+                        DropdownMenuItem(value: 'Lainnya', child: Text('Lainnya')),
+                      ],
+                      onChanged: (v) => setState(() => _religion = v),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: _maritalStatus,
+                      decoration: const InputDecoration(prefixIcon: Icon(Icons.family_restroom), labelText: 'Status Perkawinan'),
+                      items: const [
+                        DropdownMenuItem(value: 'Belum Kawin', child: Text('Belum Kawin')),
+                        DropdownMenuItem(value: 'Kawin', child: Text('Kawin')),
+                        DropdownMenuItem(value: 'Cerai Hidup', child: Text('Cerai Hidup')),
+                        DropdownMenuItem(value: 'Cerai Mati', child: Text('Cerai Mati')),
+                      ],
+                      onChanged: (v) => setState(() => _maritalStatus = v),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: _ptkpStatus,
+                      decoration: const InputDecoration(prefixIcon: Icon(Icons.badge), labelText: 'Status PTKP'),
+                      items: _ptkpOptions.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+                      onChanged: (v) => setState(() => _ptkpStatus = v),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Finance & Family
+              _sectionCard(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text('Keuangan & Kontak', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    TextFormField(controller: _nikCtrl, decoration: const InputDecoration(prefixIcon: Icon(Icons.credit_card), labelText: 'NIK (KTP)')),
+                    const SizedBox(height: 12),
+                    TextFormField(controller: _npwpCtrl, decoration: const InputDecoration(prefixIcon: Icon(Icons.account_balance_wallet), labelText: 'NPWP')),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: TextFormField(controller: _bankAccCtrl, decoration: const InputDecoration(prefixIcon: Icon(Icons.account_balance), labelText: 'No. Rekening (Mandiri)'))),
+                        const SizedBox(width: 12),
+                        Expanded(child: TextFormField(controller: _bankAccNameCtrl, decoration: const InputDecoration(prefixIcon: Icon(Icons.person), labelText: 'Nama Pemilik Rekening'))),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(controller: _fatherNameCtrl, decoration: const InputDecoration(labelText: 'Nama Ayah')),
+                    const SizedBox(height: 12),
+                    TextFormField(controller: _motherNameCtrl, decoration: const InputDecoration(labelText: 'Nama Ibu')),
+                    const SizedBox(height: 12),
+                    TextFormField(controller: _spouseNameCtrl, decoration: const InputDecoration(labelText: 'Nama Suami/Istri (jika ada)')),
+                    const SizedBox(height: 12),
+                    TextFormField(controller: _familyContactCtrl, decoration: const InputDecoration(labelText: 'Nomor Keluarga / Wali')),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Work info
+              _sectionCard(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text('Pekerjaan', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: _department ?? (_departmentCtrl.text.isNotEmpty ? _departmentCtrl.text : null),
+                      decoration: const InputDecoration(prefixIcon: Icon(Icons.business), labelText: 'Divisi / Departemen'),
+                      items: _departmentOptions.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
+                      onChanged: (v) {
+                        setState(() {
+                          _department = v;
+                          _departmentCtrl.text = v ?? '';
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: _position ?? (_positionCtrl.text.isNotEmpty ? _positionCtrl.text : null),
+                      decoration: const InputDecoration(prefixIcon: Icon(Icons.work), labelText: 'Jabatan'),
+                      items: _positionOptions.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+                      onChanged: (v) {
+                        setState(() {
+                          _position = v;
+                          _positionCtrl.text = v ?? '';
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(controller: _supervisorNameCtrl, decoration: const InputDecoration(labelText: 'Nama Atasan Langsung')),
+                    const SizedBox(height: 12),
+                    TextFormField(controller: _supervisorPositionCtrl, decoration: const InputDecoration(labelText: 'Jabatan Atasan Langsung')),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+              // Save button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _saving ? null : _save,
+                  icon: _saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.save),
+                  label: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    child: Text('Simpan Perubahan', style: TextStyle(fontSize: 16)),
+                  ),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

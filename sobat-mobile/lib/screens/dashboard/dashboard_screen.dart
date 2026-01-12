@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
@@ -22,7 +23,7 @@ class DashboardScreen extends StatelessWidget {
             icon: const Icon(Icons.account_circle),
             onSelected: (value) async {
               if (value == 'profile') {
-                // TODO: Navigate to profile
+                Navigator.of(context).pushNamed('/profile');
               } else if (value == 'logout') {
                 final authProvider =
                     Provider.of<AuthProvider>(context, listen: false);
@@ -61,123 +62,184 @@ class DashboardScreen extends StatelessWidget {
         builder: (context, authProvider, child) {
           final user = authProvider.user;
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Welcome Card
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: AppTheme.primaryGreen,
-                          child: Text(
-                            user?.name.substring(0, 1).toUpperCase() ?? 'U',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Selamat Datang,',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                user?.name ?? 'User',
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                              const SizedBox(height: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.primaryGreen.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  user?.role.toUpperCase() ?? 'USER',
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: AppTheme.primaryGreen,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+          return Stack(
+            children: [
+              // Decorative blurred shapes
+              Positioned(
+                top: -80,
+                left: -60,
+                child: Container(
+                  width: 220,
+                  height: 220,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        AppTheme.primaryGreen.withValues(alpha: .18),
+                        AppTheme.primaryGreen.withValues(alpha: 0.06),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
-
-                // Menu Grid
-                Text(
-                  'Menu Utama',
-                  style: Theme.of(context).textTheme.titleLarge,
+              ),
+              Positioned(
+                bottom: -100,
+                right: -80,
+                child: Container(
+                  width: 260,
+                  height: 260,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        AppTheme.info.withValues(alpha: 0.14),
+                        AppTheme.info.withValues(alpha: 0.04),
+                      ],
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 16),
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
+              ),
+
+              // Content
+              SingleChildScrollView(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildMenuCard(
-                      context,
-                      icon: Icons.people_outline,
-                      title: 'Karyawan',
-                      color: AppTheme.info,
-                      onTap: () {
-                        // TODO: Navigate to employees
-                      },
+                    // Welcome Glass Card
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.white.withValues(alpha: 0.06),
+                                Colors.white.withValues(alpha: 0.02),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.08),
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(18),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 34,
+                                  backgroundColor: AppTheme.primaryGreen,
+                                  child: Text(
+                                    user?.name?.substring(0, 1).toUpperCase() ?? 'U',
+                                    style: const TextStyle(
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Selamat Datang,',
+                                        style: Theme.of(context).textTheme.bodySmall,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        user?.name ?? 'User',
+                                        style: Theme.of(context).textTheme.headlineSmall,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.primaryGreen.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          user?.role?.toUpperCase() ?? 'USER',
+                                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                color: AppTheme.primaryGreen,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                    _buildMenuCard(
-                      context,
-                      icon: Icons.access_time,
-                      title: 'Absensi',
-                      color: AppTheme.success,
-                      onTap: () {
-                        // TODO: Navigate to attendance
-                      },
+
+                    const SizedBox(height: 24),
+
+                    Text(
+                      'Menu Utama',
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                    _buildMenuCard(
-                      context,
-                      icon: Icons.beach_access,
-                      title: 'Cuti',
-                      color: AppTheme.warning,
-                      onTap: () {
-                        // TODO: Navigate to leave
-                      },
+                    const SizedBox(height: 14),
+
+                    GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      mainAxisSpacing: 14,
+                      crossAxisSpacing: 14,
+                      children: [
+                        _buildMenuCard(
+                          context,
+                          icon: Icons.people_outline,
+                          title: 'Karyawan',
+                          color: AppTheme.info,
+                          onTap: () {},
+                        ),
+                        _buildMenuCard(
+                          context,
+                          icon: Icons.access_time,
+                          title: 'Absensi',
+                          color: AppTheme.success,
+                          onTap: () {},
+                        ),
+                        _buildMenuCard(
+                          context,
+                          icon: Icons.beach_access,
+                          title: 'Cuti',
+                          color: AppTheme.warning,
+                          onTap: () {},
+                        ),
+                        _buildMenuCard(
+                          context,
+                          icon: Icons.attach_money,
+                          title: 'Payroll',
+                          color: AppTheme.primaryGreen,
+                          onTap: () {},
+                        ),
+                      ],
                     ),
-                    _buildMenuCard(
-                      context,
-                      icon: Icons.attach_money,
-                      title: 'Payroll',
-                      color: AppTheme.primaryGreen,
-                      onTap: () {
-                        // TODO: Navigate to payroll
-                      },
-                    ),
+                    const SizedBox(height: 24),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           );
         },
       ),
@@ -191,34 +253,52 @@ class DashboardScreen extends StatelessWidget {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.white.withValues(alpha: 0.04),
+                    Colors.white.withValues(alpha: 0.02),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                child: Icon(
-                  icon,
-                  size: 32,
-                  color: color,
-                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
               ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium,
-                textAlign: TextAlign.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      icon,
+                      size: 28,
+                      color: color,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

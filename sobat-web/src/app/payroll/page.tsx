@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -32,6 +32,17 @@ export default function PayrollPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [parsedRows, setParsedRows] = useState<any[]>([]);
 
+  // Filter States
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
+  const months = [
+    { value: 1, label: 'Januari' }, { value: 2, label: 'Februari' }, { value: 3, label: 'Maret' },
+    { value: 4, label: 'April' }, { value: 5, label: 'Mei' }, { value: 6, label: 'Juni' },
+    { value: 7, label: 'Juli' }, { value: 8, label: 'Agustus' }, { value: 9, label: 'September' },
+    { value: 10, label: 'Oktober' }, { value: 11, label: 'November' }, { value: 12, label: 'Desember' }
+  ];
+
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
@@ -41,15 +52,21 @@ export default function PayrollPage() {
       router.push('/login');
       return;
     }
-    
+
     fetchPayrolls();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, selectedMonth, selectedYear]);
 
   const fetchPayrolls = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/payrolls');
+      setLoading(true);
+      const response = await apiClient.get('/payrolls', {
+        params: {
+          month: selectedMonth,
+          year: selectedYear
+        }
+      });
       setPayrolls(response.data.data || []);
     } catch (error) {
       console.error('Failed to fetch payrolls:', error);
@@ -168,6 +185,33 @@ export default function PayrollPage() {
                 Import Excel
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter Section */}
+      <div className="bg-white border-b border-gray-200 px-8 py-4">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-gray-700">Periode:</span>
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#1A4D2E] text-sm"
+            >
+              {months.map((m) => (
+                <option key={m.value} value={m.value}>{m.label}</option>
+              ))}
+            </select>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#1A4D2E] text-sm"
+            >
+              {[2024, 2025, 2026, 2027].map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
@@ -356,16 +400,16 @@ export default function PayrollPage() {
                     <table className="w-full text-sm">
                       <thead className="bg-gray-50">
                         <tr>
-                          {Object.keys(parsedRows[0]).slice(0, 8).map((col) => (
-                            <th key={col} className="text-left p-2 font-medium text-gray-600">{col}</th>
+                          {Object.keys(parsedRows[0]).map((col) => (
+                            <th key={col} className="text-left p-2 font-medium text-gray-600 whitespace-nowrap">{col}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
                         {parsedRows.map((row: any, idx: number) => (
                           <tr key={idx} className="even:bg-white odd:bg-gray-50">
-                            {Object.keys(parsedRows[0]).slice(0, 8).map((col) => (
-                              <td key={col} className="p-2">{row[col] ?? '-'}</td>
+                            {Object.keys(parsedRows[0]).map((col) => (
+                              <td key={col} className="p-2 whitespace-nowrap">{row[col]}</td>
                             ))}
                           </tr>
                         ))}
@@ -390,10 +434,10 @@ export default function PayrollPage() {
                             rows: parsedRows,
                           });
                           const data = response.data;
-                          
+
                           // Show detailed results
                           let message = `Import selesai!\n\nTotal: ${data.summary.total}\nBerhasil: ${data.summary.saved}\nGagal: ${data.summary.failed}`;
-                          
+
                           if (data.failed && data.failed.length > 0) {
                             message += '\n\nBaris yang gagal:';
                             data.failed.slice(0, 5).forEach((fail: any) => {
@@ -404,9 +448,9 @@ export default function PayrollPage() {
                             }
                             console.log('All failed rows:', data.failed);
                           }
-                          
+
                           alert(message);
-                          
+
                           // Close modal and refresh only if some succeeded
                           if (data.summary.saved > 0) {
                             setShowUploadModal(false);

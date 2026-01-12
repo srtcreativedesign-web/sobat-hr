@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\Payroll;
 use App\Models\Employee;
 use Barryvdh\DomPDF\Facade\Pdf;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Services\GroqAiService;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PayrollController extends Controller
 {
@@ -26,6 +26,17 @@ class PayrollController extends Controller
             $query->where('employee_id', $request->employee_id);
         }
 
+        // Filter by period (month and year)
+        if ($request->has('month') && $request->has('year')) {
+            // period is stored as YYYY-MM
+            $periodString = sprintf('%04d-%02d', $request->year, $request->month);
+            $query->where('period', $periodString);
+        }
+        // Filter by year only
+        elseif ($request->has('year')) {
+            $query->where('period', 'like', $request->year . '-%');
+        }
+
         $payrolls = $query->orderBy('period', 'desc')
             ->get();
 
@@ -35,7 +46,7 @@ class PayrollController extends Controller
                 $periodDate = $payroll->period . '-01';
                 $periodStart = date('Y-m-01', strtotime($periodDate));
                 $periodEnd = date('Y-m-t', strtotime($periodDate));
-                
+
                 return [
                     'id' => $payroll->id,
                     'employee' => [
@@ -47,6 +58,7 @@ class PayrollController extends Controller
                     'basic_salary' => (float) $payroll->basic_salary,
                     'allowances' => (float) ($payroll->overtime_pay ?? 0),
                     'deductions' => (float) ($payroll->bpjs_kesehatan ?? 0),
+                    'bpjs_health' => (float) ($payroll->bpjs_kesehatan ?? 0),
                     'bpjs_employment' => (float) ($payroll->bpjs_ketenagakerjaan ?? 0),
                     'tax' => (float) ($payroll->pph21 ?? 0),
                     'gross_salary' => (float) $payroll->gross_salary,
@@ -115,66 +127,6 @@ class PayrollController extends Controller
     }
 
     /**
-     * Calculate payroll for employee
-     */
-    public function calculate(Request $request)
-    {
-        $validated = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'period_month' => 'required|integer|min:1|max:12',
-            'period_year' => 'required|integer|min:2020',
-        ]);
-
-        $employee = Employee::findOrFail($validated['employee_id']);
-
-        // Get attendance data for the period
-        $attendances = $employee->attendances()
-            ->whereMonth('date', $validated['period_month'])
-            ->whereYear('date', $validated['period_year'])
-            ->get();
-
-        $totalWorkDays = $attendances->where('status', 'present')->count();
-        $totalWorkHours = $attendances->sum('work_hours');
-        $totalOvertimeHours = 0; // TODO: Calculate from overtime requests
-
-        // Calculate components
-        $baseSalary = $employee->base_salary;
-        $allowances = 0; // TODO: Calculate allowances
-        $overtimePay = $totalOvertimeHours * ($baseSalary / 173); // Assuming 173 work hours/month
-        
-        // BPJS calculations (simplified)
-        $bpjsHealth = $baseSalary * 0.01; // 1% employee contribution
-        $bpjsEmployment = $baseSalary * 0.02; // 2% employee contribution
-        
-        // PPh21 calculation (simplified - needs proper tax bracket)
-        $grossSalary = $baseSalary + $allowances + $overtimePay;
-        $taxableIncome = $grossSalary - $bpjsHealth - $bpjsEmployment;
-        $taxPph21 = $this->calculatePph21($taxableIncome);
-
-        $deductions = 0; // TODO: Calculate other deductions
-        $totalDeductions = $deductions + $bpjsHealth + $bpjsEmployment + $taxPph21;
-        
-        $netSalary = $grossSalary - $totalDeductions;
-
-        $payroll = Payroll::create([
-            'employee_id' => $validated['employee_id'],
-            'period_month' => $validated['period_month'],
-            'period_year' => $validated['period_year'],
-            'base_salary' => $baseSalary,
-            'allowances' => $allowances,
-            'overtime_pay' => $overtimePay,
-            'deductions' => $deductions,
-            'bpjs_health' => $bpjsHealth,
-            'bpjs_employment' => $bpjsEmployment,
-            'tax_pph21' => $taxPph21,
-            'net_salary' => $netSalary,
-            'status' => 'draft',
-        ]);
-
-        return response()->json($payroll);
-    }
-
-    /**
      * Generate payroll slip PDF
      */
     public function generateSlip(string $id)
@@ -234,291 +186,128 @@ class PayrollController extends Controller
     }
 
     /**
-     * Calculate PPh21 tax (simplified)
-     */
-    private function calculatePph21($taxableIncome)
-    {
-        // Simplified PPh21 calculation
-        // Real implementation should use proper tax brackets
-        $yearlyIncome = $taxableIncome * 12;
-        $ptkp = 54000000; // PTKP for single person (TK/0)
-
-        if ($yearlyIncome <= $ptkp) {
-            return 0;
-        }
-
-        $taxable = $yearlyIncome - $ptkp;
-        
-        // Tax brackets (simplified)
-        if ($taxable <= 60000000) {
-            $yearlyTax = $taxable * 0.05;
-        } elseif ($taxable <= 250000000) {
-            $yearlyTax = 3000000 + ($taxable - 60000000) * 0.15;
-        } else {
-            $yearlyTax = 31500000 + ($taxable - 250000000) * 0.25;
-        }
-
-        return $yearlyTax / 12; // Monthly tax
-    }
-
-    /**
      * Download template Excel untuk import payroll
      */
     public function downloadTemplate()
     {
-        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-
-        // Set header
-        $headers = ['No', 'Nama', 'Periode', 'Gaji Pokok', 'Lemburan', 'BPJS Kesehatan', 'BPJS TK', 'PPh21', 'Take Home Pay'];
-        $sheet->fromArray($headers, null, 'A1');
-
-        // Style header
-        $headerStyle = [
-            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '1A4D2E']],
-            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
-        ];
-        $sheet->getStyle('A1:I1')->applyFromArray($headerStyle);
-
-        // Add sample data
-        $sampleData = [
-            [1, 'John Doe', 'Januari 2026', 5000000, 500000, 50000, 100000, 250000, 5100000],
-            [2, 'Jane Smith', 'Januari 2026', 6000000, 300000, 60000, 120000, 300000, 5820000],
-        ];
-        $sheet->fromArray($sampleData, null, 'A2');
-
-        // Add instruction comment
-        $sheet->getComment('C2')->getText()->createTextRun('Format periode: "Januari 2026" atau "2026-01"');
-
-        // Auto-size columns
-        foreach (range('A', 'I') as $col) {
-            $sheet->getColumnDimension($col)->setAutoSize(true);
-        }
-
-        // Create writer and download
-        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-        $fileName = 'Template_Import_Payroll_' . date('Y-m-d') . '.xlsx';
-        $tempFile = tempnam(sys_get_temp_dir(), 'payroll_template');
-        $writer->save($tempFile);
-
-        return response()->download($tempFile, $fileName)->deleteFileAfterSend(true);
+        // Temporary: return error since PhpSpreadsheet is not available
+        return response()->json([
+            'message' => 'Template download temporarily unavailable. Please use CSV format for import.',
+            'error' => 'PhpSpreadsheet not installed due to PHP version compatibility',
+        ], 503);
     }
 
     /**
-     * Import payroll from Excel
+     * Import payroll from Excel/CSV file
      */
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls|max:10240', // 10MB max
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240', // 10MB max
         ]);
 
         $file = $request->file('file');
-
-        // Use temporary uploaded file path directly (more reliable than store)
-        $fullPath = $file->getRealPath();
-        
-        // Also store for audit purposes
         $storedPath = $file->store('payroll_imports', 'local');
 
-        // Try to parse Excel file using PhpSpreadsheet if available
-        $rows = [];
         try {
-            if (!class_exists('\\PhpOffice\\PhpSpreadsheet\\IOFactory')) {
-                // Fallback: if CSV file, parse using native methods
-                $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
-                if ($ext === 'csv' || $file->getClientMimeType() === 'text/csv') {
-                    if (($handle = fopen($fullPath, 'r')) !== false) {
-                        $headerRow = fgetcsv($handle);
-                        if ($headerRow === false) {
-                            return response()->json(['message' => 'CSV file is empty or invalid'], 422);
-                        }
+            // Parse Excel file and FORCE formula calculation
+            $path = $file->getRealPath();
 
-                        $header = [];
-                        foreach ($headerRow as $i => $h) {
-                            $key = trim(strtolower(str_replace(' ', '_', $h)));
-                            
-                            // Column aliases
-                            $columnAliases = [
-                                'no' => 'no',
-                                'nama' => 'employee_name',
-                                'name' => 'employee_name',
-                                'employee_name' => 'employee_name',
-                                'employee_code' => 'employee_code',
-                                'kode_karyawan' => 'employee_code',
-                                'periode' => 'period',
-                                'period' => 'period',
-                                'gaji_pokok' => 'basic_salary',
-                                'basic_salary' => 'basic_salary',
-                                'lemburan' => 'overtime',
-                                'lembur' => 'overtime',
-                                'overtime' => 'overtime',
-                                'bpjs_kesehatan' => 'bpjs_health',
-                                'bpjs_health' => 'bpjs_health',
-                                'bpis_tk' => 'bpjs_employment',
-                                'bpjs_tk' => 'bpjs_employment',
-                                'bpjs_employment' => 'bpjs_employment',
-                                'pph21' => 'tax_pph21',
-                                'tax_pph21' => 'tax_pph21',
-                                'take_home_pay' => 'net_salary',
-                                'net_salary' => 'net_salary',
-                            ];
-                            
-                            $mappedKey = $columnAliases[$key] ?? $key;
-                            $header[$i] = $mappedKey;
-                        }
+            // Load spreadsheet
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path);
 
-                        // Check required columns
-                        $available = array_values($header);
-                        $hasEmployeeIdentifier = in_array('employee_code', $available) || in_array('employee_name', $available);
-                        
-                        if (!$hasEmployeeIdentifier || !in_array('period', $available) || !in_array('basic_salary', $available)) {
-                            return response()->json([
-                                'message' => 'Missing required columns. Need: employee identifier (code/name), period, basic_salary',
-                                'available_columns' => $available,
-                            ], 422);
-                        }
+            // Note: toArray with second param=true forces calculation for formulas that haven't been calculated yet
 
-                        while (($data = fgetcsv($handle)) !== false) {
-                            $parsed = [];
-                            foreach ($data as $i => $value) {
-                                $key = $header[$i] ?? null;
-                                if ($key) {
-                                    $parsed[$key] = $value;
-                                }
-                            }
+            // Convert to array with calculated values, but RAW data (no formatting)
+            // This ensures 12000 is read as 12000 (number), not "12.000" (string)
+            $data = $spreadsheet->getActiveSheet()->toArray(null, true, false, true);
 
-                            if (empty($parsed['employee_code']) && empty($parsed['employee_name'])) {
-                                continue;
-                            }
-
-                            $parsed['basic_salary'] = isset($parsed['basic_salary']) ? (float) preg_replace('/[^0-9.\\-]/', '', (string)$parsed['basic_salary']) : 0;
-                            $parsed['overtime'] = isset($parsed['overtime']) ? (float) preg_replace('/[^0-9.\\-]/', '', (string)$parsed['overtime']) : 0;
-                            $parsed['bpjs_health'] = isset($parsed['bpjs_health']) ? (float) preg_replace('/[^0-9.\\-]/', '', (string)$parsed['bpjs_health']) : 0;
-                            $parsed['bpjs_employment'] = isset($parsed['bpjs_employment']) ? (float) preg_replace('/[^0-9.\\-]/', '', (string)$parsed['bpjs_employment']) : 0;
-                            $parsed['tax_pph21'] = isset($parsed['tax_pph21']) ? (float) preg_replace('/[^0-9.\\-]/', '', (string)$parsed['tax_pph21']) : 0;
-                            $parsed['net_salary'] = isset($parsed['net_salary']) ? (float) preg_replace('/[^0-9.\\-]/', '', (string)$parsed['net_salary']) : null;
-
-                            $rows[] = $parsed;
-                        }
-
-                        fclose($handle);
-
-                        return response()->json([
-                            'message' => 'CSV parsed successfully',
-                            'file_name' => $file->getClientOriginalName(),
-                            'rows_count' => count($rows),
-                            'rows' => $rows,
-                        ]);
-                    }
-
-                    return response()->json(['message' => 'Unable to open CSV file'], 500);
-                }
-
-                return response()->json([
-                    'message' => 'PhpSpreadsheet not installed. Install ext-gd or run composer require phpoffice/phpspreadsheet, or upload CSV files as fallback.',
-                    'file_name' => $file->getClientOriginalName(),
-                    'stored_path' => $storedPath,
-                ], 500);
+            if (empty($data)) {
+                return response()->json(['message' => 'File is empty or invalid'], 422);
             }
 
-            $spreadsheet = IOFactory::load($fullPath);
-            $sheet = $spreadsheet->getActiveSheet();
-            $highestRow = $sheet->getHighestDataRow();
-            $highestColumn = $sheet->getHighestDataColumn();
-
-            // Expect header row in row 1
+            // Get header row
+            $headerRow = reset($data);
             $header = [];
-            $headerRow = $sheet->rangeToArray('A1:' . $highestColumn . '1', null, true, false, false);
-            $headerRow = $headerRow[0]; // Get first row with 0-based index
-            
-            // Column aliases for flexible mapping
-            $columnAliases = [
-                'no' => 'no',
-                'nama' => 'employee_name',
-                'name' => 'employee_name',
-                'employee_name' => 'employee_name',
-                'employee_code' => 'employee_code',
-                'kode_karyawan' => 'employee_code',
-                'periode' => 'period',
-                'period' => 'period',
-                'gaji_pokok' => 'basic_salary',
-                'basic_salary' => 'basic_salary',
-                'salary' => 'basic_salary',
-                'lemburan' => 'overtime',
-                'lembur' => 'overtime',
-                'overtime' => 'overtime',
-                'bpjs_kesehatan' => 'bpjs_health',
-                'bpjs_health' => 'bpjs_health',
-                'bpis_tk' => 'bpjs_employment',
-                'bpjs_tk' => 'bpjs_employment',
-                'bpjs_employment' => 'bpjs_employment',
-                'pph21' => 'tax_pph21',
-                'tax_pph21' => 'tax_pph21',
-                'take_home_pay' => 'net_salary',
-                'net_salary' => 'net_salary',
-                'gaji_bersih' => 'net_salary',
-            ];
-            
-            foreach ($headerRow as $col => $value) {
-                $key = trim(strtolower(str_replace(' ', '_', $value)));
+            foreach ($headerRow as $i => $h) {
+                $key = trim(strtolower(str_replace(' ', '_', $h)));
+
+                // Column aliases
+                $columnAliases = [
+                    'no' => 'no',
+                    'nama' => 'employee_name',
+                    'name' => 'employee_name',
+                    'employee_name' => 'employee_name',
+                    'employee_code' => 'employee_code',
+                    'kode_karyawan' => 'employee_code',
+                    'periode' => 'period',
+                    'period' => 'period',
+                    'gaji_pokok' => 'basic_salary',
+                    'basic_salary' => 'basic_salary',
+                    'lemburan' => 'overtime',
+                    'lembur' => 'overtime',
+                    'overtime' => 'overtime',
+                    'bpjs_kesehatan' => 'bpjs_health',
+                    'bpjs_health' => 'bpjs_health',
+                    'bpis_tk' => 'bpjs_employment',
+                    'bpjs_tk' => 'bpjs_employment',
+                    'bpjs_employment' => 'bpjs_employment',
+                    'pph21' => 'tax_pph21',
+                    'tax_pph21' => 'tax_pph21',
+                    'take_home_pay' => 'net_salary',
+                    'net_salary' => 'net_salary',
+                    'gross_salary' => 'gross_salary',
+                    'gaji_kotor' => 'gross_salary',
+                    'total_deductions' => 'total_deductions',
+                    'total_potongan' => 'total_deductions',
+                    'other_deductions' => 'other_deductions',
+                    'potongan_lain' => 'other_deductions',
+                ];
+
                 $mappedKey = $columnAliases[$key] ?? $key;
-                $header[$col] = $mappedKey;
+                $header[$i] = $mappedKey;
             }
 
-            // Required minimal columns: employee identifier (name or code), period, basic_salary
+            // Check required columns
             $available = array_values($header);
             $hasEmployeeIdentifier = in_array('employee_code', $available) || in_array('employee_name', $available);
-            $hasPeriod = in_array('period', $available);
-            $hasSalary = in_array('basic_salary', $available);
-            
-            if (!$hasEmployeeIdentifier) {
+
+            if (!$hasEmployeeIdentifier || !in_array('period', $available) || !in_array('basic_salary', $available)) {
                 return response()->json([
-                    'message' => 'Missing employee identifier column (employee_code or employee_name/nama)',
-                    'available_columns' => $available,
-                ], 422);
-            }
-            
-            if (!$hasPeriod) {
-                return response()->json([
-                    'message' => 'Missing required column: period/periode',
-                    'available_columns' => $available,
-                ], 422);
-            }
-            
-            if (!$hasSalary) {
-                return response()->json([
-                    'message' => 'Missing required column: basic_salary/gaji_pokok',
+                    'message' => 'Missing required columns. Need: employee identifier (code/name), period, basic_salary',
                     'available_columns' => $available,
                 ], 422);
             }
 
-            // Parse data rows starting from row 2
-            for ($row = 2; $row <= $highestRow; $row++) {
-                $rowData = $sheet->rangeToArray('A' . $row . ':' . $highestColumn . $row, null, true, false, false);
-                $rowData = $rowData[0]; // Get first row with 0-based index
-                
+            // Remove header row from data
+            array_shift($data);
+
+            $rows = [];
+            foreach ($data as $index => $rowData) {
+                // Header already removed
+
                 $parsed = [];
-                foreach ($rowData as $col => $value) {
-                    $key = $header[$col] ?? null;
+                foreach ($rowData as $i => $value) {
+                    $key = $header[$i] ?? null;
                     if ($key) {
-                        $parsed[$key] = $value;
+                        // Convert encoding to UTF-8
+                        $parsed[$key] = mb_convert_encoding($value, 'UTF-8', 'auto');
                     }
                 }
 
-                // Basic normalization
-                if ((empty($parsed['employee_code']) && empty($parsed['employee_name'])) || empty($parsed['period'])) {
-                    // skip empty rows
+                if (empty($parsed['employee_code']) && empty($parsed['employee_name'])) {
                     continue;
                 }
 
-                $parsed['basic_salary'] = isset($parsed['basic_salary']) ? (float) preg_replace('/[^0-9.\-]/', '', (string)$parsed['basic_salary']) : 0;
-                $parsed['overtime'] = isset($parsed['overtime']) ? (float) preg_replace('/[^0-9.\-]/', '', (string)$parsed['overtime']) : 0;
-                $parsed['bpjs_health'] = isset($parsed['bpjs_health']) ? (float) preg_replace('/[^0-9.\-]/', '', (string)$parsed['bpjs_health']) : 0;
-                $parsed['bpjs_employment'] = isset($parsed['bpjs_employment']) ? (float) preg_replace('/[^0-9.\-]/', '', (string)$parsed['bpjs_employment']) : 0;
-                $parsed['tax_pph21'] = isset($parsed['tax_pph21']) ? (float) preg_replace('/[^0-9.\-]/', '', (string)$parsed['tax_pph21']) : 0;
-                $parsed['net_salary'] = isset($parsed['net_salary']) ? (float) preg_replace('/[^0-9.\-]/', '', (string)$parsed['net_salary']) : null;
+                $parsed['basic_salary'] = $parsed['basic_salary'] ?? 0;
+                $parsed['overtime'] = $parsed['overtime'] ?? 0;
+                $parsed['bpjs_health'] = $parsed['bpjs_health'] ?? 0;
+                $parsed['bpjs_employment'] = $parsed['bpjs_employment'] ?? 0;
+                $parsed['tax_pph21'] = $parsed['tax_pph21'] ?? 0;
+                $parsed['net_salary'] = isset($parsed['net_salary']) ? $parsed['net_salary'] : null;
+                $parsed['gross_salary'] = isset($parsed['gross_salary']) ? $parsed['gross_salary'] : null;
+                $parsed['total_deductions'] = isset($parsed['total_deductions']) ? $parsed['total_deductions'] : null;
+                $parsed['other_deductions'] = isset($parsed['other_deductions']) ? $parsed['other_deductions'] : 0;
 
                 $rows[] = $parsed;
             }
@@ -559,7 +348,7 @@ class PayrollController extends Controller
             try {
                 // Find employee by name (case insensitive)
                 $employee = Employee::whereRaw('LOWER(full_name) = ?', [strtolower($row['employee_name'])])->first();
-                
+
                 if (!$employee) {
                     $failed[] = [
                         'row' => $index + 1,
@@ -572,7 +361,7 @@ class PayrollController extends Controller
                 // Parse period (assuming format like "Januari 2026" or "2026-01")
                 $period = $row['period'];
                 $periodParsed = $this->parsePeriod($period);
-                
+
                 if (!$periodParsed) {
                     $failed[] = [
                         'row' => $index + 1,
@@ -582,18 +371,20 @@ class PayrollController extends Controller
                     continue;
                 }
 
-                // Calculate total deductions and gross salary
-                $basicSalary = $row['basic_salary'];
+                // Use values from Excel directly
+                // Parse currency here for storage
+                $basicSalary = $this->parseCurrency($row['basic_salary']);
                 $allowances = 0;
-                $overtime = $row['overtime'] ?? 0;
-                $bpjsHealth = $row['bpjs_health'] ?? 0;
-                $bpjsEmployment = $row['bpjs_employment'] ?? 0;
-                $taxPph21 = $row['tax_pph21'] ?? 0;
-                $otherDeductions = 0;
-                $netSalary = $row['net_salary'] ?? ($basicSalary + $overtime - $bpjsHealth - $bpjsEmployment - $taxPph21);
-                
-                $totalDeductions = $bpjsHealth + $bpjsEmployment + $taxPph21 + $otherDeductions;
-                $grossSalary = $basicSalary + $allowances + $overtime;
+                $overtime = $this->parseCurrency($row['overtime'] ?? 0);
+                $bpjsHealth = $this->parseCurrency($row['bpjs_health'] ?? 0);
+                $bpjsEmployment = $this->parseCurrency($row['bpjs_employment'] ?? 0);
+                $taxPph21 = $this->parseCurrency($row['tax_pph21'] ?? 0);
+                $otherDeductions = $this->parseCurrency($row['other_deductions'] ?? 0);
+
+                // Use values from Excel directly - NO CALCULATION AT ALL
+                $grossSalary = $this->parseCurrency($row['gross_salary'] ?? 0);
+                $totalDeductions = $this->parseCurrency($row['total_deductions'] ?? 0);
+                $netSalary = $this->parseCurrency($row['net_salary'] ?? 0);
 
                 // Format period as YYYY-MM
                 $periodString = sprintf('%04d-%02d', $periodParsed['year'], $periodParsed['month']);
@@ -674,32 +465,52 @@ class PayrollController extends Controller
     {
         // Clean the period string - remove leading numbers and extra spaces
         $period = preg_replace('/^\d+\s+/', '', trim($period));
-        
+
         // Try format: YYYY-MM or YYYY/MM
         if (preg_match('/^(\d{4})[-\/](\d{1,2})$/', $period, $matches)) {
-            return ['year' => (int)$matches[1], 'month' => (int)$matches[2]];
+            return ['year' => (int) $matches[1], 'month' => (int) $matches[2]];
         }
 
         // Try format: "Januari 2026" or "January 2026"
         $monthNames = [
-            'januari' => 1, 'january' => 1, 'jan' => 1,
-            'februari' => 2, 'february' => 2, 'feb' => 2,
-            'maret' => 3, 'march' => 3, 'mar' => 3,
-            'april' => 4, 'apr' => 4,
-            'mei' => 5, 'may' => 5,
-            'juni' => 6, 'june' => 6, 'jun' => 6,
-            'juli' => 7, 'july' => 7, 'jul' => 7,
-            'agustus' => 8, 'august' => 8, 'aug' => 8,
-            'september' => 9, 'sep' => 9,
-            'oktober' => 10, 'october' => 10, 'oct' => 10,
-            'november' => 11, 'nov' => 11,
-            'desember' => 12, 'december' => 12, 'dec' => 12,
+            'januari' => 1,
+            'january' => 1,
+            'jan' => 1,
+            'februari' => 2,
+            'february' => 2,
+            'feb' => 2,
+            'maret' => 3,
+            'march' => 3,
+            'mar' => 3,
+            'april' => 4,
+            'apr' => 4,
+            'mei' => 5,
+            'may' => 5,
+            'juni' => 6,
+            'june' => 6,
+            'jun' => 6,
+            'juli' => 7,
+            'july' => 7,
+            'jul' => 7,
+            'agustus' => 8,
+            'august' => 8,
+            'aug' => 8,
+            'september' => 9,
+            'sep' => 9,
+            'oktober' => 10,
+            'october' => 10,
+            'oct' => 10,
+            'november' => 11,
+            'nov' => 11,
+            'desember' => 12,
+            'december' => 12,
+            'dec' => 12,
         ];
 
         $parts = preg_split('/\s+/', strtolower(trim($period)));
         if (count($parts) === 2) {
             $monthName = $parts[0];
-            $year = (int)$parts[1];
+            $year = (int) $parts[1];
             if (isset($monthNames[$monthName]) && $year > 2000) {
                 return ['year' => $year, 'month' => $monthNames[$monthName]];
             }
@@ -741,5 +552,56 @@ class PayrollController extends Controller
             'message' => 'Payslip generation will be implemented',
             'payroll_id' => $id,
         ]);
+    }
+
+    /**
+     * Parse currency string to float (Handles Indonesian format)
+     */
+    private function parseCurrency($value)
+    {
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        $string = (string) $value;
+
+        // Remove "Rp", "IDR", and spaces
+        $string = preg_replace('/[^0-9,.-]/', '', $string);
+
+        // Handle empty string
+        if (empty($string)) {
+            return 0.0;
+        }
+
+        // Indonesian format handling:
+        // PRIORITY: Check for dots with exactly 3 digits pattern (thousands)
+        // This catches 12.000, 200.000, 5.000.000 etc EARLY
+        if (preg_match('/^\d{1,3}(\.\d{3})+$/', $string)) {
+            // Definitely thousands separator format
+            return (float) str_replace('.', '', $string);
+        }
+
+        // Mixed: has both dots and commas
+        if (str_contains($string, '.') && str_contains($string, ',')) {
+            // Assume 5.000.000,00 -> Remove dots, replace comma
+            $string = str_replace('.', '', $string);
+            $string = str_replace(',', '.', $string);
+        }
+        // Multiple dots (thousands separator)
+        elseif (substr_count($string, '.') > 1) {
+            $string = str_replace('.', '', $string);
+        }
+        // Single dot - ambiguous case
+        elseif (str_contains($string, '.') && !str_contains($string, ',')) {
+            // Try removing dot and see if result >= 1000
+            $temp = str_replace('.', '', $string);
+            if (is_numeric($temp) && (float) $temp >= 1000) {
+                $string = $temp;
+            }
+            // Otherwise leave as decimal
+        }
+
+        // Final cleanup
+        return (float) $string;
     }
 }

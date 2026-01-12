@@ -1,8 +1,6 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
-import '../../config/theme.dart';
-import '../../providers/auth_provider.dart';
+import '../../services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,544 +10,516 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final DateTime _currentDate = DateTime.now();
+  final AuthService _authService = AuthService();
+  Map<String, dynamic>? _user;
+  bool _isLoading = true;
+  int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final user = await _authService.getCurrentUser();
+    setState(() {
+      _user = user;
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFF1A4D2E),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
-      body: CustomScrollView(
-        slivers: [
-          // App Bar dengan gradient
-          SliverAppBar(
-            expandedHeight: 200,
-            floating: false,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF1A4D2E),
-                      Color(0xFF2d7a4a),
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: SafeArea(
+        child: RefreshIndicator(
+          color: const Color(0xFF1A4D2E),
+          onRefresh: _loadUserData,
+          child: Stack(
+            children: [
+              // Decorative background shapes
+              Positioned(
+                top: -100,
+                right: -80,
+                child: Container(
+                  width: 240,
+                  height: 240,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF1A4D2E).withValues(alpha: 0.15),
+                        const Color(0xFF1A4D2E).withValues(alpha: 0.05),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: -120,
+                left: -60,
+                child: Container(
+                  width: 280,
+                  height: 280,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF49FFB8).withValues(alpha: 0.12),
+                        const Color(0xFF49FFB8).withValues(alpha: 0.04),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              
+              // Content ScrollView
+              CustomScrollView(
+                slivers: [
+              // App Bar with gradient
+              SliverAppBar(
+                expandedHeight: 200,
+                floating: false,
+                pinned: true,
+                backgroundColor: Colors.transparent,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: ClipRRect(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              const Color(0xFF1A4D2E).withValues(alpha: 0.85),
+                              const Color(0xFF2d7a4a).withValues(alpha: 0.75),
+                            ],
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Selamat Datang! 👋',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _user?['name'] ?? 'User',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                _user?['employee']?['position'] ?? 'Employee',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                    onPressed: () {},
+                  ),
+                ],
+              ),
+
+              // Content
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildQuickActions(),
+                      const SizedBox(height: 24),
+                      _buildSectionHeader('Pengajuan Terbaru', onViewAll: () {}),
+                      const SizedBox(height: 12),
+                      _buildRecentRequests(),
+                      const SizedBox(height: 24),
+                      _buildSectionHeader('Dokumen'),
+                      const SizedBox(height: 12),
+                      _buildDocumentsCard(),
                     ],
                   ),
                 ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Consumer<AuthProvider>(
-                      builder: (context, authProvider, child) {
-                        final user = authProvider.user;
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 30,
-                                  backgroundColor: const Color(0xFF49FFB8),
-                                  child: Text(
-                                    user?.name.substring(0, 1).toUpperCase() ?? 'U',
-                                    style: const TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF1A4D2E),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Selamat Datang,',
-                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                              color: Colors.white.withOpacity(0.9),
-                                            ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        user?.name ?? 'User',
-                                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.notifications_outlined,
-                                    color: Color(0xFF49FFB8),
-                                  ),
-                                  onPressed: () {
-                                    // TODO: Navigate to notifications
-                                  },
-                                ),
-                              ],
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                ),
               ),
+            ], // Close slivers array
+          ), // Close CustomScrollView
+        ], // Close Stack children array
+      ), // Close Stack
+        ), // Close RefreshIndicator
+      ), // Close SafeArea
+      bottomNavigationBar: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.92),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              border: Border(top: BorderSide(color: Colors.grey.withValues(alpha: 0.15))),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, -3))
+              ],
             ),
-            backgroundColor: const Color(0xFF1A4D2E),
-            actions: [
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: Colors.white),
-                onSelected: (value) async {
-                  if (value == 'profile') {
-                    // TODO: Navigate to profile
-                  } else if (value == 'logout') {
-                    final authProvider =
-                        Provider.of<AuthProvider>(context, listen: false);
-                    await authProvider.logout();
-                    if (context.mounted) {
-                      Navigator.of(context).pushReplacementNamed('/login');
-                    }
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'profile',
-                    child: Row(
-                      children: [
-                        Icon(Icons.person_outline),
-                        SizedBox(width: 8),
-                        Text('Profile Saya'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'logout',
-                    child: Row(
-                      children: [
-                        Icon(Icons.logout),
-                        SizedBox(width: 8),
-                        Text('Keluar'),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-          // Content
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Tanggal & Absensi Card
-                  _buildAttendanceCard(context),
-                  const SizedBox(height: 24),
-
-                  // Quick Actions
-                  Text(
-                    'Aksi Cepat',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildQuickActions(context),
-                  const SizedBox(height: 24),
-
-                  // Menu ESS
-                  Text(
-                    'Layanan Karyawan',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildESSMenu(context),
-                ],
-              ),
+            child: BottomNavigationBar(
+              currentIndex: _selectedIndex,
+              selectedItemColor: const Color(0xFF1A4D2E),
+              unselectedItemColor: Colors.grey,
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(icon: Icon(Icons.description_outlined), label: 'Pengajuan'),
+                BottomNavigationBarItem(icon: Icon(Icons.folder_outlined), label: 'Dokumen'),
+                BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+              ],
+              onTap: (index) {
+                setState(() => _selectedIndex = index);
+                if (index == 3) {
+                  Navigator.of(context).pushNamed('/profile');
+                } else if (index == 0) {
+                  // already on home
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Fitur belum tersedia')),
+                  );
+                }
+              },
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildAttendanceCard(BuildContext context) {
-    final String formattedDate = DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(_currentDate);
-    final String currentTime = DateFormat('HH:mm').format(_currentDate);
+  Widget _buildQuickActions() {
+    final actions = [
+      {'icon': Icons.event_available, 'label': 'Cuti', 'color': const Color(0xFF1A4D2E)},
+      {'icon': Icons.access_time, 'label': 'Lembur', 'color': const Color(0xFFE67E22)},
+      {'icon': Icons.receipt_long, 'label': 'Reimburse', 'color': const Color(0xFF3498DB)},
+      {'icon': Icons.exit_to_app, 'label': 'Resign', 'color': const Color(0xFFE74C3C)},
+    ];
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: const Color(0xFF49FFB8).withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.white,
-              const Color(0xFF49FFB8).withOpacity(0.05),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.white.withValues(alpha: 0.08),
+                Colors.white.withValues(alpha: 0.04),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 14,
+                offset: const Offset(0, 4),
+              ),
             ],
           ),
-          borderRadius: BorderRadius.circular(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Quick Actions',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A4D2E),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: actions.map((action) {
+                  return InkWell(
+                    onTap: () {},
+                    borderRadius: BorderRadius.circular(12),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 62,
+                          height: 62,
+                          decoration: BoxDecoration(
+                            color: (action['color'] as Color).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(
+                            action['icon'] as IconData,
+                            color: action['color'] as Color,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          action['label'] as String,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
         ),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, {VoidCallback? onViewAll}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1A4D2E)),
+        ),
+        if (onViewAll != null)
+          TextButton(
+            onPressed: onViewAll,
+            child: const Text('Lihat Semua', style: TextStyle(color: Color(0xFF1A4D2E), fontWeight: FontWeight.w600)),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildRecentRequests() {
+    final requests = [
+      {'type': 'Cuti', 'date': '7 Jan 2026', 'status': 'pending', 'description': 'Cuti Tahunan - 3 hari'},
+      {'type': 'Lembur', 'date': '5 Jan 2026', 'status': 'approved', 'description': 'Lembur Project X - 4 jam'},
+    ];
+
+    return Column(
+      children: requests.map((request) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.white.withValues(alpha: 0.06),
+                    Colors.white.withValues(alpha: 0.03),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 3)),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(request['status'] as String).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(_getRequestIcon(request['type'] as String), color: _getStatusColor(request['status'] as String), size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(request['type'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            _buildStatusBadge(request['status'] as String),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(request['description'] as String, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+                        const SizedBox(height: 4),
+                        Text(request['date'] as String, style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildDocumentsCard() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: InkWell(
+          onTap: () {},
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF1A4D2E).withValues(alpha: 0.88),
+                  const Color(0xFF2d7a4a).withValues(alpha: 0.82),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+              boxShadow: [
+                BoxShadow(color: const Color(0xFF1A4D2E).withValues(alpha: 0.28), blurRadius: 16, offset: const Offset(0, 6)),
+              ],
+            ),
+            child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  width: 58,
+                  height: 58,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1A4D2E).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Icon(
-                    Icons.calendar_today,
-                    color: Color(0xFF1A4D2E),
-                    size: 24,
-                  ),
+                  child: const Icon(Icons.description_outlined, color: Colors.white, size: 30),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        formattedDate,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        currentTime,
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                              color: const Color(0xFF1A4D2E),
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
+                      const Text('Slip Gaji', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 6),
+                      Text('Download slip gaji bulanan Anda', style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 12)),
                     ],
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildAttendanceButton(
-                    context,
-                    label: 'Check In',
-                    icon: Icons.login,
-                    color: AppTheme.success,
-                    onTap: () {
-                      // TODO: Implement check in
-                      _showComingSoonDialog(context, 'Check In');
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildAttendanceButton(
-                    context,
-                    label: 'Check Out',
-                    icon: Icons.logout,
-                    color: AppTheme.error,
-                    onTap: () {
-                      // TODO: Implement check out
-                      _showComingSoonDialog(context, 'Check Out');
-                    },
-                  ),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: const Color(0xFF49FFB8), borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(Icons.arrow_forward, color: Color(0xFF1A4D2E), size: 20),
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildAttendanceButton(
-    BuildContext context, {
-    required String label,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+  Widget _buildStatusBadge(String status) {
+    final config = {
+      'pending': {'label': 'Pending', 'color': const Color(0xFFF39C12)},
+      'approved': {'label': 'Disetujui', 'color': const Color(0xFF27AE60)},
+      'rejected': {'label': 'Ditolak', 'color': const Color(0xFFE74C3C)},
+    };
+    final statusConfig = config[status] ?? config['pending']!;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: (statusConfig['color'] as Color).withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Text(statusConfig['label'] as String, style: TextStyle(color: statusConfig['color'] as Color, fontSize: 11, fontWeight: FontWeight.w700)),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'approved': return const Color(0xFF27AE60);
+      case 'rejected': return const Color(0xFFE74C3C);
+      default: return const Color(0xFFF39C12);
+    }
+  }
+
+  IconData _getRequestIcon(String type) {
+    switch (type) {
+      case 'Cuti': return Icons.event_available;
+      case 'Lembur': return Icons.access_time;
+      case 'Reimburse': return Icons.receipt_long;
+      case 'Resign': return Icons.exit_to_app;
+      default: return Icons.description;
+    }
+  }
+
+  Widget _buildBottomNav() {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: color.withOpacity(0.3),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
+            color: Colors.white.withValues(alpha: 0.92),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            border: Border(top: BorderSide(color: Colors.grey.withValues(alpha: 0.15))),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, -3))
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActions(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildQuickActionCard(
-            context,
-            icon: Icons.beach_access,
-            label: 'Cuti',
-            color: const Color(0xFF3B82F6),
-            onTap: () {
-              _showComingSoonDialog(context, 'Pengajuan Cuti');
-            },
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildQuickActionCard(
-            context,
-            icon: Icons.receipt_long,
-            label: 'Reimburse',
-            color: const Color(0xFFF59E0B),
-            onTap: () {
-              _showComingSoonDialog(context, 'Pengajuan Reimburse');
-            },
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildQuickActionCard(
-            context,
-            icon: Icons.access_time,
-            label: 'Lembur',
-            color: const Color(0xFF8B5CF6),
-            onTap: () {
-              _showComingSoonDialog(context, 'Pengajuan Lembur');
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuickActionCard(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: color, size: 28),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                textAlign: TextAlign.center,
-              ),
+          child: BottomNavigationBar(
+            currentIndex: 0,
+            selectedItemColor: const Color(0xFF1A4D2E),
+            unselectedItemColor: Colors.grey,
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            items: const [
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+              BottomNavigationBarItem(icon: Icon(Icons.description_outlined), label: 'Pengajuan'),
+              BottomNavigationBarItem(icon: Icon(Icons.folder_outlined), label: 'Dokumen'),
+              BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
             ],
+            onTap: (index) {},
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildESSMenu(BuildContext context) {
-    return Column(
-      children: [
-        _buildESSMenuItem(
-          context,
-          icon: Icons.description,
-          title: 'Slip Gaji',
-          subtitle: 'Download slip gaji bulanan',
-          color: const Color(0xFF10B981),
-          onTap: () {
-            _showComingSoonDialog(context, 'Slip Gaji');
-          },
-        ),
-        const SizedBox(height: 12),
-        _buildESSMenuItem(
-          context,
-          icon: Icons.history,
-          title: 'Riwayat Absensi',
-          subtitle: 'Lihat riwayat kehadiran Anda',
-          color: const Color(0xFF3B82F6),
-          onTap: () {
-            _showComingSoonDialog(context, 'Riwayat Absensi');
-          },
-        ),
-        const SizedBox(height: 12),
-        _buildESSMenuItem(
-          context,
-          icon: Icons.assignment,
-          title: 'Status Pengajuan',
-          subtitle: 'Tracking approval real-time',
-          color: const Color(0xFFF59E0B),
-          onTap: () {
-            _showComingSoonDialog(context, 'Status Pengajuan');
-          },
-        ),
-        const SizedBox(height: 12),
-        _buildESSMenuItem(
-          context,
-          icon: Icons.person,
-          title: 'Profile Saya',
-          subtitle: 'Update data personal',
-          color: const Color(0xFF6366F1),
-          onTap: () {
-            _showComingSoonDialog(context, 'Profile');
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildESSMenuItem(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: color, size: 28),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                color: Colors.grey[400],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showComingSoonDialog(BuildContext context, String feature) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF49FFB8).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.info_outline,
-                color: Color(0xFF1A4D2E),
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text('Coming Soon'),
-          ],
-        ),
-        content: Text(
-          'Fitur $feature sedang dalam pengembangan dan akan segera hadir.',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text(
-              'OK',
-              style: TextStyle(color: Color(0xFF1A4D2E)),
-            ),
-          ),
-        ],
       ),
     );
   }

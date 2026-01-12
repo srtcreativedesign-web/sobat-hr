@@ -6,6 +6,8 @@ import 'providers/auth_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
+import 'screens/profile/profile_screen.dart';
+import 'screens/profile/edit_profile_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +34,8 @@ class MyApp extends StatelessWidget {
           '/login': (context) => const LoginScreen(),
           '/home': (context) => const HomeScreen(),
           '/dashboard': (context) => const DashboardScreen(),
+          '/profile': (context) => const ProfileScreen(),
+          '/profile/edit': (context) => const EditProfileScreen(),
         },
       ),
     );

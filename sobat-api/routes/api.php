@@ -75,4 +75,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard/attendance-heatmap', [App\Http\Controllers\Api\DashboardController::class, 'attendanceHeatmap']);
         Route::get('/dashboard/contract-expiring', [App\Http\Controllers\Api\DashboardController::class, 'contractExpiring']);
     });
+
+    // Staff Invitation routes (Admin only)
+    Route::middleware('role:super_admin,admin_cabang')->group(function () {
+        Route::post('/staff/import', [App\Http\Controllers\StaffInvitationController::class, 'import']);
+        Route::post('/staff/invite/execute', [App\Http\Controllers\StaffInvitationController::class, 'execute']);
+    });
 });

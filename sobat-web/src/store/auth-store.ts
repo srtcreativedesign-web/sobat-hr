@@ -16,18 +16,40 @@ interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  lastChecked: number | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  initAuth: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
       isAuthenticated: false,
       isLoading: false,
+      lastChecked: null,
+
+      initAuth: () => {
+        // Initialize auth from localStorage on app start
+        const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+        const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
+
+        if (token && storedUser) {
+          try {
+            const user = JSON.parse(storedUser);
+            set({
+              user,
+              token,
+              isAuthenticated: true,
+            });
+          } catch (e) {
+            console.error('Failed to parse stored user:', e);
+          }
+        }
+      },
 
       login: async (email: string, password: string) => {
         try {
@@ -39,7 +61,9 @@ export const useAuthStore = create<AuthState>()(
             password,
           });
 
-          const { access_token, user } = response.data;
+          // Handle response structure: { success, data: { access_token, user } }
+          const responseData = response.data?.data || response.data;
+          const { access_token, user } = responseData;
 
           if (!access_token || !user) {
             throw new Error('Invalid response from server');
@@ -80,25 +104,47 @@ export const useAuthStore = create<AuthState>()(
       },
 
       checkAuth: async () => {
-        const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
-        if (!token) {
-          set({ isAuthenticated: false });
+        const state = get();
+        const now = Date.now();
+        
+        // Don't check if we checked less than 5 minutes ago
+        if (state.lastChecked && (now - state.lastChecked) < 5 * 60 * 1000) {
           return;
         }
 
+        const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+        
+        if (!token) {
+          set({ isAuthenticated: false, user: null, token: null });
+          return;
+        }
+
+        // Verify token with backend
         try {
           const response = await apiClient.get(API_ENDPOINTS.AUTH.ME);
           set({
             user: response.data,
             token,
             isAuthenticated: true,
+            lastChecked: now,
           });
+          localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.data));
         } catch (error) {
-          set({
-            user: null,
-            token: null,
-            isAuthenticated: false,
-          });
+          // Only logout if explicitly 401 Unauthorized
+          if ((error as any)?.response?.status === 401) {
+            localStorage.removeItem(STORAGE_KEYS.TOKEN);
+            localStorage.removeItem(STORAGE_KEYS.USER);
+            set({
+              user: null,
+              token: null,
+              isAuthenticated: false,
+              lastChecked: null,
+            });
+          } else {
+            // Network error or other - keep existing session
+            console.warn('Auth check failed, keeping existing session:', error);
+            set({ lastChecked: now });
+          }
         }
       },
     }),
@@ -108,6 +154,7 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         token: state.token,
         isAuthenticated: state.isAuthenticated,
+        lastChecked: state.lastChecked,
       }),
     }
   )

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../config/api_config.dart';
 import '../models/user.dart';
@@ -107,5 +108,75 @@ class AuthService {
     // Verify token dengan get profile
     final user = await getProfile();
     return user != null;
+  }
+
+  Future<Map<String, dynamic>?> getCurrentUser() async {
+    try {
+      final userData = await StorageService.getUser();
+      return userData;
+    } catch (e) {
+      return null;
+    }
+  }
+ 
+
+  Future<void> updateEmployee(int id, Map<String, dynamic> payload) async {
+    try {
+      final response = await _dio.put('${ApiConfig.employees}/$id', data: payload);
+      if (response.statusCode == 200) {
+        // Optionally refresh stored user/profile
+        await getProfile();
+        return;
+      }
+      throw Exception('Gagal memperbarui data karyawan');
+    } on DioException catch (e) {
+      // Handle validation errors (422) from Laravel
+      final status = e.response?.statusCode;
+      if (status == 422) {
+        final data = e.response?.data;
+        // Debug: print raw response body for easier inspection
+        print('AuthService.updateEmployee 422 response raw: ${jsonEncode(data)}');
+        final errors = data != null && data['errors'] != null ? data['errors'] as Map<String, dynamic> : null;
+        if (errors != null) {
+          final msgs = errors.values
+              .expand((v) => (v as List).map((i) => i.toString()))
+              .join(' | ');
+          // include raw data for debugging
+          throw Exception('$msgs | raw:${jsonEncode(data)}');
+        }
+        final msg = data != null && data['message'] != null ? data['message'].toString() : 'Validasi gagal';
+        throw Exception('$msg | raw:${jsonEncode(data)}');
+      }
+      throw Exception(e.response?.data['message'] ?? e.message);
+    }
+  }
+
+  Future<void> createEmployee(Map<String, dynamic> payload) async {
+    try {
+      final response = await _dio.post(ApiConfig.employees, data: payload);
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        await getProfile();
+        return;
+      }
+      throw Exception('Gagal membuat data karyawan');
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      if (status == 422) {
+        final data = e.response?.data;
+        // Debug: print raw response body for easier inspection
+        print('AuthService.createEmployee 422 response raw: ${jsonEncode(data)}');
+        final errors = data != null && data['errors'] != null ? data['errors'] as Map<String, dynamic> : null;
+        if (errors != null) {
+          final msgs = errors.values
+              .expand((v) => (v as List).map((i) => i.toString()))
+              .join(' | ');
+          // include raw data for debugging
+          throw Exception('$msgs | raw:${jsonEncode(data)}');
+        }
+        final msg = data != null && data['message'] != null ? data['message'].toString() : 'Validasi gagal';
+        throw Exception('$msg | raw:${jsonEncode(data)}');
+      }
+      throw Exception(e.response?.data['message'] ?? e.message);
+    }
   }
 }
