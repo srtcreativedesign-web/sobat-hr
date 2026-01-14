@@ -80,82 +80,214 @@ class _PayrollScreenState extends State<PayrollScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: const Text(
-          'Slip Gaji',
-          style: TextStyle(
-            color: AppTheme.textDark,
-            fontWeight: FontWeight.bold,
+      body: Stack(
+        children: [
+          // Background Header
+          Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          color: AppTheme.colorEggplant,
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _loadPayrolls,
+                        color: AppTheme.colorEggplant,
+                        child: ListView(
+                          padding: const EdgeInsets.only(top: 24, bottom: 24),
+                          children: [
+                            _buildYearFilter(),
+                            const SizedBox(height: 24),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Riwayat Gaji',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(fontWeight: FontWeight.bold),
+                                  ),
+                                  Text(
+                                    'Total ${_payrolls.length} Slip',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            if (_payrolls.isEmpty)
+                              _buildEmptyState()
+                            else
+                              ListView.separated(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                ),
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: _payrolls.length,
+                                separatorBuilder: (c, i) =>
+                                    const SizedBox(height: 16),
+                                itemBuilder: (context, index) {
+                                  return _buildPayrollCard(_payrolls[index]);
+                                },
+                              ),
+                            const SizedBox(height: 48),
+                          ],
+                        ),
+                      ),
+              ),
+            ],
           ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.textDark),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          // Year Selector
-          PopupMenuButton<int?>(
-            initialValue: _selectedYear,
-            onSelected: (year) {
-              setState(() => _selectedYear = year);
-              _loadPayrolls();
-            },
-            itemBuilder: (context) {
-              final currentYear = DateTime.now().year;
-              return [
-                const PopupMenuItem<int?>(
-                  value: null,
-                  child: Text('Semua Tahun'),
-                ),
-                PopupMenuItem(value: currentYear, child: Text('$currentYear')),
-                PopupMenuItem(
-                  value: currentYear - 1,
-                  child: Text('${currentYear - 1}'),
-                ),
-              ];
-            },
-            child: Padding(
-              // Trigger widget
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Text(
-                    _selectedYear?.toString() ?? 'Semua',
-                    style: const TextStyle(
-                      color: AppTheme.colorEggplant,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Icon(
-                    Icons.arrow_drop_down,
-                    color: AppTheme.colorEggplant,
-                  ),
-                ],
+          // Back Button (Floating)
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 10,
+            left: 16,
+            child: CircleAvatar(
+              backgroundColor: Colors.white,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: AppTheme.textDark),
+                onPressed: () => Navigator.pop(context),
               ),
             ),
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppTheme.colorEggplant),
-            )
-          : _payrolls.isEmpty
-          ? _buildEmptyState()
-          : RefreshIndicator(
-              onRefresh: _loadPayrolls,
-              color: AppTheme.colorEggplant,
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _payrolls.length,
-                itemBuilder: (context, index) {
-                  final payroll = _payrolls[index];
-                  return _buildPayrollCard(payroll);
-                },
+    );
+  }
+
+  Widget _buildHeader() {
+    // Calculate latest net salary (first item if available)
+    double lastSalary = 0;
+    String lastDate = '-';
+    if (_payrolls.isNotEmpty) {
+      lastSalary = double.tryParse(_payrolls[0]['net_salary'].toString()) ?? 0;
+      lastDate = DateFormat(
+        'd MMM yyyy',
+        'id_ID',
+      ).format(DateTime.parse(_payrolls[0]['period_start']));
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 60,
+        bottom: 30,
+        left: 24,
+        right: 24,
+      ),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppTheme.colorEggplant, Color(0xFF2D1B22)],
+        ),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Decor circles
+          Positioned(
+            right: -50,
+            top: -50,
+            child: Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.colorCyan.withOpacity(0.1),
               ),
             ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Gaji Bersih Terakhir',
+                style: TextStyle(
+                  color: AppTheme.colorCyan.withOpacity(0.8),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (_isLoading)
+                const SizedBox(
+                  height: 40,
+                  width: 150,
+                  child: LinearProgressIndicator(color: Colors.white24),
+                )
+              else
+                Text(
+                  _formatCurrency(lastSalary),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              const SizedBox(height: 8),
+              Text(
+                'Periode $lastDate',
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildYearFilter() {
+    final currentYear = DateTime.now().year;
+    final years = [null, currentYear, currentYear - 1, currentYear - 2];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        children: years.map((year) {
+          final isSelected = _selectedYear == year;
+          return Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: FilterChip(
+              label: Text(year?.toString() ?? 'Semua'),
+              selected: isSelected,
+              onSelected: (bool selected) {
+                if (selected) {
+                  setState(() => _selectedYear = year);
+                  _loadPayrolls();
+                }
+              },
+              backgroundColor: Colors.white,
+              selectedColor: AppTheme.colorEggplant,
+              checkmarkColor: Colors.white,
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : AppTheme.textDark,
+                fontWeight: FontWeight.w600,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: isSelected ? Colors.transparent : Colors.grey.shade300,
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -192,31 +324,31 @@ class _PayrollScreenState extends State<PayrollScreen> {
     final periodDate = DateTime.parse(payroll['period_start']);
     final monthName = DateFormat('MMMM', 'id_ID').format(periodDate);
     final status = payroll['status'] ?? 'pending';
-    final isPaid =
-        status == 'paid' ||
-        status == 'approved'; // Treat approved as visible mostly
 
-    // Status color
+    // Status config
     Color statusColor = Colors.orange;
     String statusText = 'Pending';
+    IconData statusIcon = Icons.access_time;
+
     if (status == 'paid') {
       statusColor = AppTheme.success;
-      statusText = 'Dibayarkan';
+      statusText = 'Lunas';
+      statusIcon = Icons.check_circle;
     } else if (status == 'approved') {
       statusColor = Colors.blue;
       statusText = 'Disetujui';
+      statusIcon = Icons.thumb_up;
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -226,72 +358,102 @@ class _PayrollScreenState extends State<PayrollScreen> {
           onTap: () => _showDetailSheet(payroll),
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          monthName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textDark,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${periodDate.year}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textLight,
-                          ),
-                        ),
-                      ],
-                    ),
+                    // Date Box
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
+                      width: 50,
+                      height: 50,
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        color: AppTheme.colorCyan.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Text(
-                        statusText,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: statusColor,
+                      child: Center(
+                        child: Icon(
+                          Icons.calendar_today,
+                          color: AppTheme.colorEggplant,
+                          size: 24,
                         ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            monthName,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textDark,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'ID: #SLIP-${periodDate.year}${periodDate.month.toString().padLeft(2, '0')}-${payroll['id']}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.textLight,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Text(
+                                _formatCurrency(payroll['net_salary'] ?? 0),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.textDark,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  statusText,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: statusColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                const Divider(height: 1),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Take Home Pay',
-                      style: TextStyle(fontSize: 12, color: AppTheme.textLight),
+                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: () => _showDetailSheet(payroll),
+                    icon: const Icon(Icons.visibility_outlined, size: 18),
+                    label: const Text('Lihat Detail'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppTheme.colorEggplant,
+                      padding: const EdgeInsets.symmetric(vertical: 0),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    Text(
-                      _formatCurrency(payroll['net_salary'] ?? 0),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.colorEggplant,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -359,9 +521,9 @@ class _PayrollScreenState extends State<PayrollScreen> {
                   ),
                   _buildDetailRow(
                     'Lembur',
-                    payroll['allowances'],
+                    payroll['overtime_pay'] ?? 0, // Ensure key is correct
                     isPlus: true,
-                  ), // Note: allowances field used for overtime too based on controller mapping? Let's check keys.
+                  ),
                   // Keys from controller: basic_salary, allowances (overtime), deductions (bpjs_kes), bpjs_employment, tax
 
                   // Wait, let's recheck the controller output keys
