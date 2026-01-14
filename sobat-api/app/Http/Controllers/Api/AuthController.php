@@ -48,6 +48,7 @@ class AuthController extends Controller
                         'name' => $user->name,
                         'email' => $user->email,
                         'role' => $user->role?->name ?? null,
+                        'has_pin' => $user->has_pin,
                     ]
                 ]
             ]);
@@ -88,6 +89,7 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role?->name ?? null,
+                'has_pin' => $user->has_pin,
             ]
         ], 201);
     }
@@ -118,6 +120,56 @@ class AuthController extends Controller
             'email' => $user->email,
             'role' => $user->role?->name ?? null,
             'employee' => $user->employee,
+            'has_pin' => $user->has_pin,
+        ]);
+    }
+    /**
+     * Update user profile (Name & Email)
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+        ]);
+
+        $user->update([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+        ]);
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user' => $user
+        ]);
+    }
+
+    /**
+     * Change password
+     */
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|min:8|confirmed',
+        ]);
+
+        $user = $request->user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'message' => 'Password saat ini salah'
+            ], 422);
+        }
+
+        $user->update([
+            'password' => Hash::make($request->new_password)
+        ]);
+
+        return response()->json([
+            'message' => 'Password berhasil diubah'
         ]);
     }
 }

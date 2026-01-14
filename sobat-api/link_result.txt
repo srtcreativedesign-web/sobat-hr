@@ -1,0 +1,27 @@
+User 8: Susi Pudjiastuti
+Attributes: {"id":8,"name":"Susi Pudjiastuti","email":"susi.pudjiastuti@sea.org","email_verified_at":null,"password":"$2y$12$Bg9OuUOeWDV3re60AByBZeFaDGJsaI252QW1.HJxS02lD4mahbHFq","role_id":4,"is_active":1,"remember_token":null,"created_at":"2026-01-14 01:58:03","updated_at":"2026-01-14 01:58:03"}
+EmpID Property: NULL
+Employee 8: Susi Pudjiastuti
+Attempting Update...
+
+   Illuminate\Database\QueryException 
+
+  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'employee_id' in 'field list' (Connection: mysql, SQL: update `users` set `employee_id` = 8, `users`.`updated_at` = 2026-01-14 06:50:28 where `id` = 8)
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:826
+    822▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
+    823▕                 );
+    824▕             }
+    825▕ 
+  ➜ 826▕             throw new QueryException(
+    827▕                 $this->getName(), $query, $this->prepareBindings($bindings), $e
+    828▕             );
+    829▕         }
+    830▕     }
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:591
+      PDOException::("SQLSTATE[42S22]: Column not found: 1054 Unknown column 'employee_id' in 'field list'")
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:591
+      PDO::prepare()
+

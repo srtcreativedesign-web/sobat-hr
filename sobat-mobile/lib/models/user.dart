@@ -8,6 +8,7 @@ class User {
   final DateTime? emailVerifiedAt;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final bool hasPin;
 
   User({
     required this.id,
@@ -19,6 +20,7 @@ class User {
     this.emailVerifiedAt,
     this.createdAt,
     this.updatedAt,
+    this.hasPin = false,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,7 @@ class User {
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
           : null,
+      hasPin: json['has_pin'] as bool? ?? false,
     );
   }
 
@@ -52,6 +55,7 @@ class User {
       'email_verified_at': emailVerifiedAt?.toIso8601String(),
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
+      'has_pin': hasPin,
     };
   }
 

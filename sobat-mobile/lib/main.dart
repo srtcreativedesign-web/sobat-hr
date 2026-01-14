@@ -8,6 +8,7 @@ import 'screens/home/home_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/profile/edit_profile_screen.dart';
+import 'screens/payroll/payroll_screen.dart'; // Added
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,9 +22,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-      ],
+      providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
       child: MaterialApp(
         title: 'SOBAT HR',
         debugShowCheckedModeBanner: false,
@@ -36,6 +35,7 @@ class MyApp extends StatelessWidget {
           '/dashboard': (context) => const DashboardScreen(),
           '/profile': (context) => const ProfileScreen(),
           '/profile/edit': (context) => const EditProfileScreen(),
+          '/payroll': (context) => const PayrollScreen(), // Added
         },
       ),
     );
@@ -53,7 +53,7 @@ class AuthWrapper extends StatelessWidget {
           return const Scaffold(
             body: Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1A4D2E)),
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.colorCyan),
               ),
             ),
           );

@@ -10,6 +10,11 @@ interface MenuItem {
   href: string;
   icon: React.ReactNode;
   roles?: string[];
+  subItems?: {
+    name: string;
+    href: string;
+    icon: React.ReactNode | null;
+  }[];
 }
 
 export default function Sidebar() {
@@ -17,6 +22,16 @@ export default function Sidebar() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(['Employees']);
+
+  const toggleMenu = (name: string) => {
+    if (isCollapsed) setIsCollapsed(false);
+    setExpandedMenus(prev =>
+      prev.includes(name)
+        ? prev.filter(item => item !== name)
+        : [...prev, name]
+    );
+  };
 
   const menuItems: MenuItem[] = [
     {
@@ -38,16 +53,23 @@ export default function Sidebar() {
         </svg>
       ),
       roles: ['super_admin', 'admin_cabang'],
-    },
-    {
-      name: 'Invite Staff',
-      href: '/employees/invite',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-        </svg>
-      ),
-      roles: ['super_admin', 'admin_cabang'],
+      subItems: [
+        {
+          name: 'Employee List',
+          href: '/employees',
+          icon: null
+        },
+        {
+          name: 'Master Data',
+          href: '/employees/master',
+          icon: null
+        },
+        {
+          name: 'Invite Staff',
+          href: '/employees/invite',
+          icon: null
+        }
+      ]
     },
     {
       name: 'Organizations',
@@ -117,6 +139,14 @@ export default function Sidebar() {
       ),
       roles: ['super_admin'],
     },
+    {
+      name: 'HR Policies',
+      href: '/hr-policies',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>
+      ),
+      roles: ['super_admin', 'admin_cabang'],
+    },
   ];
 
   const handleLogout = () => {
@@ -184,32 +214,64 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto custom-scrollbar">
         {filteredMenuItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href || (item.subItems && item.subItems.some(sub => pathname === sub.href));
+          const isExpanded = expandedMenus.includes(item.name);
+          const hasSubItems = item.subItems && item.subItems.length > 0;
+
           return (
-            <button
-              key={item.href}
-              onClick={() => router.push(item.href)}
-              className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 relative overflow-hidden ${isActive
-                ? 'bg-[#462e37] text-[#a9eae2] shadow-[0_0_20px_rgba(70,46,55,0.3)] font-bold'
-                : 'text-[#462e37]/70 hover:text-[#462e37] hover:bg-[#462e37]/10'
-                } ${isCollapsed ? 'justify-center' : ''}`}
-            >
-              {isActive && (
-                <div className="absolute inset-0 bg-white/20 mix-blend-overlay"></div>
-              )}
+            <div key={item.name}>
+              <button
+                onClick={() => hasSubItems ? toggleMenu(item.name) : router.push(item.href)}
+                className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 relative overflow-hidden ${isActive && !hasSubItems
+                  ? 'bg-[#462e37] text-[#a9eae2] shadow-[0_0_20px_rgba(70,46,55,0.3)] font-bold'
+                  : 'text-[#462e37]/70 hover:text-[#462e37] hover:bg-[#462e37]/10'
+                  } ${isCollapsed ? 'justify-center' : ''}`}
+              >
+                {isActive && !hasSubItems && (
+                  <div className="absolute inset-0 bg-white/20 mix-blend-overlay"></div>
+                )}
 
-              <span className={`transform transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
-                {item.icon}
-              </span>
+                <span className={`transform transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
+                  {item.icon}
+                </span>
 
-              {!isCollapsed && (
-                <span className="text-sm tracking-wide">{item.name}</span>
-              )}
+                {!isCollapsed && (
+                  <>
+                    <span className="text-sm tracking-wide flex-1 text-left">{item.name}</span>
+                    {hasSubItems && (
+                      <svg className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    )}
+                  </>
+                )}
 
-              {!isCollapsed && isActive && (
-                <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-[#a9eae2]"></div>
+                {!isCollapsed && isActive && !hasSubItems && (
+                  <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-[#a9eae2]"></div>
+                )}
+              </button>
+
+              {/* Submenu */}
+              {!isCollapsed && hasSubItems && isExpanded && (
+                <div className="ml-4 mt-1 space-y-1 border-l-2 border-[#462e37]/10 pl-2">
+                  {item.subItems?.map((sub) => {
+                    const isSubActive = pathname === sub.href;
+                    return (
+                      <button
+                        key={sub.href}
+                        onClick={() => router.push(sub.href)}
+                        className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition-all ${isSubActive
+                          ? 'bg-[#462e37] text-[#a9eae2] shadow-md font-bold'
+                          : 'text-[#462e37]/60 hover:text-[#462e37] hover:bg-[#462e37]/5'
+                          }`}
+                      >
+                        {sub.name}
+                      </button>
+                    )
+                  })}
+                </div>
               )}
-            </button>
+            </div>
           );
         })}
       </nav>

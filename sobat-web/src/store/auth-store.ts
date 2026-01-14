@@ -21,6 +21,7 @@ interface AuthState {
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   initAuth: () => void;
+  setUser: (user: User | null) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -31,6 +32,15 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       lastChecked: null,
+
+      setUser: (user: User | null) => {
+        set({ user });
+        if (user) {
+          localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+        } else {
+          localStorage.removeItem(STORAGE_KEYS.USER);
+        }
+      },
 
       initAuth: () => {
         // Initialize auth from localStorage on app start
@@ -54,7 +64,7 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         try {
           set({ isLoading: true });
-          
+
           // Direct Bearer token authentication with Sanctum
           const response = await apiClient.post(API_ENDPOINTS.AUTH.LOGIN, {
             email,
@@ -106,14 +116,14 @@ export const useAuthStore = create<AuthState>()(
       checkAuth: async () => {
         const state = get();
         const now = Date.now();
-        
+
         // Don't check if we checked less than 5 minutes ago
         if (state.lastChecked && (now - state.lastChecked) < 5 * 60 * 1000) {
           return;
         }
 
         const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
-        
+
         if (!token) {
           set({ isAuthenticated: false, user: null, token: null });
           return;

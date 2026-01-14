@@ -26,7 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      
+
       final success = await authProvider.login(
         _emailController.text.trim(),
         _passwordController.text,
@@ -42,13 +42,13 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF1A4D2E), // Forest Green
-              Color(0xFF0d2618), // Dark Forest
+              AppTheme.colorCyan,
+              AppTheme.colorCyan.withValues(alpha: 0.8),
             ],
           ),
         ),
@@ -67,12 +67,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: const Color(0xFF49FFB8),
+                        color: AppTheme.colorEggplant,
                         width: 2,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF49FFB8).withAlpha(77),
+                          color: AppTheme.colorEggplant.withValues(alpha: 0.3),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -81,16 +81,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Icon(
                       Icons.business_center,
                       size: 40,
-                      color: Color(0xFF1A4D2E),
+                      color: AppTheme.colorCyan,
                     ),
                   ),
                   const SizedBox(height: 24),
                   Text(
                     'SOBAT HR',
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      color: AppTheme.colorEggplant,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 24),
                   const SizedBox(height: 48),
@@ -98,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Login Card
                   Card(
                     elevation: 8,
-                    shadowColor: Colors.black.withAlpha(51),
+                    shadowColor: Colors.black.withValues(alpha: 0.2),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -117,9 +117,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             const SizedBox(height: 8),
                             Text(
                               'Masuk untuk melanjutkan',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: AppTheme.textLight,
-                                  ),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: AppTheme.textLight),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 32),
@@ -186,10 +185,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                     padding: const EdgeInsets.all(12),
                                     margin: const EdgeInsets.only(bottom: 16),
                                     decoration: BoxDecoration(
-                                      color: AppTheme.error.withAlpha(26),
+                                      color: AppTheme.error.withValues(
+                                        alpha: 0.1,
+                                      ),
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border.all(
-                                        color: AppTheme.error.withAlpha(77),
+                                        color: AppTheme.error.withValues(
+                                          alpha: 0.3,
+                                        ),
                                       ),
                                     ),
                                     child: Row(
@@ -222,16 +225,20 @@ class _LoginScreenState extends State<LoginScreen> {
                               builder: (context, authProvider, child) {
                                 return Container(
                                   decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
+                                    gradient: LinearGradient(
                                       colors: [
-                                        Color(0xFF1A4D2E),
-                                        Color(0xFF2d7a4a),
+                                        AppTheme.colorCyan,
+                                        AppTheme.colorCyan.withValues(
+                                          alpha: 0.8,
+                                        ),
                                       ],
                                     ),
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF1A4D2E).withValues(alpha: 0.3),
+                                        color: AppTheme.colorCyan.withValues(
+                                          alpha: 0.3,
+                                        ),
                                         blurRadius: 8,
                                         offset: const Offset(0, 4),
                                       ),
@@ -256,11 +263,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                               strokeWidth: 2,
                                               valueColor:
                                                   AlwaysStoppedAnimation<Color>(
-                                                Colors.white,
-                                              ),
+                                                    Colors.white,
+                                                  ),
                                             ),
                                           )
-                                        : const Text('Masuk'),
+                                        : const Text(
+                                            'Masuk',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
+                                          ),
                                   ),
                                 );
                               },
@@ -277,8 +290,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                      ),
                     ),
                     child: Column(
                       children: [
@@ -287,25 +303,28 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             const Icon(
                               Icons.info_outline,
-                              color: Colors.white,
+                              color: AppTheme.colorEggplant,
                               size: 16,
                             ),
                             const SizedBox(width: 8),
                             Text(
                               'Demo Credentials',
-                              style:
-                                  Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: AppTheme.colorEggplant,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Email: elian@sobat.co.id\nPassword: password123',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.9),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: AppTheme.colorEggplant.withValues(
+                                  alpha: 0.9,
+                                ),
                               ),
                           textAlign: TextAlign.center,
                         ),
@@ -317,7 +336,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () {
                       Navigator.of(context).pushNamed('/signup');
                     },
-                    child: const Text('Belum punya akun? Daftar', style: TextStyle(color: Colors.white)),
+                    child: RichText(
+                      text: TextSpan(
+                        text: 'Belum punya akun? ',
+                        style: const TextStyle(color: AppTheme.colorEggplant),
+                        children: [
+                          TextSpan(
+                            text: 'Daftar',
+                            style: TextStyle(
+                              color: AppTheme.colorEggplant,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),

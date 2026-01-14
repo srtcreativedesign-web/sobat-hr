@@ -1,0 +1,683 @@
+import 'dart:ui';
+import '../../config/theme.dart';
+import 'package:flutter/material.dart';
+import '../../services/auth_service.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final AuthService _authService = AuthService();
+  Map<String, dynamic>? _user;
+  bool _isLoading = true;
+  int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final user = await _authService.getCurrentUser();
+    setState(() {
+      _user = user;
+      _isLoading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: AppTheme.colorEggplant),
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: SafeArea(
+        child: RefreshIndicator(
+          color: AppTheme.colorEggplant,
+          onRefresh: _loadUserData,
+          child: Stack(
+            children: [
+              // Decorative background shapes
+              Positioned(
+                top: -100,
+                right: -80,
+                child: Container(
+                  width: 240,
+                  height: 240,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        AppTheme.colorEggplant.withValues(alpha: 0.15),
+                        AppTheme.colorEggplant.withValues(alpha: 0.05),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: -120,
+                left: -60,
+                child: Container(
+                  width: 280,
+                  height: 280,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        AppTheme.colorCyan.withValues(alpha: 0.12),
+                        AppTheme.colorCyan.withValues(alpha: 0.04),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // Content ScrollView
+              CustomScrollView(
+                slivers: [
+                  // App Bar with gradient
+                  SliverAppBar(
+                    expandedHeight: 200,
+                    floating: false,
+                    pinned: true,
+                    backgroundColor: Colors.transparent,
+                    flexibleSpace: FlexibleSpaceBar(
+                      background: ClipRRect(
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  AppTheme.colorCyan.withValues(alpha: 0.85),
+                                  AppTheme.colorCyan.withValues(alpha: 0.75),
+                                ],
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                20,
+                                60,
+                                20,
+                                20,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Selamat Datang! 👋',
+                                    style: TextStyle(
+                                      color: AppTheme.colorEggplant,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    _user?['name'] ?? 'User',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    _user?['employee']?['position'] ??
+                                        'Employee',
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.85,
+                                      ),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    actions: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.notifications_outlined,
+                          color: AppTheme.colorCyan,
+                        ),
+                        onPressed: () {},
+                      ),
+                    ],
+                  ),
+
+                  // Content
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildQuickActions(),
+                          const SizedBox(height: 24),
+                          _buildSectionHeader(
+                            'Pengajuan Terbaru',
+                            onViewAll: () {},
+                          ),
+                          const SizedBox(height: 12),
+                          _buildRecentRequests(),
+                          const SizedBox(height: 24),
+                          _buildSectionHeader('Dokumen'),
+                          const SizedBox(height: 12),
+                          _buildDocumentsCard(),
+                        ],
+                      ),
+                    ),
+                  ),
+                ], // Close slivers array
+              ), // Close CustomScrollView
+            ], // Close Stack children array
+          ), // Close Stack
+        ), // Close RefreshIndicator
+      ), // Close SafeArea
+      bottomNavigationBar: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.92),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
+              border: Border(
+                top: BorderSide(color: Colors.grey.withValues(alpha: 0.15)),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, -3),
+                ),
+              ],
+            ),
+            child: BottomNavigationBar(
+              currentIndex: _selectedIndex,
+              selectedItemColor: AppTheme.colorCyan,
+              unselectedItemColor: Colors.grey,
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.description_outlined),
+                  label: 'Pengajuan',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.folder_outlined),
+                  label: 'Dokumen',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person_outline),
+                  label: 'Profile',
+                ),
+              ],
+              onTap: (index) {
+                setState(() => _selectedIndex = index);
+                if (index == 3) {
+                  Navigator.of(context).pushNamed('/profile');
+                } else if (index == 0) {
+                  // already on home
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Fitur belum tersedia')),
+                  );
+                }
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActions() {
+    final actions = [
+      {
+        'icon': Icons.event_available,
+        'label': 'Cuti',
+        'color': AppTheme.colorCyan,
+      },
+      {
+        'icon': Icons.access_time,
+        'label': 'Lembur',
+        'color': const Color(0xFFE67E22),
+      },
+      {
+        'icon': Icons.receipt_long,
+        'label': 'Reimburse',
+        'color': const Color(0xFF3498DB),
+      },
+      {
+        'icon': Icons.exit_to_app,
+        'label': 'Resign',
+        'color': const Color(0xFFE74C3C),
+      },
+    ];
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.white.withValues(alpha: 0.08),
+                Colors.white.withValues(alpha: 0.04),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 14,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Quick Actions',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textDark,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: actions.map((action) {
+                  return InkWell(
+                    onTap: () {},
+                    borderRadius: BorderRadius.circular(12),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 62,
+                          height: 62,
+                          decoration: BoxDecoration(
+                            color: (action['color'] as Color).withValues(
+                              alpha: 0.12,
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(
+                            action['icon'] as IconData,
+                            color: action['color'] as Color,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          action['label'] as String,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, {VoidCallback? onViewAll}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textDark,
+          ),
+        ),
+        if (onViewAll != null)
+          TextButton(
+            onPressed: onViewAll,
+            child: const Text(
+              'Lihat Semua',
+              style: TextStyle(
+                color: AppTheme.colorCyan,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildRecentRequests() {
+    final requests = [
+      {
+        'type': 'Cuti',
+        'date': '7 Jan 2026',
+        'status': 'pending',
+        'description': 'Cuti Tahunan - 3 hari',
+      },
+      {
+        'type': 'Lembur',
+        'date': '5 Jan 2026',
+        'status': 'approved',
+        'description': 'Lembur Project X - 4 jam',
+      },
+    ];
+
+    return Column(
+      children: requests.map((request) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.white.withValues(alpha: 0.06),
+                    Colors.white.withValues(alpha: 0.03),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(
+                        request['status'] as String,
+                      ).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      _getRequestIcon(request['type'] as String),
+                      color: _getStatusColor(request['status'] as String),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              request['type'] as String,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            _buildStatusBadge(request['status'] as String),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          request['description'] as String,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          request['date'] as String,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildDocumentsCard() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: InkWell(
+          onTap: () {},
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTheme.colorEggplant.withValues(alpha: 0.88),
+                  AppTheme.colorEggplant.withValues(alpha: 0.82),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.colorEggplant.withValues(alpha: 0.28),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.description_outlined,
+                    color: AppTheme.colorCyan,
+                    size: 30,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Slip Gaji',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Download slip gaji bulanan Anda',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.colorCyan,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward,
+                    color: AppTheme.colorEggplant,
+                    size: 20,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(String status) {
+    final config = {
+      'pending': {'label': 'Pending', 'color': const Color(0xFFF39C12)},
+      'approved': {'label': 'Disetujui', 'color': const Color(0xFF27AE60)},
+      'rejected': {'label': 'Ditolak', 'color': const Color(0xFFE74C3C)},
+    };
+    final statusConfig = config[status] ?? config['pending']!;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: (statusConfig['color'] as Color).withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Text(
+        statusConfig['label'] as String,
+        style: TextStyle(
+          color: statusConfig['color'] as Color,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'approved':
+        return const Color(0xFF27AE60);
+      case 'rejected':
+        return const Color(0xFFE74C3C);
+      default:
+        return const Color(0xFFF39C12);
+    }
+  }
+
+  IconData _getRequestIcon(String type) {
+    switch (type) {
+      case 'Cuti':
+        return Icons.event_available;
+      case 'Lembur':
+        return Icons.access_time;
+      case 'Reimburse':
+        return Icons.receipt_long;
+      case 'Resign':
+        return Icons.exit_to_app;
+      default:
+        return Icons.description;
+    }
+  }
+
+  Widget _buildBottomNav() {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.92),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            border: Border(
+              top: BorderSide(color: Colors.grey.withValues(alpha: 0.15)),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 12,
+                offset: const Offset(0, -3),
+              ),
+            ],
+          ),
+          child: BottomNavigationBar(
+            currentIndex: 0,
+            selectedItemColor: AppTheme.colorEggplant,
+            unselectedItemColor: Colors.grey,
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            items: const [
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.description_outlined),
+                label: 'Pengajuan',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.folder_outlined),
+                label: 'Dokumen',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person_outline),
+                label: 'Profile',
+              ),
+            ],
+            onTap: (index) {},
+          ),
+        ),
+      ),
+    );
+  }
+}

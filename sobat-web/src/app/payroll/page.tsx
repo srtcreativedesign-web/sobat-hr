@@ -33,8 +33,8 @@ export default function PayrollPage() {
   const [parsedRows, setParsedRows] = useState<any[]>([]);
 
   // Filter States
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(0); // 0 = Semua
+  const [selectedYear, setSelectedYear] = useState(0); // 0 = Semua
 
   const months = [
     { value: 1, label: 'Januari' }, { value: 2, label: 'Februari' }, { value: 3, label: 'Maret' },
@@ -63,8 +63,8 @@ export default function PayrollPage() {
       setLoading(true);
       const response = await apiClient.get('/payrolls', {
         params: {
-          month: selectedMonth,
-          year: selectedYear
+          ...(selectedMonth !== 0 && { month: selectedMonth }),
+          ...(selectedYear !== 0 && { year: selectedYear })
         }
       });
       setPayrolls(response.data.data || []);
@@ -199,6 +199,7 @@ export default function PayrollPage() {
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#462e37] text-sm"
             >
+              <option value={0}>Semua Bulan</option>
               {months.map((m) => (
                 <option key={m.value} value={m.value}>{m.label}</option>
               ))}
@@ -208,6 +209,7 @@ export default function PayrollPage() {
               onChange={(e) => setSelectedYear(Number(e.target.value))}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#462e37] text-sm"
             >
+              <option value={0}>Semua Tahun</option>
               {[2024, 2025, 2026, 2027].map((y) => (
                 <option key={y} value={y}>{y}</option>
               ))}

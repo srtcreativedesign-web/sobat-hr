@@ -50,20 +50,55 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? _position;
 
   final List<String> _departmentOptions = [
-    'Wrapping', 'Refleksi', 'Celullar', 'Minimarket', 'HANS', 'Food & Beverages',
-    'Human Resources Development', 'Business Development', 'Finance, Accounting, & Tax',
-    'Training & Development', 'Internal Keuangan', 'Project', 'Money Changer', 'Yang lain',
+    'Wrapping',
+    'Refleksi',
+    'Celullar',
+    'Minimarket',
+    'HANS',
+    'Food & Beverages',
+    'Human Resources Development',
+    'Business Development',
+    'Finance, Accounting, & Tax',
+    'Training & Development',
+    'Internal Keuangan',
+    'Project',
+    'Money Changer',
+    'Yang lain',
   ];
 
   final List<String> _positionOptions = [
-    'Direktur Utama', 'Direktur Operasional', 'Direktur Keuangan', 'Konsultan',
-    'Manager Non-Operational', 'Manager Operational', 'Manager Keuangan', 'Assistant Manager',
-    'Supervisor', 'Team Leader', 'Staff Office/Admin', 'Crew/Staff Operational',
-    'Cleaning Service', 'Teknisi', 'Security', 'Driver', 'Yang lain',
+    'Direktur Utama',
+    'Direktur Operasional',
+    'Direktur Keuangan',
+    'Konsultan',
+    'Manager Non-Operational',
+    'Manager Operational',
+    'Manager Keuangan',
+    'Assistant Manager',
+    'Supervisor',
+    'Team Leader',
+    'Staff Office/Admin',
+    'Crew/Staff Operational',
+    'Cleaning Service',
+    'Teknisi',
+    'Security',
+    'Driver',
+    'Yang lain',
   ];
 
   final List<String> _ptkpOptions = [
-    'TK0', 'TK1', 'TK2', 'TK3', 'K0', 'K1', 'K2', 'K3', 'K/I/0', 'K/I/1', 'K/I/2', 'K/I/3'
+    'TK0',
+    'TK1',
+    'TK2',
+    'TK3',
+    'K0',
+    'K1',
+    'K2',
+    'K3',
+    'K/I/0',
+    'K/I/1',
+    'K/I/2',
+    'K/I/3',
   ];
 
   bool _saving = false;
@@ -84,7 +119,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _phoneCtrl.text = current['phone'] ?? '';
 
       // employee sub-object may exist
-      final emp = current['employee'] ?? current['employee_data'] ?? current['employee_record'];
+      final emp =
+          current['employee'] ??
+          current['employee_data'] ??
+          current['employee_record'];
       if (emp != null && emp is Map<String, dynamic>) {
         _employeeRecordId = emp['id'] as int?;
         _employeeIdCtrl.text = emp['employee_code'] ?? emp['employee_id'] ?? '';
@@ -140,7 +178,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.white.withValues(alpha: 0.06), Colors.white.withValues(alpha: 0.02)],
+              colors: [
+                Colors.white.withValues(alpha: 0.06),
+                Colors.white.withValues(alpha: 0.02),
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -186,7 +227,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     };
 
     // Debug: print payload and target id to console
-    print('EditProfile: saving employeeRecordId=$_employeeRecordId payload=${payload.toString()}');
+    print(
+      'EditProfile: saving employeeRecordId=$_employeeRecordId payload=${payload.toString()}',
+    );
 
     try {
       if (_employeeRecordId != null) {
@@ -195,7 +238,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         await _authService.createEmployee(payload);
       }
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profil berhasil disimpan')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profil berhasil disimpan')),
+        );
         Navigator.of(context).pop(true);
       }
     } catch (e, st) {
@@ -203,7 +248,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       print('EditProfile: save failed -> $e');
       print('EditProfile: stacktrace -> $st');
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal menyimpan: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal menyimpan: $e')));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -244,7 +291,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           TextButton(
             onPressed: _saving ? null : _save,
             child: _saving
-                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : const Text('Simpan', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -262,8 +313,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   children: [
                     TextFormField(
                       controller: _nameCtrl,
-                      decoration: const InputDecoration(prefixIcon: Icon(Icons.person), labelText: 'Nama Lengkap'),
-                      validator: (v) => (v == null || v.isEmpty) ? 'Nama wajib diisi' : null,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.person),
+                        labelText: 'Nama Lengkap',
+                      ),
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Nama wajib diisi' : null,
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -271,14 +326,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         Expanded(
                           child: TextFormField(
                             controller: _emailCtrl,
-                            decoration: const InputDecoration(prefixIcon: Icon(Icons.email), labelText: 'Email'),
+                            decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.email),
+                              labelText: 'Email',
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: TextFormField(
                             controller: _phoneCtrl,
-                            decoration: const InputDecoration(prefixIcon: Icon(Icons.phone), labelText: 'Nomor HP'),
+                            decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.phone),
+                              labelText: 'Nomor HP',
+                            ),
                           ),
                         ),
                       ],
@@ -294,69 +355,153 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('Data Pribadi', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Data Pribadi',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Expanded(child: TextFormField(controller: _employeeIdCtrl, decoration: const InputDecoration(labelText: 'NIK Karyawan'))),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _employeeIdCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'NIK Karyawan',
+                            ),
+                          ),
+                        ),
                         const SizedBox(width: 12),
-                        Expanded(child: TextFormField(controller: _placeOfBirthCtrl, decoration: const InputDecoration(labelText: 'Tempat Lahir'))),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _placeOfBirthCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Tempat Lahir',
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
                     InkWell(
                       onTap: _pickDateOfBirth,
                       child: InputDecorator(
-                        decoration: const InputDecoration(prefixIcon: Icon(Icons.calendar_today), labelText: 'Tanggal Lahir'),
-                        child: Text(_dateOfBirth == null ? '-' : DateFormat.yMMMMd('id_ID').format(_dateOfBirth!)),
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(Icons.calendar_today),
+                          labelText: 'Tanggal Lahir',
+                        ),
+                        child: Text(
+                          _dateOfBirth == null
+                              ? '-'
+                              : DateFormat.yMMMMd(
+                                  'id_ID',
+                                ).format(_dateOfBirth!),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
-                    TextFormField(controller: _ktpAddressCtrl, decoration: const InputDecoration(prefixIcon: Icon(Icons.home), labelText: 'Alamat KTP')),
+                    TextFormField(
+                      controller: _ktpAddressCtrl,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.home),
+                        labelText: 'Alamat KTP',
+                      ),
+                    ),
                     const SizedBox(height: 12),
-                    TextFormField(controller: _currentAddressCtrl, decoration: const InputDecoration(prefixIcon: Icon(Icons.location_on), labelText: 'Alamat Domisili')),
+                    TextFormField(
+                      controller: _currentAddressCtrl,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.location_on),
+                        labelText: 'Alamat Domisili',
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: _gender,
-                      decoration: const InputDecoration(prefixIcon: Icon(Icons.wc), labelText: 'Jenis Kelamin'),
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.wc),
+                        labelText: 'Jenis Kelamin',
+                      ),
                       items: const [
-                        DropdownMenuItem(value: 'male', child: Text('Laki-laki')),
-                        DropdownMenuItem(value: 'female', child: Text('Perempuan')),
+                        DropdownMenuItem(
+                          value: 'male',
+                          child: Text('Laki-laki'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'female',
+                          child: Text('Perempuan'),
+                        ),
                       ],
                       onChanged: (v) => setState(() => _gender = v),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: _religion,
-                      decoration: const InputDecoration(prefixIcon: Icon(Icons.account_balance), labelText: 'Agama'),
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.account_balance),
+                        labelText: 'Agama',
+                      ),
                       items: const [
                         DropdownMenuItem(value: 'Islam', child: Text('Islam')),
-                        DropdownMenuItem(value: 'Kristen', child: Text('Kristen')),
-                        DropdownMenuItem(value: 'Katolik', child: Text('Katolik')),
+                        DropdownMenuItem(
+                          value: 'Kristen',
+                          child: Text('Kristen'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Katolik',
+                          child: Text('Katolik'),
+                        ),
                         DropdownMenuItem(value: 'Hindu', child: Text('Hindu')),
-                        DropdownMenuItem(value: 'Buddha', child: Text('Buddha')),
-                        DropdownMenuItem(value: 'Konghucu', child: Text('Konghucu')),
-                        DropdownMenuItem(value: 'Lainnya', child: Text('Lainnya')),
+                        DropdownMenuItem(
+                          value: 'Buddha',
+                          child: Text('Buddha'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Konghucu',
+                          child: Text('Konghucu'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Lainnya',
+                          child: Text('Lainnya'),
+                        ),
                       ],
                       onChanged: (v) => setState(() => _religion = v),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: _maritalStatus,
-                      decoration: const InputDecoration(prefixIcon: Icon(Icons.family_restroom), labelText: 'Status Perkawinan'),
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.family_restroom),
+                        labelText: 'Status Perkawinan',
+                      ),
                       items: const [
-                        DropdownMenuItem(value: 'Belum Kawin', child: Text('Belum Kawin')),
+                        DropdownMenuItem(
+                          value: 'Belum Kawin',
+                          child: Text('Belum Kawin'),
+                        ),
                         DropdownMenuItem(value: 'Kawin', child: Text('Kawin')),
-                        DropdownMenuItem(value: 'Cerai Hidup', child: Text('Cerai Hidup')),
-                        DropdownMenuItem(value: 'Cerai Mati', child: Text('Cerai Mati')),
+                        DropdownMenuItem(
+                          value: 'Cerai Hidup',
+                          child: Text('Cerai Hidup'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Cerai Mati',
+                          child: Text('Cerai Mati'),
+                        ),
                       ],
                       onChanged: (v) => setState(() => _maritalStatus = v),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: _ptkpStatus,
-                      decoration: const InputDecoration(prefixIcon: Icon(Icons.badge), labelText: 'Status PTKP'),
-                      items: _ptkpOptions.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.badge),
+                        labelText: 'Status PTKP',
+                      ),
+                      items: _ptkpOptions
+                          .map(
+                            (p) => DropdownMenuItem(value: p, child: Text(p)),
+                          )
+                          .toList(),
                       onChanged: (v) => setState(() => _ptkpStatus = v),
                     ),
                   ],
@@ -370,27 +515,74 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('Keuangan & Kontak', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Keuangan & Kontak',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 12),
-                    TextFormField(controller: _nikCtrl, decoration: const InputDecoration(prefixIcon: Icon(Icons.credit_card), labelText: 'NIK (KTP)')),
+                    TextFormField(
+                      controller: _nikCtrl,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.credit_card),
+                        labelText: 'NIK (KTP)',
+                      ),
+                    ),
                     const SizedBox(height: 12),
-                    TextFormField(controller: _npwpCtrl, decoration: const InputDecoration(prefixIcon: Icon(Icons.account_balance_wallet), labelText: 'NPWP')),
+                    TextFormField(
+                      controller: _npwpCtrl,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.account_balance_wallet),
+                        labelText: 'NPWP',
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Expanded(child: TextFormField(controller: _bankAccCtrl, decoration: const InputDecoration(prefixIcon: Icon(Icons.account_balance), labelText: 'No. Rekening (Mandiri)'))),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _bankAccCtrl,
+                            decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.account_balance),
+                              labelText: 'No. Rekening (Mandiri)',
+                            ),
+                          ),
+                        ),
                         const SizedBox(width: 12),
-                        Expanded(child: TextFormField(controller: _bankAccNameCtrl, decoration: const InputDecoration(prefixIcon: Icon(Icons.person), labelText: 'Nama Pemilik Rekening'))),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _bankAccNameCtrl,
+                            decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.person),
+                              labelText: 'Nama Pemilik Rekening',
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    TextFormField(controller: _fatherNameCtrl, decoration: const InputDecoration(labelText: 'Nama Ayah')),
+                    TextFormField(
+                      controller: _fatherNameCtrl,
+                      decoration: const InputDecoration(labelText: 'Nama Ayah'),
+                    ),
                     const SizedBox(height: 12),
-                    TextFormField(controller: _motherNameCtrl, decoration: const InputDecoration(labelText: 'Nama Ibu')),
+                    TextFormField(
+                      controller: _motherNameCtrl,
+                      decoration: const InputDecoration(labelText: 'Nama Ibu'),
+                    ),
                     const SizedBox(height: 12),
-                    TextFormField(controller: _spouseNameCtrl, decoration: const InputDecoration(labelText: 'Nama Suami/Istri (jika ada)')),
+                    TextFormField(
+                      controller: _spouseNameCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Nama Suami/Istri (jika ada)',
+                      ),
+                    ),
                     const SizedBox(height: 12),
-                    TextFormField(controller: _familyContactCtrl, decoration: const InputDecoration(labelText: 'Nomor Keluarga / Wali')),
+                    TextFormField(
+                      controller: _familyContactCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Nomor Keluarga / Wali',
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -402,12 +594,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('Pekerjaan', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Pekerjaan',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      initialValue: _department ?? (_departmentCtrl.text.isNotEmpty ? _departmentCtrl.text : null),
-                      decoration: const InputDecoration(prefixIcon: Icon(Icons.business), labelText: 'Divisi / Departemen'),
-                      items: _departmentOptions.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
+                      initialValue:
+                          _department ??
+                          (_departmentCtrl.text.isNotEmpty
+                              ? _departmentCtrl.text
+                              : null),
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.business),
+                        labelText: 'Divisi / Departemen',
+                      ),
+                      items: _departmentOptions
+                          .map(
+                            (d) => DropdownMenuItem(value: d, child: Text(d)),
+                          )
+                          .toList(),
                       onChanged: (v) {
                         setState(() {
                           _department = v;
@@ -417,9 +623,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      initialValue: _position ?? (_positionCtrl.text.isNotEmpty ? _positionCtrl.text : null),
-                      decoration: const InputDecoration(prefixIcon: Icon(Icons.work), labelText: 'Jabatan'),
-                      items: _positionOptions.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+                      initialValue:
+                          _position ??
+                          (_positionCtrl.text.isNotEmpty
+                              ? _positionCtrl.text
+                              : null),
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.work),
+                        labelText: 'Jabatan',
+                      ),
+                      items: _positionOptions
+                          .map(
+                            (p) => DropdownMenuItem(value: p, child: Text(p)),
+                          )
+                          .toList(),
                       onChanged: (v) {
                         setState(() {
                           _position = v;
@@ -428,9 +645,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       },
                     ),
                     const SizedBox(height: 12),
-                    TextFormField(controller: _supervisorNameCtrl, decoration: const InputDecoration(labelText: 'Nama Atasan Langsung')),
+                    TextFormField(
+                      controller: _supervisorNameCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Nama Atasan Langsung',
+                      ),
+                    ),
                     const SizedBox(height: 12),
-                    TextFormField(controller: _supervisorPositionCtrl, decoration: const InputDecoration(labelText: 'Jabatan Atasan Langsung')),
+                    TextFormField(
+                      controller: _supervisorPositionCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Jabatan Atasan Langsung',
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -441,12 +668,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: _saving ? null : _save,
-                  icon: _saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.save),
+                  icon: _saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.save),
                   label: const Padding(
                     padding: EdgeInsets.symmetric(vertical: 14),
-                    child: Text('Simpan Perubahan', style: TextStyle(fontSize: 16)),
+                    child: Text(
+                      'Simpan Perubahan',
+                      style: TextStyle(fontSize: 16),
+                    ),
                   ),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.colorCyan,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),

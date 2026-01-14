@@ -33,7 +33,10 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'security_pin',
     ];
+
+    protected $appends = ['has_pin'];
 
     /**
      * Get the attributes that should be cast.
@@ -46,6 +49,11 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function getHasPinAttribute()
+    {
+        return !is_null($this->security_pin);
     }
 
     /**

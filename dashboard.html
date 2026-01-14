@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Dashboard Karyawan</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2563eb",
+                        "primary-soft": "#eff6ff",
+                        "background": "#f8fafc",
+                        "card": "#ffffff",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    boxShadow: {
+                        "soft": "0 4px 20px -2px rgba(0, 0, 0, 0.05)",
+                        "glow": "0 0 15px rgba(37, 99, 235, 0.2)"
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .conic-chart {
+            background: conic-gradient(var(--chart-color) var(--chart-percent), #f1f5f9 0);
+            border-radius: 50%;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body
+    class="font-display bg-background text-slate-800 min-h-screen pb-28 antialiased selection:bg-blue-100 selection:text-blue-900">
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100">
+        <div class="px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <div class="h-10 w-10 rounded-full bg-cover bg-center ring-2 ring-white shadow-sm"
+                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB46vfsvGRqp7lKWaK33PGE6_fc1rm2-1am2ttY4oApODgmMxXgUdpP1zi2MMgRBw_OLDlMmnVmMDWSz_LevRUPJdo8jF9PeeFHetBAMzKk-U0uoeKdDBKY8gTszFCFb_c7J8e7V6fEkwAOMmsRIqzIJPQ77UoQwbWRQhhl9oiPB5WKLcb_17x1UCUcrYIYcmW1FxsA46w9Mno3w8LJNf8HPtQbb-cMwPtkTmuSHzBg3n7DlS7vlX7MIuqyAbGOACnm-5Cz7kHCqN0A');">
+                    </div>
+                    <div class="absolute bottom-0 right-0 h-2.5 w-2.5 bg-green-500 rounded-full ring-2 ring-white">
+                    </div>
+                </div>
+                <div>
+                    <h1 class="text-sm font-semibold text-slate-900 leading-none">Andi Pratama</h1>
+                    <p class="text-[10px] text-slate-500 font-medium mt-0.5">Software Engineer</p>
+                </div>
+            </div>
+            <button
+                class="relative p-2 rounded-full text-slate-400 hover:bg-slate-50 hover:text-primary transition-all">
+                <span class="material-symbols-outlined text-[24px]">notifications</span>
+                <span class="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 border-2 border-white"></span>
+            </button>
+        </div>
+    </header>
+    <main class="px-6 pt-6 space-y-8">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Dashboard</h2>
+            <p class="text-slate-500 text-sm mt-1">Ringkasan aktivitas dan data penting Anda.</p>
+        </div>
+        <div class="flex gap-4 overflow-x-auto hide-scrollbar pb-4 snap-x snap-mandatory -mx-6 px-6">
+            <div
+                class="snap-center shrink-0 w-[85%] max-w-[300px] bg-white rounded-2xl p-5 shadow-soft border border-slate-50 relative overflow-hidden">
+                <div
+                    class="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none">
+                </div>
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Sisa
+                            Cuti</span>
+                        <h3 class="text-3xl font-bold text-slate-900">12 <span
+                                class="text-sm font-medium text-slate-400">Hari</span></h3>
+                    </div>
+                    <div class="relative w-14 h-14 conic-chart flex items-center justify-center"
+                        style="--chart-color: #2563eb; --chart-percent: 75%;">
+                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                            <span class="material-symbols-outlined text-primary text-sm font-bold">percent</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-2 mt-2">
+                    <span
+                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-green-50 text-green-700 text-[10px] font-bold">
+                        <span class="material-symbols-outlined text-[12px]">check_circle</span> Valid s/d Des
+                    </span>
+                </div>
+                <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <span class="text-xs text-slate-500">Total jatah: 12 hari</span>
+                    <button class="text-xs font-semibold text-primary flex items-center gap-0.5">
+                        Ajukan <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                    </button>
+                </div>
+            </div>
+            <div
+                class="snap-center shrink-0 w-[85%] max-w-[300px] bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-5 shadow-soft relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-full h-full opacity-5 pointer-events-none"
+                    style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 20px 20px;">
+                </div>
+                <div class="relative z-10 flex flex-col h-full justify-between">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="block text-xs font-medium text-slate-400 mb-1">Slip Gaji Terakhir</span>
+                            <span class="block text-xs text-slate-300">Periode September 2023</span>
+                        </div>
+                        <div class="p-1.5 bg-white/10 rounded-lg backdrop-blur-sm">
+                            <span class="material-symbols-outlined text-[18px]">payments</span>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <h3 class="text-2xl font-bold tracking-tight">Rp 12.500.xxx</h3>
+                        <p class="text-[10px] text-slate-400 mt-1">*Ketuk untuk melihat detail</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">
+                        <span class="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded font-medium">Sudah
+                            Ditransfer</span>
+                    </div>
+                </div>
+            </div>
+            <div
+                class="snap-center shrink-0 w-[85%] max-w-[300px] bg-white rounded-2xl p-5 shadow-soft border border-slate-50 relative">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <span
+                            class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Reimbursement</span>
+                        <h3 class="text-xl font-bold text-slate-900">Rp 450.000</h3>
+                    </div>
+                    <div class="p-2 bg-orange-50 text-orange-600 rounded-lg">
+                        <span class="material-symbols-outlined text-[20px]">receipt_long</span>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
+                        <span class="text-xs font-medium text-slate-600">Menunggu Persetujuan</span>
+                    </div>
+                    <p class="text-xs text-slate-400">Pengajuan parkir &amp; transport meeting klien.</p>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h3 class="text-base font-bold text-slate-900 mb-4 px-1">Menu Cepat</h3>
+            <div class="grid grid-cols-4 gap-4">
+                <button class="flex flex-col items-center gap-3 group">
+                    <div
+                        class="w-14 h-14 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center text-primary group-active:scale-95 transition-all duration-200 relative overflow-hidden">
+                        <div class="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors"></div>
+                        <span class="material-symbols-outlined text-[28px]">description</span>
+                    </div>
+                    <span class="text-[11px] font-semibold text-slate-600 text-center leading-tight">Slip Gaji</span>
+                </button>
+                <button class="flex flex-col items-center gap-3 group">
+                    <div
+                        class="w-14 h-14 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center text-blue-500 group-active:scale-95 transition-all duration-200 relative overflow-hidden">
+                        <div class="absolute inset-0 bg-blue-500/5 group-hover:bg-blue-500/10 transition-colors"></div>
+                        <span class="material-symbols-outlined text-[28px]">flight_takeoff</span>
+                    </div>
+                    <span class="text-[11px] font-semibold text-slate-600 text-center leading-tight">Cuti</span>
+                </button>
+                <button class="flex flex-col items-center gap-3 group">
+                    <div
+                        class="w-14 h-14 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center text-teal-500 group-active:scale-95 transition-all duration-200 relative overflow-hidden">
+                        <div class="absolute inset-0 bg-teal-500/5 group-hover:bg-teal-500/10 transition-colors"></div>
+                        <span class="material-symbols-outlined text-[28px]">attach_money</span>
+                    </div>
+                    <span class="text-[11px] font-semibold text-slate-600 text-center leading-tight">Klaim</span>
+                </button>
+                <button class="flex flex-col items-center gap-3 group">
+                    <div
+                        class="w-14 h-14 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center text-slate-400 group-active:scale-95 transition-all duration-200 relative overflow-hidden">
+                        <div class="absolute inset-0 bg-slate-100 group-hover:bg-slate-200 transition-colors"></div>
+                        <span class="material-symbols-outlined text-[28px]">more_horiz</span>
+                    </div>
+                    <span class="text-[11px] font-semibold text-slate-600 text-center leading-tight">Lainnya</span>
+                </button>
+            </div>
+        </div>
+        <div class="relative w-full rounded-2xl overflow-hidden shadow-soft group cursor-pointer">
+            <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+                style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAI_hBxDjDjRP8mz0O2IoekqSaOzzLZcBTGwHWzVDPmuv7R19Ry536DfOi6fS0EKpeCcxAKsjQE9q06zNdzNdJrAhUuD4-F0fjVd7IJm2Y7u90Pj3zAf-gChhz_ztONLOJCwmnY8r5s_yjLw4e7dVRz9CZMp6stprbDjqsrrORznxld22c_4G3SoNmjTCyXrN5Aj9_pgTQGHMr2FeAVD0tfoOlMGIM_dfK2egUuQgt-ZpzW0o_quWc4e74Y1q4VTcR5T-wmBoSl0Kg7');">
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-r from-blue-900/90 to-blue-800/60 mix-blend-multiply"></div>
+            <div class="relative z-10 p-5 flex flex-col items-start gap-2">
+                <span
+                    class="px-2 py-0.5 rounded text-[10px] font-bold bg-white/20 text-white backdrop-blur-sm border border-white/10">PENGUMUMAN</span>
+                <h3 class="text-white font-bold text-lg leading-snug w-3/4">Kebijakan Baru Cuti Tahunan 2024</h3>
+                <div class="flex items-center gap-2 mt-1 group-hover:gap-3 transition-all">
+                    <span class="text-xs text-blue-100 font-medium">Baca selengkapnya</span>
+                    <span class="material-symbols-outlined text-xs text-blue-100">arrow_forward</span>
+                </div>
+            </div>
+        </div>
+        <div>
+            <div class="flex items-center justify-between mb-4 px-1">
+                <h3 class="text-base font-bold text-slate-900">Aktivitas Terkini</h3>
+                <button class="text-xs font-bold text-primary hover:text-blue-700">Lihat Semua</button>
+            </div>
+            <div class="space-y-0 relative">
+                <div class="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-100"></div>
+                <div class="relative flex gap-4 pb-6 group">
+                    <div
+                        class="relative z-10 h-10 w-10 shrink-0 rounded-full bg-green-50 border-4 border-background flex items-center justify-center text-green-600 shadow-sm">
+                        <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                    </div>
+                    <div class="flex-1 bg-white p-3 rounded-xl shadow-sm border border-slate-50">
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="text-sm font-bold text-slate-900">Cuti Tahunan Disetujui</h4>
+                            <span class="text-[10px] text-slate-400">2j yang lalu</span>
+                        </div>
+                        <p class="text-xs text-slate-500 leading-relaxed">Pengajuan cuti Anda untuk tanggal 24-25 Okt
+                            telah disetujui oleh HR.</p>
+                    </div>
+                </div>
+                <div class="relative flex gap-4 pb-6 group">
+                    <div
+                        class="relative z-10 h-10 w-10 shrink-0 rounded-full bg-orange-50 border-4 border-background flex items-center justify-center text-orange-500 shadow-sm">
+                        <span class="material-symbols-outlined text-[18px]">schedule</span>
+                    </div>
+                    <div class="flex-1 bg-white p-3 rounded-xl shadow-sm border border-slate-50">
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="text-sm font-bold text-slate-900">Reimbursement Diproses</h4>
+                            <span class="text-[10px] text-slate-400">Hari ini, 09:00</span>
+                        </div>
+                        <p class="text-xs text-slate-500 leading-relaxed">Klaim transportasi Anda sedang dalam
+                            peninjauan manajer.</p>
+                    </div>
+                </div>
+                <div class="relative flex gap-4 group">
+                    <div
+                        class="relative z-10 h-10 w-10 shrink-0 rounded-full bg-blue-50 border-4 border-background flex items-center justify-center text-blue-600 shadow-sm">
+                        <span class="material-symbols-outlined text-[18px]">payments</span>
+                    </div>
+                    <div class="flex-1 bg-white p-3 rounded-xl shadow-sm border border-slate-50">
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="text-sm font-bold text-slate-900">Gaji Masuk</h4>
+                            <span class="text-[10px] text-slate-400">25 Sep</span>
+                        </div>
+                        <p class="text-xs text-slate-500 leading-relaxed">Slip gaji periode September telah diterbitkan.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <nav class="fixed bottom-0 w-full z-50 px-6 pb-6 pt-2 pointer-events-none">
+        <div
+            class="pointer-events-auto bg-white/90 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-2xl mx-auto max-w-sm flex items-center justify-around py-3 px-2">
+            <button class="flex flex-col items-center gap-1 w-12 text-primary">
+                <span class="material-symbols-outlined filled text-[24px]">dashboard</span>
+                <span class="h-1 w-1 bg-primary rounded-full mt-1"></span>
+            </button>
+            <button class="flex flex-col items-center gap-1 w-12 text-slate-400 hover:text-slate-600 transition-colors">
+                <span class="material-symbols-outlined text-[24px]">folder_open</span>
+            </button>
+            <div class="relative -top-8">
+                <button
+                    class="h-14 w-14 bg-primary text-white rounded-full shadow-glow flex items-center justify-center transform transition-transform active:scale-95 border-4 border-background">
+                    <span class="material-symbols-outlined text-[28px]">add</span>
+                </button>
+            </div>
+            <button class="flex flex-col items-center gap-1 w-12 text-slate-400 hover:text-slate-600 transition-colors">
+                <span class="material-symbols-outlined text-[24px]">account_balance_wallet</span>
+            </button>
+            <button class="flex flex-col items-center gap-1 w-12 text-slate-400 hover:text-slate-600 transition-colors">
+                <span class="material-symbols-outlined text-[24px]">person</span>
+            </button>
+        </div>
+    </nav>
+
+</body>
+
+</html>

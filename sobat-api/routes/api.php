@@ -23,6 +23,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Auth routes
     Route::post('/auth/logout', [App\Http\Controllers\Api\AuthController::class, 'logout']);
     Route::get('/auth/me', [App\Http\Controllers\Api\AuthController::class, 'me']);
+    Route::put('/auth/profile', [App\Http\Controllers\Api\AuthController::class, 'updateProfile']);
+    Route::put('/auth/password', [App\Http\Controllers\Api\AuthController::class, 'changePassword']);
+
+    // Security PIN
+    Route::post('/security/pin/setup', [App\Http\Controllers\Api\SecurityController::class, 'setupPin']);
+    Route::post('/security/pin/verify', [App\Http\Controllers\Api\SecurityController::class, 'verifyPin']);
 
     // Employee routes
     Route::apiResource('employees', App\Http\Controllers\Api\EmployeeController::class);
@@ -88,6 +94,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/staff/invite/execute', [App\Http\Controllers\StaffInvitationController::class, 'execute']);
 
     });
+
+    // Policy & Announcement routes
+    Route::apiResource('policies', App\Http\Controllers\Api\PolicyController::class);
 });
 
 // Public invitation routes

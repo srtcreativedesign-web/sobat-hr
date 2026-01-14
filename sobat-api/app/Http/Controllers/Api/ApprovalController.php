@@ -14,7 +14,7 @@ class ApprovalController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        
+
         if (!$user->employee) {
             return response()->json([
                 'message' => 'User is not associated with an employee'
@@ -35,7 +35,7 @@ class ApprovalController extends Controller
     public function pending(Request $request)
     {
         $user = $request->user();
-        
+
         if (!$user->employee) {
             return response()->json([
                 'message' => 'User is not associated with an employee'

@@ -1,0 +1,5 @@
+USER 8: Name=Susi Pudjiastuti | Role={"id":4,"name":"staff","display_name":"Staff","description":"Regular staff\/employee with basic access","created_at":"2026-01-13T09:02:48.000000Z","updated_at":"2026-01-13T09:02:48.000000Z"} | EmpID=NULL
+USER 8 HAS NO EMP ID LINKED
+--- RECENT PAYROLLS ---
+ID=2 | Period=2026-01 | EmpID=8 | Name=Susi Pudjiastuti | Status=draft
+ID=1 | Period=2026-01 | EmpID=5 | Name=Jane Smith | Status=draft

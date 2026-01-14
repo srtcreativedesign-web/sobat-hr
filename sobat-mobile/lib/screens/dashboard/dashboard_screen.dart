@@ -25,8 +25,10 @@ class DashboardScreen extends StatelessWidget {
               if (value == 'profile') {
                 Navigator.of(context).pushNamed('/profile');
               } else if (value == 'logout') {
-                final authProvider =
-                    Provider.of<AuthProvider>(context, listen: false);
+                final authProvider = Provider.of<AuthProvider>(
+                  context,
+                  listen: false,
+                );
                 await authProvider.logout();
                 if (context.mounted) {
                   Navigator.of(context).pushReplacementNamed('/login');
@@ -75,8 +77,8 @@ class DashboardScreen extends StatelessWidget {
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
                       colors: [
-                        AppTheme.primaryGreen.withValues(alpha: .18),
-                        AppTheme.primaryGreen.withValues(alpha: 0.06),
+                        AppTheme.colorCyan.withValues(alpha: .18),
+                        AppTheme.colorCyan.withValues(alpha: 0.06),
                       ],
                     ),
                   ),
@@ -123,7 +125,9 @@ class DashboardScreen extends StatelessWidget {
                               end: Alignment.bottomRight,
                             ),
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.12),
+                            ),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.08),
@@ -138,29 +142,35 @@ class DashboardScreen extends StatelessWidget {
                               children: [
                                 CircleAvatar(
                                   radius: 34,
-                                  backgroundColor: AppTheme.primaryGreen,
+                                  backgroundColor: AppTheme.colorCyan,
                                   child: Text(
-                                    user?.name?.substring(0, 1).toUpperCase() ?? 'U',
+                                    user?.name?.substring(0, 1).toUpperCase() ??
+                                        'U',
                                     style: const TextStyle(
                                       fontSize: 26,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                                      color: AppTheme.colorEggplant,
                                     ),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'Selamat Datang,',
-                                        style: Theme.of(context).textTheme.bodySmall,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall,
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
                                         user?.name ?? 'User',
-                                        style: Theme.of(context).textTheme.headlineSmall,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.headlineSmall,
                                       ),
                                       const SizedBox(height: 8),
                                       Container(
@@ -169,13 +179,20 @@ class DashboardScreen extends StatelessWidget {
                                           vertical: 6,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: AppTheme.primaryGreen.withValues(alpha: 0.12),
-                                          borderRadius: BorderRadius.circular(6),
+                                          color: AppTheme.colorCyan.withValues(
+                                            alpha: 0.12,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
                                         ),
                                         child: Text(
                                           user?.role?.toUpperCase() ?? 'USER',
-                                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                color: AppTheme.primaryGreen,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: AppTheme.colorCyan,
                                                 fontWeight: FontWeight.w700,
                                               ),
                                         ),
@@ -230,7 +247,7 @@ class DashboardScreen extends StatelessWidget {
                           context,
                           icon: Icons.attach_money,
                           title: 'Payroll',
-                          color: AppTheme.primaryGreen,
+                          color: AppTheme.colorCyan,
                           onTap: () {},
                         ),
                       ],
@@ -284,11 +301,7 @@ class DashboardScreen extends StatelessWidget {
                       color: color.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(
-                      icon,
-                      size: 28,
-                      color: color,
-                    ),
+                    child: Icon(icon, size: 28, color: color),
                   ),
                   const SizedBox(height: 12),
                   Text(

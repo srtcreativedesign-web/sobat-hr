@@ -13,9 +13,40 @@
 
 ---
 
-## 1.1 MODERN UI/UX DESIGN SYSTEM (CRITICAL)
+## 1.1 MODERN UI/UX DESIGN SYSTEM (WEB)
 **Design Philosophy:** "Premium, Clean, & Dynamic".  
 Aplikasi tidak boleh terlihat kaku seperti dashboard admin konvensional. Harus terasa seperti aplikasi SaaS modern (e.g., Linear, Vercel style).
+
+[...Web Guidelines Kept Same...]
+
+## 1.2 MOBILE UI DESIGN SYSTEM (FLUTTER)
+**Theme:** "Clean Glassmorphism".
+Unified styling rules for `home_screen.dart`, `profile_screen.dart`, and future modules.
+
+### **Core Colors:**
+-   **Background:** Slate-50 `0xFFF8FAFC` (Clean, bright foundation).
+-   **Primary:** Dark Eggplant `AppTheme.colorEggplant` (Brand identity).
+-   **Accent:** Pale Cyan `AppTheme.colorCyan` (Highlights, gradients).
+-   **Surface:** White `0xFFFFFFFF` with low opacity for glass effects.
+
+### **Component Styles:**
+1.  **Cards (Standard):**
+    -   Background: White `Colors.white`.
+    -   Border Radius: `20`.
+    -   Shadow: `BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: Offset(0, 4))`.
+    -   Border: `Border.all(color: Colors.grey.shade50)`.
+2.  **Glass Cards (Overlays/Floating):**
+    -   Blur: `BackdropFilter` sigma 16.
+    -   Color: `Colors.white.withValues(alpha: 0.9)`.
+    -   Border: White `0.5` opacity.
+3.  **Typography:**
+    -   **Headings:** Bold, `AppTheme.textDark`.
+    -   **Subtitles:** W500, `AppTheme.textLight`, smaller size.
+4.  **Navigation:**
+    -   **Bottom Bar:** Floating Glass Pill with Split Layout.
+    -   **FAB:** Independently Floating `FloatingActionButton` (Eggplant color).
+
+---
 
 ### **Color Palette (Premium & Trust):**
 - **Primary:** Forest Green `#1A4D2E` (Solid, Trustworthy)
@@ -107,4 +138,5 @@ Aplikasi tidak boleh terlihat kaku seperti dashboard admin konvensional. Harus t
 -   **Phase 3:** Payroll Import Feature (Excel -> UI -> PDF) with **Zero Calculation Logic**.
 -   **Phase 4:** Mobile App Integration.
 
-
+va sobat
+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

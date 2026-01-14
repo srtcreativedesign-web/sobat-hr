@@ -317,7 +317,7 @@ export default function EmployeesPage() {
             {/* Modal Content */}
             <div className="p-6 space-y-6">
               {/* Basic Info */}
-              <div className="bg-gradient-to-r from-[#a9eae2] to-[#729892] rounded-lg p-6 text-[#462e37]">>
+              <div className="bg-gradient-to-r from-[#a9eae2] to-[#729892] rounded-lg p-6 text-[#462e37]">
                 <div className="flex items-center gap-4">
                   <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center text-3xl font-bold">
                     {selectedEmployee.full_name.charAt(0).toUpperCase()}

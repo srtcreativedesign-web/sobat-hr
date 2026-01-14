@@ -1,9 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/custom_navbar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -33,313 +33,404 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = auth.user;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profil Saya'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refresh,
-          ),
-        ],
-      ),
+      backgroundColor: const Color(0xFFF8FAFC), // Slate-50 background
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Profile Header Card
-                  _buildProfileHeader(context, user),
-                  
-                  const SizedBox(height: 20),
-
-                  // Account Section
-                  _buildSectionTitle('Akun'),
-                  const SizedBox(height: 10),
-                  _buildGlassCard(
-                    child: Column(
-                      children: [
-                        _buildMenuItem(
-                          icon: Icons.person_outline,
-                          title: 'Edit Profil',
-                          subtitle: 'Ubah informasi pribadi Anda',
-                          onTap: () async {
-                            final res = await Navigator.of(context).pushNamed('/profile/edit');
-                            if (res == true) {
-                              _refresh();
-                            }
-                          },
-                        ),
-                        _buildDivider(),
-                        _buildMenuItem(
-                          icon: Icons.lock_outline,
-                          title: 'Ubah Password',
-                          subtitle: 'Perbarui kata sandi Anda',
-                          onTap: () => _showComingSoon(context),
-                        ),
-                        _buildDivider(),
-                        _buildMenuItem(
-                          icon: Icons.notifications_outlined,
-                          title: 'Notifikasi',
-                          subtitle: 'Atur preferensi notifikasi',
-                          trailing: Switch(
-                            value: true,
-                            onChanged: (value) => _showComingSoon(context),
-                            activeThumbColor: AppTheme.primaryGreen,
-                          ),
-                          onTap: null,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // App Section
-                  _buildSectionTitle('Aplikasi'),
-                  const SizedBox(height: 10),
-                  _buildGlassCard(
-                    child: Column(
-                      children: [
-                        _buildMenuItem(
-                          icon: Icons.language,
-                          title: 'Bahasa',
-                          subtitle: 'Indonesia',
-                          onTap: () => _showComingSoon(context),
-                        ),
-                        _buildDivider(),
-                        _buildMenuItem(
-                          icon: Icons.dark_mode_outlined,
-                          title: 'Tema',
-                          subtitle: 'Light Mode',
-                          onTap: () => _showComingSoon(context),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Support Section
-                  _buildSectionTitle('Bantuan & Dukungan'),
-                  const SizedBox(height: 10),
-                  _buildGlassCard(
-                    child: Column(
-                      children: [
-                        _buildMenuItem(
-                          icon: Icons.help_outline,
-                          title: 'Pusat Bantuan',
-                          subtitle: 'FAQ dan panduan penggunaan',
-                          onTap: () => _showHelpCenter(context),
-                        ),
-                        _buildDivider(),
-                        _buildMenuItem(
-                          icon: Icons.feedback_outlined,
-                          title: 'Kirim Feedback',
-                          subtitle: 'Bantu kami untuk lebih baik',
-                          onTap: () => _showComingSoon(context),
-                        ),
-                        _buildDivider(),
-                        _buildMenuItem(
-                          icon: Icons.privacy_tip_outlined,
-                          title: 'Kebijakan Privasi',
-                          subtitle: 'Perlindungan data Anda',
-                          onTap: () => _showPrivacyPolicy(context),
-                        ),
-                        _buildDivider(),
-                        _buildMenuItem(
-                          icon: Icons.description_outlined,
-                          title: 'Syarat & Ketentuan',
-                          subtitle: 'Ketentuan penggunaan aplikasi',
-                          onTap: () => _showTermsConditions(context),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // About Section
-                  _buildSectionTitle('Tentang'),
-                  const SizedBox(height: 10),
-                  _buildGlassCard(
-                    child: Column(
-                      children: [
-                        _buildMenuItem(
-                          icon: Icons.info_outline,
-                          title: 'Tentang SOBAT HR',
-                          subtitle: 'Versi 1.0.0',
-                          onTap: () => _showAboutApp(context),
-                        ),
-                        _buildDivider(),
-                        _buildMenuItem(
-                          icon: Icons.star_outline,
-                          title: 'Beri Rating',
-                          subtitle: 'Nilai aplikasi kami',
-                          onTap: () => _showComingSoon(context),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // Logout Button
-                  _buildGlassCard(
-                    child: InkWell(
-                      onTap: () => _confirmLogout(context, auth),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.logout, color: AppTheme.error, size: 22),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Keluar',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: AppTheme.error,
-                                    fontWeight: FontWeight.bold,
+          : Stack(
+              children: [
+                CustomScrollView(
+                  slivers: [
+                    // 1. Sticky Header
+                    SliverAppBar(
+                      pinned: true,
+                      floating: true,
+                      backgroundColor: Colors.white.withValues(alpha: 0.8),
+                      elevation: 0,
+                      scrolledUnderElevation: 0,
+                      toolbarHeight: 70,
+                      flexibleSpace: ClipRRect(
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(color: Colors.grey.shade200),
+                              ),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            alignment: Alignment.centerLeft,
+                            child: SafeArea(
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Profil Saya',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.textDark,
+                                    ),
                                   ),
+                                  IconButton(
+                                    icon: const Icon(Icons.settings_outlined),
+                                    onPressed: () {},
+                                    color: AppTheme.textLight,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // 2. Content
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Profile Card
+                            _buildProfileCard(context, user),
+
+                            const SizedBox(height: 24),
+
+                            // Account Section
+                            _buildSectionTitle('Akun'),
+                            const SizedBox(height: 12),
+                            _buildStandardCard(
+                              child: Column(
+                                children: [
+                                  _buildMenuItem(
+                                    icon: Icons.person_outline,
+                                    title: 'Edit Profil',
+                                    subtitle: 'Ubah informasi pribadi Anda',
+                                    onTap: () async {
+                                      final res = await Navigator.of(
+                                        context,
+                                      ).pushNamed('/profile/edit');
+                                      if (res == true) _refresh();
+                                    },
+                                  ),
+                                  _buildDivider(),
+                                  _buildMenuItem(
+                                    icon: Icons.lock_outline,
+                                    title: 'Ubah Password',
+                                    subtitle: 'Perbarui kata sandi Anda',
+                                    onTap: () => _showComingSoon(context),
+                                  ),
+                                  _buildDivider(),
+                                  _buildMenuItem(
+                                    icon: Icons.notifications_outlined,
+                                    title: 'Notifikasi',
+                                    subtitle: 'Atur preferensi notifikasi',
+                                    trailing: Switch(
+                                      value: true,
+                                      onChanged: (value) =>
+                                          _showComingSoon(context),
+                                      activeColor: AppTheme.colorCyan,
+                                      activeTrackColor: AppTheme.colorCyan
+                                          .withValues(alpha: 0.2),
+                                    ),
+                                    onTap: null,
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // App Section
+                            _buildSectionTitle('Aplikasi'),
+                            const SizedBox(height: 12),
+                            _buildStandardCard(
+                              child: Column(
+                                children: [
+                                  _buildMenuItem(
+                                    icon: Icons.language,
+                                    title: 'Bahasa',
+                                    subtitle: 'Indonesia',
+                                    onTap: () => _showComingSoon(context),
+                                  ),
+                                  _buildDivider(),
+                                  _buildMenuItem(
+                                    icon: Icons.dark_mode_outlined,
+                                    title: 'Tema',
+                                    subtitle: 'Light Mode',
+                                    onTap: () => _showComingSoon(context),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // Support Section
+                            _buildSectionTitle('Bantuan & Dukungan'),
+                            const SizedBox(height: 12),
+                            _buildStandardCard(
+                              child: Column(
+                                children: [
+                                  _buildMenuItem(
+                                    icon: Icons.help_outline,
+                                    title: 'Pusat Bantuan',
+                                    subtitle: 'FAQ dan panduan penggunaan',
+                                    onTap: () => _showHelpCenter(context),
+                                  ),
+                                  _buildDivider(),
+                                  _buildMenuItem(
+                                    icon: Icons.feedback_outlined,
+                                    title: 'Kirim Feedback',
+                                    subtitle: 'Bantu kami untuk lebih baik',
+                                    onTap: () => _showComingSoon(context),
+                                  ),
+                                  _buildDivider(),
+                                  _buildMenuItem(
+                                    icon: Icons.privacy_tip_outlined,
+                                    title: 'Kebijakan Privasi',
+                                    subtitle: 'Perlindungan data Anda',
+                                    onTap: () => _showPrivacyPolicy(context),
+                                  ),
+                                  _buildDivider(),
+                                  _buildMenuItem(
+                                    icon: Icons.description_outlined,
+                                    title: 'Syarat & Ketentuan',
+                                    subtitle: 'Ketentuan penggunaan aplikasi',
+                                    onTap: () => _showTermsConditions(context),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // Logout Button
+                            _buildStandardCard(
+                              child: InkWell(
+                                onTap: () => _confirmLogout(context, auth),
+                                borderRadius: BorderRadius.circular(20),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.logout,
+                                        color: AppTheme.error,
+                                        size: 22,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Keluar',
+                                        style: TextStyle(
+                                          color: AppTheme.error,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 32),
+                            Center(
+                              child: Text(
+                                '© 2026 SOBAT HR v1.0.0\nMade with ❤️ in Indonesia',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: AppTheme.textLight,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                  ),
+                  ],
+                ),
 
-                  const SizedBox(height: 30),
-
-                  // Footer
-                  Center(
-                    child: Text(
-                      '© 2026 SOBAT HR\nMade with ❤️ in Indonesia',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey,
-                          ),
+                // Navbar Overlay
+                Positioned(
+                  left: 24,
+                  right: 24,
+                  bottom: 32,
+                  child: SafeArea(
+                    child: CustomNavbar(
+                      currentIndex: 4,
+                      onTap: (index) {
+                        if (index == 0)
+                          Navigator.popUntil(context, (route) => route.isFirst);
+                      },
                     ),
                   ),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
-    );
-  }
+                ),
 
-  Widget _buildProfileHeader(BuildContext context, user) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppTheme.primaryGreen.withValues(alpha: 0.85),
-                AppTheme.primaryGreen.withValues(alpha: 0.65),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-          ),
-          child: Column(
-            children: [
-              Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.white,
-                    child: CircleAvatar(
-                      radius: 47,
-                      backgroundColor: AppTheme.primaryGreen.withValues(alpha: 0.3),
-                      child: Text(
-                        (user?.name?.isNotEmpty == true)
-                            ? user!.name.substring(0, 1).toUpperCase()
-                            : 'U',
-                        style: const TextStyle(
-                          fontSize: 38,
-                          fontWeight: FontWeight.bold,
+                // Floating FAB
+                Positioned(
+                  bottom: 56,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: SizedBox(
+                      height: 64,
+                      width: 64,
+                      child: FloatingActionButton(
+                        heroTag: 'profile_fab',
+                        onPressed: () {},
+                        backgroundColor: AppTheme.colorEggplant,
+                        elevation: 4,
+                        shape: const CircleBorder(),
+                        child: const Icon(
+                          Icons.add_rounded,
+                          size: 32,
                           color: Colors.white,
                         ),
                       ),
                     ),
                   ),
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.camera_alt,
-                        size: 18,
-                        color: AppTheme.primaryGreen,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                user?.name ?? 'User',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  user?.role?.toUpperCase() ?? 'USER',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.email_outlined, color: Colors.white.withValues(alpha: 0.9), size: 16),
-                  const SizedBox(width: 6),
-                  Text(
-                    user?.email ?? '-',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13),
-                  ),
-                ],
-              ),
-              if (user?.employeeId != null) ...[
-                const SizedBox(height: 6),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.badge_outlined, color: Colors.white.withValues(alpha: 0.9), size: 16),
-                    const SizedBox(width: 6),
-                    Text(
-                      'NIK: ${user!.employeeId}',
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13),
-                    ),
-                  ],
                 ),
               ],
+            ),
+    );
+  }
+
+  // STANDARD CARD STYLE
+  Widget _buildStandardCard({required Widget child}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Colors.grey.shade50),
+      ),
+      child: child,
+    );
+  }
+
+  // PROFILE CARD WITH GRADIENT
+  Widget _buildProfileCard(BuildContext context, user) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.colorEggplant,
+            AppTheme.colorEggplant.withValues(alpha: 0.9),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.colorEggplant.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Stack(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    width: 4,
+                  ),
+                ),
+                child: CircleAvatar(
+                  radius: 40,
+                  backgroundColor: Colors.white.withValues(alpha: 0.1),
+                  child: Text(
+                    (user?.name?.isNotEmpty == true)
+                        ? user!.name.substring(0, 1).toUpperCase()
+                        : 'U',
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.colorCyan,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppTheme.colorEggplant, width: 2),
+                  ),
+                  child: Icon(
+                    Icons.edit,
+                    size: 14,
+                    color: AppTheme.colorEggplant,
+                  ),
+                ),
+              ),
             ],
           ),
-        ),
+          const SizedBox(height: 16),
+          Text(
+            user?.name ?? 'User',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            user?.role?.toUpperCase() ?? 'STAFF',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.white.withValues(alpha: 0.7),
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.badge_outlined, color: Colors.white70, size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  user?.employeeId ?? 'ID: -',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -359,30 +450,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildGlassCard({required Widget child}) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withValues(alpha: 0.08),
-                Colors.white.withValues(alpha: 0.04),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
-
   Widget _buildMenuItem({
     required IconData icon,
     required String title,
@@ -394,17 +461,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: AppTheme.primaryGreen.withValues(alpha: 0.1),
+          color: AppTheme.colorCyan.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, color: AppTheme.primaryGreen, size: 22),
+        child: Icon(icon, color: AppTheme.colorCyan, size: 22),
       ),
       title: Text(
         title,
         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
       ),
       subtitle: subtitle != null
-          ? Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey))
+          ? Text(
+              subtitle,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            )
           : null,
       trailing: trailing ?? const Icon(Icons.chevron_right, color: Colors.grey),
       onTap: onTap,
@@ -417,7 +487,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       height: 1,
       indent: 60,
       endIndent: 16,
-      color: Colors.grey.withValues(alpha: 0.2),
+      color: Colors.grey.withValues(alpha: 0.1),
     );
   }
 
@@ -449,9 +519,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Navigator.of(context).pushReplacementNamed('/login');
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.error,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error),
             child: const Text('Keluar'),
           ),
         ],
@@ -485,7 +553,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.all(20),
               child: Row(
                 children: [
-                  Icon(Icons.help_outline, color: AppTheme.primaryGreen),
+                  Icon(Icons.help_outline, color: AppTheme.colorCyan),
                   const SizedBox(width: 12),
                   const Text(
                     'Pusat Bantuan',
@@ -550,7 +618,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.privacy_tip_outlined, color: AppTheme.primaryGreen),
+            Icon(Icons.privacy_tip_outlined, color: AppTheme.colorCyan),
             const SizedBox(width: 12),
             const Text('Kebijakan Privasi'),
           ],
@@ -599,7 +667,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.description_outlined, color: AppTheme.primaryGreen),
+            Icon(Icons.description_outlined, color: AppTheme.colorCyan),
             const SizedBox(width: 12),
             const Text('Syarat & Ketentuan'),
           ],
@@ -646,10 +714,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withValues(alpha: 0.1),
+                color: AppTheme.colorCyan.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.business, color: AppTheme.primaryGreen, size: 40),
+              child: Icon(Icons.business, color: AppTheme.colorCyan, size: 40),
             ),
             const SizedBox(height: 16),
             const Text('SOBAT HR'),
@@ -687,17 +755,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 IconButton(
                   icon: const Icon(Icons.email_outlined),
                   onPressed: () => _showComingSoon(context),
-                  color: AppTheme.primaryGreen,
+                  color: AppTheme.colorCyan,
                 ),
                 IconButton(
                   icon: const Icon(Icons.language),
                   onPressed: () => _showComingSoon(context),
-                  color: AppTheme.primaryGreen,
+                  color: AppTheme.colorCyan,
                 ),
                 IconButton(
                   icon: const Icon(Icons.info_outline),
                   onPressed: () => _showComingSoon(context),
-                  color: AppTheme.primaryGreen,
+                  color: AppTheme.colorCyan,
                 ),
               ],
             ),
@@ -726,7 +794,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 6),
           Text(
             content,
-            style: const TextStyle(fontSize: 12, color: Colors.grey, height: 1.5),
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+              height: 1.5,
+            ),
           ),
         ],
       ),

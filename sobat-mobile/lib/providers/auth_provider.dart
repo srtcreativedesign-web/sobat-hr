@@ -5,7 +5,7 @@ import '../services/storage_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
-  
+
   User? _user;
   bool _isAuthenticated = false;
   bool _isLoading = false;
@@ -49,7 +49,7 @@ class AuthProvider with ChangeNotifier {
 
     try {
       final result = await _authService.login(email, password);
-      
+
       if (result['success'] == true) {
         _user = result['user'] as User;
         _isAuthenticated = true;
@@ -102,4 +102,7 @@ class AuthProvider with ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
   }
+
+  // Alias for refreshing user data
+  Future<void> loadUser() async => await refreshProfile();
 }

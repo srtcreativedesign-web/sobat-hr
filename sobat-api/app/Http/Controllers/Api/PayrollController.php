@@ -26,6 +26,28 @@ class PayrollController extends Controller
             $query->where('employee_id', $request->employee_id);
         }
 
+        // Automatic scope for non-admin users
+        $user = auth()->user();
+        // Check if user has a role relation and if that role is admin/hr
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        \Illuminate\Support\Facades\Log::info("DEBUG PAYROLL: User ID {$user->id}, Role: {$roleName}"); // DEBUG
+
+        if (!in_array($roleName, ['admin', 'super_admin', 'hr'])) {
+            // Access employee via relation
+            $employeeId = $user->employee ? $user->employee->id : null;
+
+            if ($employeeId) {
+                $query->where('employee_id', $employeeId);
+                \Illuminate\Support\Facades\Log::info("DEBUG PAYROLL: Filtered by Employee ID {$employeeId}");
+            } else {
+                // If user has no employee_id linked, they shouldn't see any payrolls
+                \Illuminate\Support\Facades\Log::info("DEBUG PAYROLL: No Employee ID linked for non-admin");
+                return response()->json(['data' => []]);
+            }
+        } else {
+            \Illuminate\Support\Facades\Log::info("DEBUG PAYROLL: Admin Access Granted");
+        }
+
         // Filter by period (month and year)
         if ($request->has('month') && $request->has('year')) {
             // period is stored as YYYY-MM
