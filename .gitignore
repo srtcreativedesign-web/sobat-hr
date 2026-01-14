@@ -27,3 +27,4 @@ sobat-web/.env*.local
 *.swp
 *.swo
 *~
+/context.md
