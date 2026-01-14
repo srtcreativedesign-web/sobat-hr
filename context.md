@@ -57,8 +57,15 @@ Aplikasi tidak boleh terlihat kaku seperti dashboard admin konvensional. Harus t
 -   **Payroll Engine:** 
     -   **STRICT:** Import Excel -> Display Raw Data -> Generate Payslip. 
     -   **NO AUTO-CALCULATION:** System trusts Excel data 100%.
--   **Organization:** Dynamic structure & approval workflow.
+-   **Organization:** Dynamic structure (HQ, Branch, Dept) with Parent-Child hierarchy.
 -   **Integration:** Fingerprint sync.
+
+### Latest Progress (Jan 2026):
+-   **Authentication:** Fully implemented (Sanctum + NextAuth).
+-   **Employee:** CRUD + Invite System (Excel Import) implemented.
+-   **Payroll:** Excel Import & Payslip Logic implemented.
+-   **UI:** Updated to "Mint Theme" (`#a9eae2` Primary).
+-   **Next To-Do:** Organization Management (Hierarchy & structure).
 
 ### B. Admin Cabang / Manager (Web Dashboard - Next.js)
 **Scope:** Branch Operations.

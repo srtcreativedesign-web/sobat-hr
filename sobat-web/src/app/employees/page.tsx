@@ -69,7 +69,7 @@ export default function EmployeesPage() {
       router.push('/login');
       return;
     }
-    
+
     fetchEmployees();
     fetchOrganizations();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -82,7 +82,7 @@ export default function EmployeesPage() {
       if (searchTerm) params.append('search', searchTerm);
       if (filterOrg) params.append('organization_id', filterOrg);
       if (filterStatus) params.append('status', filterStatus);
-      
+
       const response = await apiClient.get(`/employees?${params.toString()}`);
       setEmployees(response.data.data || response.data || []);
     } catch (error) {
@@ -171,20 +171,20 @@ export default function EmployeesPage() {
                   placeholder="Nama atau NIK..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1A4D2E] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#462e37] focus:border-transparent"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Organisasi
+                  Divisi
                 </label>
                 <select
                   value={filterOrg}
                   onChange={(e) => setFilterOrg(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1A4D2E] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#462e37] focus:border-transparent"
                 >
-                  <option value="">Semua Organisasi</option>
+                  <option value="">Semua Divisi</option>
                   {organizations.map(org => (
                     <option key={org.id} value={org.id}>{org.name}</option>
                   ))}
@@ -198,7 +198,7 @@ export default function EmployeesPage() {
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1A4D2E] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#462e37] focus:border-transparent"
                 >
                   <option value="">Semua Status</option>
                   <option value="active">Aktif</option>
@@ -210,7 +210,7 @@ export default function EmployeesPage() {
               <div className="flex items-end">
                 <button
                   type="submit"
-                  className="w-full px-6 py-2 bg-[#1A4D2E] text-white rounded-lg hover:bg-[#0d2618] transition-colors"
+                  className="w-full px-6 py-2 bg-[#a9eae2] text-[#462e37] rounded-lg hover:bg-[#729892] transition-colors"
                 >
                   Cari
                 </button>
@@ -223,7 +223,7 @@ export default function EmployeesPage() {
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           {loading ? (
             <div className="p-12 text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#1A4D2E] border-t-transparent"></div>
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#a9eae2] border-t-transparent"></div>
               <p className="mt-4 text-gray-600">Memuat data...</p>
             </div>
           ) : employees.length === 0 ? (
@@ -248,7 +248,7 @@ export default function EmployeesPage() {
                       Jabatan
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Organisasi
+                      Divisi
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
@@ -283,7 +283,7 @@ export default function EmployeesPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => handleViewDetails(employee)}
-                          className="text-[#1A4D2E] hover:text-[#0d2618] font-medium"
+                          className="text-[#462e37] hover:text-[#2d1e24] font-medium"
                         >
                           Detail
                         </button>
@@ -317,14 +317,14 @@ export default function EmployeesPage() {
             {/* Modal Content */}
             <div className="p-6 space-y-6">
               {/* Basic Info */}
-              <div className="bg-gradient-to-r from-[#1A4D2E] to-[#2d7a4a] rounded-lg p-6 text-white">
+              <div className="bg-gradient-to-r from-[#a9eae2] to-[#729892] rounded-lg p-6 text-[#462e37]">>
                 <div className="flex items-center gap-4">
                   <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center text-3xl font-bold">
                     {selectedEmployee.full_name.charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <h3 className="text-2xl font-bold">{selectedEmployee.full_name}</h3>
-                    <p className="text-[#49FFB8]">{selectedEmployee.employee_code}</p>
+                    <p className="text-[#462e37] font-semibold">{selectedEmployee.employee_code}</p>
                     <p className="text-sm mt-1">{selectedEmployee.position} • {selectedEmployee.organization?.name}</p>
                   </div>
                 </div>

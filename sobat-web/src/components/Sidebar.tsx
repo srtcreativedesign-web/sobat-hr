@@ -133,25 +133,25 @@ export default function Sidebar() {
   });
 
   return (
-    <div className={`${isCollapsed ? 'w-20' : 'w-72'} h-screen sticky top-0 bg-gradient-to-b from-[#1A4D2E] to-[#041a0d] text-white transition-all duration-300 flex flex-col border-r border-[#49FFB8]/10 shadow-[4px_0_24px_rgba(0,0,0,0.2)]`}>
+    <div className={`${isCollapsed ? 'w-20' : 'w-72'} h-screen sticky top-0 bg-gradient-to-b from-[#a9eae2] to-[#729892] text-[#462e37] transition-all duration-300 flex flex-col border-r border-[#462e37]/10 shadow-[4px_0_24px_rgba(0,0,0,0.1)]`}>
       {/* Header */}
-      <div className="p-6 flex items-center justify-between border-b border-[#49FFB8]/10 bg-black/10 backdrop-blur-sm">
+      <div className="p-6 flex items-center justify-between border-b border-[#462e37]/10 bg-white/10 backdrop-blur-sm">
         {!isCollapsed && (
           <div className="flex items-center gap-3 animate-fade-in-up">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#49FFB8] to-[#2d7a4a] flex items-center justify-center shadow-[0_0_15px_rgba(73,255,184,0.3)]">
-              <svg className="w-6 h-6 text-[#1A4D2E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#462e37] to-[#2d1e24] flex items-center justify-center shadow-[0_0_15px_rgba(70,46,55,0.3)]">
+              <svg className="w-6 h-6 text-[#a9eae2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-white drop-shadow-md">SOBAT <span className="text-[#49FFB8]">HR</span></h1>
-              <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Admin Panel</p>
+              <h1 className="text-xl font-bold tracking-tight text-[#462e37] drop-shadow-sm">SOBAT <span className="text-white">HR</span></h1>
+              <p className="text-[10px] uppercase tracking-widest text-[#462e37]/70 font-semibold">Admin Panel</p>
             </div>
           </div>
         )}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-2 rounded-lg text-gray-400 hover:text-[#49FFB8] hover:bg-white/5 transition-all"
+          className="p-2 rounded-lg text-[#462e37]/60 hover:text-[#462e37] hover:bg-[#462e37]/10 transition-all"
         >
           <svg className="w-5 h-5 transform transition-transform" style={{ transform: isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -160,18 +160,18 @@ export default function Sidebar() {
       </div>
 
       {/* User Info */}
-      <div className="p-4 mx-4 mt-6 mb-4 rounded-2xl bg-[#49FFB8]/5 border border-[#49FFB8]/10 backdrop-blur-sm">
+      <div className="p-4 mx-4 mt-6 mb-4 rounded-2xl bg-[#462e37]/5 border border-[#462e37]/10 backdrop-blur-sm">
         <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
           <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-b from-gray-700 to-gray-900 border-2 border-[#49FFB8]/50 flex items-center justify-center font-bold text-white shadow-lg">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-b from-[#462e37] to-[#2d1e24] border-2 border-[#462e37]/50 flex items-center justify-center font-bold text-white shadow-lg">
               {user?.name?.charAt(0).toUpperCase() || 'A'}
             </div>
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#49FFB8] border-2 border-[#1A4D2E] rounded-full"></div>
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#a9eae2] border-2 border-[#462e37] rounded-full"></div>
           </div>
           {!isCollapsed && (
             <div className="flex-1 min-w-0 overflow-hidden">
-              <p className="font-bold text-sm truncate text-white">{user?.name || 'Admin'}</p>
-              <p className="text-xs text-[#49FFB8] truncate font-medium">
+              <p className="font-bold text-sm truncate text-[#462e37]">{user?.name || 'Admin'}</p>
+              <p className="text-xs text-[#462e37]/70 truncate font-medium">
                 {typeof user?.role === 'string'
                   ? user.role
                   : (user?.role && typeof user.role === 'object' ? (user.role as Role).display_name : 'Administrator')}
@@ -190,8 +190,8 @@ export default function Sidebar() {
               key={item.href}
               onClick={() => router.push(item.href)}
               className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 relative overflow-hidden ${isActive
-                ? 'bg-[#49FFB8] text-[#1A4D2E] shadow-[0_0_20px_rgba(73,255,184,0.3)] font-bold'
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                ? 'bg-[#462e37] text-[#a9eae2] shadow-[0_0_20px_rgba(70,46,55,0.3)] font-bold'
+                : 'text-[#462e37]/70 hover:text-[#462e37] hover:bg-[#462e37]/10'
                 } ${isCollapsed ? 'justify-center' : ''}`}
             >
               {isActive && (
@@ -207,7 +207,7 @@ export default function Sidebar() {
               )}
 
               {!isCollapsed && isActive && (
-                <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-[#1A4D2E]"></div>
+                <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-[#a9eae2]"></div>
               )}
             </button>
           );
@@ -215,10 +215,10 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer Actions */}
-      <div className="p-4 mx-4 mb-4 mt-2 space-y-2 border-t border-[#49FFB8]/10">
+      <div className="p-4 mx-4 mb-4 mt-2 space-y-2 border-t border-[#462e37]/10">
         <button
           onClick={() => router.push('/settings')}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all text-sm font-medium ${isCollapsed ? 'justify-center' : ''}`}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[#462e37]/70 hover:text-[#462e37] hover:bg-[#462e37]/10 transition-all text-sm font-medium ${isCollapsed ? 'justify-center' : ''}`}
         >
           <svg className="w-5 h-5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />

@@ -19,9 +19,11 @@ class OrganizationController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|unique:organizations',
-            'type' => 'required|in:headquarters,branch,department',
+            'type' => 'required|in:headquarters,branch,department,division',
+            'line_style' => 'nullable|in:solid,dashed,dotted',
             'parent_id' => 'nullable|exists:organizations,id',
             'address' => 'nullable|string',
+            'description' => 'nullable|string',
             'phone' => 'nullable|string',
             'email' => 'nullable|email',
         ]);
@@ -46,9 +48,11 @@ class OrganizationController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'code' => 'sometimes|string|unique:organizations,code,' . $id,
-            'type' => 'sometimes|in:headquarters,branch,department',
+            'type' => 'sometimes|in:headquarters,branch,department,division',
+            'line_style' => 'nullable|in:solid,dashed,dotted',
             'parent_id' => 'nullable|exists:organizations,id',
             'address' => 'nullable|string',
+            'description' => 'nullable|string',
             'phone' => 'nullable|string',
             'email' => 'nullable|email',
         ]);

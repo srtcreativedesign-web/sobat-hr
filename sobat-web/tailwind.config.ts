@@ -11,6 +11,12 @@ export default {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        brand: {
+          dark: '#462e37',
+          sage: '#729892',
+          mint: '#a9eae2',
+          terracotta: '#a36c65',
+        },
         primary: {
           50: '#f0f9ff',
           100: '#e0f2fe',

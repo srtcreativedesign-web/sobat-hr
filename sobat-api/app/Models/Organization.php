@@ -17,6 +17,8 @@ class Organization extends Model
         'address',
         'phone',
         'email',
+        'line_style',
+        'description',
     ];
 
     /**

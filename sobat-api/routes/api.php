@@ -76,6 +76,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard/contract-expiring', [App\Http\Controllers\Api\DashboardController::class, 'contractExpiring']);
     });
 
+    // AI Context Route
+    Route::get('/ai/context', [App\Http\Controllers\Api\AiContextController::class, 'getContext']);
+
+
     // Staff Invitation routes (Admin only)
     Route::middleware('role:super_admin,admin_cabang')->group(function () {
         Route::post('/staff/import', [App\Http\Controllers\StaffInvitationController::class, 'import']);

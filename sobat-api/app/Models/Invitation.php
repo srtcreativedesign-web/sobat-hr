@@ -16,6 +16,8 @@ class Invitation extends Model
         'expires_at',
         'password_generated_at',
         'password_encrypted',
+        'role',
+        'organization_id',
     ];
 
     protected $casts = [
@@ -23,4 +25,9 @@ class Invitation extends Model
         'expires_at' => 'datetime',
         'password_generated_at' => 'datetime',
     ];
+
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class);
+    }
 }

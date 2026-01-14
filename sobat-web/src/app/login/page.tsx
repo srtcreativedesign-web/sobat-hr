@@ -39,13 +39,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0d2618] to-[#1A4D2E] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#a9eae2] to-[#729892] flex items-center justify-center p-4">
       {/* Glass Card */}
-      <div className="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-2xl animate-fade-in-up">
+      <div className="w-full max-w-md bg-white/40 backdrop-blur-xl border border-white/60 rounded-3xl p-8 shadow-xl animate-fade-in-up">
 
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-gray-300">Sign in to access SOBAT HR</p>
+          <h1 className="text-3xl font-bold text-[#462e37] mb-2">Welcome Back</h1>
+          <p className="text-[#462e37]/70">Sign in to access SOBAT HR</p>
         </div>
 
         {error && (
@@ -59,24 +59,24 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-[#49FFB8] ml-1">Email Address</label>
+            <label className="text-sm font-semibold text-[#462e37] ml-1">Email Address</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-5 py-4 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#49FFB8] focus:ring-1 focus:ring-[#49FFB8] transition-all duration-300"
+              className="w-full px-5 py-4 bg-white/60 border border-white/40 rounded-xl text-[#462e37] placeholder-[#462e37]/40 focus:outline-none focus:border-[#462e37] focus:ring-1 focus:ring-[#462e37] transition-all duration-300"
               placeholder="admin@sobat.co.id"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-[#49FFB8] ml-1">Password</label>
+            <label className="text-sm font-semibold text-[#462e37] ml-1">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-5 py-4 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#49FFB8] focus:ring-1 focus:ring-[#49FFB8] transition-all duration-300"
+              className="w-full px-5 py-4 bg-white/60 border border-white/40 rounded-xl text-[#462e37] placeholder-[#462e37]/40 focus:outline-none focus:border-[#462e37] focus:ring-1 focus:ring-[#462e37] transition-all duration-300"
               placeholder="••••••••"
               required
             />
@@ -85,7 +85,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 mt-4 bg-gradient-to-r from-[#49FFB8] to-[#2d7a4a] text-[#0d2618] font-bold text-lg rounded-xl shadow-lg hover:shadow-[#49FFB8]/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+            className="w-full py-4 mt-4 bg-[#462e37] text-[#a9eae2] font-bold text-lg rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {loading ? (
               <svg className="animate-spin h-5 w-5 text-[#0d2618]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -98,8 +98,8 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-8 text-center text-sm text-gray-400">
-          <Link href="/" className="hover:text-[#49FFB8] transition-colors">
+        <div className="mt-8 text-center text-sm text-[#462e37]/70">
+          <Link href="/" className="hover:text-[#462e37] transition-colors font-semibold">
             ← Back to Home
           </Link>
         </div>

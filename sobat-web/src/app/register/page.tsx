@@ -68,14 +68,14 @@ function RegisterForm() {
 
     if (isSuccess) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#1A4D2E]/5 to-[#49FFB8]/5 p-4">
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#a9eae2] to-[#729892] p-4">
                 <div className="max-w-md w-full bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up border border-white/50 p-8 text-center">
                     <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-600">
                         <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     </div>
                     <h1 className="text-2xl font-bold text-gray-800 mb-4">Pembuatan Akun Berhasil!</h1>
                     <p className="text-gray-600 mb-8">
-                        Akun Anda telah aktif. Silahkan login menggunakan aplikasi <span className="font-semibold text-[#1A4D2E]">Sobat Mobile</span>.
+                        Akun Anda telah aktif. Silahkan login menggunakan aplikasi <span className="font-semibold text-[#462e37]">Sobat Mobile</span>.
                     </p>
                 </div>
             </div>
@@ -85,7 +85,7 @@ function RegisterForm() {
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1A4D2E]"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#462e37]"></div>
             </div>
         );
     }
@@ -105,11 +105,11 @@ function RegisterForm() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#1A4D2E]/5 to-[#49FFB8]/5 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#462e37]/5 to-[#a9eae2]/5 p-4">
             <div className="max-w-md w-full bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up border border-white/50">
                 <div className="p-8">
                     <div className="text-center mb-8">
-                        <h1 className="text-2xl font-bold bg-gradient-to-r from-[#1A4D2E] to-[#49FFB8] bg-clip-text text-transparent">
+                        <h1 className="text-2xl font-bold text-[#462e37]">
                             Activate Account
                         </h1>
                         <p className="text-gray-500 mt-2">Halo, <span className="font-semibold text-gray-800">{userData?.name}</span>!</p>
@@ -125,7 +125,7 @@ function RegisterForm() {
                                 minLength={8}
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#1A4D2E] focus:ring-2 focus:ring-[#1A4D2E]/20 outline-none transition-all placeholder:text-gray-300"
+                                className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#462e37] focus:ring-2 focus:ring-[#462e37]/20 outline-none transition-all placeholder:text-gray-300"
                                 placeholder="Minimal 8 karakter"
                             />
                         </div>
@@ -138,7 +138,7 @@ function RegisterForm() {
                                 minLength={8}
                                 value={formData.password_confirmation}
                                 onChange={(e) => setFormData({ ...formData, password_confirmation: e.target.value })}
-                                className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#1A4D2E] focus:ring-2 focus:ring-[#1A4D2E]/20 outline-none transition-all placeholder:text-gray-300"
+                                className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#462e37] focus:ring-2 focus:ring-[#462e37]/20 outline-none transition-all placeholder:text-gray-300"
                                 placeholder="Ulangi password"
                             />
                         </div>
@@ -146,7 +146,7 @@ function RegisterForm() {
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full py-3 px-4 bg-gradient-to-r from-[#1A4D2E] to-[#143d24] text-white rounded-lg font-semibold shadow-lg hover:shadow-[#1A4D2E]/30 transform hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="w-full py-3 px-4 bg-[#462e37] text-[#a9eae2] rounded-lg font-semibold shadow-lg hover:shadow-[#462e37]/30 transform hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? 'Mengaktifkan...' : 'Aktifkan Akun'}
                         </button>

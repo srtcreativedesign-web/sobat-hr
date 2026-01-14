@@ -186,15 +186,52 @@ class PayrollController extends Controller
     }
 
     /**
-     * Download template Excel untuk import payroll
+     * Download template Excel (CSV) for payroll import
      */
     public function downloadTemplate()
     {
-        // Temporary: return error since PhpSpreadsheet is not available
-        return response()->json([
-            'message' => 'Template download temporarily unavailable. Please use CSV format for import.',
-            'error' => 'PhpSpreadsheet not installed due to PHP version compatibility',
-        ], 503);
+        $headers = [
+            'No',
+            'Employee Name',
+            'Employee Code', // NIK
+            'Period',        // Format: YYYY-MM or "Januari 2024"
+            'Basic Salary',
+            'Overtime',
+            'BPJS Health',
+            'BPJS Employment',
+            'Tax PPh21',
+            'Other Deductions',
+            'Net Salary'
+        ];
+
+        $callback = function () use ($headers) {
+            $file = fopen('php://output', 'w');
+            // Write BOM for Excel to recognize UTF-8
+            fwrite($file, "\xEF\xBB\xBF");
+            fputcsv($file, $headers);
+
+            // Example row 1
+            fputcsv($file, [
+                '1',
+                'Budi Santoso',
+                'EMP001',
+                date('Y-m'),
+                '5000000',
+                '500000',
+                '100000',
+                '200000',
+                '50000',
+                '0',
+                '5150000'
+            ]);
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, [
+            "Content-Type" => "text/csv",
+            "Content-Disposition" => "attachment; filename=template_import_payroll.csv",
+        ]);
     }
 
     /**
@@ -229,53 +266,108 @@ class PayrollController extends Controller
             // Get header row
             $headerRow = reset($data);
             $header = [];
-            foreach ($headerRow as $i => $h) {
-                $key = trim(strtolower(str_replace(' ', '_', $h)));
 
-                // Column aliases
-                $columnAliases = [
+            // Map headers
+            foreach ($headerRow as $i => $h) {
+                if (!$h)
+                    continue;
+
+                // Normalize: lowercase, remove non-alphanumeric (keep spaces for now)
+                $cleanH = strtolower(trim($h)); // e.g. "gaji pokok (clean)"
+                $key = preg_replace('/[^a-z0-9]/', '_', $cleanH); // e.g. "gaji_pokok_clean"
+
+                // Direct mapping first
+                $mapped = null;
+                $normalizedAlias = [
                     'no' => 'no',
                     'nama' => 'employee_name',
+                    'employee' => 'employee_name',
                     'name' => 'employee_name',
-                    'employee_name' => 'employee_name',
-                    'employee_code' => 'employee_code',
-                    'kode_karyawan' => 'employee_code',
+                    'karyawan' => 'employee_name',
+                    'pegawai' => 'employee_name',
+
+                    'nik' => 'employee_code',
+                    'kode' => 'employee_code',
+                    'code' => 'employee_code',
+                    'id' => 'employee_code',
+
                     'periode' => 'period',
                     'period' => 'period',
-                    'gaji_pokok' => 'basic_salary',
-                    'basic_salary' => 'basic_salary',
-                    'lemburan' => 'overtime',
+                    'bulan' => 'period',
+
+                    'basic' => 'basic_salary',
+                    'pokok' => 'basic_salary',
+                    'gapok' => 'basic_salary',
+
                     'lembur' => 'overtime',
                     'overtime' => 'overtime',
-                    'bpjs_kesehatan' => 'bpjs_health',
-                    'bpjs_health' => 'bpjs_health',
-                    'bpis_tk' => 'bpjs_employment',
+
+                    'bpjs_kes' => 'bpjs_health',
+                    'kesehatan' => 'bpjs_health',
+
                     'bpjs_tk' => 'bpjs_employment',
-                    'bpjs_employment' => 'bpjs_employment',
-                    'pph21' => 'tax_pph21',
-                    'tax_pph21' => 'tax_pph21',
-                    'take_home_pay' => 'net_salary',
-                    'net_salary' => 'net_salary',
-                    'gross_salary' => 'gross_salary',
-                    'gaji_kotor' => 'gross_salary',
-                    'total_deductions' => 'total_deductions',
-                    'total_potongan' => 'total_deductions',
-                    'other_deductions' => 'other_deductions',
-                    'potongan_lain' => 'other_deductions',
+                    'ketenagakerjaan' => 'bpjs_employment',
+                    'jamsostek' => 'bpjs_employment',
+
+                    'pph' => 'tax_pph21',
+                    'pajak' => 'tax_pph21',
+                    'tax' => 'tax_pph21',
+
+                    'net' => 'net_salary',
+                    'thp' => 'net_salary',
+                    'bersih' => 'net_salary',
+                    'home_pay' => 'net_salary',
+                    'diterima' => 'net_salary',
+
+                    'deduction' => 'total_deductions',
+                    'potongan' => 'total_deductions',
                 ];
 
-                $mappedKey = $columnAliases[$key] ?? $key;
-                $header[$i] = $mappedKey;
+                // 1. Exact match check (after simple normalization)
+                foreach ($normalizedAlias as $alias => $target) {
+                    if ($key === $alias || str_replace('_', '', $key) === $alias) {
+                        $mapped = $target;
+                        break;
+                    }
+                }
+
+                // 2. Contains check (Fuzzy)
+                if (!$mapped) {
+                    foreach ($normalizedAlias as $alias => $target) {
+                        if (str_contains($cleanH, $alias) || str_contains($key, $alias)) {
+                            // Prioritize "basic" (basic_salary) vs "net" (net_salary)
+                            // "gaji pokok" contains "pokok" -> basic_salary
+                            // "total gaji bersih" contains "bersih" -> net_salary
+                            // "bpjs kesehatan" contains "kesehatan" -> bpjs_health
+                            $mapped = $target;
+                            break;
+                        }
+                    }
+                }
+
+                // Special Fallback for "Gaji" only -> Basic Salary
+                if (!$mapped && $cleanH === 'gaji') {
+                    $mapped = 'basic_salary';
+                }
+
+                $header[$i] = $mapped; // Can be null if not ignored
             }
 
-            // Check required columns
-            $available = array_values($header);
-            $hasEmployeeIdentifier = in_array('employee_code', $available) || in_array('employee_name', $available);
+            // FILTER null headers
+            $available = array_filter(array_values(array_unique($header)));
 
-            if (!$hasEmployeeIdentifier || !in_array('period', $available) || !in_array('basic_salary', $available)) {
+            $hasEmployeeIdentifier = in_array('employee_code', $available) || in_array('employee_name', $available);
+            $hasPeriod = in_array('period', $available);
+            $hasBasicSalary = in_array('basic_salary', $available);
+
+            if (!$hasEmployeeIdentifier || !$hasPeriod || !$hasBasicSalary) {
+                // Collect original headers for debugging
+                $detectedOriginals = array_values(array_filter($headerRow));
+
                 return response()->json([
-                    'message' => 'Missing required columns. Need: employee identifier (code/name), period, basic_salary',
+                    'message' => 'Missing columns. \nDetected: [' . implode(', ', $available) . ']. \nFrom Headers: [' . implode(', ', $detectedOriginals) . ']. \nNeed: Name/Code, Period, Basic Salary (Gaji Pokok).',
                     'available_columns' => $available,
+                    'original_headers' => $headerRow
                 ], 422);
             }
 

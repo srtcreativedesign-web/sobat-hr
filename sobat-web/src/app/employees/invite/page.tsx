@@ -9,6 +9,10 @@ interface PreviewRow {
   rowIndex: number;
   name: string;
   email: string;
+  role: string | null;
+  division_input?: string;
+  organization_name?: string | null;
+
   valid: boolean;
   errors: string[];
   temporary_password: string | null;
@@ -114,7 +118,7 @@ export default function InviteStaffPage() {
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-20">
         <div className="px-8 py-6">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-[#1A4D2E] to-[#49FFB8] bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-[#462e37] to-[#a9eae2] bg-clip-text text-transparent">
             Invite Staff
           </h1>
           <p className="text-gray-500 mt-1">Upload Excel file to bulk invite new staff members.</p>
@@ -124,16 +128,16 @@ export default function InviteStaffPage() {
       <div className="p-8 space-y-8 animate-fade-in-up">
         {/* Upload Card */}
         <div className="glass-card p-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#1A4D2E] to-[#49FFB8] opacity-10 rounded-bl-full pointer-events-none"></div>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#462e37] to-[#a9eae2] opacity-10 rounded-bl-full pointer-events-none"></div>
 
           <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-[#1A4D2E]/10 flex items-center justify-center text-[#1A4D2E]">
+            <div className="w-10 h-10 rounded-lg bg-[#a9eae2]/20 flex items-center justify-center text-[#462e37]">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
             </div>
             Upload Excel File
           </h2>
 
-          <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 hover:border-[#1A4D2E] hover:bg-[#1A4D2E]/5 transition-all text-center">
+          <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 hover:border-[#a9eae2] hover:bg-[#a9eae2]/5 transition-all text-center">
             <input
               type="file"
               id="file-upload"
@@ -142,11 +146,11 @@ export default function InviteStaffPage() {
               className="hidden"
             />
             <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
-              <div className="w-16 h-16 rounded-full bg-green-100 text-[#1A4D2E] flex items-center justify-center mb-4">
+              <div className="w-16 h-16 rounded-full bg-[#a9eae2]/20 text-[#462e37] flex items-center justify-center mb-4">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               </div>
               {file ? (
-                <p className="text-lg font-semibold text-[#1A4D2E]">{file.name}</p>
+                <p className="text-lg font-semibold text-[#462e37]">{file.name}</p>
               ) : (
                 <>
                   <p className="text-lg font-medium text-gray-600">Click to upload file</p>
@@ -160,7 +164,7 @@ export default function InviteStaffPage() {
             <button
               onClick={handleUpload}
               disabled={!file || uploading}
-              className="px-8 py-3 bg-gradient-to-r from-[#1A4D2E] to-[#2d7a4a] text-white font-bold rounded-xl shadow-lg hover:shadow-[#1A4D2E]/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-8 py-3 bg-gradient-to-r from-[#a9eae2] to-[#729892] text-[#462e37] font-bold rounded-xl shadow-lg hover:shadow-[#a9eae2]/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {uploading ? (
                 <>
@@ -182,14 +186,14 @@ export default function InviteStaffPage() {
               <div className="flex gap-4">
                 <button
                   onClick={handleSelectAll}
-                  className="px-4 py-2 text-[#1A4D2E] font-semibold hover:bg-green-50 rounded-lg transition-colors"
+                  className="px-4 py-2 text-[#462e37] font-semibold hover:bg-[#a9eae2]/20 rounded-lg transition-colors"
                 >
                   Select All Valid
                 </button>
                 <button
                   onClick={handleInvite}
                   disabled={selectedRows.size === 0 || loading}
-                  className="px-6 py-2 bg-[#1A4D2E] text-white font-semibold rounded-lg hover:bg-[#143d24] transition-colors disabled:opacity-50"
+                  className="px-6 py-2 bg-[#a9eae2] text-[#462e37] font-semibold rounded-lg hover:bg-[#729892] transition-colors disabled:opacity-50"
                 >
                   {loading ? 'Sending Invites...' : `Invite Selected (${selectedRows.size})`}
                 </button>
@@ -205,11 +209,14 @@ export default function InviteStaffPage() {
                         type="checkbox"
                         onChange={handleSelectAll}
                         checked={selectedRows.size === preview.filter(r => r.valid).length && preview.length > 0}
-                        className="rounded border-gray-300 text-[#1A4D2E] focus:ring-[#1A4D2E]"
+                        className="rounded border-gray-300 text-[#a9eae2] focus:ring-[#a9eae2]"
                       />
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Role</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Divisi</th>
+
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Issues</th>
                   </tr>
@@ -223,12 +230,23 @@ export default function InviteStaffPage() {
                             type="checkbox"
                             checked={selectedRows.has(row.rowIndex)}
                             onChange={() => handleSelectRow(row.rowIndex)}
-                            className="rounded border-gray-300 text-[#1A4D2E] focus:ring-[#1A4D2E]"
+                            className="rounded border-gray-300 text-[#a9eae2] focus:ring-[#a9eae2]"
                           />
                         )}
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">{row.name}</td>
                       <td className="px-6 py-4 text-sm text-gray-500">{row.email}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500 capitalize">{row.role || 'Staff (Default)'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {row.organization_name ? (
+                          <span className="text-gray-900">{row.organization_name}</span>
+                        ) : row.division_input ? (
+                          <span className="text-orange-500" title="Divisi tidak ditemukan di database">{row.division_input} (?)</span>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold ${row.valid
                           ? 'bg-green-100 text-green-700'

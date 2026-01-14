@@ -91,7 +91,7 @@ export default function InvitationList({ refreshTrigger }: { refreshTrigger: num
                 </h2>
                 <button
                     onClick={handleExport}
-                    className="px-4 py-2 bg-[#1A4D2E] text-white text-sm font-semibold rounded-lg hover:bg-[#143d24] transition-colors flex items-center gap-2"
+                    className="px-4 py-2 bg-[#462e37] text-white text-sm font-semibold rounded-lg hover:bg-[#143d24] transition-colors flex items-center gap-2"
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                     Export to Excel
@@ -121,13 +121,13 @@ export default function InvitationList({ refreshTrigger }: { refreshTrigger: num
                                                 type="text"
                                                 readOnly
                                                 value={link}
-                                                className="flex-1 bg-white border border-gray-200 text-gray-600 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#1A4D2E] w-64"
+                                                className="flex-1 bg-white border border-gray-200 text-gray-600 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#462e37] w-64"
                                             />
                                             <button
                                                 onClick={() => handleCopyLink(invite.token, invite.id)}
                                                 className={`p-2 rounded-lg transition-all ${copiedId === invite.id
                                                     ? 'bg-green-100 text-green-700'
-                                                    : 'bg-gray-100 text-gray-600 hover:bg-[#1A4D2E] hover:text-white'
+                                                    : 'bg-gray-100 text-gray-600 hover:bg-[#462e37] hover:text-white'
                                                     }`}
                                                 title="Copy Link"
                                             >

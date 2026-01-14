@@ -145,7 +145,7 @@ export default function PayrollPage() {
         <div className="px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-[#1A4D2E] to-[#2d7a4a] bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-[#462e37] to-[#729892] bg-clip-text text-transparent">
                 Payroll Management
               </h1>
               <p className="text-gray-600 mt-1">Kelola data payroll dan slip gaji karyawan</p>
@@ -168,7 +168,7 @@ export default function PayrollPage() {
                     alert('Gagal download template');
                   }
                 }}
-                className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-[#1A4D2E] text-[#1A4D2E] rounded-xl font-semibold hover:bg-[#1A4D2E] hover:text-white transition-all transform hover:scale-[1.02]"
+                className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-[#a9eae2] text-[#462e37] rounded-xl font-semibold hover:bg-[#a9eae2] hover:text-[#462e37] transition-all transform hover:scale-[1.02]"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -177,7 +177,7 @@ export default function PayrollPage() {
               </button>
               <button
                 onClick={() => setShowUploadModal(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#1A4D2E] to-[#2d7a4a] text-white rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-[1.02]"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#a9eae2] to-[#729892] text-[#462e37] rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-[1.02]"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -197,7 +197,7 @@ export default function PayrollPage() {
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#1A4D2E] text-sm"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#462e37] text-sm"
             >
               {months.map((m) => (
                 <option key={m.value} value={m.value}>{m.label}</option>
@@ -206,7 +206,7 @@ export default function PayrollPage() {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#1A4D2E] text-sm"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#462e37] text-sm"
             >
               {[2024, 2025, 2026, 2027].map((y) => (
                 <option key={y} value={y}>{y}</option>
@@ -226,7 +226,7 @@ export default function PayrollPage() {
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-4 border-[#1A4D2E] border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-8 h-8 border-4 border-[#a9eae2] border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : payrolls.length === 0 ? (
             <div className="text-center py-12">
@@ -331,7 +331,7 @@ export default function PayrollPage() {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Pilih File Excel
                 </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#49FFB8] transition-colors">
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#a9eae2] transition-colors">
                   <input
                     type="file"
                     accept=".xlsx,.xls,.csv"
@@ -360,11 +360,11 @@ export default function PayrollPage() {
                 <div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-600">Uploading...</span>
-                    <span className="text-[#1A4D2E] font-semibold">{uploadProgress}%</span>
+                    <span className="text-[#462e37] font-semibold">{uploadProgress}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
-                      className="bg-gradient-to-r from-[#1A4D2E] to-[#49FFB8] h-2 rounded-full transition-all duration-300"
+                      className="bg-gradient-to-r from-[#a9eae2] to-[#729892] h-2 rounded-full transition-all duration-300"
                       style={{ width: `${uploadProgress}%` }}
                     />
                   </div>
@@ -386,7 +386,7 @@ export default function PayrollPage() {
                 <button
                   onClick={handleUpload}
                   disabled={!selectedFile || uploadProgress > 0}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-[#1A4D2E] to-[#2d7a4a] text-white rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-[#a9eae2] to-[#729892] text-[#462e37] rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                   Upload
                 </button>
@@ -464,7 +464,7 @@ export default function PayrollPage() {
                           console.error('Save error:', error.response?.data);
                         }
                       }}
-                      className="px-4 py-2 bg-gradient-to-r from-[#1A4D2E] to-[#2d7a4a] text-white rounded-lg"
+                      className="px-4 py-2 bg-gradient-to-r from-[#a9eae2] to-[#729892] text-[#462e37] rounded-lg"
                     >
                       Save to DB
                     </button>

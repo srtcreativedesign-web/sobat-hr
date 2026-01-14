@@ -13,29 +13,34 @@ class ShiftSeeder extends Seeder
      */
     public function run(): void
     {
-        $jakartaBranch = Organization::where('name', 'Jakarta Branch')->first();
-        $surabayaBranch = Organization::where('name', 'Surabaya Branch')->first();
+        // Use existing divisions from DivisionSeeder (Holding, Project, etc.)
+        $holding = Organization::where('name', 'Holding')->first();
+        $project = Organization::where('name', 'Project')->first();
+        $defaultOrg = Organization::first();
 
-        // Jakarta - Regular Shift
+        $org1 = $holding ? $holding->id : $defaultOrg->id;
+        $org2 = $project ? $project->id : $defaultOrg->id;
+
+        // Regular Shift (Holding)
         Shift::create([
             'name' => 'Regular Shift',
-            'organization_id' => $jakartaBranch->id,
+            'organization_id' => $org1,
             'start_time' => '09:00:00',
             'end_time' => '18:00:00',
         ]);
 
-        // Jakarta - Night Shift
+        // Night Shift (Holding)
         Shift::create([
             'name' => 'Night Shift',
-            'organization_id' => $jakartaBranch->id,
+            'organization_id' => $org1,
             'start_time' => '21:00:00',
             'end_time' => '06:00:00',
         ]);
 
-        // Surabaya - Regular Shift
+        // Regular Shift (Project)
         Shift::create([
             'name' => 'Regular Shift',
-            'organization_id' => $surabayaBranch->id,
+            'organization_id' => $org2,
             'start_time' => '08:00:00',
             'end_time' => '17:00:00',
         ]);
