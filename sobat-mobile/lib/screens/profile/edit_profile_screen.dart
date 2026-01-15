@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -26,6 +27,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _employeeIdCtrl = TextEditingController();
   final TextEditingController _placeOfBirthCtrl = TextEditingController();
   DateTime? _dateOfBirth;
+  DateTime? _joinDate;
   final TextEditingController _ktpAddressCtrl = TextEditingController();
   final TextEditingController _currentAddressCtrl = TextEditingController();
   String? _gender;
@@ -40,7 +42,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _motherNameCtrl = TextEditingController();
   final TextEditingController _spouseNameCtrl = TextEditingController();
   final TextEditingController _familyContactCtrl = TextEditingController();
-  String? _education;
+
+  // Education fields
+  // Mandatory
+  final TextEditingController _eduSdCtrl = TextEditingController();
+  final TextEditingController _eduSmpCtrl = TextEditingController();
+  final TextEditingController _eduSmkCtrl = TextEditingController();
+  // Optional
+  final TextEditingController _eduS1Ctrl = TextEditingController();
+  final TextEditingController _eduS2Ctrl = TextEditingController();
+  final TextEditingController _eduS3Ctrl = TextEditingController();
+
   final TextEditingController _departmentCtrl = TextEditingController();
   final TextEditingController _positionCtrl = TextEditingController();
   final TextEditingController _supervisorNameCtrl = TextEditingController();
@@ -49,7 +61,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? _department;
   String? _position;
 
-  final List<String> _departmentOptions = [
+  List<String> _departmentOptions = [
     'Wrapping',
     'Refleksi',
     'Celullar',
@@ -66,7 +78,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     'Yang lain',
   ];
 
-  final List<String> _positionOptions = [
+  List<String> _positionOptions = [
     'Direktur Utama',
     'Direktur Operasional',
     'Direktur Keuangan',
@@ -132,6 +144,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             _dateOfBirth = DateTime.parse(emp['date_of_birth']);
           } catch (_) {}
         }
+        if (emp['join_date'] != null) {
+          try {
+            _joinDate = DateTime.parse(emp['join_date']);
+          } catch (_) {}
+        }
         _ktpAddressCtrl.text = emp['ktp_address'] ?? '';
         _currentAddressCtrl.text = emp['current_address'] ?? '';
         _gender = emp['gender'];
@@ -146,9 +163,52 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _motherNameCtrl.text = emp['mother_name'] ?? '';
         _spouseNameCtrl.text = emp['spouse_name'] ?? '';
         _familyContactCtrl.text = emp['family_contact_number'] ?? '';
-        _education = emp['education'] ?? '';
+
+        // Parse education JSON
+        if (emp['education'] != null) {
+          try {
+            if (emp['education'] is Map) {
+              final edu = emp['education'];
+              _eduSdCtrl.text = edu['sd'] ?? '';
+              _eduSmpCtrl.text = edu['smp'] ?? '';
+              _eduSmkCtrl.text = edu['smk'] ?? '';
+              _eduS1Ctrl.text = edu['s1'] ?? '';
+              _eduS2Ctrl.text = edu['s2'] ?? '';
+              _eduS3Ctrl.text = edu['s3'] ?? '';
+            } else if (emp['education'] is String) {
+              // Handle legacy string data or stringified JSON
+              try {
+                final eduMap = jsonDecode(emp['education']);
+                _eduSdCtrl.text = eduMap['sd'] ?? '';
+                _eduSmpCtrl.text = eduMap['smp'] ?? '';
+                _eduSmkCtrl.text = eduMap['smk'] ?? '';
+                _eduS1Ctrl.text = eduMap['s1'] ?? '';
+                _eduS2Ctrl.text = eduMap['s2'] ?? '';
+                _eduS3Ctrl.text = eduMap['s3'] ?? '';
+              } catch (_) {
+                // If not JSON, put loose string in SMK/SMA as fallback or leave as is
+                // For now, let's put it in SMK
+                _eduSmkCtrl.text = emp['education'];
+              }
+            }
+          } catch (_) {}
+        }
+
         _department = emp['department'] ?? null;
         _position = emp['position'] ?? null;
+
+        // Ensure values exist in options to prevent Dropdown crash
+        if (_department != null &&
+            _department!.isNotEmpty &&
+            !_departmentOptions.contains(_department)) {
+          _departmentOptions.add(_department!);
+        }
+        if (_position != null &&
+            _position!.isNotEmpty &&
+            !_positionOptions.contains(_position)) {
+          _positionOptions.add(_position!);
+        }
+
         _departmentCtrl.text = emp['department'] ?? '';
         _positionCtrl.text = emp['position'] ?? '';
         _supervisorNameCtrl.text = emp['supervisor_name'] ?? '';
@@ -167,6 +227,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       lastDate: now,
     );
     if (picked != null) setState(() => _dateOfBirth = picked);
+  }
+
+  Future<void> _pickJoinDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _joinDate ?? now,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(now.year + 1),
+    );
+    if (picked != null) setState(() => _joinDate = picked);
   }
 
   Widget _sectionCard(Widget child) {
@@ -205,6 +276,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       'employee_code': _employeeIdCtrl.text.trim(),
       'place_of_birth': _placeOfBirthCtrl.text.trim(),
       'date_of_birth': _dateOfBirth?.toIso8601String(),
+      'join_date': _joinDate?.toIso8601String(),
       'ktp_address': _ktpAddressCtrl.text.trim(),
       'current_address': _currentAddressCtrl.text.trim(),
       'gender': _gender,
@@ -219,7 +291,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       'mother_name': _motherNameCtrl.text.trim(),
       'spouse_name': _spouseNameCtrl.text.trim(),
       'family_contact_number': _familyContactCtrl.text.trim(),
-      'education': _education,
+
+      'education': {
+        'sd': _eduSdCtrl.text.trim(),
+        'smp': _eduSmpCtrl.text.trim(),
+        'smk': _eduSmkCtrl.text.trim(),
+        's1': _eduS1Ctrl.text.trim(),
+        's2': _eduS2Ctrl.text.trim(),
+        's3': _eduS3Ctrl.text.trim(),
+      },
       'department': _departmentCtrl.text.trim(),
       'position': _positionCtrl.text.trim(),
       'supervisor_name': _supervisorNameCtrl.text.trim(),
@@ -277,7 +357,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _departmentCtrl.dispose();
     _positionCtrl.dispose();
     _supervisorNameCtrl.dispose();
+
     _supervisorPositionCtrl.dispose();
+
+    _eduSdCtrl.dispose();
+    _eduSmpCtrl.dispose();
+    _eduSmkCtrl.dispose();
+    _eduS1Ctrl.dispose();
+    _eduS2Ctrl.dispose();
+    _eduS3Ctrl.dispose();
+
     // no-op for _department/_position strings
     super.dispose();
   }
@@ -595,9 +684,81 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Text(
-                      'Pekerjaan',
+                      'Pekerjaan & Pendidikan',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
+                    const SizedBox(height: 12),
+
+                    const Text(
+                      'Riwayat Pendidikan (Wajib diisi SD-SMK)',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _eduSdCtrl,
+                            decoration: const InputDecoration(labelText: 'SD'),
+                            validator: (v) =>
+                                (v == null || v.isEmpty) ? 'Wajib' : null,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _eduSmpCtrl,
+                            decoration: const InputDecoration(labelText: 'SMP'),
+                            validator: (v) =>
+                                (v == null || v.isEmpty) ? 'Wajib' : null,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _eduSmkCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'SMA/SMK',
+                            ),
+                            validator: (v) =>
+                                (v == null || v.isEmpty) ? 'Wajib' : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Pendidikan Tinggi (Opsional)',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _eduS1Ctrl,
+                            decoration: const InputDecoration(labelText: 'S1'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _eduS2Ctrl,
+                            decoration: const InputDecoration(labelText: 'S2'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _eduS3Ctrl,
+                            decoration: const InputDecoration(labelText: 'S3'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const SizedBox(height: 16),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue:
@@ -643,6 +804,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           _positionCtrl.text = v ?? '';
                         });
                       },
+                    ),
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: _pickJoinDate,
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(Icons.date_range),
+                          labelText: 'Tanggal Bergabung',
+                        ),
+                        child: Text(
+                          _joinDate == null
+                              ? '-'
+                              : DateFormat.yMMMMd('id_ID').format(_joinDate!),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     TextFormField(

@@ -206,7 +206,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
               height: 150,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.colorCyan.withOpacity(0.1),
+                color: AppTheme.colorCyan.withValues(alpha: 0.1),
               ),
             ),
           ),
@@ -216,7 +216,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
               Text(
                 'Gaji Bersih Terakhir',
                 style: TextStyle(
-                  color: AppTheme.colorCyan.withOpacity(0.8),
+                  color: AppTheme.colorCyan.withValues(alpha: 0.8),
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -346,7 +346,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -369,7 +369,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
                       width: 50,
                       height: 50,
                       decoration: BoxDecoration(
-                        color: AppTheme.colorCyan.withOpacity(0.15),
+                        color: AppTheme.colorCyan.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Center(
@@ -420,7 +420,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: statusColor.withOpacity(0.1),
+                                  color: statusColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
@@ -584,7 +584,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
                 border: Border(top: BorderSide(color: Colors.grey.shade100)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, -4),
                   ),

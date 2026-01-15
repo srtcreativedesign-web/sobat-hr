@@ -36,7 +36,7 @@ interface Employee {
   mother_name?: string;
   spouse_name?: string;
   family_contact_number?: string;
-  education?: string;
+  education?: any;
   supervisor_name?: string;
   supervisor_position?: string;
   basic_salary?: number;
@@ -146,6 +146,52 @@ export default function EmployeesPage() {
   const getGenderLabel = (gender: string | undefined) => {
     if (gender === 'male') return 'Laki-laki';
     if (gender === 'female') return 'Perempuan';
+    return '-';
+  };
+
+  const formatEducation = (edu: any) => {
+    if (!edu) return '-';
+    if (typeof edu === 'string') return edu;
+    if (typeof edu === 'object') {
+      if (edu.s3) return `S3`;
+      if (edu.s2) return `S2`;
+      if (edu.s1) return `S1`;
+      if (edu.smk) return `SMA/SMK`;
+      if (edu.smp) return `SMP`;
+      if (edu.sd) return `SD`;
+      return '-';
+    }
+    return '-';
+  };
+
+  const renderEducationDetails = (edu: any) => {
+    if (!edu) return '-';
+    if (typeof edu === 'string') return edu;
+    if (typeof edu === 'object') {
+      const levels = [
+        { key: 's3', label: 'S3' },
+        { key: 's2', label: 'S2' },
+        { key: 's1', label: 'S1' },
+        { key: 'smk', label: 'SMA/SMK' },
+        { key: 'smp', label: 'SMP' },
+        { key: 'sd', label: 'SD' },
+      ];
+
+      const filledLevels = levels.filter(l => edu[l.key]);
+
+      if (filledLevels.length === 0) return '-';
+
+      return (
+        <div className="flex flex-col gap-1 mt-1">
+          {filledLevels.map(l => (
+            <div key={l.key} className="text-sm">
+              <span className="font-semibold text-gray-600 mr-2">{l.label}:</span>
+              <span>{edu[l.key]}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
     return '-';
   };
 
@@ -336,35 +382,35 @@ export default function EmployeesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm text-gray-500">Email</label>
-                    <p className="font-medium">{selectedEmployee.email || '-'}</p>
+                    <p className="font-medium text-gray-900">{selectedEmployee.email || '-'}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">No. Telepon</label>
-                    <p className="font-medium">{selectedEmployee.phone || '-'}</p>
+                    <p className="font-medium text-gray-900">{selectedEmployee.phone || '-'}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">Tempat Lahir</label>
-                    <p className="font-medium">{selectedEmployee.place_of_birth || '-'}</p>
+                    <p className="font-medium text-gray-900">{selectedEmployee.place_of_birth || '-'}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">Tanggal Lahir</label>
-                    <p className="font-medium">{formatDate(selectedEmployee.birth_date)}</p>
+                    <p className="font-medium text-gray-900">{formatDate(selectedEmployee.birth_date)}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">Jenis Kelamin</label>
-                    <p className="font-medium">{getGenderLabel(selectedEmployee.gender)}</p>
+                    <p className="font-medium text-gray-900">{getGenderLabel(selectedEmployee.gender)}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">Agama</label>
-                    <p className="font-medium">{selectedEmployee.religion || '-'}</p>
+                    <p className="font-medium text-gray-900">{selectedEmployee.religion || '-'}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">Status Perkawinan</label>
-                    <p className="font-medium">{selectedEmployee.marital_status || '-'}</p>
+                    <p className="font-medium text-gray-900">{selectedEmployee.marital_status || '-'}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">Status PTKP</label>
-                    <p className="font-medium">{selectedEmployee.ptkp_status || '-'}</p>
+                    <p className="font-medium text-gray-900">{selectedEmployee.ptkp_status || '-'}</p>
                   </div>
                 </div>
               </div>
@@ -375,11 +421,11 @@ export default function EmployeesPage() {
                 <div className="grid grid-cols-1 gap-4">
                   <div>
                     <label className="text-sm text-gray-500">Alamat KTP</label>
-                    <p className="font-medium">{selectedEmployee.ktp_address || '-'}</p>
+                    <p className="font-medium text-gray-900">{selectedEmployee.ktp_address || '-'}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">Alamat Domisili</label>
-                    <p className="font-medium">{selectedEmployee.current_address || '-'}</p>
+                    <p className="font-medium text-gray-900">{selectedEmployee.current_address || '-'}</p>
                   </div>
                 </div>
               </div>
@@ -390,19 +436,19 @@ export default function EmployeesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm text-gray-500">NIK (KTP)</label>
-                    <p className="font-medium">{selectedEmployee.nik || '-'}</p>
+                    <p className="font-medium text-gray-900">{selectedEmployee.nik || '-'}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">NPWP</label>
-                    <p className="font-medium">{selectedEmployee.npwp || '-'}</p>
+                    <p className="font-medium text-gray-900">{selectedEmployee.npwp || '-'}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">No. Rekening</label>
-                    <p className="font-medium">{selectedEmployee.bank_account_number || '-'}</p>
+                    <p className="font-medium text-gray-900">{selectedEmployee.bank_account_number || '-'}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">Nama Pemilik Rekening</label>
-                    <p className="font-medium">{selectedEmployee.bank_account_name || '-'}</p>
+                    <p className="font-medium text-gray-900">{selectedEmployee.bank_account_name || '-'}</p>
                   </div>
                 </div>
               </div>
@@ -413,19 +459,19 @@ export default function EmployeesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm text-gray-500">Nama Ayah</label>
-                    <p className="font-medium">{selectedEmployee.father_name || '-'}</p>
+                    <p className="font-medium text-gray-900">{selectedEmployee.father_name || '-'}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">Nama Ibu</label>
-                    <p className="font-medium">{selectedEmployee.mother_name || '-'}</p>
+                    <p className="font-medium text-gray-900">{selectedEmployee.mother_name || '-'}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">Nama Pasangan</label>
-                    <p className="font-medium">{selectedEmployee.spouse_name || '-'}</p>
+                    <p className="font-medium text-gray-900">{selectedEmployee.spouse_name || '-'}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">Kontak Keluarga</label>
-                    <p className="font-medium">{selectedEmployee.family_contact_number || '-'}</p>
+                    <p className="font-medium text-gray-900">{selectedEmployee.family_contact_number || '-'}</p>
                   </div>
                 </div>
               </div>
@@ -436,19 +482,19 @@ export default function EmployeesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm text-gray-500">Tanggal Bergabung</label>
-                    <p className="font-medium">{formatDate(selectedEmployee.join_date)}</p>
+                    <p className="font-medium text-gray-900">{formatDate(selectedEmployee.join_date)}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">Pendidikan</label>
-                    <p className="font-medium">{selectedEmployee.education || '-'}</p>
+                    <div className="font-medium text-gray-900">{renderEducationDetails(selectedEmployee.education)}</div>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">Divisi/Departemen</label>
-                    <p className="font-medium">{selectedEmployee.level || '-'}</p>
+                    <p className="font-medium text-gray-900">{selectedEmployee.level || '-'}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">Status Kepegawaian</label>
-                    <p className="font-medium">{selectedEmployee.employment_status || '-'}</p>
+                    <p className="font-medium text-gray-900">{selectedEmployee.employment_status || '-'}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">Nama Atasan</label>
@@ -460,7 +506,7 @@ export default function EmployeesPage() {
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">Gaji Pokok</label>
-                    <p className="font-medium">{formatCurrency(selectedEmployee.basic_salary)}</p>
+                    <p className="font-medium text-gray-900">{formatCurrency(selectedEmployee.basic_salary)}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">Status</label>

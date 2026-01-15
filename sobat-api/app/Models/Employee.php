@@ -54,6 +54,7 @@ class Employee extends Model
         'join_date' => 'date',
         'contract_end_date' => 'date',
         'basic_salary' => 'decimal:2',
+        'education' => 'array',
     ];
 
     /**

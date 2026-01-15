@@ -516,7 +516,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Navigator.pop(context);
               await auth.logout();
               if (context.mounted) {
-                Navigator.of(context).pushReplacementNamed('/login');
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil('/', (route) => false);
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error),

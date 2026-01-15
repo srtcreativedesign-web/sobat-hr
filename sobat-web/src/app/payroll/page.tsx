@@ -16,7 +16,11 @@ interface Payroll {
   period_end: string;
   basic_salary: number;
   allowances: number;
+  overtime_pay: number;
   deductions: number;
+  bpjs_health: number;
+  bpjs_employment: number;
+  tax: number;
   gross_salary: number;
   net_salary: number;
   status: 'pending' | 'approved' | 'paid';
@@ -262,10 +266,10 @@ export default function PayrollPage() {
                         {new Date(payroll.period_start).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}
                       </td>
                       <td className="py-4 px-6 text-right text-sm text-gray-900">{formatCurrency(payroll.basic_salary)}</td>
-                      <td className="py-4 px-6 text-right text-sm text-green-600">{formatCurrency(payroll.allowances || 0)}</td>
-                      <td className="py-4 px-6 text-right text-sm text-red-600">{formatCurrency(payroll.deductions || 0)}</td>
-                      <td className="py-4 px-6 text-right text-sm text-red-600">{formatCurrency((payroll as any).bpjs_employment || 0)}</td>
-                      <td className="py-4 px-6 text-right text-sm text-red-600">{formatCurrency((payroll as any).tax || 0)}</td>
+                      <td className="py-4 px-6 text-right text-sm text-green-600">{formatCurrency(payroll.overtime_pay || 0)}</td>
+                      <td className="py-4 px-6 text-right text-sm text-red-600">{formatCurrency(payroll.bpjs_health || 0)}</td>
+                      <td className="py-4 px-6 text-right text-sm text-red-600">{formatCurrency(payroll.bpjs_employment || 0)}</td>
+                      <td className="py-4 px-6 text-right text-sm text-red-600">{formatCurrency(payroll.tax || 0)}</td>
                       <td className="py-4 px-6 text-right text-sm font-semibold text-gray-900">{formatCurrency(payroll.net_salary)}</td>
                       <td className="py-4 px-6 text-center">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBadge(payroll.status)}`}>

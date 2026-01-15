@@ -33,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (success && mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        // AuthWrapper will handle navigation
       }
     }
   }

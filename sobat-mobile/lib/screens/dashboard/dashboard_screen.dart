@@ -31,7 +31,9 @@ class DashboardScreen extends StatelessWidget {
                 );
                 await authProvider.logout();
                 if (context.mounted) {
-                  Navigator.of(context).pushReplacementNamed('/login');
+                  Navigator.of(
+                    context,
+                  ).pushNamedAndRemoveUntil('/', (route) => false);
                 }
               }
             },

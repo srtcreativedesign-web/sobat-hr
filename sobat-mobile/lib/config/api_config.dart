@@ -1,13 +1,17 @@
+import 'dart:io';
+
 class ApiConfig {
   // Base URL for API
   // Android Emulator: use 10.0.2.2 instead of localhost
-  // iOS Simulator: use localhost
-  // Physical Device: use your computer's IP address
-  // static const String baseUrl = 'http://192.168.1.7:8000/api'; // Old IP
-  // Use 10.0.2.2 for Android Emulator to access localhost
-  // static const String baseUrl = 'http://10.0.2.2:8000/api';
-  // Physical Device (Your IP: 192.168.1.8)
-  static const String baseUrl = 'http://192.168.1.8:8000/api';
+  // iOS Simulator & Web: use localhost (127.0.0.1)
+
+  static String get baseUrl {
+    if (Platform.isAndroid) {
+      return 'http://10.0.2.2:8000/api';
+    }
+    // iOS Simulator, Physical device (if mapped), or other
+    return 'http://127.0.0.1:8000/api';
+  }
 
   // API Endpoints
   static const String login = '/auth/login';

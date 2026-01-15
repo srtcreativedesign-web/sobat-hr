@@ -190,8 +190,13 @@ class _HomeScreenState extends State<HomeScreen> {
               child: CustomNavbar(
                 currentIndex: _selectedIndex,
                 onTap: (index) {
-                  setState(() => _selectedIndex = index);
-                  if (index == 4) Navigator.pushNamed(context, '/profile');
+                  if (index == 4) {
+                    Navigator.pushNamed(context, '/profile').then((_) {
+                      if (mounted) setState(() => _selectedIndex = 0);
+                    });
+                  } else {
+                    setState(() => _selectedIndex = index);
+                  }
                 },
               ),
             ),

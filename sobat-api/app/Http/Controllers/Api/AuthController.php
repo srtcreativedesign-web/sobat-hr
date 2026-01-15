@@ -115,12 +115,16 @@ class AuthController extends Controller
         $user->load(['role', 'employee']);
 
         return response()->json([
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => $user->role?->name ?? null,
-            'employee' => $user->employee,
-            'has_pin' => $user->has_pin,
+            'success' => true,
+            'message' => 'User profile fetched successfully',
+            'data' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role?->name ?? null,
+                'employee' => $user->employee,
+                'has_pin' => $user->has_pin,
+            ]
         ]);
     }
     /**

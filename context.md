@@ -108,3 +108,6 @@ Aplikasi tidak boleh terlihat kaku seperti dashboard admin konvensional. Harus t
 -   **Phase 4:** Mobile App Integration.
 
 
+
+
+/Applications/XAMPP/xamppfiles/bin/php artisan serve
