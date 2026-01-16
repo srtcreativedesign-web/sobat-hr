@@ -60,6 +60,8 @@ class StaffInvitationController extends Controller
                 $email = isset($row[1]) ? mb_convert_encoding($row[1], 'UTF-8', 'auto') : '';
                 $role = isset($row[2]) ? mb_convert_encoding($row[2], 'UTF-8', 'auto') : 'staff';
                 $divisionInput = isset($row[3]) ? mb_convert_encoding($row[3], 'UTF-8', 'auto') : '';
+                $jobLevel = isset($row[4]) ? mb_convert_encoding($row[4], 'UTF-8', 'auto') : '';
+                $track = isset($row[5]) ? mb_convert_encoding($row[5], 'UTF-8', 'auto') : '';
 
                 // Fuzzy Match Division
                 $matchedOrg = $this->findOrganization($divisionInput, $organizations);
@@ -70,6 +72,8 @@ class StaffInvitationController extends Controller
                     'email' => trim($email),
                     'role' => trim($role),
                     'division_input' => trim($divisionInput),
+                    'job_level' => trim($jobLevel),
+                    'track' => trim($track),
                     'organization_id' => $matchedOrg ? $matchedOrg->id : null,
                     'organization_name' => $matchedOrg ? $matchedOrg->name : null,
                     'valid' => true,
@@ -187,6 +191,8 @@ class StaffInvitationController extends Controller
             'rows.*.name' => 'required|string',
             'rows.*.email' => 'required|email',
             'rows.*.role' => 'nullable|string',
+            'rows.*.job_level' => 'nullable|string',
+            'rows.*.track' => 'nullable|in:operational,office',
             'rows.*.organization_id' => 'nullable|exists:organizations,id',
         ]);
 
@@ -258,11 +264,18 @@ class StaffInvitationController extends Controller
             return response()->json(['valid' => false, 'message' => "Token found but status is '{$anyInvite->status}'."], 400);
         }
 
+        // Parse payload for extra details if any
+        $payload = $anyInvite->payload ? (is_array($anyInvite->payload) ? $anyInvite->payload : json_decode($anyInvite->payload, true)) : [];
+
         return response()->json([
             'valid' => true,
             'name' => $anyInvite->name,
             'email' => $anyInvite->email,
             'organization' => $anyInvite->organization ? $anyInvite->organization->name : null,
+            'organization_id' => $anyInvite->organization_id,
+            'job_level' => $payload['job_level'] ?? null,
+            'track' => $payload['track'] ?? null,
+            'role' => $anyInvite->role,
         ]);
     }
 
@@ -271,6 +284,10 @@ class StaffInvitationController extends Controller
         $request->validate([
             'token' => 'required|string',
             'password' => 'required|string|min:8|confirmed',
+            'job_level' => 'nullable|string',
+            'track' => 'nullable|in:operational,office',
+            'organization_id' => 'nullable|exists:organizations,id',
+            'role' => 'nullable|string',
         ]);
 
         $invitation = Invitation::where('token', $request->token)
@@ -307,13 +324,29 @@ class StaffInvitationController extends Controller
             ]);
 
             // 3. Create Employee Profile
+            $payload = $invitation->payload ? (is_array($invitation->payload) ? $invitation->payload : json_decode($invitation->payload, true)) : [];
+            
+            // Allow override from Request if provided, otherwise fallback to Payload, then Defaults
+            $jobLevel = $request->has('job_level') ? $request->job_level : ($payload['job_level'] ?? null);
+            $track = $request->has('track') ? $request->track : ($payload['track'] ?? null);
+            $finalOrgId = $request->has('organization_id') ? $request->organization_id : $orgId;
+            $roleName = $request->has('role') ? $request->role : ($invitation->role ?: 'staff');
+
+            // Re-fetch role if overridden
+            $role = \App\Models\Role::where('name', $roleName)->first();
+            if (!$role) {
+                 $role = \App\Models\Role::where('name', 'staff')->first();
+            }
+
             \App\Models\Employee::create([
                 'user_id' => $user->id,
-                'organization_id' => $orgId,
+                'organization_id' => $finalOrgId,
                 'employee_code' => 'EMP-' . str_pad($user->id, 4, '0', STR_PAD_LEFT),
                 'full_name' => $user->name,
                 'email' => $user->email,
                 'position' => ucfirst($role ? $role->name : 'Staff'),
+                'job_level' => $jobLevel,
+                'track' => $track,
                 'phone' => '-',
                 'address' => '-',
                 'join_date' => now(),

@@ -132,13 +132,14 @@ export const useAuthStore = create<AuthState>()(
         // Verify token with backend
         try {
           const response = await apiClient.get(API_ENDPOINTS.AUTH.ME);
+          const userData = response.data?.data || response.data;
           set({
-            user: response.data,
+            user: userData,
             token,
             isAuthenticated: true,
             lastChecked: now,
           });
-          localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.data));
+          localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
         } catch (error) {
           // Only logout if explicitly 401 Unauthorized
           if ((error as any)?.response?.status === 401) {

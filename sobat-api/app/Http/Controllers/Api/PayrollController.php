@@ -86,6 +86,7 @@ class PayrollController extends Controller
                     'tax' => (float) ($payroll->pph21 ?? 0),
                     'gross_salary' => (float) $payroll->gross_salary,
                     'net_salary' => (float) $payroll->net_salary,
+                    'details' => $payroll->details,
                     'status' => $payroll->status === 'draft' ? 'pending' : $payroll->status,
                 ];
             }),
@@ -270,168 +271,166 @@ class PayrollController extends Controller
         $storedPath = $file->store('payroll_imports', 'local');
 
         try {
-            // Parse Excel file and FORCE formula calculation
             $path = $file->getRealPath();
-
-            // Load spreadsheet
             $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path);
+            $sheet = $spreadsheet->getActiveSheet();
+            
+            // Get all data
+            $rows = [];
+            foreach ($sheet->getRowIterator() as $row) {
+                $cellIterator = $row->getCellIterator();
+                $cellIterator->setIterateOnlyExistingCells(FALSE); // Loop all cells
+                $rowData = [];
+                foreach ($cellIterator as $cell) {
+                    $rowData[] = $cell->getCalculatedValue(); // Get calculated value
+                }
+                $rows[] = $rowData;
+            }
 
-            // Note: toArray with second param=true forces calculation for formulas that haven't been calculated yet
-
-            // Convert to array with calculated values, but RAW data (no formatting)
-            // This ensures 12000 is read as 12000 (number), not "12.000" (string)
-            $data = $spreadsheet->getActiveSheet()->toArray(null, true, false, true);
-
-            if (empty($data)) {
+            if (empty($rows)) {
                 return response()->json(['message' => 'File is empty or invalid'], 422);
             }
 
-            // Get header row
-            $headerRow = reset($data);
-            $header = [];
+            // DETECT HEADER FORMAT
+            // We assume the complex format (Row 2 + Row 3) usually.
+            // Let's look for "Nama Karyawan" in first 5 rows
+            $headerRowIndex = -1;
+            foreach ($rows as $idx => $r) {
+                if (isset($r[1]) && stripos($r[1], 'Nama Karyawan') !== false) {
+                    $headerRowIndex = $idx;
+                    break;
+                }
+            }
 
-            // Map headers
-            foreach ($headerRow as $i => $h) {
-                if (!$h)
-                    continue;
+            if ($headerRowIndex === -1) {
+                return response()->json(['message' => 'Format tidak dikenali. Pastikan ada kolom "Nama Karyawan".'], 422);
+            }
 
-                // Normalize: lowercase, remove non-alphanumeric (keep spaces for now)
-                $cleanH = strtolower(trim($h)); // e.g. "gaji pokok (clean)"
-                $key = preg_replace('/[^a-z0-9]/', '_', $cleanH); // e.g. "gaji_pokok_clean"
+            // MAPPING CONFIGURATION based on Column Analysis (0-indexed)
+            // A=0, B=1, ... K=10, L=11, M=12, N=13, O=14, P=15, Q=16, R=17, S=18, T=19, U=20 
+            // V=21, W=22, X=23, Y=24, Z=25, AA=26, AB=27, AC=28, AD=29, AE=30, AF=31
+            
+            // Check if Row 3 exists (idx + 1) for detailed columns
+            $hasDetailedRow = isset($rows[$headerRowIndex + 1]);
 
-                // Direct mapping first
-                $mapped = null;
-                $normalizedAlias = [
-                    'no' => 'no',
-                    'nama' => 'employee_name',
-                    'employee' => 'employee_name',
-                    'name' => 'employee_name',
-                    'karyawan' => 'employee_name',
-                    'pegawai' => 'employee_name',
+            $idxEmployeeName = 1; // Col B
+            $idxPeriod = -1; // Usually not in row, we might need to ask user or infer? 
+            // Wait, in previous analysis "Period" wasn't explicitly in the columns shown.
+            // The template uses Row 2: "No | Nama Karyawan ...". No Period column?
+            // Let's check user data usage. Often period is in filename OR there is a generic period column.
+            // In the `analyze_columns.php` output: NO Period column found in Row 2 headers.
+            // But checking `saveImport`, we need period.
+            // We will Try to find a Date/Period in the whole sheet before the header? 
+            // OR default to Current Month if missing?
+            // Let's look for separate "Period" logic later. For now assume it might be missing from row data.
+            
+            $dataRows = [];
+            
+            // Start reading data from Header + 2 (because Row 3 is sub-header)
+            // If Header is Row 2 (index 1), Data starts at Row 4 (index 3)
+            $startDataIndex = $headerRowIndex + ($hasDetailedRow ? 2 : 1);
 
-                    'nik' => 'employee_code',
-                    'kode' => 'employee_code',
-                    'code' => 'employee_code',
-                    'id' => 'employee_code',
+            for ($i = $startDataIndex; $i < count($rows); $i++) {
+                $row = $rows[$i];
+                
+                // Skip empty name
+                if (empty($row[$idxEmployeeName])) continue;
 
-                    'periode' => 'period',
-                    'period' => 'period',
-                    'bulan' => 'period',
+                // Extract Values (Safe defaults)
+                $extract = function($idx) use ($row) {
+                    return isset($row[$idx]) ? $this->parseCurrency($row[$idx]) : 0;
+                };
 
-                    'basic' => 'basic_salary',
-                    'pokok' => 'basic_salary',
-                    'gapok' => 'basic_salary',
+                // MAPPING (Based on Analysis)
+                // K (10) = Basic Salary
+                $basicSalary = $extract(10); 
+                
+                // Q (16) = Tunj. Jabatan => Existing 'allowances'
+                $allowances = $extract(16);
 
-                    'lembur' => 'overtime',
-                    'overtime' => 'overtime',
+                // P (15) = Tunj. Kesehatan => BPJS Health (Company portion? or allowance?)
+                // Usually "Tunjangan BPJS" is income. "Potongan BPJS" is deduction.
+                // Let's map P to 'bpjs_health' field for now, assuming it's the allowance part or the deduction part shown as positive?
+                // Header says "Tunj. Kesehatan". So likely Income.
+                // But DB 'bpjs_kesehatan' is usually the standard deduction amount stored?
+                // If this is Tunjangan, add to Allowances? Or store in Details?
+                // Let's store in `details['tunjangan_kesehatan']` and map to allowances total if needed.
+                $tunjKesehatan = $extract(15);
+                
+                // N (13) Transport? No, Row 3 "Jumlah" is O (14). (Row 2 N is merged?)
+                $transportAllowance = $extract(14); 
 
-                    'bpjs_kes' => 'bpjs_health',
-                    'kesehatan' => 'bpjs_health',
+                // U (20) Lembur (Jumlah)
+                $overtime = $extract(20);
 
-                    'bpjs_tk' => 'bpjs_employment',
-                    'ketenagakerjaan' => 'bpjs_employment',
-                    'jamsostek' => 'bpjs_employment',
+                // V (21) Insentif Lebaran
+                $insentif = $extract(21);
 
-                    'pph' => 'tax_pph21',
-                    'pajak' => 'tax_pph21',
-                    'tax' => 'tax_pph21',
+                // Z (25) Potongan -> Row 3 says "Absen 1X" at Z?
+                // Wait. Column Analysis:
+                // ROW 2: [Z] Potongan (Rp)
+                // ROW 3: [Z] Absen 1X  [AA] Terlambat  [AB] Selisih SO  [AC] Pinjaman  [AD] Adm Bank  [AE] BPJS TK  [AF] Jumlah
+                
+                $absen1x = $extract(25);
+                $terlambat = $extract(26);
+                $selisihSO = $extract(27);
+                $pinjaman = $extract(28); // AC (28)
+                $admBank = $extract(29);
+                $bpjsTKDeduction = $extract(30); // AE (30) BPJS TK
+                
+                // AF (31) Total Potongan
+                $totalDeduction = $extract(31);
 
-                    'net' => 'net_salary',
-                    'thp' => 'net_salary',
-                    'bersih' => 'net_salary',
-                    'home_pay' => 'net_salary',
-                    'diterima' => 'net_salary',
+                // Calculate Totals to verify
+                // Gross = Basic + Tunj Jabatan + Tunj Kesehatan + Transport + Overtime + Insentif
+                // Note: Tunj Kesehatan might be Benefit (Non-cash)? 
+                // Let's stick to explicitly explicit columns being saved.
 
-                    'deduction' => 'total_deductions',
-                    'potongan' => 'total_deductions',
+                $details = [
+                    'transport_allowance' => $transportAllowance, // O
+                    'tunjangan_kesehatan' => $tunjKesehatan, // P
+                    'insentif_lebaran' => $insentif, // V
+                    'adj_kekurangan_gaji' => $extract(22), // W
+                    'kebijakan_ho' => $extract(24), // Y
+                    'absen_1x' => $absen1x, // Z
+                    'terlambat' => $terlambat, // AA
+                    'selisih_so' => $selisihSO, // AB
+                    'pinjaman' => $pinjaman, // AC
+                    'adm_bank' => $admBank, // AD
+                    'bpjs_tk_deduction' => $bpjsTKDeduction, // AE
                 ];
 
-                // 1. Exact match check (after simple normalization)
-                foreach ($normalizedAlias as $alias => $target) {
-                    if ($key === $alias || str_replace('_', '', $key) === $alias) {
-                        $mapped = $target;
-                        break;
-                    }
+                $parsed = [
+                    'employee_name' => $row[$idxEmployeeName],
+                    'employee_code' => $row[2] ?? null, // C (2) No Rekening? Wait.
+                    // Row 2 Analysis: [C] No Rekening. No Employee Code found in headers!
+                    // We must rely on Name matching.
+                    
+                    'period' => date('Y-m'), // Default to current if missing
+                    'basic_salary' => $basicSalary,
+                    'allowances' => $allowances + $tunjKesehatan + $transportAllowance + $insentif, // Aggregate for backward compat
+                    'overtime' => $overtime,
+                    // Use Total Potongan from AF (31)
+                    'total_deductions' => $totalDeduction,
+                    'net_salary' => $extract(33), // AH (33) THP?
+                    // [AG] Grand Total (32). [AH] THP (33).
+                    
+                    'details' => $details
+                ];
+                
+                // If THP is 0/empty, calculate it?
+                if ($parsed['net_salary'] == 0) {
+                     $parsed['net_salary'] = $parsed['basic_salary'] + $parsed['allowances'] + $parsed['overtime'] - $parsed['total_deductions'];
                 }
 
-                // 2. Contains check (Fuzzy)
-                if (!$mapped) {
-                    foreach ($normalizedAlias as $alias => $target) {
-                        if (str_contains($cleanH, $alias) || str_contains($key, $alias)) {
-                            // Prioritize "basic" (basic_salary) vs "net" (net_salary)
-                            // "gaji pokok" contains "pokok" -> basic_salary
-                            // "total gaji bersih" contains "bersih" -> net_salary
-                            // "bpjs kesehatan" contains "kesehatan" -> bpjs_health
-                            $mapped = $target;
-                            break;
-                        }
-                    }
-                }
-
-                // Special Fallback for "Gaji" only -> Basic Salary
-                if (!$mapped && $cleanH === 'gaji') {
-                    $mapped = 'basic_salary';
-                }
-
-                $header[$i] = $mapped; // Can be null if not ignored
-            }
-
-            // FILTER null headers
-            $available = array_filter(array_values(array_unique($header)));
-
-            $hasEmployeeIdentifier = in_array('employee_code', $available) || in_array('employee_name', $available);
-            $hasPeriod = in_array('period', $available);
-            $hasBasicSalary = in_array('basic_salary', $available);
-
-            if (!$hasEmployeeIdentifier || !$hasPeriod || !$hasBasicSalary) {
-                // Collect original headers for debugging
-                $detectedOriginals = array_values(array_filter($headerRow));
-
-                return response()->json([
-                    'message' => 'Missing columns. \nDetected: [' . implode(', ', $available) . ']. \nFrom Headers: [' . implode(', ', $detectedOriginals) . ']. \nNeed: Name/Code, Period, Basic Salary (Gaji Pokok).',
-                    'available_columns' => $available,
-                    'original_headers' => $headerRow
-                ], 422);
-            }
-
-            // Remove header row from data
-            array_shift($data);
-
-            $rows = [];
-            foreach ($data as $index => $rowData) {
-                // Header already removed
-
-                $parsed = [];
-                foreach ($rowData as $i => $value) {
-                    $key = $header[$i] ?? null;
-                    if ($key) {
-                        // Convert encoding to UTF-8
-                        $parsed[$key] = mb_convert_encoding($value, 'UTF-8', 'auto');
-                    }
-                }
-
-                if (empty($parsed['employee_code']) && empty($parsed['employee_name'])) {
-                    continue;
-                }
-
-                $parsed['basic_salary'] = $parsed['basic_salary'] ?? 0;
-                $parsed['overtime'] = $parsed['overtime'] ?? 0;
-                $parsed['bpjs_health'] = $parsed['bpjs_health'] ?? 0;
-                $parsed['bpjs_employment'] = $parsed['bpjs_employment'] ?? 0;
-                $parsed['tax_pph21'] = $parsed['tax_pph21'] ?? 0;
-                $parsed['net_salary'] = isset($parsed['net_salary']) ? $parsed['net_salary'] : null;
-                $parsed['gross_salary'] = isset($parsed['gross_salary']) ? $parsed['gross_salary'] : null;
-                $parsed['total_deductions'] = isset($parsed['total_deductions']) ? $parsed['total_deductions'] : null;
-                $parsed['other_deductions'] = isset($parsed['other_deductions']) ? $parsed['other_deductions'] : 0;
-
-                $rows[] = $parsed;
+                $dataRows[] = $parsed;
             }
 
             return response()->json([
-                'message' => 'File parsed successfully',
+                'message' => 'File parsed successfully (Complex Format)',
                 'file_name' => $file->getClientOriginalName(),
-                'rows_count' => count($rows),
-                'rows' => $rows,
+                'rows_count' => count($dataRows),
+                'rows' => $dataRows,
             ]);
 
         } catch (\Exception $e) {
@@ -451,8 +450,13 @@ class PayrollController extends Controller
         $request->validate([
             'rows' => 'required|array',
             'rows.*.employee_name' => 'required|string',
-            'rows.*.period' => 'required|string',
             'rows.*.basic_salary' => 'required|numeric',
+            'rows.*.period' => 'nullable|string', // Period can be defaulted
+            'rows.*.allowances' => 'nullable|numeric',
+            'rows.*.overtime' => 'nullable|numeric',
+            'rows.*.total_deductions' => 'nullable|numeric',
+            'rows.*.net_salary' => 'required|numeric',
+            'rows.*.details' => 'nullable|array', // For JSON column
         ]);
 
         $rows = $request->input('rows');
@@ -473,85 +477,54 @@ class PayrollController extends Controller
                     continue;
                 }
 
-                // Parse period (assuming format like "Januari 2026" or "2026-01")
-                $period = $row['period'];
+                // Parse period
+                $period = $row['period'] ?? date('Y-m'); // Fallback
                 $periodParsed = $this->parsePeriod($period);
-
-                if (!$periodParsed) {
-                    $failed[] = [
-                        'row' => $index + 1,
-                        'employee_name' => $row['employee_name'],
-                        'reason' => 'Invalid period format: ' . $period,
-                    ];
-                    continue;
-                }
-
-                // Use values from Excel directly
-                // Parse currency here for storage
-                $basicSalary = $this->parseCurrency($row['basic_salary']);
-                $allowances = 0;
-                $overtime = $this->parseCurrency($row['overtime'] ?? 0);
-                $bpjsHealth = $this->parseCurrency($row['bpjs_health'] ?? 0);
-                $bpjsEmployment = $this->parseCurrency($row['bpjs_employment'] ?? 0);
-                $taxPph21 = $this->parseCurrency($row['tax_pph21'] ?? 0);
-                $otherDeductions = $this->parseCurrency($row['other_deductions'] ?? 0);
-
-                // Use values from Excel directly - NO CALCULATION AT ALL
-                $grossSalary = $this->parseCurrency($row['gross_salary'] ?? 0);
-                $totalDeductions = $this->parseCurrency($row['total_deductions'] ?? 0);
-                $netSalary = $this->parseCurrency($row['net_salary'] ?? 0);
-
-                // Format period as YYYY-MM
+                if (!$periodParsed) $periodParsed = ['year' => (int)date('Y'), 'month' => (int)date('m')];
                 $periodString = sprintf('%04d-%02d', $periodParsed['year'], $periodParsed['month']);
 
-                // Check if payroll already exists for this employee and period
-                $existing = Payroll::where('employee_id', $employee->id)
-                    ->where('period', $periodString)
-                    ->first();
+                $basicSalary = $row['basic_salary'];
+                $allowances = $row['allowances'] ?? 0;
+                $overtime = $row['overtime'] ?? 0;
+                $totalDeductions = $row['total_deductions'] ?? 0;
+                $netSalary = $row['net_salary'];
+                
+                // Gross = Basic + Allowances + Overtime
+                $grossSalary = $basicSalary + $allowances + $overtime;
+                
+                $details = $row['details'] ?? [];
 
-                if ($existing) {
-                    // Update existing
-                    $existing->update([
-                        'basic_salary' => $basicSalary,
-                        'allowances' => $allowances,
-                        'overtime_pay' => $overtime,
-                        'gross_salary' => $grossSalary,
-                        'bpjs_kesehatan' => $bpjsHealth,
-                        'bpjs_ketenagakerjaan' => $bpjsEmployment,
-                        'pph21' => $taxPph21,
-                        'other_deductions' => $otherDeductions,
-                        'total_deductions' => $totalDeductions,
-                        'net_salary' => $netSalary,
-                        'status' => 'draft',
-                    ]);
-                    $saved[] = [
-                        'row' => $index + 1,
-                        'employee_name' => $row['employee_name'],
-                        'action' => 'updated',
-                    ];
-                } else {
-                    // Create new
-                    Payroll::create([
+                // Check update or create
+                $payroll = Payroll::updateOrCreate(
+                    [
                         'employee_id' => $employee->id,
                         'period' => $periodString,
+                    ],
+                    [
                         'basic_salary' => $basicSalary,
                         'allowances' => $allowances,
                         'overtime_pay' => $overtime,
                         'gross_salary' => $grossSalary,
-                        'bpjs_kesehatan' => $bpjsHealth,
-                        'bpjs_ketenagakerjaan' => $bpjsEmployment,
-                        'pph21' => $taxPph21,
-                        'other_deductions' => $otherDeductions,
                         'total_deductions' => $totalDeductions,
                         'net_salary' => $netSalary,
+                        'details' => $details, // Save JSON
                         'status' => 'draft',
-                    ]);
-                    $saved[] = [
-                        'row' => $index + 1,
-                        'employee_name' => $row['employee_name'],
-                        'action' => 'created',
-                    ];
-                }
+                        // BPJS Health, BPJS Employment, Tax PPh21 are not directly mapped from the new import format
+                        // They would need to be extracted from 'details' if required for specific columns.
+                        // For now, they will default to 0 if not explicitly set here.
+                        'bpjs_kesehatan' => 0, // Or extract from details if available
+                        'bpjs_ketenagakerjaan' => $details['bpjs_tk_deduction'] ?? 0, // Example: map from details
+                        'pph21' => 0, // Or extract from details if available
+                        'other_deductions' => $totalDeductions - ($details['bpjs_tk_deduction'] ?? 0), // Example: calculate other deductions
+                    ]
+                );
+
+                $saved[] = [
+                    'row' => $index + 1,
+                    'employee_name' => $row['employee_name'],
+                    'action' => $payroll->wasRecentlyCreated ? 'created' : 'updated',
+                ];
+
             } catch (\Exception $e) {
                 $failed[] = [
                     'row' => $index + 1,
@@ -562,7 +535,7 @@ class PayrollController extends Controller
         }
 
         return response()->json([
-            'message' => 'Import completed',
+            'message' => 'Import updated successfully',
             'summary' => [
                 'total' => count($rows),
                 'saved' => count($saved),

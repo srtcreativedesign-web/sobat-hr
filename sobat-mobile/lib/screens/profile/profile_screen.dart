@@ -48,6 +48,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       elevation: 0,
                       scrolledUnderElevation: 0,
                       toolbarHeight: 70,
+                      title: Text(
+                        'Profil Saya',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textDark,
+                        ),
+                      ),
+                      centerTitle: false,
+                      actions: [
+                        IconButton(
+                          icon: const Icon(Icons.settings_outlined),
+                          onPressed: () {},
+                          color: AppTheme.textLight,
+                        ),
+                        const SizedBox(width: 16),
+                      ],
                       flexibleSpace: ClipRRect(
                         child: BackdropFilter(
                           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
@@ -55,29 +72,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             decoration: BoxDecoration(
                               border: Border(
                                 bottom: BorderSide(color: Colors.grey.shade200),
-                              ),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            alignment: Alignment.centerLeft,
-                            child: SafeArea(
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Profil Saya',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppTheme.textDark,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.settings_outlined),
-                                    onPressed: () {},
-                                    color: AppTheme.textLight,
-                                  ),
-                                ],
                               ),
                             ),
                           ),
@@ -261,14 +255,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   left: 24,
                   right: 24,
                   bottom: 32,
-                  child: SafeArea(
-                    child: CustomNavbar(
-                      currentIndex: 4,
-                      onTap: (index) {
-                        if (index == 0)
-                          Navigator.popUntil(context, (route) => route.isFirst);
-                      },
-                    ),
+                  child: CustomNavbar(
+                    currentIndex: 4,
+                    onTap: (index) {
+                      if (index == 0)
+                        Navigator.popUntil(context, (route) => route.isFirst);
+                    },
                   ),
                 ),
 
@@ -400,14 +392,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            user?.role?.toUpperCase() ?? 'STAFF',
+            (user?.jobLevel != null)
+                ? (user!.jobLevel!.toUpperCase().replaceAll('_', ' '))
+                : (user?.role?.toUpperCase() ?? 'STAFF'),
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.white.withValues(alpha: 0.7),
+              color: Colors.white.withValues(alpha: 0.9),
               letterSpacing: 1,
             ),
           ),
+          if (user?.organization != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              user!.organization!,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
+            ),
+          ],
           const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

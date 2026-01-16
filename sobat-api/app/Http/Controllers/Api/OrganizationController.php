@@ -77,4 +77,14 @@ class OrganizationController extends Controller
 
         return response()->json($employees);
     }
+
+    public function reset()
+    {
+        // Disable foreign key checks to allow truncation if needed, 
+        // or just delete query if cascading is set up. 
+        // Safer to just delete all.
+        Organization::query()->delete();
+
+        return response()->json(['message' => 'All organizations reset successfully']);
+    }
 }

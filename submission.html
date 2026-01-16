@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Daftar Pengajuan</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#136dec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101822",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1c2431",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.75rem",
+                        "xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display transition-colors duration-200">
+    <div
+        class="relative flex h-full min-h-screen w-full max-w-md mx-auto flex-col bg-background-light dark:bg-background-dark overflow-hidden shadow-2xl border-x border-slate-200 dark:border-slate-800">
+        <header
+            class="sticky top-0 z-20 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50">
+            <div class="h-[44px] w-full flex items-center justify-between px-6 pt-2">
+                <span class="text-xs font-semibold">9:41</span>
+                <div class="flex gap-1">
+                    <span class="material-symbols-outlined text-[16px] leading-none">signal_cellular_alt</span>
+                    <span class="material-symbols-outlined text-[16px] leading-none">wifi</span>
+                    <span class="material-symbols-outlined text-[16px] leading-none">battery_full</span>
+                </div>
+            </div>
+            <div class="flex items-center justify-between px-5 pb-3 pt-1">
+                <h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Pengajuan</h1>
+                <button
+                    class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary active:bg-primary/20 transition-colors">
+                    <span class="material-symbols-outlined" style="font-size: 28px;">add</span>
+                </button>
+            </div>
+            <div class="flex gap-3 px-5 pb-4 pt-1 overflow-x-auto no-scrollbar mask-gradient-r">
+                <button
+                    class="flex h-9 shrink-0 items-center justify-center rounded-full bg-primary text-white px-5 shadow-sm shadow-primary/30">
+                    <p class="text-sm font-semibold">Semua</p>
+                </button>
+                <button
+                    class="flex h-9 shrink-0 items-center justify-center rounded-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 px-5 text-slate-600 dark:text-slate-300">
+                    <p class="text-sm font-medium">Menunggu</p>
+                </button>
+                <button
+                    class="flex h-9 shrink-0 items-center justify-center rounded-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 px-5 text-slate-600 dark:text-slate-300">
+                    <p class="text-sm font-medium">Disetujui</p>
+                </button>
+                <button
+                    class="flex h-9 shrink-0 items-center justify-center rounded-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 px-5 text-slate-600 dark:text-slate-300">
+                    <p class="text-sm font-medium">Ditolak</p>
+                </button>
+            </div>
+        </header>
+        <main class="flex-1 overflow-y-auto px-5 py-4 space-y-4 pb-24">
+            <div class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">Terbaru
+            </div>
+            <div
+                class="group relative flex w-full flex-col gap-3 rounded-2xl bg-white dark:bg-surface-dark p-4 shadow-sm border border-slate-100 dark:border-slate-800 transition-all hover:shadow-md active:scale-[0.98]">
+                <div class="flex items-start justify-between">
+                    <div class="flex gap-4">
+                        <div
+                            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400">
+                            <span class="material-symbols-outlined">calendar_month</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">Cuti Tahunan
+                            </h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">12 Jan 2024 - 14 Jan 2024</p>
+                        </div>
+                    </div>
+                    <span
+                        class="inline-flex items-center rounded-full bg-orange-100 dark:bg-orange-500/20 px-2.5 py-0.5 text-xs font-semibold text-orange-700 dark:text-orange-300">
+                        Menunggu
+                    </span>
+                </div>
+                <div class="h-px w-full bg-slate-100 dark:bg-slate-700/50"></div>
+                <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <span>3 Hari kerja</span>
+                    <span class="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
+                </div>
+            </div>
+            <div
+                class="group relative flex w-full flex-col gap-3 rounded-2xl bg-white dark:bg-surface-dark p-4 shadow-sm border border-slate-100 dark:border-slate-800 transition-all hover:shadow-md active:scale-[0.98]">
+                <div class="flex items-start justify-between">
+                    <div class="flex gap-4">
+                        <div
+                            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:text-blue-400">
+                            <span class="material-symbols-outlined">medical_services</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">Reimbursement
+                                Medis</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">10 Des 2023</p>
+                        </div>
+                    </div>
+                    <span
+                        class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/20 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                        Disetujui
+                    </span>
+                </div>
+                <div class="h-px w-full bg-slate-100 dark:bg-slate-700/50"></div>
+                <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <span>Rp 450.000</span>
+                    <span class="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
+                </div>
+            </div>
+            <div class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mt-6 mb-2">2023
+            </div>
+            <div
+                class="group relative flex w-full flex-col gap-3 rounded-2xl bg-white dark:bg-surface-dark p-4 shadow-sm border border-slate-100 dark:border-slate-800 transition-all hover:shadow-md active:scale-[0.98]">
+                <div class="flex items-start justify-between">
+                    <div class="flex gap-4">
+                        <div
+                            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                            <span class="material-symbols-outlined">thermometer</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">Cuti Sakit</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">01 Nov 2023</p>
+                        </div>
+                    </div>
+                    <span
+                        class="inline-flex items-center rounded-full bg-rose-100 dark:bg-rose-500/20 px-2.5 py-0.5 text-xs font-semibold text-rose-700 dark:text-rose-300">
+                        Ditolak
+                    </span>
+                </div>
+                <div class="h-px w-full bg-slate-100 dark:bg-slate-700/50"></div>
+                <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <span>1 Hari • Lampiran kurang</span>
+                    <span class="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
+                </div>
+            </div>
+            <div
+                class="group relative flex w-full flex-col gap-3 rounded-2xl bg-white dark:bg-surface-dark p-4 shadow-sm border border-slate-100 dark:border-slate-800 transition-all hover:shadow-md active:scale-[0.98]">
+                <div class="flex items-start justify-between">
+                    <div class="flex gap-4">
+                        <div
+                            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:text-blue-400">
+                            <span class="material-symbols-outlined">flight_takeoff</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">Perjalanan
+                                Dinas</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">15 Okt 2023</p>
+                        </div>
+                    </div>
+                    <span
+                        class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/20 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                        Disetujui
+                    </span>
+                </div>
+                <div class="h-px w-full bg-slate-100 dark:bg-slate-700/50"></div>
+                <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <span>Jakarta - Bandung</span>
+                    <span class="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
+                </div>
+            </div>
+            <div
+                class="group relative flex w-full flex-col gap-3 rounded-2xl bg-white dark:bg-surface-dark p-4 shadow-sm border border-slate-100 dark:border-slate-800 transition-all hover:shadow-md active:scale-[0.98]">
+                <div class="flex items-start justify-between">
+                    <div class="flex gap-4">
+                        <div
+                            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:text-blue-400">
+                            <span class="material-symbols-outlined">schedule</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">Lembur</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">02 Okt 2023</p>
+                        </div>
+                    </div>
+                    <span
+                        class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/20 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                        Disetujui
+                    </span>
+                </div>
+                <div class="h-px w-full bg-slate-100 dark:bg-slate-700/50"></div>
+                <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <span>4 Jam</span>
+                    <span class="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
+                </div>
+            </div>
+        </main>
+        <nav
+            class="absolute bottom-0 z-20 w-full bg-white dark:bg-surface-dark border-t border-slate-200 dark:border-slate-800 pb-6 pt-3">
+            <div class="grid grid-cols-4 h-full">
+                <a class="flex flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors"
+                    href="#">
+                    <span class="material-symbols-outlined text-[24px]">home</span>
+                    <span class="text-[10px] font-medium">Beranda</span>
+                </a>
+                <a class="flex flex-col items-center justify-center gap-1 text-primary" href="#">
+                    <span class="material-symbols-outlined text-[24px] fill-1">assignment</span>
+                    <span class="text-[10px] font-bold">Pengajuan</span>
+                </a>
+                <a class="flex flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors"
+                    href="#">
+                    <span class="material-symbols-outlined text-[24px]">payments</span>
+                    <span class="text-[10px] font-medium">Payslip</span>
+                </a>
+                <a class="flex flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors"
+                    href="#">
+                    <span class="material-symbols-outlined text-[24px]">person</span>
+                    <span class="text-[10px] font-medium">Profil</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+    <style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</body>
+
+</html>

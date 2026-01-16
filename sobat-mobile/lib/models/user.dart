@@ -8,6 +8,10 @@ class User {
   final DateTime? emailVerifiedAt;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String? jobLevel;
+  final String? track;
+  final String? organization;
+  final int? organizationId;
   final bool hasPin;
 
   User({
@@ -20,17 +24,46 @@ class User {
     this.emailVerifiedAt,
     this.createdAt,
     this.updatedAt,
+    this.jobLevel,
+    this.track,
+    this.organization,
+    this.organizationId,
     this.hasPin = false,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    String? empId;
+    String? jobLvl; // job_level column
+    String? trk; // track column
+    String? orgName; // organization.name
+    int? orgId; // organization.id
+
+    if (json['employee'] != null) {
+      empId = json['employee']['employee_code'];
+      jobLvl = json['employee']['job_level'];
+      trk = json['employee']['track'];
+
+      if (json['employee']['organization'] != null) {
+        orgName = json['employee']['organization']['name'];
+        orgId = json['employee']['organization']['id'];
+      } else {
+        // Fallback if organization_id is directly on employee
+        orgId = json['employee']['organization_id'];
+      }
+    } else {
+      // Fallback for flat structure if any
+      empId = json['employee_id'];
+    }
+
     return User(
       id: json['id'] as int,
       name: json['name'] as String,
       email: json['email'] as String,
-      employeeId: json['employee_id'] as String?,
+      employeeId: empId,
       avatar: json['avatar'] as String?,
-      role: json['role'] as String?,
+      role: (json['role'] is Map)
+          ? json['role']['name'] as String?
+          : json['role'] as String?,
       emailVerifiedAt: json['email_verified_at'] != null
           ? DateTime.parse(json['email_verified_at'] as String)
           : null,
@@ -40,6 +73,10 @@ class User {
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
           : null,
+      jobLevel: jobLvl,
+      track: trk,
+      organization: orgName,
+      organizationId: orgId,
       hasPin: json['has_pin'] as bool? ?? false,
     );
   }
@@ -56,6 +93,10 @@ class User {
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
       'has_pin': hasPin,
+      'job_level': jobLevel,
+      'track': track,
+      'organization': organization,
+      'organization_id': organizationId,
     };
   }
 

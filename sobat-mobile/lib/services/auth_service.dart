@@ -8,43 +8,44 @@ class AuthService {
   late final Dio _dio;
 
   AuthService() {
-    _dio = Dio(BaseOptions(
-      baseUrl: ApiConfig.baseUrl,
-      connectTimeout: ApiConfig.connectTimeout,
-      receiveTimeout: ApiConfig.receiveTimeout,
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-    ));
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: ApiConfig.baseUrl,
+        connectTimeout: ApiConfig.connectTimeout,
+        receiveTimeout: ApiConfig.receiveTimeout,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
 
     // Add interceptor untuk attach token
-    _dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        final token = await StorageService.getToken();
-        if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
-        }
-        return handler.next(options);
-      },
-      onError: (error, handler) async {
-        // Auto logout jika 401
-        if (error.response?.statusCode == 401) {
-          await StorageService.clearAll();
-        }
-        return handler.next(error);
-      },
-    ));
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          final token = await StorageService.getToken();
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          return handler.next(options);
+        },
+        onError: (error, handler) async {
+          // Auto logout jika 401
+          if (error.response?.statusCode == 401) {
+            await StorageService.clearAll();
+          }
+          return handler.next(error);
+        },
+      ),
+    );
   }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await _dio.post(
         ApiConfig.login,
-        data: {
-          'email': email,
-          'password': password,
-        },
+        data: {'email': email, 'password': password},
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
@@ -67,7 +68,8 @@ class AuthService {
     } on DioException catch (e) {
       if (e.response != null) {
         throw Exception(
-            e.response?.data['message'] ?? 'Login gagal: ${e.message}');
+          e.response?.data['message'] ?? 'Login gagal: ${e.message}',
+        );
       } else {
         throw Exception('Koneksi gagal. Periksa internet Anda.');
       }
@@ -118,11 +120,13 @@ class AuthService {
       return null;
     }
   }
- 
 
   Future<void> updateEmployee(int id, Map<String, dynamic> payload) async {
     try {
-      final response = await _dio.put('${ApiConfig.employees}/$id', data: payload);
+      final response = await _dio.put(
+        '${ApiConfig.employees}/$id',
+        data: payload,
+      );
       if (response.statusCode == 200) {
         // Optionally refresh stored user/profile
         await getProfile();
@@ -135,8 +139,12 @@ class AuthService {
       if (status == 422) {
         final data = e.response?.data;
         // Debug: print raw response body for easier inspection
-        print('AuthService.updateEmployee 422 response raw: ${jsonEncode(data)}');
-        final errors = data != null && data['errors'] != null ? data['errors'] as Map<String, dynamic> : null;
+        print(
+          'AuthService.updateEmployee 422 response raw: ${jsonEncode(data)}',
+        );
+        final errors = data != null && data['errors'] != null
+            ? data['errors'] as Map<String, dynamic>
+            : null;
         if (errors != null) {
           final msgs = errors.values
               .expand((v) => (v as List).map((i) => i.toString()))
@@ -144,7 +152,9 @@ class AuthService {
           // include raw data for debugging
           throw Exception('$msgs | raw:${jsonEncode(data)}');
         }
-        final msg = data != null && data['message'] != null ? data['message'].toString() : 'Validasi gagal';
+        final msg = data != null && data['message'] != null
+            ? data['message'].toString()
+            : 'Validasi gagal';
         throw Exception('$msg | raw:${jsonEncode(data)}');
       }
       throw Exception(e.response?.data['message'] ?? e.message);
@@ -164,8 +174,12 @@ class AuthService {
       if (status == 422) {
         final data = e.response?.data;
         // Debug: print raw response body for easier inspection
-        print('AuthService.createEmployee 422 response raw: ${jsonEncode(data)}');
-        final errors = data != null && data['errors'] != null ? data['errors'] as Map<String, dynamic> : null;
+        print(
+          'AuthService.createEmployee 422 response raw: ${jsonEncode(data)}',
+        );
+        final errors = data != null && data['errors'] != null
+            ? data['errors'] as Map<String, dynamic>
+            : null;
         if (errors != null) {
           final msgs = errors.values
               .expand((v) => (v as List).map((i) => i.toString()))
@@ -173,10 +187,36 @@ class AuthService {
           // include raw data for debugging
           throw Exception('$msgs | raw:${jsonEncode(data)}');
         }
-        final msg = data != null && data['message'] != null ? data['message'].toString() : 'Validasi gagal';
+        final msg = data != null && data['message'] != null
+            ? data['message'].toString()
+            : 'Validasi gagal';
         throw Exception('$msg | raw:${jsonEncode(data)}');
       }
       throw Exception(e.response?.data['message'] ?? e.message);
+    }
+  }
+
+  Future<Map<String, dynamic>?> getSupervisorCandidate({
+    required int organizationId,
+    required String jobLevel,
+    required String track,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '${ApiConfig.employees}/supervisor-candidate',
+        queryParameters: {
+          'organization_id': organizationId,
+          'job_level': jobLevel,
+          'track': track,
+        },
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
     }
   }
 }

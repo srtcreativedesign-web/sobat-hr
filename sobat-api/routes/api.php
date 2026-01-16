@@ -31,11 +31,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/security/pin/verify', [App\Http\Controllers\Api\SecurityController::class, 'verifyPin']);
 
     // Employee routes
+    Route::get('/employees/supervisor-candidate', [App\Http\Controllers\Api\EmployeeController::class, 'getSupervisorCandidate']);
     Route::apiResource('employees', App\Http\Controllers\Api\EmployeeController::class);
     Route::get('/employees/{id}/attendances', [App\Http\Controllers\Api\EmployeeController::class, 'attendances']);
     Route::get('/employees/{id}/payrolls', [App\Http\Controllers\Api\EmployeeController::class, 'payrolls']);
 
     // Organization routes
+    Route::delete('/organizations/reset', [App\Http\Controllers\Api\OrganizationController::class, 'reset']);
     Route::apiResource('organizations', App\Http\Controllers\Api\OrganizationController::class);
     Route::get('/organizations/{id}/employees', [App\Http\Controllers\Api\OrganizationController::class, 'employees']);
 

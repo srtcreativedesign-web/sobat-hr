@@ -22,6 +22,7 @@ class Payroll extends Model
         'other_deductions',
         'total_deductions',
         'net_salary',
+        'details',
         'status',
         'paid_at',
     ];
@@ -38,6 +39,7 @@ class Payroll extends Model
         'total_deductions' => 'decimal:2',
         'net_salary' => 'decimal:2',
         'paid_at' => 'datetime',
+        'details' => 'array',
     ];
 
     /**

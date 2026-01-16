@@ -63,6 +63,8 @@ class EmployeeController extends Controller
             'department' => 'nullable|string',
             'base_salary' => 'nullable|numeric|min:0',
             'status' => 'nullable|in:active,inactive,resigned',
+            'job_level' => 'nullable|string',
+            'track' => 'nullable|in:operational,office',
             'contract_type' => 'nullable|in:permanent,contract,probation',
             'contract_end_date' => 'nullable|date',
             // Additional employee profile fields
@@ -129,6 +131,10 @@ class EmployeeController extends Controller
             $data['employment_status'] = $validated['employment_status'];
         if (isset($validated['status']))
             $data['status'] = $validated['status'];
+        if (isset($validated['job_level']))
+            $data['job_level'] = $validated['job_level'];
+        if (isset($validated['track']))
+            $data['track'] = $validated['track'];
 
         // New additional fields added by migration (same names)
         $extraFields = [
@@ -150,6 +156,7 @@ class EmployeeController extends Controller
             'education',
             'supervisor_name',
             'supervisor_position',
+            'department',
             'photo_path'
         ];
         foreach ($extraFields as $f) {
@@ -241,6 +248,8 @@ class EmployeeController extends Controller
             'status' => 'sometimes|in:active,inactive,resigned',
             'contract_type' => 'sometimes|in:permanent,contract,probation',
             'employment_status' => 'sometimes|in:permanent,contract,probation',
+            'job_level' => 'nullable|string',
+            'track' => 'nullable|in:operational,office',
             'contract_end_date' => 'nullable|date',
             // Additional employee profile fields
             'place_of_birth' => 'nullable|string',
@@ -304,6 +313,10 @@ class EmployeeController extends Controller
             $data['employment_status'] = $validated['employment_status'];
         if (isset($validated['status']))
             $data['status'] = $validated['status'];
+        if (isset($validated['job_level']))
+            $data['job_level'] = $validated['job_level'];
+        if (isset($validated['track']))
+            $data['track'] = $validated['track'];
 
         $extraFields = [
             'place_of_birth',
@@ -324,6 +337,7 @@ class EmployeeController extends Controller
             'education',
             'supervisor_name',
             'supervisor_position',
+            'department',
             'photo_path'
         ];
         foreach ($extraFields as $f) {
@@ -379,5 +393,79 @@ class EmployeeController extends Controller
             ->paginate(12);
 
         return response()->json($payrolls);
+    }
+
+    /**
+     * Get potential supervisor based on organization and job level hierarchy
+     */
+    public function getSupervisorCandidate(Request $request)
+    {
+        $organizationId = $request->query('organization_id');
+        $jobLevel = $request->query('job_level');
+        $track = $request->query('track');
+
+        if (!$organizationId || !$jobLevel) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Organization ID and Job Level are required'
+            ], 400);
+        }
+
+        // Hierarchy Definitions
+        $officeHierarchy = [
+            'staff' => 'team_leader',
+            'team_leader' => 'spv',
+            'spv' => 'deputy_manager',
+            'deputy_manager' => 'manager',
+            'manager' => 'director',
+        ];
+
+        $operationalHierarchy = [
+            'crew' => 'crew_leader',
+            'crew_leader' => 'spv',
+            'spv' => 'manager_ops',
+        ];
+
+        $targetLevel = null;
+
+        if ($track === 'operational') {
+            $targetLevel = $operationalHierarchy[$jobLevel] ?? null;
+        } else {
+            // Default to office if track is mixed or not specified, check office map
+            $targetLevel = $officeHierarchy[$jobLevel] ?? null;
+        }
+
+        if (!$targetLevel) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No supervisor level found for this position',
+                'data' => null
+            ]);
+        }
+
+        // Find employee in the same organization with the target level
+        $supervisor = Employee::where('organization_id', $organizationId)
+            ->where('job_level', $targetLevel)
+            ->where('status', 'active') // Ensure active
+            ->first();
+
+        // If not found in same org, maybe check parent org? 
+        // For now user said "divisi yang sama" (same division).
+
+        if ($supervisor) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'name' => $supervisor->full_name,
+                    'position' => $supervisor->position // This is the string position, not job_level
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'No supervisor found',
+            'data' => null
+        ]);
     }
 }

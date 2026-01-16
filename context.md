@@ -111,3 +111,5 @@ Aplikasi tidak boleh terlihat kaku seperti dashboard admin konvensional. Harus t
 
 
 /Applications/XAMPP/xamppfiles/bin/php artisan serve
+
+flutter run -d C6F066BB-39CC-4E0E-A581-B08203675EB0

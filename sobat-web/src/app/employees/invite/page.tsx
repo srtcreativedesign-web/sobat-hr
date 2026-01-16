@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import apiClient from '@/lib/api-client';
 import DashboardLayout from '@/components/DashboardLayout';
 import InvitationList from '@/components/InvitationList';
@@ -25,6 +25,76 @@ export default function InviteStaffPage() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Manual Invite State
+  const [manualForm, setManualForm] = useState({
+    name: '',
+    email: '',
+    role: 'staff',
+    job_level: 'staff',
+    track: 'office',
+    organization_id: ''
+  });
+  const [organizations, setOrganizations] = useState<any[]>([]);
+
+  // Fetch Organizations on Mount
+  useEffect(() => {
+    const fetchOrgs = async () => {
+      try {
+        const res = await apiClient.get('/organizations');
+        setOrganizations(res.data.data || res.data || []);
+      } catch (e) {
+        console.error('Failed to fetch orgs', e);
+      }
+    };
+    fetchOrgs();
+  }, []);
+
+  const handleManualSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualForm.email || !manualForm.name) return;
+
+    setLoading(true);
+    try {
+      const payload = {
+        rows: [{
+          name: manualForm.name,
+          email: manualForm.email,
+          role: manualForm.role,
+          job_level: manualForm.job_level,
+          track: manualForm.track,
+          organization_id: manualForm.organization_id || null
+        }]
+      };
+
+      const response = await apiClient.post('/staff/invite/execute', payload);
+      const result = response.data;
+
+      let message = result.message;
+      if (result.failed > 0) {
+        message += `\nError: ${result.errors.join(', ')}`;
+        alert(message);
+      } else {
+        alert('Invitation sent successfully!');
+        setManualForm({
+          name: '',
+          email: '',
+          role: 'staff',
+          job_level: 'staff',
+          track: 'office',
+          organization_id: ''
+        });
+        setRefreshTrigger(prev => prev + 1);
+      }
+
+    } catch (error: any) {
+      console.error('Manual invite error', error);
+      alert(error.response?.data?.message || 'Failed to send invitation');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -121,11 +191,117 @@ export default function InviteStaffPage() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-[#462e37] to-[#a9eae2] bg-clip-text text-transparent">
             Invite Staff
           </h1>
-          <p className="text-gray-500 mt-1">Upload Excel file to bulk invite new staff members.</p>
+          <p className="text-gray-500 mt-1">Upload Excel file or use manual form to invite new staff members.</p>
         </div>
       </div>
 
       <div className="p-8 space-y-8 animate-fade-in-up">
+
+        {/* Manual Invitation Form */}
+        <div className="glass-card p-8">
+          <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+            <div className="w-10 h-10 rounded-lg bg-[#462e37]/10 flex items-center justify-center text-[#462e37]">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+            </div>
+            Manual Invitation
+          </h2>
+          <form onSubmit={handleManualSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+              <input
+                type="text"
+                required
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2]"
+                value={manualForm.name}
+                onChange={e => setManualForm({ ...manualForm, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <input
+                type="email"
+                required
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2]"
+                value={manualForm.email}
+                onChange={e => setManualForm({ ...manualForm, email: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">App Role (Login Access)</label>
+              <select
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2]"
+                value={manualForm.role}
+                onChange={e => setManualForm({ ...manualForm, role: e.target.value })}
+              >
+                <option value="staff">Staff (User)</option>
+                <option value="admin_cabang">Admin Cabang</option>
+                <option value="manager">Manager (App Access)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Track (Jalur Karir)</label>
+              <select
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2]"
+                value={manualForm.track}
+                onChange={e => setManualForm({ ...manualForm, track: e.target.value })}
+              >
+                <option value="office">Office (Kantor)</option>
+                <option value="operational">Operational (Lapangan)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Job Level (Jabatan)</label>
+              <select
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2]"
+                value={manualForm.job_level}
+                onChange={e => setManualForm({ ...manualForm, job_level: e.target.value })}
+              >
+                {manualForm.track === 'office' ? (
+                  <>
+                    <option value="staff">Staff</option>
+                    <option value="team_leader">Team Leader</option>
+                    <option value="spv">Supervisor</option>
+                    <option value="deputy_manager">Deputy Manager</option>
+                    <option value="manager">Manager</option>
+                    <option value="director">Director</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="crew">Crew</option>
+                    <option value="crew_leader">Crew Leader</option>
+                    <option value="spv">Supervisor</option>
+                    <option value="manager_ops">Operational Manager</option>
+                  </>
+                )}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Division</label>
+              <select
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2]"
+                value={manualForm.organization_id}
+                onChange={e => setManualForm({ ...manualForm, organization_id: e.target.value })}
+              >
+                <option value="">Select Division...</option>
+                {organizations
+                  .filter(org => !['Board Of Directors', 'Holdings'].includes(org.type))
+                  .map(org => (
+                    <option key={org.id} value={org.id}>{org.name}</option>
+                  ))}
+              </select>
+            </div>
+            <div className="md:col-span-2 flex justify-end">
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-6 py-2 bg-[#462e37] text-white font-bold rounded-lg hover:bg-[#2d1e24] transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Sending...' : 'Send Invitation'}
+              </button>
+            </div>
+          </form>
+        </div>
+
         {/* Upload Card */}
         <div className="glass-card p-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#462e37] to-[#a9eae2] opacity-10 rounded-bl-full pointer-events-none"></div>
@@ -134,7 +310,7 @@ export default function InviteStaffPage() {
             <div className="w-10 h-10 rounded-lg bg-[#a9eae2]/20 flex items-center justify-center text-[#462e37]">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
             </div>
-            Upload Excel File
+            Bulk Upload Excel File
           </h2>
 
           <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 hover:border-[#a9eae2] hover:bg-[#a9eae2]/5 transition-all text-center">

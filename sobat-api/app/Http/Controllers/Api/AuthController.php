@@ -47,7 +47,8 @@ class AuthController extends Controller
                         'id' => $user->id,
                         'name' => $user->name,
                         'email' => $user->email,
-                        'role' => $user->role?->name ?? null,
+                        'role' => $user->role, // Return full role object
+                        'employee' => $user->employee, // Return employee object
                         'has_pin' => $user->has_pin,
                     ]
                 ]
@@ -88,7 +89,8 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => $user->role?->name ?? null,
+                'role' => $user->role, // Return full role object
+                'employee' => $user->employee, // Return employee object (usually null for new reg)
                 'has_pin' => $user->has_pin,
             ]
         ], 201);
@@ -112,7 +114,7 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         $user = $request->user();
-        $user->load(['role', 'employee']);
+        $user->load(['role', 'employee.organization']);
 
         return response()->json([
             'success' => true,
@@ -121,7 +123,7 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => $user->role?->name ?? null,
+                'role' => $user->role, // Return full role object
                 'employee' => $user->employee,
                 'has_pin' => $user->has_pin,
             ]

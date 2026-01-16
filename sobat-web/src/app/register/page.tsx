@@ -14,10 +14,16 @@ function RegisterForm() {
     const [userData, setUserData] = useState<{ name: string; email: string } | null>(null);
     const [error, setError] = useState('');
     const [isSuccess, setIsSuccess] = useState(false);
+    const [organizations, setOrganizations] = useState<any[]>([]);
+    const [invitationData, setInvitationData] = useState<any>(null);
 
     const [formData, setFormData] = useState({
         password: '',
         password_confirmation: '',
+        job_level: 'staff',
+        track: 'office',
+        organization_id: '',
+        role: 'staff'
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -29,10 +35,22 @@ function RegisterForm() {
             return;
         }
 
+        // Fetch Organizations
+        apiClient.get('/organizations').then(res => {
+            setOrganizations(res.data.data || res.data || []);
+        }).catch(err => console.error(err));
+
         apiClient.get(`/staff/invite/verify/${token}`)
             .then((res) => {
                 setIsValid(res.data.valid);
                 setUserData({ name: res.data.name, email: res.data.email });
+                setInvitationData(res.data);
+
+                // Pre-fill if available
+                if (res.data.organization_id) {
+                    setFormData(prev => ({ ...prev, organization_id: res.data.organization_id }));
+                }
+                // Determine track based on org? Or just default.
             })
             .catch((err) => {
                 setError(err.response?.data?.message || 'Invitation invalid or expired.');
@@ -55,11 +73,13 @@ function RegisterForm() {
                 token,
                 password: formData.password,
                 password_confirmation: formData.password_confirmation,
+                job_level: formData.job_level,
+                track: formData.track,
+                organization_id: formData.organization_id,
+                role: formData.role
             });
 
             setIsSuccess(true);
-            // No auto-login or redirect needed as per request
-
         } catch (err: any) {
             alert(err.response?.data?.message || 'Gagal mengaktifkan akun.');
             setIsSubmitting(false); // Only re-enable if failed
@@ -75,7 +95,7 @@ function RegisterForm() {
                     </div>
                     <h1 className="text-2xl font-bold text-gray-800 mb-4">Pembuatan Akun Berhasil!</h1>
                     <p className="text-gray-600 mb-8">
-                        Akun Anda telah aktif. Silahkan login menggunakan aplikasi <span className="font-semibold text-[#462e37]">Sobat Mobile</span>.
+                        Akun Anda telah aktif, Jabatan dan Divisi berhasil disimpan. Silahkan login menggunakan aplikasi <span className="font-semibold text-[#462e37]">Sobat Mobile</span>.
                     </p>
                 </div>
             </div>
@@ -114,9 +134,71 @@ function RegisterForm() {
                         </h1>
                         <p className="text-gray-500 mt-2">Halo, <span className="font-semibold text-gray-800">{userData?.name}</span>!</p>
                         <p className="text-sm text-gray-400">{userData?.email}</p>
+                        <p className="text-xs text-gray-500 mt-4 bg-yellow-50 p-2 rounded border border-yellow-100">Silakan lengkapi data jabatan dan divisi Anda di bawah ini.</p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Job Details Section */}
+                        <div className="space-y-3 pt-2">
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Track (Jalur Karir)</label>
+                                <select
+                                    className="w-full px-4 py-2 border rounded-lg text-sm bg-white"
+                                    value={formData.track}
+                                    onChange={e => setFormData({ ...formData, track: e.target.value, job_level: e.target.value === 'office' ? 'staff' : 'crew' })}
+                                >
+                                    <option value="office">Office (Kantor)</option>
+                                    <option value="operational">Operational (Lapangan/Outlet)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Job Level (Jabatan)</label>
+                                <select
+                                    className="w-full px-4 py-2 border rounded-lg text-sm bg-white"
+                                    value={formData.job_level}
+                                    onChange={e => setFormData({ ...formData, job_level: e.target.value })}
+                                >
+                                    {formData.track === 'office' ? (
+                                        <>
+                                            <option value="staff">Staff</option>
+                                            <option value="team_leader">Team Leader</option>
+                                            <option value="spv">Supervisor</option>
+                                            <option value="deputy_manager">Deputy Manager</option>
+                                            <option value="manager">Manager</option>
+                                            <option value="director">Director</option>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <option value="crew">Crew</option>
+                                            <option value="crew_leader">Crew Leader</option>
+                                            <option value="spv">Supervisor</option>
+                                            <option value="manager_ops">Operational Manager</option>
+                                        </>
+                                    )}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Divisi / Penempatan</label>
+                                <select
+                                    className="w-full px-4 py-2 border rounded-lg text-sm bg-white"
+                                    value={formData.organization_id}
+                                    onChange={e => setFormData({ ...formData, organization_id: e.target.value })}
+                                    required
+                                >
+                                    <option value="">Pilih Divisi...</option>
+                                    {organizations
+                                        .filter(org => !['Board Of Directors', 'Holdings'].includes(org.type))
+                                        .map(org => (
+                                            <option key={org.id} value={org.id}>{org.name}</option>
+                                        ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        <hr className="border-gray-100 my-4" />
+
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Buat Password Baru</label>
                             <input

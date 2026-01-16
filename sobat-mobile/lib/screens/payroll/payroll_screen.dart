@@ -514,21 +514,94 @@ class _PayrollScreenState extends State<PayrollScreen> {
                 padding: const EdgeInsets.all(24),
                 children: [
                   _buildDetailRow('Gaji Pokok', payroll['basic_salary']),
-                  _buildDetailRow(
-                    'Tunjangan',
-                    payroll['allowances'],
-                    isPlus: true,
-                  ),
+
+                  // DYNAMIC ALLOWANCES
+                  if (payroll['details'] != null &&
+                      (payroll['details'] is Map) &&
+                      (payroll['details'] as Map).isNotEmpty) ...[
+                    // Extract Details
+                    Builder(
+                      builder: (context) {
+                        final details = payroll['details'] as Map;
+                        final totalAllowances =
+                            (payroll['allowances'] as num? ?? 0).toDouble();
+
+                        double transport =
+                            (details['transport_allowance'] as num? ?? 0)
+                                .toDouble();
+                        double tunjKes =
+                            (details['tunjangan_kesehatan'] as num? ?? 0)
+                                .toDouble();
+                        double insentif =
+                            (details['insentif_lebaran'] as num? ?? 0)
+                                .toDouble();
+                        double adjGaji =
+                            (details['adj_kekurangan_gaji'] as num? ?? 0)
+                                .toDouble();
+                        double kebijakanHO =
+                            (details['kebijakan_ho'] as num? ?? 0).toDouble();
+
+                        // Calculate Residual (Tunjangan Jabatan)
+                        double tunjJabatan =
+                            totalAllowances - (transport + tunjKes + insentif);
+
+                        return Column(
+                          children: [
+                            if (tunjKes > 0)
+                              _buildDetailRow(
+                                'Tunjangan Kesehatan',
+                                tunjKes,
+                                isPlus: true,
+                              ),
+                            if (tunjJabatan > 0)
+                              _buildDetailRow(
+                                'Tunjangan Jabatan',
+                                tunjJabatan,
+                                isPlus: true,
+                              ),
+                            if (transport > 0)
+                              _buildDetailRow(
+                                'Transport',
+                                transport,
+                                isPlus: true,
+                              ),
+                            if (insentif > 0)
+                              _buildDetailRow(
+                                'Insentif Lebaran',
+                                insentif,
+                                isPlus: true,
+                              ),
+                            if (adjGaji > 0)
+                              _buildDetailRow(
+                                'Adjustment Gaji',
+                                adjGaji,
+                                isPlus: true,
+                              ),
+                            if (kebijakanHO > 0)
+                              _buildDetailRow(
+                                'Kebijakan HO',
+                                kebijakanHO,
+                                isPlus: true,
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                  ] else ...[
+                    // Fallback
+                    _buildDetailRow(
+                      'Tunjangan',
+                      payroll['allowances'],
+                      isPlus: true,
+                    ),
+                  ],
+
                   _buildDetailRow(
                     'Lembur',
-                    payroll['overtime_pay'] ?? 0, // Ensure key is correct
+                    payroll['overtime_pay'] ?? 0,
                     isPlus: true,
                   ),
-                  // Keys from controller: basic_salary, allowances (overtime), deductions (bpjs_kes), bpjs_employment, tax
 
-                  // Wait, let's recheck the controller output keys
-                  // 'allowances' => (float) ($payroll->overtime_pay ?? 0),  <-- Weird mapping in backend?
-                  // Let's use the keys returned by backend: basic_salary, allowances, deductions, tax, net_salary
                   const Divider(height: 32),
                   const Text(
                     'Potongan',
@@ -538,18 +611,79 @@ class _PayrollScreenState extends State<PayrollScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _buildDetailRow(
-                    'BPJS Kesehatan',
-                    payroll['bpjs_health'],
-                    isMinus: true,
-                  ),
-                  _buildDetailRow(
-                    'BPJS Ketenagakerjaan',
-                    payroll['bpjs_employment'],
-                    isMinus: true,
-                  ),
-                  _buildDetailRow('PPh 21', payroll['tax'], isMinus: true),
 
+                  // STANDARD DEDUCTIONS
+                  if ((payroll['bpjs_health'] as num? ?? 0) > 0)
+                    _buildDetailRow(
+                      'BPJS Kesehatan',
+                      payroll['bpjs_health'],
+                      isMinus: true,
+                    ),
+
+                  if ((payroll['bpjs_employment'] as num? ?? 0) > 0)
+                    _buildDetailRow(
+                      'BPJS Ketenagakerjaan',
+                      payroll['bpjs_employment'],
+                      isMinus: true,
+                    ),
+
+                  if ((payroll['tax'] as num? ?? 0) > 0)
+                    _buildDetailRow('PPh 21', payroll['tax'], isMinus: true),
+
+                  // DETAILED DEDUCTIONS
+                  if (payroll['details'] != null &&
+                      (payroll['details'] is Map)) ...[
+                    Builder(
+                      builder: (context) {
+                        final details = payroll['details'] as Map;
+                        return Column(
+                          children: [
+                            if ((details['absen_1x'] as num? ?? 0) > 0)
+                              _buildDetailRow(
+                                'Potongan Absen',
+                                details['absen_1x'],
+                                isMinus: true,
+                              ),
+
+                            if ((details['terlambat'] as num? ?? 0) > 0)
+                              _buildDetailRow(
+                                'Denda Terlambat',
+                                details['terlambat'],
+                                isMinus: true,
+                              ),
+
+                            if ((details['selisih_so'] as num? ?? 0) > 0)
+                              _buildDetailRow(
+                                'Selisih SO',
+                                details['selisih_so'],
+                                isMinus: true,
+                              ),
+
+                            if ((details['pinjaman'] as num? ?? 0) > 0)
+                              _buildDetailRow(
+                                'Pinjaman / Kasbon',
+                                details['pinjaman'],
+                                isMinus: true,
+                              ),
+
+                            if ((details['adm_bank'] as num? ?? 0) > 0)
+                              _buildDetailRow(
+                                'Admin Bank',
+                                details['adm_bank'],
+                                isMinus: true,
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+
+                  // Check for Other Deductions?
+                  // Using total_deductions - sum of knowns logic?
+                  // Or just assume 'other_deductions' field is correct?
+                  // The API controller sums up total_deductions correctly in import.
+                  // But 'other_deductions' column might be used if I map it.
+                  // For now, let's just stick to what we explicitly have.
                   const Divider(height: 32),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

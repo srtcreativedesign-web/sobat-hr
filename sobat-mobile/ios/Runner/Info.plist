@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Aplikasi membutuhkan akses galeri untuk mengupload bukti pengajuan.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Aplikasi membutuhkan akses kamera untuk mengambil foto bukti pengajuan.</string>
 </dict>
 </plist>

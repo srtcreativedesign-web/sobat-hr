@@ -1,14 +1,14 @@
 import 'dart:ui';
-import '../../config/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-// import '../../services/auth_service.dart'; // Removed unused
+import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/custom_navbar.dart';
 import '../../models/user.dart';
 
 import '../../services/payroll_service.dart';
 import '../../screens/security/pin_screen.dart'; // Import PinScreen
+import '../../screens/submission/submission_screen.dart'; // Import SubmissionScreen
 import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -105,100 +105,29 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: const Color(0xFFF8FAFC), // Slate-50 like background
       body: Stack(
         children: [
-          CustomScrollView(
-            slivers: [
-              // 1. Sticky Header
-              _buildStickyHeader(user),
-
-              // 2. Main Content
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Section Title
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Dashboard',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.textDark,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Ringkasan aktivitas dan data penting Anda.',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: AppTheme.textLight,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Horizontal Cards (Carousel)
-                      _buildHorizontalCards(),
-
-                      const SizedBox(height: 32),
-
-                      // Quick Actions
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: _buildQuickActions(),
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      // Banner
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: _buildBanner(),
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      // Recent Activity
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: _buildRecentActivity(),
-                      ),
-
-                      // Bottom padding for floating nav
-                      const SizedBox(height: 120),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+          // Body Content
+          _selectedIndex == 0
+              ? _buildDashboardContent(user)
+              : _selectedIndex == 1
+              ? const SubmissionScreen()
+              : Center(child: Text('Coming Soon: Index $_selectedIndex')),
 
           // 3. Floating Bottom Nav
           Positioned(
             left: 24,
             right: 24,
             bottom: 32,
-            child: SafeArea(
-              child: CustomNavbar(
-                currentIndex: _selectedIndex,
-                onTap: (index) {
-                  if (index == 4) {
-                    Navigator.pushNamed(context, '/profile').then((_) {
-                      if (mounted) setState(() => _selectedIndex = 0);
-                    });
-                  } else {
-                    setState(() => _selectedIndex = index);
-                  }
-                },
-              ),
+            child: CustomNavbar(
+              currentIndex: _selectedIndex,
+              onTap: (index) {
+                if (index == 4) {
+                  Navigator.pushNamed(context, '/profile').then((_) {
+                    if (mounted) setState(() => _selectedIndex = 0);
+                  });
+                } else {
+                  setState(() => _selectedIndex = index);
+                }
+              },
             ),
           ),
 
@@ -212,7 +141,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 64,
                 width: 64,
                 child: FloatingActionButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/submission/menu');
+                  },
                   backgroundColor: AppTheme.colorEggplant,
                   elevation: 4,
                   shape: const CircleBorder(),
@@ -227,6 +158,84 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDashboardContent(User? user) {
+    return CustomScrollView(
+      slivers: [
+        // 1. Sticky Header
+        _buildStickyHeader(user),
+
+        // 2. Main Content
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Section Title
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Dashboard',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textDark,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Ringkasan aktivitas dan data penting Anda.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.textLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Horizontal Cards (Carousel)
+                _buildHorizontalCards(),
+
+                const SizedBox(height: 32),
+
+                // Quick Actions
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: _buildQuickActions(),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Banner
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: _buildBanner(),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Recent Activity
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: _buildRecentActivity(),
+                ),
+
+                // Bottom padding for floating nav
+                const SizedBox(height: 120),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -675,9 +684,38 @@ class _HomeScreenState extends State<HomeScreen> {
               AppTheme.colorEggplant,
               onTap: _navigateToPayroll,
             ),
-            _buildActionItem(Icons.flight_takeoff, 'Cuti', Colors.blue),
-            _buildActionItem(Icons.attach_money, 'Klaim', Colors.teal),
-            _buildActionItem(Icons.more_horiz, 'Lainnya', Colors.grey),
+            _buildActionItem(
+              Icons.flight_takeoff,
+              'Cuti',
+              Colors.blue,
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  '/submission/create',
+                  arguments: 'Cuti',
+                );
+              },
+            ),
+            _buildActionItem(
+              Icons.attach_money,
+              'Klaim',
+              Colors.teal,
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  '/submission/create',
+                  arguments: 'Reimbursement',
+                );
+              },
+            ),
+            _buildActionItem(
+              Icons.more_horiz,
+              'Lainnya',
+              Colors.grey,
+              onTap: () {
+                Navigator.pushNamed(context, '/submission/menu');
+              },
+            ),
           ],
         ),
       ],

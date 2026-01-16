@@ -8,7 +8,9 @@ import 'screens/home/home_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/profile/edit_profile_screen.dart';
-import 'screens/payroll/payroll_screen.dart'; // Added
+import 'screens/payroll/payroll_screen.dart';
+import 'screens/submission/submission_menu_screen.dart'; // Added
+import 'screens/submission/create_submission_screen.dart'; // Added
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,7 +37,12 @@ class MyApp extends StatelessWidget {
           '/dashboard': (context) => const DashboardScreen(),
           '/profile': (context) => const ProfileScreen(),
           '/profile/edit': (context) => const EditProfileScreen(),
-          '/payroll': (context) => const PayrollScreen(), // Added
+          '/payroll': (context) => const PayrollScreen(),
+          '/submission/menu': (context) => const SubmissionMenuScreen(),
+          '/submission/create': (context) {
+            final args = ModalRoute.of(context)!.settings.arguments as String;
+            return CreateSubmissionScreen(type: args);
+          },
         },
       ),
     );

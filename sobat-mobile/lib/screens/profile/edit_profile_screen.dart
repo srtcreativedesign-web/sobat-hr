@@ -194,8 +194,40 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           } catch (_) {}
         }
 
-        _department = emp['department'] ?? null;
-        _position = emp['position'] ?? null;
+        // Prioritize data from Employee object (from registration)
+        final userJobLevel = emp['job_level'];
+        final userTrack = emp['track'];
+
+        String? userOrgName;
+        int? userOrgId;
+
+        if (emp['organization'] != null && emp['organization'] is Map) {
+          userOrgName = emp['organization']['name'];
+          userOrgId = emp['organization']['id'];
+        } else {
+          // Fallback if organization is not eager loaded but id exists
+          userOrgId = emp['organization_id'];
+        }
+
+        if (userOrgName != null && userOrgName.isNotEmpty) {
+          _department = userOrgName;
+        } else {
+          _department = emp['department'];
+        }
+
+        if (userJobLevel != null && userJobLevel.toString().isNotEmpty) {
+          // Format job level: staff -> Staff, team_leader -> Team Leader
+          _position = userJobLevel
+              .toString()
+              .split('_')
+              .map(
+                (str) =>
+                    "${str[0].toUpperCase()}${str.substring(1).toLowerCase()}",
+              )
+              .join(' ');
+        } else {
+          _position = emp['position'];
+        }
 
         // Ensure values exist in options to prevent Dropdown crash
         if (_department != null &&
@@ -209,10 +241,35 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _positionOptions.add(_position!);
         }
 
-        _departmentCtrl.text = emp['department'] ?? '';
-        _positionCtrl.text = emp['position'] ?? '';
+        _departmentCtrl.text = _department ?? '';
+        _positionCtrl.text = _position ?? '';
         _supervisorNameCtrl.text = emp['supervisor_name'] ?? '';
         _supervisorPositionCtrl.text = emp['supervisor_position'] ?? '';
+
+        // Auto-fill Supervisor if empty
+        if (_supervisorNameCtrl.text.isEmpty &&
+            userOrgId != null &&
+            userJobLevel != null) {
+          // Call API to find supervisor candidate
+          try {
+            final candidate = await _authService.getSupervisorCandidate(
+              organizationId: userOrgId is int
+                  ? userOrgId
+                  : int.parse(userOrgId.toString()),
+              jobLevel: userJobLevel.toString(),
+              track: userTrack?.toString() ?? 'office',
+            );
+
+            if (candidate != null && mounted) {
+              setState(() {
+                _supervisorNameCtrl.text = candidate['name'] ?? '';
+                _supervisorPositionCtrl.text = candidate['position'] ?? '';
+              });
+            }
+          } catch (e) {
+            print('Supervisor lookup failed: $e');
+          }
+        }
       }
       setState(() {});
     }
@@ -238,6 +295,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       lastDate: DateTime(now.year + 1),
     );
     if (picked != null) setState(() => _joinDate = picked);
+    if (picked != null) setState(() => _joinDate = picked);
+  }
+
+  DropdownMenuItem<String> _buildDropdownItem(String value) {
+    return DropdownMenuItem<String>(
+      value: value,
+      child: Text(value, overflow: TextOverflow.ellipsis),
+    );
   }
 
   Widget _sectionCard(Widget child) {
@@ -484,6 +549,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               : DateFormat.yMMMMd(
                                   'id_ID',
                                 ).format(_dateOfBirth!),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ),
@@ -505,91 +572,63 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue: _gender,
                       decoration: const InputDecoration(
                         prefixIcon: Icon(Icons.wc),
                         labelText: 'Jenis Kelamin',
                       ),
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'male',
-                          child: Text('Laki-laki'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'female',
-                          child: Text('Perempuan'),
-                        ),
+                      items: [
+                        _buildDropdownItem('male'),
+                        _buildDropdownItem('female'),
                       ],
                       onChanged: (v) => setState(() => _gender = v),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue: _religion,
                       decoration: const InputDecoration(
                         prefixIcon: Icon(Icons.account_balance),
                         labelText: 'Agama',
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 'Islam', child: Text('Islam')),
-                        DropdownMenuItem(
-                          value: 'Kristen',
-                          child: Text('Kristen'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Katolik',
-                          child: Text('Katolik'),
-                        ),
-                        DropdownMenuItem(value: 'Hindu', child: Text('Hindu')),
-                        DropdownMenuItem(
-                          value: 'Buddha',
-                          child: Text('Buddha'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Konghucu',
-                          child: Text('Konghucu'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Lainnya',
-                          child: Text('Lainnya'),
-                        ),
+                      items: [
+                        _buildDropdownItem('Islam'),
+                        _buildDropdownItem('Kristen'),
+                        _buildDropdownItem('Katolik'),
+                        _buildDropdownItem('Hindu'),
+                        _buildDropdownItem('Buddha'),
+                        _buildDropdownItem('Konghucu'),
+                        _buildDropdownItem('Lainnya'),
                       ],
                       onChanged: (v) => setState(() => _religion = v),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue: _maritalStatus,
                       decoration: const InputDecoration(
                         prefixIcon: Icon(Icons.family_restroom),
                         labelText: 'Status Perkawinan',
                       ),
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'Belum Kawin',
-                          child: Text('Belum Kawin'),
-                        ),
-                        DropdownMenuItem(value: 'Kawin', child: Text('Kawin')),
-                        DropdownMenuItem(
-                          value: 'Cerai Hidup',
-                          child: Text('Cerai Hidup'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Cerai Mati',
-                          child: Text('Cerai Mati'),
-                        ),
+                      items: [
+                        _buildDropdownItem('Belum Kawin'),
+                        _buildDropdownItem('Kawin'),
+                        _buildDropdownItem('Cerai Hidup'),
+                        _buildDropdownItem('Cerai Mati'),
                       ],
                       onChanged: (v) => setState(() => _maritalStatus = v),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue: _ptkpStatus,
                       decoration: const InputDecoration(
                         prefixIcon: Icon(Icons.badge),
                         labelText: 'Status PTKP',
                       ),
                       items: _ptkpOptions
-                          .map(
-                            (p) => DropdownMenuItem(value: p, child: Text(p)),
-                          )
+                          .map((p) => _buildDropdownItem(p))
                           .toList(),
                       onChanged: (v) => setState(() => _ptkpStatus = v),
                     ),
@@ -761,6 +800,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const SizedBox(height: 16),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue:
                           _department ??
                           (_departmentCtrl.text.isNotEmpty
@@ -771,9 +811,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         labelText: 'Divisi / Departemen',
                       ),
                       items: _departmentOptions
-                          .map(
-                            (d) => DropdownMenuItem(value: d, child: Text(d)),
-                          )
+                          .map((d) => _buildDropdownItem(d))
                           .toList(),
                       onChanged: (v) {
                         setState(() {
@@ -784,6 +822,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue:
                           _position ??
                           (_positionCtrl.text.isNotEmpty
@@ -794,9 +833,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         labelText: 'Jabatan',
                       ),
                       items: _positionOptions
-                          .map(
-                            (p) => DropdownMenuItem(value: p, child: Text(p)),
-                          )
+                          .map((p) => _buildDropdownItem(p))
                           .toList(),
                       onChanged: (v) {
                         setState(() {
@@ -817,6 +854,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           _joinDate == null
                               ? '-'
                               : DateFormat.yMMMMd('id_ID').format(_joinDate!),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ),
