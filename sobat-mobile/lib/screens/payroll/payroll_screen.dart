@@ -54,11 +54,23 @@ class _PayrollScreenState extends State<PayrollScreen> {
       );
 
       final filename = 'Slip_Gaji_$period.pdf';
+      debugPrint('Downloading slip: $filename');
+
       await _payrollService.downloadSlip(id, filename);
 
+      if (!mounted) return;
       Navigator.pop(context); // Close loading
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Slip gaji berhasil diunduh dan dibuka'),
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
+      if (!mounted) return;
       Navigator.pop(context); // Close loading
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal download: $e'),
@@ -731,6 +743,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
                     payroll['id'],
                     DateFormat(
                       'MMM_yyyy',
+                      'id_ID',
                     ).format(DateTime.parse(payroll['period_start'])),
                   ),
                   icon: const Icon(Icons.download_rounded),

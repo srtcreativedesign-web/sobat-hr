@@ -415,7 +415,11 @@ export default function PayrollPage() {
                         {parsedRows.map((row: any, idx: number) => (
                           <tr key={idx} className="even:bg-white odd:bg-gray-50">
                             {Object.keys(parsedRows[0]).map((col) => (
-                              <td key={col} className="p-2 whitespace-nowrap">{row[col]}</td>
+                              <td key={col} className="p-2 whitespace-nowrap">
+                                {typeof row[col] === 'object' && row[col] !== null
+                                  ? JSON.stringify(row[col])
+                                  : row[col]}
+                              </td>
                             ))}
                           </tr>
                         ))}

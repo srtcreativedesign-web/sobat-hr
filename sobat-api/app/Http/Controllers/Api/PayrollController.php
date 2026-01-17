@@ -494,6 +494,25 @@ class PayrollController extends Controller
                 
                 $details = $row['details'] ?? [];
 
+                // Calculate known deductions from details to separate them from 'other_deductions'
+                $bpjsTK = (float) ($details['bpjs_tk_deduction'] ?? 0);
+                $absen = (float) ($details['absen_1x'] ?? 0);
+                $terlambat = (float) ($details['terlambat'] ?? 0);
+                $selisih = (float) ($details['selisih_so'] ?? 0);
+                $pinjaman = (float) ($details['pinjaman'] ?? 0);
+                $admBank = (float) ($details['adm_bank'] ?? 0);
+                
+                $knownDeductions = $bpjsTK + $absen + $terlambat + $selisih + $pinjaman + $admBank;
+                $otherDeductions = $totalDeductions - $knownDeductions;
+                
+                // Ensure no negative other deductions (floating point safety)
+                if ($otherDeductions < 0) $otherDeductions = 0;
+
+                // Enforce Net Salary Consistency
+                // Net Salary = Gross - Total Deductions
+                // We use the calculated value to ensure the Slip PDF math matches the Database value
+                $calculatedNetSalary = $grossSalary - $totalDeductions;
+
                 // Check update or create
                 $payroll = Payroll::updateOrCreate(
                     [
@@ -506,16 +525,13 @@ class PayrollController extends Controller
                         'overtime_pay' => $overtime,
                         'gross_salary' => $grossSalary,
                         'total_deductions' => $totalDeductions,
-                        'net_salary' => $netSalary,
+                        'net_salary' => $calculatedNetSalary, // Use consistent calculated value
                         'details' => $details, // Save JSON
                         'status' => 'draft',
-                        // BPJS Health, BPJS Employment, Tax PPh21 are not directly mapped from the new import format
-                        // They would need to be extracted from 'details' if required for specific columns.
-                        // For now, they will default to 0 if not explicitly set here.
-                        'bpjs_kesehatan' => 0, // Or extract from details if available
-                        'bpjs_ketenagakerjaan' => $details['bpjs_tk_deduction'] ?? 0, // Example: map from details
-                        'pph21' => 0, // Or extract from details if available
-                        'other_deductions' => $totalDeductions - ($details['bpjs_tk_deduction'] ?? 0), // Example: calculate other deductions
+                        'bpjs_kesehatan' => 0, 
+                        'bpjs_ketenagakerjaan' => $bpjsTK,
+                        'pph21' => 0,
+                        'other_deductions' => $otherDeductions,
                     ]
                 );
 
