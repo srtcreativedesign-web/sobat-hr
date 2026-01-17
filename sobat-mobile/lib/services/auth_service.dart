@@ -219,4 +219,8 @@ class AuthService {
       return null;
     }
   }
+
+  Future<String?> getToken() async {
+    return await StorageService.getToken();
+  }
 }

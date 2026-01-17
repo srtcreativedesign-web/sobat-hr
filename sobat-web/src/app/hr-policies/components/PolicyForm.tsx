@@ -14,6 +14,7 @@ export default function PolicyForm({ isOpen, onClose, onSuccess, initialData }: 
     const [loading, setLoading] = useState(false);
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
+    const [category, setCategory] = useState<'news' | 'policy'>('news');
     const [isPublished, setIsPublished] = useState(false);
     const [file, setFile] = useState<File | null>(null);
 
@@ -21,11 +22,13 @@ export default function PolicyForm({ isOpen, onClose, onSuccess, initialData }: 
         if (initialData) {
             setTitle(initialData.title);
             setContent(initialData.content);
+            setCategory(initialData.category || 'news');
             setIsPublished(initialData.is_published);
             setFile(null);
         } else {
             setTitle('');
             setContent('');
+            setCategory('news');
             setIsPublished(false);
             setFile(null);
         }
@@ -39,20 +42,20 @@ export default function PolicyForm({ isOpen, onClose, onSuccess, initialData }: 
             const formData = new FormData();
             formData.append('title', title);
             formData.append('content', content);
+            formData.append('category', category); // Add category
             formData.append('is_published', isPublished ? '1' : '0');
             if (file) {
                 formData.append('attachment', file);
             }
 
-            // Important: For PUT requests with FormData (file upload), Laravel/PHP often requires
-            // POST method with _method=PUT to handle multipart/form-data correctly.
+            // Using Announcement API
             if (initialData?.id) {
                 formData.append('_method', 'PUT');
-                await apiClient.post(`/policies/${initialData.id}`, formData, {
+                await apiClient.post(`/announcements/${initialData.id}`, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
             } else {
-                await apiClient.post('/policies', formData, {
+                await apiClient.post('/announcements', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
             }
@@ -60,7 +63,7 @@ export default function PolicyForm({ isOpen, onClose, onSuccess, initialData }: 
             onSuccess();
             onClose();
         } catch (error: any) {
-            alert(error.response?.data?.message || 'Failed to save policy');
+            alert(error.response?.data?.message || 'Failed to save announcement');
         } finally {
             setLoading(false);
         }
@@ -72,32 +75,61 @@ export default function PolicyForm({ isOpen, onClose, onSuccess, initialData }: 
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl max-w-2xl w-full p-6 animate-fade-in-up">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold text-gray-900">{initialData ? 'Edit Policy' : 'New Policy'}</h2>
+                    <h2 className="text-xl font-bold text-gray-900">{initialData ? 'Edit Item' : 'Tambah Baru'}</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Category Selection */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Judul Kebijakan</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
+                        <div className="flex gap-4">
+                            <label className={`flex-1 cursor-pointer border rounded-lg p-3 text-center transition-all ${category === 'news' ? 'bg-blue-50 border-blue-500 text-blue-700 font-bold' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                                <input
+                                    type="radio"
+                                    name="category"
+                                    value="news"
+                                    checked={category === 'news'}
+                                    onChange={() => setCategory('news')}
+                                    className="hidden"
+                                />
+                                <span className="block text-sm">Pengumuman (News)</span>
+                            </label>
+                            <label className={`flex-1 cursor-pointer border rounded-lg p-3 text-center transition-all ${category === 'policy' ? 'bg-orange-50 border-orange-500 text-orange-700 font-bold' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                                <input
+                                    type="radio"
+                                    name="category"
+                                    value="policy"
+                                    checked={category === 'policy'}
+                                    onChange={() => setCategory('policy')}
+                                    className="hidden"
+                                />
+                                <span className="block text-sm">Kebijakan HR (Policy)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Judul</label>
                         <input
                             type="text"
                             required
                             className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none"
-                            placeholder="e.g. Kebijakan Cuti Tahunan 2026"
+                            placeholder="e.g. Libur Lebaran 2026"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Konten / Isi Pengumuman</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Konten / Isi</label>
                         <textarea
                             required
                             rows={6}
                             className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none"
-                            placeholder="Tulis detail kebijakan di sini..."
+                            placeholder="Tulis detail informasi di sini..."
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
                         ></textarea>
@@ -146,7 +178,7 @@ export default function PolicyForm({ isOpen, onClose, onSuccess, initialData }: 
                             disabled={loading}
                             className="px-6 py-2 bg-[#462e37] text-white font-bold rounded-lg hover:bg-[#2d1e24] transition-colors disabled:opacity-50"
                         >
-                            {loading ? 'Saving...' : 'Simpan Kebijakan'}
+                            {loading ? 'Saving...' : 'Simpan'}
                         </button>
                     </div>
                 </form>
@@ -154,3 +186,4 @@ export default function PolicyForm({ isOpen, onClose, onSuccess, initialData }: 
         </div>
     );
 }
+

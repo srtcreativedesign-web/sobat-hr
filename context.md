@@ -65,7 +65,13 @@ Aplikasi tidak boleh terlihat kaku seperti dashboard admin konvensional. Harus t
 -   **Employee:** CRUD + Invite System (Excel Import) implemented.
 -   **Payroll:** Excel Import & Payslip Logic implemented.
 -   **UI:** Updated to "Mint Theme" (`#a9eae2` Primary).
--   **Next To-Do:** Organization Management (Hierarchy & structure).
+-   **Organization:** Hierarchical structure implemented (CEO -> Holdings -> Departments).
+-   **Mobile App:**
+    -   Navigation fixed (iOS/Android).
+    -   Profile Sync: `job_level`, `track`, `organization` synced from registration.
+    -   Supervisor Auto-fill: API endpoint (`/employees/supervisor-candidate`) implemented to auto-suggest supervisor based on hierarchy.
+    -   Submission Module: Sick Leave (Camera), Asset Request, Overtime.
+-   **Next To-Do:** Finalize Permission/Role Granularity.
 
 ### B. Admin Cabang / Manager (Web Dashboard - Next.js)
 **Scope:** Branch Operations.

@@ -11,6 +11,7 @@ import 'screens/profile/edit_profile_screen.dart';
 import 'screens/payroll/payroll_screen.dart';
 import 'screens/submission/submission_menu_screen.dart'; // Added
 import 'screens/submission/create_submission_screen.dart'; // Added
+import 'screens/announcement/announcement_list_screen.dart'; // Added
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +44,7 @@ class MyApp extends StatelessWidget {
             final args = ModalRoute.of(context)!.settings.arguments as String;
             return CreateSubmissionScreen(type: args);
           },
+          '/announcements': (context) => const AnnouncementListScreen(),
         },
       ),
     );

@@ -295,7 +295,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       lastDate: DateTime(now.year + 1),
     );
     if (picked != null) setState(() => _joinDate = picked);
-    if (picked != null) setState(() => _joinDate = picked);
   }
 
   DropdownMenuItem<String> _buildDropdownItem(String value) {

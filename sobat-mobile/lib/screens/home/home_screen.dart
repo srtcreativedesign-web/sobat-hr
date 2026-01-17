@@ -7,8 +7,10 @@ import '../../widgets/custom_navbar.dart';
 import '../../models/user.dart';
 
 import '../../services/payroll_service.dart';
-import '../../screens/security/pin_screen.dart'; // Import PinScreen
-import '../../screens/submission/submission_screen.dart'; // Import SubmissionScreen
+import '../../services/announcement_service.dart'; // Added
+import '../../screens/security/pin_screen.dart';
+import '../../screens/submission/submission_screen.dart';
+import '../../screens/announcement/announcement_detail_screen.dart'; // Added
 import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -25,12 +27,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Map<String, dynamic>? _lastPayroll;
   bool _isLoadingPayroll = true;
+  List<Map<String, dynamic>> _announcements = [];
+  bool _isLoadingAnnouncements = true;
 
   @override
   void initState() {
     super.initState();
     // Data is loaded by AuthProvider in main.dart
     _loadLastPayroll();
+    _loadAnnouncements();
+  }
+
+  Future<void> _loadAnnouncements() async {
+    try {
+      final data = await AnnouncementService().getAnnouncements(
+        category: 'news',
+      );
+      if (mounted) {
+        setState(() {
+          _announcements = data;
+          _isLoadingAnnouncements = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading announcements: $e');
+      if (mounted) setState(() => _isLoadingAnnouncements = false);
+    }
   }
 
   Future<void> _loadLastPayroll() async {
@@ -207,6 +229,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 32),
 
+                // Announcements
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: _buildAnnouncements(),
+                ),
+
+                const SizedBox(height: 32),
+
                 // Quick Actions
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -215,13 +245,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 32),
 
-                // Banner
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: _buildBanner(),
-                ),
+                // Banner - REMOVED
+                // Padding(
+                //   padding: const EdgeInsets.symmetric(horizontal: 24),
+                //   child: _buildBanner(),
+                // ),
 
-                const SizedBox(height: 32),
+                // const SizedBox(height: 32);
 
                 // Recent Activity
                 Padding(
@@ -662,6 +692,207 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildAnnouncements() {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Informasi Terbaru',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textDark,
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(context, '/announcements');
+              },
+              child: Text(
+                'Lihat Semua',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.colorEggplant,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (_isLoadingAnnouncements)
+          const Center(child: CircularProgressIndicator())
+        else if (_announcements.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade100),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, color: Colors.grey.shade400),
+                const SizedBox(width: 12),
+                Text(
+                  'Belum ada pengumuman terbaru',
+                  style: TextStyle(color: Colors.grey.shade500),
+                ),
+              ],
+            ),
+          )
+        else
+          SizedBox(
+            height: 160,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: _announcements.length,
+              itemBuilder: (context, index) {
+                final item = _announcements[index];
+                final isNews = item['category'] == 'news';
+
+                return Container(
+                  width: 300,
+                  margin: const EdgeInsets.only(right: 16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: isNews
+                          ? [
+                              AppTheme.colorEggplant.withValues(alpha: 0.9),
+                              AppTheme.colorEggplant.withValues(alpha: 0.7),
+                            ]
+                          : [Colors.orange.shade800, Colors.orange.shade600],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Stack(
+                    children: [
+                      // Decorative Circles
+                      Positioned(
+                        right: -10,
+                        top: -10,
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: -30,
+                        right: -10,
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.05),
+                          ),
+                        ),
+                      ),
+
+                      // Main Content
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    AnnouncementDetailScreen(item: item),
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    isNews ? 'PENGUMUMAN' : 'KEBIJAKAN',
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Expanded(
+                                  child: Text(
+                                    item['title'] ?? 'No Title',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      height: 1.2,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Baca selengkapnya',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.white.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    const Icon(
+                                      Icons.arrow_forward,
+                                      size: 12,
+                                      color: Colors.white,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
   Widget _buildQuickActions() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -763,90 +994,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildBanner() {
-    return Container(
-      height: 140,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        image: const DecorationImage(
-          image: NetworkImage(
-            'https://lh3.googleusercontent.com/aida-public/AB6AXuAI_hBxDjDjRP8mz0O2IoekqSaOzzLZcBTGwHWzVDPmuv7R19Ry536DfOi6fS0EKpeCcxAKsjQE9q06zNdzNdJrAhUuD4-F0fjVd7IJm2Y7u90Pj3zAf-gChhz_ztONLOJCwmnY8r5s_yjLw4e7dVRz9CZMp6stprbDjqsrrORznxld22c_4G3SoNmjTCyXrN5Aj9_pgTQGHMr2FeAVD0tfoOlMGIM_dfK2egUuQgt-ZpzW0o_quWc4e74Y1q4VTcR5T-wmBoSl0Kg7',
-          ),
-          fit: BoxFit.cover,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              AppTheme.colorEggplant.withValues(alpha: 0.9),
-              AppTheme.colorEggplant.withValues(alpha: 0.6),
-            ],
-          ),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-              ),
-              child: const Text(
-                'PENGUMUMAN',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Kebijakan Baru Cuti\nTahunan 2026',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                height: 1.2,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: const [
-                Text(
-                  'Baca selengkapnya',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppTheme.colorCyan,
-                  ),
-                ),
-                SizedBox(width: 4),
-                Icon(Icons.arrow_forward, size: 12, color: AppTheme.colorCyan),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 

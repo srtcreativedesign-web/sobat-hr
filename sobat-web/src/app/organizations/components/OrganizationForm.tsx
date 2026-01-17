@@ -75,12 +75,16 @@ export default function OrganizationForm({ isOpen, onClose, onSuccess, initialDa
         setLoading(true);
         setError('');
 
-        try {
-            const payload = {
-                ...formData,
-                parent_id: formData.parent_id ? parseInt(formData.parent_id) : null,
-            };
+        const payload = {
+            ...formData,
+            parent_id: formData.parent_id ? parseInt(formData.parent_id) : null,
+            email: formData.email || null,
+            phone: formData.phone || null,
+            address: formData.address || null,
+            description: formData.description || null,
+        };
 
+        try {
             let response;
             if (initialData) {
                 response = await apiClient.put(`/organizations/${initialData.id}`, payload);
@@ -97,8 +101,10 @@ export default function OrganizationForm({ isOpen, onClose, onSuccess, initialDa
             onClose();
         } catch (err: any) {
             console.error('Save Error:', err);
+            console.log('Failed Payload:', payload);
             if (err.response) {
-                console.error('Validation Response:', err.response.data);
+                console.error('Validation Response:', JSON.stringify(err.response.data, null, 2));
+                console.error('Validation Errors:', err.response.data?.errors);
             }
 
             // Handle Laravel Validation Errors

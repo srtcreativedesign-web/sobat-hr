@@ -19,7 +19,7 @@ class OrganizationController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|unique:organizations',
-            'type' => 'required|in:headquarters,branch,department,division',
+            'type' => 'required|string|max:50',
             'line_style' => 'nullable|in:solid,dashed,dotted',
             'parent_id' => 'nullable|exists:organizations,id',
             'address' => 'nullable|string',
@@ -48,7 +48,7 @@ class OrganizationController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'code' => 'sometimes|string|unique:organizations,code,' . $id,
-            'type' => 'sometimes|in:headquarters,branch,department,division',
+            'type' => 'sometimes|string|max:50',
             'line_style' => 'nullable|in:solid,dashed,dotted',
             'parent_id' => 'nullable|exists:organizations,id',
             'address' => 'nullable|string',

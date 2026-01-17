@@ -99,6 +99,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Policy & Announcement routes
     Route::apiResource('policies', App\Http\Controllers\Api\PolicyController::class);
+    Route::apiResource('announcements', App\Http\Controllers\Api\AnnouncementController::class);
 });
 
 // Public invitation routes
