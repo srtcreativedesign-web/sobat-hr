@@ -32,13 +32,12 @@ class GroqAiService
 Nama: {$employeeName}
 Periode: {$period}
 Gaji Pokok: Rp {$basicSalary}
-Lembur: Rp {$overtime}
 Take Home Pay: Rp {$netSalary}
 
 Buatkan:
 1. Ucapan apresiasi singkat (1-2 kalimat)
-2. Penjelasan breakdown gaji yang mudah dipahami (2-3 kalimat)
-3. Tips financial planning singkat (1 kalimat)
+2. Tips financial planning singkat (1 kalimat)
+3. harapan perusahaan untuk karyawan (1 kalimat)
 
 Gunakan bahasa Indonesia yang hangat dan profesional. Maksimal 150 kata.";
 
