@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:signature/signature.dart';
+import '../../services/request_service.dart'; // Added
 
 class CreateSubmissionScreen extends StatefulWidget {
   final String type; // 'Cuti', 'Sakit', 'Lembur', 'Reimbursement', etc.
@@ -37,6 +38,51 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
 
+  int _leaveBalance = 0;
+  bool _isEligible = true;
+  bool _isLoading = false;
+  String? _ineligibilityMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.type == 'Cuti') {
+      _loadLeaveData();
+    }
+  }
+
+  Future<void> _loadLeaveData() async {
+    setState(() => _isLoading = true);
+    try {
+      final data = await RequestService().getLeaveBalance();
+      if (mounted) {
+        setState(() {
+          _leaveBalance = data['balance'] ?? 0;
+          _isEligible = data['eligible'] ?? false;
+          _ineligibilityMessage = data['message'];
+          _isLoading = false;
+        });
+
+        if (!_isEligible) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  _ineligibilityMessage ?? 'Anda tidak memenuhi syarat cuti.',
+                ),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          });
+        }
+      }
+    } catch (e) {
+      print('Error loading leave balance: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   // ... (Existing Type Config) ...
   Map<String, dynamic> get _typeConfig {
     // Reusing existing type config logic (omitted for brevity in replacement, but I must be careful not to delete it if I replacing the whole block.
@@ -53,7 +99,11 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
           'color': const Color(0xFFEA580C),
           'bgColor': const Color(0xFFFFF7ED),
           'desc': 'Ajukan cuti tahunan atau cuti khusus.',
-          'quota': 'Sisa Cuti: 12 Hari',
+          'quota': _isLoading
+              ? 'Memuat...'
+              : (_isEligible
+                    ? 'Sisa Cuti: $_leaveBalance Hari'
+                    : 'Tidak Eligible'),
         };
       case 'Sakit':
         return {
@@ -829,7 +879,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
     );
   }
 
-  void _handleSubmit() {
+  void _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
       if (_signatureController.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -841,11 +891,85 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
         return;
       }
 
-      // Mock Success
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pengajuan berhasil dikirim (Mock)')),
-      );
-      Navigator.pop(context);
+      if (widget.type == 'Cuti' && !_isEligible) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _ineligibilityMessage ?? 'Anda tidak dapat mengajukan cuti.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      setState(() => _isLoading = true);
+
+      // Prepare Data
+      // Map widget.type to API type field
+      String apiType = 'leave';
+      if (widget.type == 'Sakit')
+        apiType = 'leave'; // Sick is also leave type usually, or separate?
+      // User requested "Cuti", logic applies to "Cuti".
+      // Let's assume 'Cuti' -> 'leave', 'Sakit' -> 'leave' (with attachment?), 'Lembur' -> 'overtime', 'Reimbursement' -> 'reimbursement', 'Pengajuan Aset' -> 'reimbursement' (asset?)
+      // For now let's map simply:
+      switch (widget.type) {
+        case 'Cuti':
+          apiType = 'leave';
+          break;
+        case 'Sakit':
+          apiType = 'leave';
+          break; // Maybe distinguish via description/title
+        case 'Lembur':
+          apiType = 'overtime';
+          break;
+        case 'Reimbursement':
+          apiType = 'reimbursement';
+          break;
+        default:
+          apiType = 'reimbursement';
+          break; // Fallback
+      }
+
+      final Map<String, dynamic> data = {
+        'type': apiType,
+        'title': widget.type,
+        'description': _reasonCtrl.text,
+        'start_date': _startDate?.toIso8601String(),
+        'end_date': _endDate?.toIso8601String(),
+        // For Reimbursement/Asset use amount
+        'amount': _amountCtrl.text.isNotEmpty
+            ? double.tryParse(
+                _amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''),
+              )
+            : null,
+      };
+
+      try {
+        // Upload image if exists? Implementation complexity.
+        // Current RequestService createRequest only accepts Map.
+        // For strict MVP, we might skip file upload or add it later.
+
+        await RequestService().createRequest(data);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Pengajuan berhasil dikirim'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 }

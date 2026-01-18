@@ -46,8 +46,10 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Aplikasi membutuhkan akses galeri untuk mengupload bukti pengajuan.</string>
+	<string>Aplikasi membutuhkan akses galeri untuk mengupload bukti pengajuan atau absensi.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Aplikasi membutuhkan akses kamera untuk mengambil foto bukti pengajuan.</string>
+	<string>Aplikasi membutuhkan akses kamera untuk mengambil foto bukti pengajuan atau selfie absensi.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Aplikasi membutuhkan akses lokasi untuk memverifikasi posisi Anda saat melakukan absensi.</string>
 </dict>
 </plist>

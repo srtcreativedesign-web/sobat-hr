@@ -83,6 +83,13 @@ export default function DashboardPage() {
     </div>
   );
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
   return (
     <DashboardLayout>
       {/* Header */}
@@ -90,7 +97,7 @@ export default function DashboardPage() {
         <div className="px-8 py-6 flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-800">
-              Good Morning, <span className="bg-gradient-to-r from-[#462e37] to-[#a9eae2] bg-clip-text text-transparent">{user?.name}</span> 👋
+              {getGreeting()}, <span className="bg-gradient-to-r from-[#462e37] to-[#a9eae2] bg-clip-text text-transparent">{user?.name}</span> 👋
             </h1>
             <p className="text-sm text-gray-500 mt-1">Here's what's happening in your organization today.</p>
           </div>

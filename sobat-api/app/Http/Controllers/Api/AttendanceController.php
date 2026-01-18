@@ -40,18 +40,92 @@ class AttendanceController extends Controller
             'check_out' => 'nullable',
             'status' => 'required|in:present,late,absent,leave,sick',
             'notes' => 'nullable|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'photo' => 'nullable|image|max:5120', // Max 5MB
+            'location_address' => 'nullable|string',
         ]);
 
-        // Calculate work hours if check_out exists
+        $employee = Employee::with('organization')->find($validated['employee_id']);
+
+        // Geolocation Validation
+        if (isset($validated['latitude']) && isset($validated['longitude']) && $employee && $employee->organization && $employee->organization->latitude) {
+            $orgLat = $employee->organization->latitude;
+            $orgLng = $employee->organization->longitude;
+            $radius = $employee->organization->radius_meters ?? 50;
+
+            $distance = $this->haversineGreatCircleDistance(
+                $validated['latitude'],
+                $validated['longitude'],
+                $orgLat,
+                $orgLng
+            );
+
+            if ($distance > $radius) {
+                return response()->json([
+                    'message' => 'Anda berada di luar jangkauan kantor.',
+                    'distance' => round($distance, 2) . ' meter',
+                    'radius' => $radius . ' meter'
+                ], 422); // Unprocessable Entity
+            }
+        }
+
+        // Handle Photo Upload
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('attendance_photos', 'public');
+            $validated['photo_path'] = $path;
+        }
+
+        // Check for Late (after 08:00)
+        $workStartTime = Carbon::parse($validated['date'] . ' 08:00:00');
+        $clockInTime = Carbon::parse($validated['date'] . ' ' . $validated['check_in']);
+        
+        if ($clockInTime->gt($workStartTime)) {
+            $validated['status'] = 'late';
+            $validated['late_duration'] = $clockInTime->diffInMinutes($workStartTime);
+        }
+
+        // Calculate work hours if check_out exists (e.g., manual full day input)
         if (isset($validated['check_out'])) {
             $checkIn = Carbon::parse($validated['check_in']);
             $checkOut = Carbon::parse($validated['check_out']);
             $validated['work_hours'] = $checkOut->diffInHours($checkIn, false);
+
+            // Check for Overtime (after 17:00)
+            $workEndTime = Carbon::parse($validated['date'] . ' 17:00:00');
+            $clockOutTime = Carbon::parse($validated['date'] . ' ' . $validated['check_out']);
+            
+            if ($clockOutTime->gt($workEndTime)) {
+                $validated['overtime_duration'] = $clockOutTime->diffInMinutes($workEndTime);
+                 // Note: Status might remain 'present' or 'late', overtime is an attribute. 
+                 // If we want status to be 'overtime', we can change it, but usually 'overtime' is just extra hours on top of present.
+                 // The enum has 'overtime', but usually that means "Full Overtime Day" or similar. 
+                 // Let's keep status as calculated (late or present) and just store duration.
+            }
         }
 
         $attendance = Attendance::create($validated);
 
         return response()->json($attendance, 201);
+    }
+
+    /**
+     * Calculate distance between two points in meters using Haversine formula
+     */
+    private function haversineGreatCircleDistance($latitudeFrom, $longitudeFrom, $latitudeTo, $longitudeTo, $earthRadius = 6371000)
+    {
+        $latFrom = deg2rad($latitudeFrom);
+        $lonFrom = deg2rad($longitudeFrom);
+        $latTo = deg2rad($latitudeTo);
+        $lonTo = deg2rad($longitudeTo);
+
+        $latDelta = $latTo - $latFrom;
+        $lonDelta = $lonTo - $lonFrom;
+
+        $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) +
+            cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+        
+        return $angle * $earthRadius;
     }
 
     public function show(string $id)
@@ -73,10 +147,33 @@ class AttendanceController extends Controller
 
         // Recalculate work hours if check_in or check_out changes
         if (isset($validated['check_in']) || isset($validated['check_out'])) {
-            $checkIn = Carbon::parse($validated['check_in'] ?? $attendance->check_in);
-            $checkOut = Carbon::parse($validated['check_out'] ?? $attendance->check_out);
-            if ($checkOut) {
+            $checkInTime = isset($validated['check_in']) ? $validated['check_in'] : $attendance->check_in;
+            $checkOutTime = isset($validated['check_out']) ? $validated['check_out'] : $attendance->check_out;
+
+            $checkIn = Carbon::parse($checkInTime);
+            $checkOut = Carbon::parse($checkOutTime);
+            
+            if ($checkOutTime) {
+                // Calculate Work Hours
                 $validated['work_hours'] = $checkOut->diffInHours($checkIn, false);
+
+                // Calculate Overtime (after 17:00)
+                // Use date from attendance record
+                $dateStr = $attendance->date; // Assuming date is YYYY-MM-DD string or Carbon
+                // If $attendance->date is Carbon (casted), format it. If string, use directly.
+                // Model usually casts 'date' => 'date'.
+                $dateVal = $attendance->date instanceof Carbon ? $attendance->date->format('Y-m-d') : $attendance->date;
+                
+                $workEndTime = Carbon::parse($dateVal . ' 17:00:00');
+                // Check Out Date/Time 
+                // Note: If check out is next day, this logic needs adjustment. Assuming same day for now.
+                $clockOutDateTime = Carbon::parse($dateVal . ' ' . $checkOutTime);
+                
+                if ($clockOutDateTime->gt($workEndTime)) {
+                    $validated['overtime_duration'] = $clockOutDateTime->diffInMinutes($workEndTime);
+                } else {
+                    $validated['overtime_duration'] = 0;
+                }
             }
         }
 
@@ -138,5 +235,42 @@ class AttendanceController extends Controller
         }
 
         return response()->json($report);
+    }
+    /**
+     * Get today's attendance for the authenticated user
+     */
+    public function today(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->employee) {
+            return response()->json(['message' => 'Employee record not found'], 404);
+        }
+
+        $attendance = Attendance::where('employee_id', $user->employee->id)
+            ->whereDate('date', Carbon::today())
+            ->first();
+
+        return response()->json($attendance);
+    }
+    /**
+     * Get attendance history for the authenticated user
+     */
+    public function history(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->employee) {
+            return response()->json(['message' => 'Employee record not found'], 404);
+        }
+
+        $query = Attendance::where('employee_id', $user->employee->id);
+
+        if ($request->has('month') && $request->has('year')) {
+            $query->whereMonth('date', $request->month)
+                  ->whereYear('date', $request->year);
+        }
+
+        $history = $query->orderBy('date', 'desc')->get();
+
+        return response()->json($history);
     }
 }

@@ -19,6 +19,9 @@ class Organization extends Model
         'email',
         'line_style',
         'description',
+        'latitude',
+        'longitude',
+        'radius_meters',
     ];
 
     /**

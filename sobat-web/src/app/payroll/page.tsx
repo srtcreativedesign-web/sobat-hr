@@ -195,7 +195,7 @@ export default function PayrollPage() {
 
       {/* Filter Section */}
       <div className="bg-white border-b border-gray-200 px-8 py-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-gray-700">Periode:</span>
             <select
@@ -219,6 +219,44 @@ export default function PayrollPage() {
               ))}
             </select>
           </div>
+
+          {/* Approve All Button if Drafts Exist */}
+          {payrolls.some(p => p.status === 'pending') && (
+            <button
+              onClick={async () => {
+                if (!confirm('Are you sure you want to approve all pending payrolls for this period?')) return;
+
+                try {
+                  setLoading(true);
+                  // If no period selected, warn user? Or use current year/month? 
+                  // API requires month/year.
+                  if (selectedMonth === 0 || selectedYear === 0) {
+                    alert('Please select specific Month and Year to approve all.');
+                    setLoading(false);
+                    return;
+                  }
+
+                  const response = await apiClient.post('/payrolls/approve-all', {
+                    month: selectedMonth,
+                    year: selectedYear
+                  });
+
+                  alert(response.data.message);
+                  fetchPayrolls();
+                } catch (error: any) {
+                  alert(error.response?.data?.message || 'Failed to approve payrolls');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              className="flex items-center gap-2 px-6 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 transition-colors shadow-sm"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Approve All Drafts
+            </button>
+          )}
         </div>
       </div>
 
@@ -301,6 +339,31 @@ export default function PayrollPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                         </button>
+
+                        {payroll.status === 'pending' && (
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`Approve payroll for ${payroll.employee.full_name}?`)) return;
+                              try {
+                                setLoading(true); // Optimistic UI update or full reload? Let's reload for safety
+                                await apiClient.patch(`/payrolls/${payroll.id}/status`, {
+                                  status: 'approved'
+                                });
+                                fetchPayrolls();
+                              } catch (error: any) {
+                                alert('Failed to approve');
+                              } finally {
+                                setLoading(false);
+                              }
+                            }}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors ml-2"
+                            title="Approve"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}

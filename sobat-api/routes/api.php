@@ -42,7 +42,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/organizations/{id}/employees', [App\Http\Controllers\Api\OrganizationController::class, 'employees']);
 
     // Attendance routes
-    Route::apiResource('attendances', App\Http\Controllers\Api\AttendanceController::class);
+    Route::get('/attendance/today', [App\Http\Controllers\Api\AttendanceController::class, 'today']);
+    Route::get('/attendance/history', [App\Http\Controllers\Api\AttendanceController::class, 'history']); // New History Route
+    Route::post('/attendances', [App\Http\Controllers\Api\AttendanceController::class, 'store']);
     Route::post('/attendances/sync', [App\Http\Controllers\Api\AttendanceController::class, 'syncFingerprint']);
     Route::get('/attendances/report/{month}/{year}', [App\Http\Controllers\Api\AttendanceController::class, 'monthlyReport']);
 
@@ -51,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/shifts/assign', [App\Http\Controllers\Api\ShiftController::class, 'assignToEmployee']);
 
     // Request routes (Cuti, Lembur, Reimburse, Resign)
+    Route::get('/requests/leave-balance', [App\Http\Controllers\Api\RequestController::class, 'leaveBalance']);
     Route::apiResource('requests', App\Http\Controllers\Api\RequestController::class);
     Route::post('/requests/{id}/submit', [App\Http\Controllers\Api\RequestController::class, 'submit']);
     Route::post('/requests/{id}/approve', [App\Http\Controllers\Api\RequestController::class, 'approve']);
@@ -63,6 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Payroll routes
     Route::apiResource('payrolls', App\Http\Controllers\Api\PayrollController::class);
     Route::get('/payrolls/template/download', [App\Http\Controllers\Api\PayrollController::class, 'downloadTemplate']);
+    Route::post('/payrolls/approve-all', [App\Http\Controllers\Api\PayrollController::class, 'approveAll']);
     Route::post('/payrolls/import', [App\Http\Controllers\Api\PayrollController::class, 'import']);
     Route::post('/payrolls/import/save', [App\Http\Controllers\Api\PayrollController::class, 'saveImport']);
     Route::post('/payrolls/calculate', [App\Http\Controllers\Api\PayrollController::class, 'calculate']);

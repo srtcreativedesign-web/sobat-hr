@@ -44,6 +44,9 @@ class PayrollController extends Controller
                 \Illuminate\Support\Facades\Log::info("DEBUG PAYROLL: No Employee ID linked for non-admin");
                 return response()->json(['data' => []]);
             }
+            
+            // Non-admin users can ONLY see approved or paid payrolls
+            $query->whereIn('status', ['approved', 'paid']);
         } else {
             \Illuminate\Support\Facades\Log::info("DEBUG PAYROLL: Admin Access Granted");
         }
@@ -75,6 +78,7 @@ class PayrollController extends Controller
                         'employee_code' => $payroll->employee->employee_code ?? 'N/A',
                         'full_name' => $payroll->employee->full_name ?? 'Unknown',
                     ],
+                    'period' => $payroll->period, // Add strict period string (YYYY-MM)
                     'period_start' => $periodStart,
                     'period_end' => $periodEnd,
                     'basic_salary' => (float) $payroll->basic_salary,
@@ -639,6 +643,28 @@ class PayrollController extends Controller
         return response()->json([
             'message' => 'Payroll status updated successfully',
             'data' => $payroll,
+        ]);
+    }
+
+    /**
+     * Approve ALL draft payrolls for a specific period
+     */
+    public function approveAll(Request $request)
+    {
+        $request->validate([
+            'month' => 'required|integer|min:1|max:12',
+            'year' => 'required|integer|min:2020',
+        ]);
+
+        $periodString = sprintf('%04d-%02d', $request->year, $request->month);
+
+        $updated = Payroll::where('period', $periodString)
+            ->where('status', 'draft')
+            ->update(['status' => 'approved']);
+
+        return response()->json([
+            'message' => "Successfully approved {$updated} payrolls for period {$periodString}",
+            'count' => $updated,
         ]);
     }
 

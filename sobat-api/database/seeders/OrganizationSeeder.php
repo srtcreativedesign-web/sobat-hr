@@ -21,6 +21,9 @@ class OrganizationSeeder extends Seeder
             'phone' => '021-1234567',
             'email' => 'hq@sobat.co.id',
             'description' => 'CEO Sobat HR. Mengelola seluruh operasional perusahaan secara nasional.',
+            'latitude' => '-6.13755',
+            'longitude' => '106.62293',
+            'radius_meters' => 100,
         ]);
         // 2. COO
         $coo = Organization::create([
@@ -32,6 +35,9 @@ class OrganizationSeeder extends Seeder
             'phone' => '021-1234567',
             'email' => 'hq@sobat.co.id',
             'description' => 'Direktur Operasional Sobat HR. Mengelola seluruh operasional perusahaan secara nasional.',
+            'latitude' => '-6.13755',
+            'longitude' => '106.62293',
+            'radius_meters' => 100,
         ]);
 
         // 2. CFO
@@ -44,6 +50,9 @@ class OrganizationSeeder extends Seeder
             'phone' => '021-9876543',
             'email' => 'jkt@sobat.co.id',
             'description' => 'Menangani Semua Aspek Keuangan Perusahaan.',
+            'latitude' => '-6.13755',
+            'longitude' => '106.62293',
+            'radius_meters' => 100,
         ]);
 
         // 3. Holdings

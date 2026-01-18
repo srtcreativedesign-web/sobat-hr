@@ -7,10 +7,11 @@ class ApiConfig {
 
   static String get baseUrl {
     if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000/api';
+      // return 'http://10.0.2.2/sobat-hr/sobat-api/public/api'; // For Emulator (XAMPP Port 80)
+      return 'http://192.168.0.105/sobat-hr/sobat-api/public/api'; // For Physical Device (XAMPP Port 80)
     }
-    // iOS Simulator, Physical device (if mapped), or other
-    return 'http://127.0.0.1:8000/api';
+    // iOS Simulator, Physical device
+    return 'http://192.168.0.105/sobat-hr/sobat-api/public/api';
   }
 
   // API Endpoints

@@ -13,6 +13,7 @@ class User {
   final String? organization;
   final int? organizationId;
   final bool hasPin;
+  final bool hasOfficeLocation;
 
   User({
     required this.id,
@@ -29,14 +30,16 @@ class User {
     this.organization,
     this.organizationId,
     this.hasPin = false,
+    this.hasOfficeLocation = false,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
     String? empId;
-    String? jobLvl; // job_level column
-    String? trk; // track column
-    String? orgName; // organization.name
-    int? orgId; // organization.id
+    String? jobLvl;
+    String? trk;
+    String? orgName;
+    int? orgId;
+    bool hasLoc = false;
 
     if (json['employee'] != null) {
       empId = json['employee']['employee_code'];
@@ -46,12 +49,12 @@ class User {
       if (json['employee']['organization'] != null) {
         orgName = json['employee']['organization']['name'];
         orgId = json['employee']['organization']['id'];
+        // Check if latitude exists and is not null/empty
+        hasLoc = json['employee']['organization']['latitude'] != null;
       } else {
-        // Fallback if organization_id is directly on employee
         orgId = json['employee']['organization_id'];
       }
     } else {
-      // Fallback for flat structure if any
       empId = json['employee_id'];
     }
 
@@ -78,6 +81,7 @@ class User {
       organization: orgName,
       organizationId: orgId,
       hasPin: json['has_pin'] as bool? ?? false,
+      hasOfficeLocation: hasLoc,
     );
   }
 

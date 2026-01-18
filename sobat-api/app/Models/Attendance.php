@@ -17,6 +17,10 @@ class Attendance extends Model
         'work_hours',
         'status',
         'notes',
+        'latitude',
+        'longitude',
+        'photo_path',
+        'location_address',
     ];
 
     protected $casts = [

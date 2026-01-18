@@ -6,10 +6,13 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/custom_navbar.dart';
 import '../../models/user.dart';
 
-import '../../services/payroll_service.dart';
-import '../../services/announcement_service.dart'; // Added
+import '../../services/payroll_service.dart'; // Restored
+import '../../services/attendance_service.dart';
+import '../../services/announcement_service.dart'; // Restored
+import '../../services/request_service.dart'; // Added
 import '../../screens/security/pin_screen.dart';
 import '../../screens/submission/submission_screen.dart';
+import '../../screens/submission/create_submission_screen.dart'; // Added
 import '../../screens/announcement/announcement_detail_screen.dart'; // Added
 import 'package:intl/intl.dart';
 
@@ -29,13 +32,53 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingPayroll = true;
   List<Map<String, dynamic>> _announcements = [];
   bool _isLoadingAnnouncements = true;
+  Map<String, dynamic>? _todayAttendance;
+  bool _isLoadingAttendance = true;
+  int _leaveBalance = 0;
+  int _leaveQuota = 12;
+  bool _isEligibleLeave = true;
+  bool _isLoadingLeave = true;
 
   @override
   void initState() {
     super.initState();
     // Data is loaded by AuthProvider in main.dart
+    _loadTodayAttendance();
+    _loadLeaveBalance();
     _loadLastPayroll();
     _loadAnnouncements();
+  }
+
+  Future<void> _loadLeaveBalance() async {
+    try {
+      final data = await RequestService().getLeaveBalance();
+      if (mounted) {
+        setState(() {
+          _leaveBalance = data['balance'] ?? 0;
+          _leaveQuota = data['quota'] ?? 12; // Or 0 if not eligible?
+          _isEligibleLeave = data['eligible'] ?? false;
+          _isLoadingLeave = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading leave: $e');
+      if (mounted) setState(() => _isLoadingLeave = false);
+    }
+  }
+
+  Future<void> _loadTodayAttendance() async {
+    try {
+      final data = await AttendanceService().getTodayAttendance();
+      if (mounted) {
+        setState(() {
+          _todayAttendance = data;
+          _isLoadingAttendance = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading attendance: $e');
+      if (mounted) setState(() => _isLoadingAttendance = false);
+    }
   }
 
   Future<void> _loadAnnouncements() async {
@@ -183,89 +226,110 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _onRefresh() async {
+    // Reload all data
+    await Future.wait([
+      _loadTodayAttendance(),
+      _loadLeaveBalance(),
+      _loadLastPayroll(),
+      _loadAnnouncements(),
+    ]);
+  }
+
   Widget _buildDashboardContent(User? user) {
-    return CustomScrollView(
-      slivers: [
-        // 1. Sticky Header
-        _buildStickyHeader(user),
+    return RefreshIndicator(
+      onRefresh: _onRefresh,
+      color: AppTheme.colorEggplant,
+      backgroundColor: Colors.white,
+      child: CustomScrollView(
+        physics:
+            const AlwaysScrollableScrollPhysics(), // Ensure scroll even if content is short
+        slivers: [
+          // 1. Sticky Header
+          _buildStickyHeader(user),
 
-        // 2. Main Content
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Section Title
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Dashboard',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textDark,
-                          letterSpacing: -0.5,
+          // 2. Main Content
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Section Title
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Dashboard',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textDark,
+                            letterSpacing: -0.5,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Ringkasan aktivitas dan data penting Anda.',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppTheme.textLight,
+                        const SizedBox(height: 4),
+                        Text(
+                          'Ringkasan aktivitas dan data penting Anda.',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppTheme.textLight,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                // Horizontal Cards (Carousel)
-                _buildHorizontalCards(),
+                  // Attendance Card
+                  _buildAttendanceCard(user),
+                  const SizedBox(height: 24),
 
-                const SizedBox(height: 32),
+                  // Horizontal Cards (Carousel)
+                  _buildHorizontalCards(),
 
-                // Announcements
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: _buildAnnouncements(),
-                ),
+                  const SizedBox(height: 32),
 
-                const SizedBox(height: 32),
+                  // Announcements
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: _buildAnnouncements(),
+                  ),
 
-                // Quick Actions
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: _buildQuickActions(),
-                ),
+                  const SizedBox(height: 32),
 
-                const SizedBox(height: 32),
+                  // Quick Actions
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: _buildQuickActions(),
+                  ),
 
-                // Banner - REMOVED
-                // Padding(
-                //   padding: const EdgeInsets.symmetric(horizontal: 24),
-                //   child: _buildBanner(),
-                // ),
+                  const SizedBox(height: 32),
 
-                // const SizedBox(height: 32);
+                  // Banner - REMOVED
+                  // Padding(
+                  //   padding: const EdgeInsets.symmetric(horizontal: 24),
+                  //   child: _buildBanner(),
+                  // ),
 
-                // Recent Activity
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: _buildRecentActivity(),
-                ),
+                  // const SizedBox(height: 32);
 
-                // Bottom padding for floating nav
-                const SizedBox(height: 120),
-              ],
+                  // Recent Activity
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: _buildRecentActivity(),
+                  ),
+
+                  // Bottom padding for floating nav
+                  const SizedBox(height: 120),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -364,6 +428,284 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildAttendanceCard(User? user) {
+    // Only show if user has office placement (and thus coordinates)
+    // Using hasOfficeLocation field we added to User model
+    // if (user == null || !user.hasOfficeLocation) {
+    //   return const SizedBox.shrink();
+    // }
+    if (user == null) return const SizedBox.shrink(); // Safety check only
+
+    // Format Date
+    final now = DateTime.now();
+    // Using intl package
+    final formattedDate = DateFormat('EEEE, d MMM y', 'id_ID').format(now);
+
+    // Determine Status
+    String status = 'Belum Hadir';
+    Color statusColor = Colors.orange;
+    Color buttonColor = AppTheme.colorCyan;
+    String buttonText = 'Clock In Sekarang';
+    IconData buttonIcon = Icons.login;
+    bool isButtonDisabled = false;
+
+    // Weekend Check
+    bool isWeekend =
+        (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday);
+    if (isWeekend) {
+      status = 'Libur Akhir Pekan';
+      statusColor = Colors.red;
+      // Disable button or allow Overtime? User asked for "Sabtu Minggu Libur".
+      // Let's disable for now to reflect "Libur".
+      isButtonDisabled = true;
+      buttonColor = Colors.grey;
+      buttonText = 'Libur';
+    }
+
+    if (_isLoadingAttendance) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_todayAttendance != null) {
+      if (_todayAttendance!['check_out'] != null) {
+        status = 'Sudah Selesai';
+        statusColor = Colors.green;
+        buttonText = 'Absen Selesai';
+        isButtonDisabled = true;
+        buttonColor = Colors.grey;
+        buttonIcon = Icons.check_circle;
+      } else if (_todayAttendance!['check_in'] != null) {
+        // Only if check_in is valid
+        status = 'Sedang Bekerja';
+        statusColor = Colors.blue;
+        buttonText = 'Clock Out Sekarang';
+        buttonColor = AppTheme.colorEggplant;
+        buttonIcon = Icons.logout;
+        isButtonDisabled =
+            false; // Enable if working, even on weekends if data exists?
+        // If data exists on weekend, assume they are working overtime.
+      }
+      // If check_in is null but record exists, we treat as default/error, or 'Belum Hadir'.
+      // With isWeekend check above, 'Libur' might be overwritten if record exists?
+      // If record exists (someone checked in on weekend), we should show status.
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'KEHADIRAN HARI INI',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: AppTheme.textLight,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    formattedDate,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textDark,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.circle, size: 8, color: statusColor),
+                    const SizedBox(width: 8),
+                    Text(
+                      status,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Times
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.login,
+                            size: 16,
+                            color: AppTheme.colorCyan,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'JAM MASUK',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: AppTheme.textLight,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        (_todayAttendance != null &&
+                                _todayAttendance!['check_in'] != null)
+                            ? (_todayAttendance!['check_in']
+                                          .toString()
+                                          .length >=
+                                      5
+                                  ? _todayAttendance!['check_in']
+                                        .toString()
+                                        .substring(0, 5)
+                                  : _todayAttendance!['check_in'].toString())
+                            : '--:--',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.logout,
+                            size: 16,
+                            color: AppTheme.textLight,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'JAM KELUAR',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: AppTheme.textLight,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        (_todayAttendance != null &&
+                                _todayAttendance!['check_out'] != null)
+                            ? (_todayAttendance!['check_out']
+                                          .toString()
+                                          .length >=
+                                      5
+                                  ? _todayAttendance!['check_out']
+                                        .toString()
+                                        .substring(0, 5)
+                                  : _todayAttendance!['check_out'].toString())
+                            : '--:--',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: isButtonDisabled
+                  ? null
+                  : () {
+                      Navigator.pushNamed(
+                        context,
+                        '/attendance',
+                      ).then((_) => _loadTodayAttendance());
+                    },
+              icon: Icon(buttonIcon),
+              label: Text(buttonText),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: buttonColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHorizontalCards() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -411,13 +753,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           text: TextSpan(
                             children: [
                               TextSpan(
-                                text: '12 ',
+                                text: _isLoadingLeave
+                                    ? '...'
+                                    : (_isEligibleLeave
+                                          ? '$_leaveBalance '
+                                          : '- '),
                                 style: TextStyle(
                                   fontSize: 30,
                                   fontWeight: FontWeight.bold,
                                   color: AppTheme.textDark,
-                                  fontFamily:
-                                      'Manrope', // Assuming font is handled globally
+                                  fontFamily: 'Manrope',
                                 ),
                               ),
                               TextSpan(
@@ -503,15 +848,31 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Total jatah: 12 hari',
+                      _isEligibleLeave
+                          ? 'Total jatah: $_leaveQuota hari'
+                          : 'Belum Eligible',
                       style: TextStyle(fontSize: 12, color: AppTheme.textLight),
                     ),
-                    Text(
-                      'Ajukan →',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.colorEggplant,
+                    InkWell(
+                      // Wrap text with InkWell or similar
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const CreateSubmissionScreen(type: 'Cuti'),
+                          ),
+                        ).then((_) {
+                          _loadLeaveBalance(); // Refresh on return
+                        });
+                      },
+                      child: Text(
+                        'Ajukan →',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.colorEggplant,
+                        ),
                       ),
                     ),
                   ],
@@ -583,7 +944,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 _isLoadingPayroll
                                     ? 'Memuat...'
                                     : _lastPayroll != null
-                                    ? 'Periode ${_lastPayroll!['period']}'
+                                    ? 'Periode ${DateFormat('MMM yyyy', 'id_ID').format(DateTime.parse(_lastPayroll!['period_start']))}'
                                     : 'Belum ada data',
                                 style: const TextStyle(
                                   fontSize: 12,
@@ -653,30 +1014,44 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         child: Row(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppTheme.success.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                _lastPayroll != null &&
-                                        _lastPayroll!['status'] == 'paid'
-                                    ? 'Sudah Ditransfer'
-                                    : 'Proses',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w500,
-                                  color:
-                                      _lastPayroll != null &&
-                                          _lastPayroll!['status'] == 'paid'
-                                      ? const Color(0xFF86EFAC)
-                                      : Colors.amberAccent,
-                                ),
-                              ),
+                            Builder(
+                              builder: (context) {
+                                final status = _lastPayroll != null
+                                    ? _lastPayroll!['status']
+                                    : 'pending';
+                                Color color;
+                                String text;
+
+                                if (status == 'paid') {
+                                  color = const Color(0xFF86EFAC); // Green
+                                  text = 'Sudah Ditransfer';
+                                } else if (status == 'approved') {
+                                  color = Colors.lightBlueAccent; // Blue
+                                  text = 'Disetujui';
+                                } else {
+                                  color = Colors.amberAccent; // Orange/Yellow
+                                  text = 'Proses';
+                                }
+
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: color.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    text,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w500,
+                                      color: color,
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -897,13 +1272,32 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Menu Cepat',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textDark,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Menu Cepat',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textDark,
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                // Navigate to full menu or show bottom sheet
+                Navigator.pushNamed(context, '/submission/menu');
+              },
+              child: Text(
+                'Lihat Semua',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.colorEggplant,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         Row(
@@ -917,14 +1311,15 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             _buildActionItem(
               Icons.flight_takeoff,
-              'Cuti',
+              _isLoadingLeave ? 'Cuti' : 'Cuti ($_leaveBalance)',
               Colors.blue,
-              onTap: () {
-                Navigator.pushNamed(
+              onTap: () async {
+                await Navigator.pushNamed(
                   context,
                   '/submission/create',
                   arguments: 'Cuti',
                 );
+                _loadLeaveBalance(); // Refresh on return
               },
             ),
             _buildActionItem(
@@ -940,11 +1335,11 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             _buildActionItem(
-              Icons.more_horiz,
-              'Lainnya',
-              Colors.grey,
+              Icons.history_outlined,
+              'Riwayat Kehadiran',
+              Colors.orange,
               onTap: () {
-                Navigator.pushNamed(context, '/submission/menu');
+                Navigator.pushNamed(context, '/attendance/history');
               },
             ),
           ],

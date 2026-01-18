@@ -12,6 +12,8 @@ import 'screens/payroll/payroll_screen.dart';
 import 'screens/submission/submission_menu_screen.dart'; // Added
 import 'screens/submission/create_submission_screen.dart'; // Added
 import 'screens/announcement/announcement_list_screen.dart'; // Added
+import 'screens/attendance/attendance_screen.dart';
+import 'screens/attendance/attendance_history_screen.dart'; // Added
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,6 +47,8 @@ class MyApp extends StatelessWidget {
             return CreateSubmissionScreen(type: args);
           },
           '/announcements': (context) => const AnnouncementListScreen(),
+          '/attendance': (context) => const AttendanceScreen(),
+          '/attendance/history': (context) => const AttendanceHistoryScreen(),
         },
       ),
     );
