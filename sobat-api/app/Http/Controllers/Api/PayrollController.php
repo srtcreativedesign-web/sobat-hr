@@ -310,16 +310,27 @@ class PayrollController extends Controller
             // Detect header row (look for "Nama Karyawan")
             $headerRowIndex = -1;
             for ($row = 1; $row <= min(10, $highestRow); $row++) {
-                foreach (range('A', $highestColumn) as $col) {
-                    $cellValue = $sheet->getCell($col . $row)->getValue();
-                    if (stripos($cellValue, 'Nama Karyawan') !== false) {
+                // Use cell iterator instead of range() to support columns beyond Z
+                $rowIterator = $sheet->getRowIterator($row, $row)->current();
+                $cellIterator = $rowIterator->getCellIterator('A', $highestColumn);
+                $cellIterator->setIterateOnlyExistingCells(false);
+                
+                foreach ($cellIterator as $cell) {
+                    $cellValue = $cell->getValue();
+                    
+                    if ($cellValue && stripos($cellValue, 'Nama Karyawan') !== false) {
                         $headerRowIndex = $row;
+                        \Illuminate\Support\Facades\Log::info("Header found at row $row, col " . $cell->getColumn());
                         break 2;
                     }
                 }
             }
             
             if ($headerRowIndex === -1) {
+                \Illuminate\Support\Facades\Log::error('Header detection failed', [
+                    'highest_row' => $highestRow,
+                    'highest_column' => $highestColumn,
+                ]);
                 return response()->json(['message' => 'Format tidak dikenali. Pastikan ada kolom "Nama Karyawan".'], 422);
             }
             
@@ -351,22 +362,28 @@ class PayrollController extends Controller
                 'payroll' => 'Payroll',
             ];
             
-            foreach (range('A', $highestColumn) as $col) {
-                $headerValue = $sheet->getCell($col . $headerRowIndex)->getValue();
+            // Use cell iterator to support columns beyond Z (AA, AB, etc.)
+            $headerRow = $sheet->getRowIterator($headerRowIndex, $headerRowIndex)->current();
+            $cellIterator = $headerRow->getCellIterator('A', $highestColumn);
+            $cellIterator->setIterateOnlyExistingCells(false);
+            
+            foreach ($cellIterator as $cell) {
+                $col = $cell->getColumn();
+                $headerValue = $cell->getValue();
                 $unitsValue = $sheet->getCell($col . ($headerRowIndex + 1))->getValue();
                 
                 foreach ($headerPatterns as $key => $pattern) {
                     if (is_array($pattern)) {
                         // Multi-row header check (e.g., "Kehadiran" in row 2, "Jumlah" in row 3)
-                        $headerMatch = stripos($headerValue, $pattern[0]) !== false;
-                        $unitsMatch = stripos($unitsValue, $pattern[1]) !== false;
+                        $headerMatch = $headerValue && stripos($headerValue, $pattern[0]) !== false;
+                        $unitsMatch = $unitsValue && stripos($unitsValue, $pattern[1]) !== false;
                         
                         if ($headerMatch && $unitsMatch) {
                             $columnMapping[$key] = $col;
                         }
                     } else {
                         // Single header check
-                        if (stripos($headerValue, $pattern) !== false) {
+                        if ($headerValue && stripos($headerValue, $pattern) !== false) {
                             $columnMapping[$key] = $col;
                         }
                     }

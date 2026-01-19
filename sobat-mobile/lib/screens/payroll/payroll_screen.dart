@@ -44,7 +44,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
     }
   }
 
-  Future<void> _downloadSlip(int id, String period) async {
+  Future<void> _downloadSlip(int id, String period, {String? division}) async {
     try {
       // Show loading indicator
       showDialog(
@@ -54,9 +54,9 @@ class _PayrollScreenState extends State<PayrollScreen> {
       );
 
       final filename = 'Slip_Gaji_$period.pdf';
-      debugPrint('Downloading slip: $filename');
+      debugPrint('Downloading slip: $filename, division: $division');
 
-      await _payrollService.downloadSlip(id, filename);
+      await _payrollService.downloadSlip(id, filename, division: division);
 
       if (!mounted) return;
       Navigator.pop(context); // Close loading
@@ -184,10 +184,18 @@ class _PayrollScreenState extends State<PayrollScreen> {
     String lastDate = '-';
     if (_payrolls.isNotEmpty) {
       lastSalary = double.tryParse(_payrolls[0]['net_salary'].toString()) ?? 0;
-      lastDate = DateFormat(
-        'd MMM yyyy',
-        'id_ID',
-      ).format(DateTime.parse(_payrolls[0]['period_start']));
+      // Handle both 'period' (FnB) and 'period_start' (generic)
+      final periodStr = _payrolls[0]['period'] ?? _payrolls[0]['period_start'];
+      if (periodStr != null) {
+        // If period is YYYY-MM format, append -01 for valid DateTime parsing
+        final dateStr = periodStr.toString().length == 7
+            ? '$periodStr-01'
+            : periodStr.toString();
+        lastDate = DateFormat(
+          'd MMM yyyy',
+          'id_ID',
+        ).format(DateTime.parse(dateStr));
+      }
     }
 
     return Container(
@@ -333,7 +341,21 @@ class _PayrollScreenState extends State<PayrollScreen> {
   }
 
   Widget _buildPayrollCard(Map<String, dynamic> payroll) {
-    final periodDate = DateTime.parse(payroll['period_start']);
+    // Handle both 'period' (FnB: YYYY-MM) and 'period_start' (generic: YYYY-MM-DD)
+    final periodStr = payroll['period'] ?? payroll['period_start'];
+
+    // Default to current date if no period found
+    DateTime periodDate;
+    if (periodStr == null) {
+      periodDate = DateTime.now();
+    } else {
+      // If period is YYYY-MM format, append -01 for valid DateTime parsing
+      final dateStr = periodStr.toString().length == 7
+          ? '$periodStr-01'
+          : periodStr.toString();
+      periodDate = DateTime.parse(dateStr);
+    }
+
     final monthName = DateFormat('MMMM', 'id_ID').format(periodDate);
     final status = payroll['status'] ?? 'pending';
 
@@ -418,7 +440,13 @@ class _PayrollScreenState extends State<PayrollScreen> {
                           Row(
                             children: [
                               Text(
-                                _formatCurrency(payroll['net_salary'] ?? 0),
+                                _formatCurrency(
+                                  double.tryParse(
+                                        payroll['net_salary']?.toString() ??
+                                            '0',
+                                      ) ??
+                                      0,
+                                ),
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -525,177 +553,236 @@ class _PayrollScreenState extends State<PayrollScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(24),
                 children: [
+                  // Attendance Summary (for FnB payroll)
+                  if (payroll['attendance'] != null &&
+                      payroll['attendance'] is Map) ...[
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'DATA KEHADIRAN',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: (payroll['attendance'] as Map).entries
+                                .map((entry) {
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          entry.value.toString(),
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppTheme.textDark,
+                                          ),
+                                        ),
+                                        Text(
+                                          entry.key,
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: AppTheme.textLight,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                })
+                                .toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // PENDAPATAN SECTION
+                  const Text(
+                    'Pendapatan',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.colorCyan,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   _buildDetailRow('Gaji Pokok', payroll['basic_salary']),
 
-                  // DYNAMIC ALLOWANCES
-                  if (payroll['details'] != null &&
-                      (payroll['details'] is Map) &&
-                      (payroll['details'] as Map).isNotEmpty) ...[
-                    // Extract Details
+                  // DETAILED ALLOWANCES (FnB structured data)
+                  if (payroll['allowances'] != null &&
+                      payroll['allowances'] is Map) ...[
+                    ...(payroll['allowances'] as Map).entries.map((entry) {
+                      final value = entry.value;
+                      double amount = 0;
+
+                      // Handle nested objects (like Kehadiran, Transport, Lembur with amount field)
+                      if (value is Map && value['amount'] != null) {
+                        amount =
+                            double.tryParse(value['amount'].toString()) ?? 0;
+                      } else {
+                        amount = double.tryParse(value.toString()) ?? 0;
+                      }
+
+                      if (amount > 0 && entry.key != 'Lembur') {
+                        // Lembur shown separately
+                        return _buildDetailRow(entry.key, amount, isPlus: true);
+                      }
+                      return const SizedBox.shrink();
+                    }).toList(),
+                  ],
+
+                  // OVERTIME (if available)
+                  if (payroll['allowances'] != null &&
+                      payroll['allowances'] is Map) ...[
                     Builder(
                       builder: (context) {
-                        final details = payroll['details'] as Map;
-                        final totalAllowances =
-                            (payroll['allowances'] as num? ?? 0).toDouble();
+                        final allowances = payroll['allowances'] as Map;
+                        if (allowances['Lembur'] != null) {
+                          final lembur = allowances['Lembur'];
+                          final amount = lembur is Map
+                              ? (double.tryParse(lembur['amount'].toString()) ??
+                                    0)
+                              : (double.tryParse(lembur.toString()) ?? 0);
 
-                        double transport =
-                            (details['transport_allowance'] as num? ?? 0)
-                                .toDouble();
-                        double tunjKes =
-                            (details['tunjangan_kesehatan'] as num? ?? 0)
-                                .toDouble();
-                        double insentif =
-                            (details['insentif_lebaran'] as num? ?? 0)
-                                .toDouble();
-                        double adjGaji =
-                            (details['adj_kekurangan_gaji'] as num? ?? 0)
-                                .toDouble();
-                        double kebijakanHO =
-                            (details['kebijakan_ho'] as num? ?? 0).toDouble();
-
-                        // Calculate Residual (Tunjangan Jabatan)
-                        double tunjJabatan =
-                            totalAllowances - (transport + tunjKes + insentif);
-
-                        return Column(
-                          children: [
-                            if (tunjKes > 0)
-                              _buildDetailRow(
-                                'Tunjangan Kesehatan',
-                                tunjKes,
-                                isPlus: true,
-                              ),
-                            if (tunjJabatan > 0)
-                              _buildDetailRow(
-                                'Tunjangan Jabatan',
-                                tunjJabatan,
-                                isPlus: true,
-                              ),
-                            if (transport > 0)
-                              _buildDetailRow(
-                                'Transport',
-                                transport,
-                                isPlus: true,
-                              ),
-                            if (insentif > 0)
-                              _buildDetailRow(
-                                'Insentif Lebaran',
-                                insentif,
-                                isPlus: true,
-                              ),
-                            if (adjGaji > 0)
-                              _buildDetailRow(
-                                'Adjustment Gaji',
-                                adjGaji,
-                                isPlus: true,
-                              ),
-                            if (kebijakanHO > 0)
-                              _buildDetailRow(
-                                'Kebijakan HO',
-                                kebijakanHO,
-                                isPlus: true,
-                              ),
-                          ],
-                        );
+                          if (amount > 0) {
+                            return _buildDetailRow(
+                              'Lembur',
+                              amount,
+                              isPlus: true,
+                            );
+                          }
+                        }
+                        return const SizedBox.shrink();
                       },
                     ),
-                  ] else ...[
-                    // Fallback
+                  ] else if (payroll['overtime_pay'] != null) ...[
                     _buildDetailRow(
-                      'Tunjangan',
-                      payroll['allowances'],
+                      'Lembur',
+                      payroll['overtime_pay'],
                       isPlus: true,
                     ),
                   ],
 
-                  _buildDetailRow(
-                    'Lembur',
-                    payroll['overtime_pay'] ?? 0,
-                    isPlus: true,
-                  ),
-
                   const Divider(height: 32),
+
+                  // POTONGAN SECTION
                   const Text(
                     'Potongan',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.textLight,
+                      color: Colors.red,
+                      letterSpacing: 0.5,
                     ),
                   ),
                   const SizedBox(height: 12),
 
-                  // STANDARD DEDUCTIONS
-                  if ((payroll['bpjs_health'] as num? ?? 0) > 0)
-                    _buildDetailRow(
-                      'BPJS Kesehatan',
-                      payroll['bpjs_health'],
-                      isMinus: true,
-                    ),
+                  // DETAILED DEDUCTIONS (FnB structured data)
+                  if (payroll['deductions'] != null &&
+                      payroll['deductions'] is Map) ...[
+                    ...(payroll['deductions'] as Map).entries.map((entry) {
+                      final amount =
+                          double.tryParse(entry.value.toString()) ?? 0;
+                      if (amount > 0) {
+                        return _buildDetailRow(
+                          entry.key,
+                          amount,
+                          isMinus: true,
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    }).toList(),
+                  ] else ...[
+                    // Generic payroll deductions
+                    if ((payroll['bpjs_health'] ?? 0) > 0)
+                      _buildDetailRow(
+                        'BPJS Kesehatan',
+                        payroll['bpjs_health'],
+                        isMinus: true,
+                      ),
+                    if ((payroll['bpjs_employment'] ?? 0) > 0)
+                      _buildDetailRow(
+                        'BPJS Ketenagakerjaan',
+                        payroll['bpjs_employment'],
+                        isMinus: true,
+                      ),
+                    if ((payroll['tax'] ?? 0) > 0)
+                      _buildDetailRow('PPh 21', payroll['tax'], isMinus: true),
+                  ],
 
-                  if ((payroll['bpjs_employment'] as num? ?? 0) > 0)
-                    _buildDetailRow(
-                      'BPJS Ketenagakerjaan',
-                      payroll['bpjs_employment'],
-                      isMinus: true,
-                    ),
-
-                  if ((payroll['tax'] as num? ?? 0) > 0)
-                    _buildDetailRow('PPh 21', payroll['tax'], isMinus: true),
-
-                  // DETAILED DEDUCTIONS
-                  if (payroll['details'] != null &&
-                      (payroll['details'] is Map)) ...[
+                  // EWA Display (for FnB)
+                  if (payroll['ewa_amount'] != null) ...[
                     Builder(
                       builder: (context) {
-                        final details = payroll['details'] as Map;
-                        return Column(
-                          children: [
-                            if ((details['absen_1x'] as num? ?? 0) > 0)
-                              _buildDetailRow(
-                                'Potongan Absen',
-                                details['absen_1x'],
-                                isMinus: true,
-                              ),
-
-                            if ((details['terlambat'] as num? ?? 0) > 0)
-                              _buildDetailRow(
-                                'Denda Terlambat',
-                                details['terlambat'],
-                                isMinus: true,
-                              ),
-
-                            if ((details['selisih_so'] as num? ?? 0) > 0)
-                              _buildDetailRow(
-                                'Selisih SO',
-                                details['selisih_so'],
-                                isMinus: true,
-                              ),
-
-                            if ((details['pinjaman'] as num? ?? 0) > 0)
-                              _buildDetailRow(
-                                'Pinjaman / Kasbon',
-                                details['pinjaman'],
-                                isMinus: true,
-                              ),
-
-                            if ((details['adm_bank'] as num? ?? 0) > 0)
-                              _buildDetailRow(
-                                'Admin Bank',
-                                details['adm_bank'],
-                                isMinus: true,
-                              ),
-                          ],
-                        );
+                        final ewaAmount =
+                            double.tryParse(payroll['ewa_amount'].toString()) ??
+                            0;
+                        if (ewaAmount > 0) {
+                          return Container(
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'EWA (KASBON)',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.red,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Total EWA'),
+                                    Text(
+                                      '- ${_formatCurrency(ewaAmount)}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
                       },
                     ),
                   ],
 
-                  // Check for Other Deductions?
-                  // Using total_deductions - sum of knowns logic?
-                  // Or just assume 'other_deductions' field is correct?
-                  // The API controller sums up total_deductions correctly in import.
-                  // But 'other_deductions' column might be used if I map it.
-                  // For now, let's just stick to what we explicitly have.
                   const Divider(height: 32),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -709,7 +796,12 @@ class _PayrollScreenState extends State<PayrollScreen> {
                         ),
                       ),
                       Text(
-                        _formatCurrency(payroll['net_salary'] ?? 0),
+                        _formatCurrency(
+                          double.tryParse(
+                                payroll['net_salary']?.toString() ?? '0',
+                              ) ??
+                              0,
+                        ),
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -739,13 +831,24 @@ class _PayrollScreenState extends State<PayrollScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () => _downloadSlip(
-                    payroll['id'],
-                    DateFormat(
-                      'MMM_yyyy',
-                      'id_ID',
-                    ).format(DateTime.parse(payroll['period_start'])),
-                  ),
+                  onPressed: () {
+                    final periodStr =
+                        payroll['period'] ?? payroll['period_start'];
+                    if (periodStr != null) {
+                      // If period is YYYY-MM format, append -01 for valid DateTime parsing
+                      final dateStr = periodStr.toString().length == 7
+                          ? '$periodStr-01'
+                          : periodStr.toString();
+                      _downloadSlip(
+                        payroll['id'],
+                        DateFormat(
+                          'MMM_yyyy',
+                          'id_ID',
+                        ).format(DateTime.parse(dateStr)),
+                        division: payroll['division'],
+                      );
+                    }
+                  },
                   icon: const Icon(Icons.download_rounded),
                   label: const Text('Download Slip Gaji'),
                   style: ElevatedButton.styleFrom(
@@ -782,6 +885,9 @@ class _PayrollScreenState extends State<PayrollScreen> {
       prefix = '- ';
     }
 
+    // Parse value to double to handle both String and num types
+    final numValue = double.tryParse(value?.toString() ?? '0') ?? 0;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -789,7 +895,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
         children: [
           Text(label, style: const TextStyle(color: AppTheme.textLight)),
           Text(
-            '$prefix${_formatCurrency(value ?? 0)}',
+            '$prefix${_formatCurrency(numValue)}',
             style: TextStyle(fontWeight: FontWeight.w600, color: valueColor),
           ),
         ],

@@ -65,7 +65,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/approvals', [App\Http\Controllers\Api\ApprovalController::class, 'index']);
     Route::get('/approvals/pending', [App\Http\Controllers\Api\ApprovalController::class, 'pending']);
 
-    // Payroll routes
+    // FnB Payroll routes (MUST be before apiResource to avoid route conflict)
+    Route::prefix('payrolls/fnb')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\PayrollFnbController::class, 'index']);
+        Route::post('/import', [App\Http\Controllers\Api\PayrollFnbController::class, 'import']);
+        Route::post('/import/save', [App\Http\Controllers\Api\PayrollFnbController::class, 'saveImport']);
+        Route::get('/{id}', [App\Http\Controllers\Api\PayrollFnbController::class, 'show']);
+        Route::patch('/{id}/status', [App\Http\Controllers\Api\PayrollFnbController::class, 'updateStatus']);
+        Route::delete('/{id}', [App\Http\Controllers\Api\PayrollFnbController::class, 'destroy']);
+        Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollFnbController::class, 'generateSlip']); // Added FnB slip route
+    });
+
+    // Payroll routes (generic)
     Route::apiResource('payrolls', App\Http\Controllers\Api\PayrollController::class);
     Route::get('/payrolls/template/download', [App\Http\Controllers\Api\PayrollController::class, 'downloadTemplate']);
     Route::post('/payrolls/approve-all', [App\Http\Controllers\Api\PayrollController::class, 'approveAll']);

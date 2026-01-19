@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
@@ -102,21 +103,28 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadLastPayroll() async {
     try {
       final payrolls = await PayrollService().getPayrolls();
-      if (payrolls.isNotEmpty) {
-        // Sort by period descending just in case, though API might already do it
-        payrolls.sort(
-          (a, b) => (b['period'] as String).compareTo(a['period'] as String),
-        );
+      if (payrolls.isNotEmpty && mounted) {
+        // Sort by period/period_start descending (string comparison is safe)
+        try {
+          payrolls.sort((a, b) {
+            final aStr = (a['period'] ?? a['period_start'] ?? '').toString();
+            final bStr = (b['period'] ?? b['period_start'] ?? '').toString();
+            return bStr.compareTo(aStr);
+          });
+        } catch (e) {
+          debugPrint('Failed to sort payrolls in home: $e');
+        }
+
         setState(() {
-          _lastPayroll = payrolls.first;
+          _lastPayroll = payrolls.isNotEmpty ? payrolls.first : null;
           _isLoadingPayroll = false;
         });
-      } else {
+      } else if (mounted) {
         setState(() => _isLoadingPayroll = false);
       }
     } catch (e) {
-      print('Error loading last payroll: $e');
-      setState(() => _isLoadingPayroll = false);
+      debugPrint('Error loading last payroll: $e');
+      if (mounted) setState(() => _isLoadingPayroll = false);
     }
   }
 
@@ -948,7 +956,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                 _isLoadingPayroll
                                     ? 'Memuat...'
                                     : _lastPayroll != null
-                                    ? 'Periode ${DateFormat('MMM yyyy', 'id_ID').format(DateTime.parse(_lastPayroll!['period_start']))}'
+                                    ? () {
+                                        final periodStr =
+                                            _lastPayroll!['period'] ??
+                                            _lastPayroll!['period_start'];
+                                        if (periodStr != null) {
+                                          // Handle YYYY-MM format by appending -01
+                                          final dateStr =
+                                              periodStr.toString().length == 7
+                                              ? '$periodStr-01'
+                                              : periodStr.toString();
+                                          return 'Periode ${DateFormat('MMM yyyy', 'id_ID').format(DateTime.parse(dateStr))}';
+                                        }
+                                        return 'Belum ada data';
+                                      }()
                                     : 'Belum ada data',
                                 style: const TextStyle(
                                   fontSize: 12,
