@@ -2,7 +2,8 @@ class User {
   final int id;
   final String name;
   final String email;
-  final String? employeeId;
+  final int? employeeRecordId; // Integer ID for DB relationship
+  final String? employeeId; // String Code (e.g. EMP001)
   final String? avatar;
   final String? role;
   final DateTime? emailVerifiedAt;
@@ -19,6 +20,7 @@ class User {
     required this.id,
     required this.name,
     required this.email,
+    this.employeeRecordId,
     this.employeeId,
     this.avatar,
     this.role,
@@ -34,6 +36,7 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    int? empRecordId;
     String? empId;
     String? jobLvl;
     String? trk;
@@ -42,6 +45,7 @@ class User {
     bool hasLoc = false;
 
     if (json['employee'] != null) {
+      empRecordId = json['employee']['id']; // Store integer ID
       empId = json['employee']['employee_code'];
       jobLvl = json['employee']['job_level'];
       trk = json['employee']['track'];
@@ -62,6 +66,7 @@ class User {
       id: json['id'] as int,
       name: json['name'] as String,
       email: json['email'] as String,
+      employeeRecordId: empRecordId, // Added
       employeeId: empId,
       avatar: json['avatar'] as String?,
       role: (json['role'] is Map)

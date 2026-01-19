@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
+import { API_URL } from '@/lib/config';
 
 interface Attendance {
     id: number;
@@ -30,6 +31,7 @@ export default function AttendancePage() {
     const [loading, setLoading] = useState(false);
     const [filterDate, setFilterDate] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
+    const [selectedAttendance, setSelectedAttendance] = useState<Attendance | null>(null);
 
     useEffect(() => {
         checkAuth();
@@ -76,6 +78,14 @@ export default function AttendancePage() {
             month: 'long',
             year: 'numeric'
         });
+    };
+
+    const getPhotoUrl = (path: string | null) => {
+        if (!path) return null;
+        // Clean path if it starts with 'public/' (stored in db) or just appending to base
+        // API_URL usually ends with /api. We need the base URL (without /api) for storage
+        const baseUrl = API_URL.replace('/api', '');
+        return `${baseUrl}/storage/${path}`;
     };
 
     const getStatusBadge = (status: string) => {
@@ -155,6 +165,7 @@ export default function AttendancePage() {
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Keluar</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lokasi</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -182,6 +193,14 @@ export default function AttendancePage() {
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-[200px] truncate">
                                                 {att.location_address || '-'}
                                             </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <button
+                                                    onClick={() => setSelectedAttendance(att)}
+                                                    className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-md transition-colors"
+                                                >
+                                                    Detail
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -190,6 +209,107 @@ export default function AttendancePage() {
                     )}
                 </div>
             </div>
+
+            {/* Detail Modal */}
+            {selectedAttendance && (
+                <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                    <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                        {/* Background overlay */}
+                        <div
+                            className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+                            aria-hidden="true"
+                            onClick={() => setSelectedAttendance(null)}
+                        ></div>
+
+                        {/* Modal panel */}
+                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                <div className="sm:flex sm:items-start">
+                                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                        <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                            Detail Kehadiran
+                                        </h3>
+                                        <div className="mt-4 space-y-4">
+                                            {/* Photo */}
+                                            <div className="aspect-w-16 aspect-h-9 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center border border-gray-200">
+                                                {selectedAttendance.photo_path ? (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img
+                                                        src={getPhotoUrl(selectedAttendance.photo_path) || ''}
+                                                        alt="Bukti Absensi"
+                                                        className="object-cover w-full h-64"
+                                                    />
+                                                ) : (
+                                                    <div className="py-12 flex flex-col items-center text-gray-400">
+                                                        <svg className="h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                        </svg>
+                                                        <span>Tidak ada foto</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Details Grid */}
+                                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                                <div>
+                                                    <p className="font-medium text-gray-500">Nama Karyawan</p>
+                                                    <p className="text-gray-900 font-semibold">{selectedAttendance.employee?.full_name}</p>
+                                                    <p className="text-gray-500 text-xs">{selectedAttendance.employee?.employee_code}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-gray-500">Tanggal</p>
+                                                    <p className="text-gray-900">{formatDate(selectedAttendance.date)}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-gray-500">Jam Masuk</p>
+                                                    <p className="text-gray-900 font-mono">{selectedAttendance.check_in?.substring(0, 5) || '-'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-gray-500">Jam Keluar</p>
+                                                    <p className="text-gray-900 font-mono">{selectedAttendance.check_out?.substring(0, 5) || '-'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-gray-500">Total Jam Kerja</p>
+                                                    <p className="text-gray-900">{selectedAttendance.work_hours ? `${selectedAttendance.work_hours} Jam` : '-'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-gray-500">Status</p>
+                                                    <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full mt-1 ${getStatusBadge(selectedAttendance.status)}`}>
+                                                        {selectedAttendance.status.toUpperCase()}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Full Width Items */}
+                                            <div>
+                                                <p className="font-medium text-gray-500 text-sm">Lokasi</p>
+                                                <p className="text-gray-900 text-sm">{selectedAttendance.location_address || '-'}</p>
+                                            </div>
+
+                                            {selectedAttendance.notes && (
+                                                <div>
+                                                    <p className="font-medium text-gray-500 text-sm">Catatan</p>
+                                                    <p className="text-gray-900 text-sm bg-gray-50 p-2 rounded mt-1">{selectedAttendance.notes}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                <button
+                                    type="button"
+                                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                                    onClick={() => setSelectedAttendance(null)}
+                                >
+                                    Tutup
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </DashboardLayout>
     );
 }

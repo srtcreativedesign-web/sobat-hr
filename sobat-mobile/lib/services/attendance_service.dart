@@ -24,28 +24,18 @@ class AttendanceService {
   }
 
   Future<Map<String, dynamic>> checkIn({
+    required int employeeId,
     required double latitude,
     required double longitude,
     required File photo,
     required String status, // 'present', 'late', etc.
+    String? address, // Added address
     String? notes,
   }) async {
     await _addAuthHeader();
 
     try {
-      // Get current user to get employee_id (Assuming Profile endpoint or stored)
-      // Ideally employee_id should be stored in Session/Provider, but for now fetch 'me' or assume backend handles it?
-      // Wait, AttendanceController 'store' requires 'employee_id'.
-      // Usually AuthController 'me' returns employee data including ID.
-      // Let's first fetch user profile if we don't have ID.
-      // OR, we can update "store" method in backend to use Auth::user()->employee->id if not provided?
-      // Checking backend... store requires 'employee_id'.
-      // I will assume we can get it from AuthProvider or Me endpoint.
-      // To keep it simple, let's fetch /auth/me first inside here or expect caller to pass it.
-      // Better: Fetch /auth/me short cache.
-
-      final userResponse = await _dio.get(ApiConfig.profile);
-      final employeeId = userResponse.data['employee']['id'];
+      // Use passed employeeId instead of fetching it
 
       String fileName = photo.path.split('/').last;
 
@@ -56,6 +46,7 @@ class AttendanceService {
         'status': status,
         'latitude': latitude,
         'longitude': longitude,
+        'location_address': address ?? '', // Send address
         'notes': notes,
         'photo': await MultipartFile.fromFile(
           photo.path,
@@ -114,6 +105,31 @@ class AttendanceService {
       return response.data as List<dynamic>;
     } catch (e) {
       throw 'Gagal memuat riwayat absensi: $e';
+    }
+  }
+
+  Future<Map<String, dynamic>> checkOut({
+    required int attendanceId,
+    required String checkOutTime,
+    String? status,
+    String? notes,
+  }) async {
+    await _addAuthHeader();
+    try {
+      final response = await _dio.put(
+        '/attendances/$attendanceId',
+        data: {
+          'check_out': checkOutTime,
+          if (status != null) 'status': status,
+          if (notes != null) 'notes': notes,
+        },
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw e.response?.data['message'] ??
+          'Gagal melakukan check-out: ${e.message}';
+    } catch (e) {
+      throw 'Terjadi kesalahan: $e';
     }
   }
 }

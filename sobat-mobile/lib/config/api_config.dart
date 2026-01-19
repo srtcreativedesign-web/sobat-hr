@@ -1,17 +1,14 @@
-import 'dart:io';
-
 class ApiConfig {
   // Base URL for API
   // Android Emulator: use 10.0.2.2 instead of localhost
   // iOS Simulator & Web: use localhost (127.0.0.1)
 
   static String get baseUrl {
-    if (Platform.isAndroid) {
-      // return 'http://10.0.2.2/sobat-hr/sobat-api/public/api'; // For Emulator (XAMPP Port 80)
-      return 'http://192.168.0.105/sobat-hr/sobat-api/public/api'; // For Physical Device (XAMPP Port 80)
-    }
-    // iOS Simulator, Physical device
-    return 'http://192.168.0.105/sobat-hr/sobat-api/public/api';
+    // If you are using Android Emulator, use 'http://10.0.2.2/...'
+    // For Physical Device (Android/iOS), use your LAN IP: 'http://192.168.1.3/...'
+
+    // Returning LAN IP for Physical Device support (User Request)
+    return 'http://192.168.1.3/sobat-hr/sobat-api/public/api';
   }
 
   // API Endpoints

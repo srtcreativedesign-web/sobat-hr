@@ -44,6 +44,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Attendance routes
     Route::get('/attendance/today', [App\Http\Controllers\Api\AttendanceController::class, 'today']);
     Route::get('/attendance/history', [App\Http\Controllers\Api\AttendanceController::class, 'history']); // New History Route
+    Route::get('/attendances', [App\Http\Controllers\Api\AttendanceController::class, 'index']); // Added for Web Admin
     Route::post('/attendances', [App\Http\Controllers\Api\AttendanceController::class, 'store']);
     Route::post('/attendances/sync', [App\Http\Controllers\Api\AttendanceController::class, 'syncFingerprint']);
     Route::get('/attendances/report/{month}/{year}', [App\Http\Controllers\Api\AttendanceController::class, 'monthlyReport']);
