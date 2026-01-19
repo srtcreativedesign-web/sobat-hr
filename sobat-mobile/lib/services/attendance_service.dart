@@ -111,19 +111,33 @@ class AttendanceService {
   Future<Map<String, dynamic>> checkOut({
     required int attendanceId,
     required String checkOutTime,
+    required File photo,
     String? status,
     String? notes,
   }) async {
     await _addAuthHeader();
     try {
-      final response = await _dio.put(
+      String fileName = photo.path.split('/').last;
+
+      // Use FormData to allow file upload
+      // Laravel requires POST with _method=PUT to handle multipart/form-data for updates
+      FormData formData = FormData.fromMap({
+        '_method': 'PUT',
+        'check_out': checkOutTime,
+        if (status != null) 'status': status,
+        if (notes != null) 'notes': notes,
+        'photo': await MultipartFile.fromFile(
+          photo.path,
+          filename: fileName,
+          contentType: MediaType('image', 'jpeg'),
+        ),
+      });
+
+      final response = await _dio.post(
         '/attendances/$attendanceId',
-        data: {
-          'check_out': checkOutTime,
-          if (status != null) 'status': status,
-          if (notes != null) 'notes': notes,
-        },
+        data: formData,
       );
+
       return response.data;
     } on DioException catch (e) {
       throw e.response?.data['message'] ??

@@ -20,6 +20,7 @@ class Attendance extends Model
         'latitude',
         'longitude',
         'photo_path',
+        'checkout_photo_path',
         'location_address',
     ];
 

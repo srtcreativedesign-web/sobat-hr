@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/attendance/history', [App\Http\Controllers\Api\AttendanceController::class, 'history']); // New History Route
     Route::get('/attendances', [App\Http\Controllers\Api\AttendanceController::class, 'index']); // Added for Web Admin
     Route::post('/attendances', [App\Http\Controllers\Api\AttendanceController::class, 'store']);
+    Route::put('/attendances/{id}', [App\Http\Controllers\Api\AttendanceController::class, 'update']); // Checkout Route
     Route::post('/attendances/sync', [App\Http\Controllers\Api\AttendanceController::class, 'syncFingerprint']);
     Route::get('/attendances/report/{month}/{year}', [App\Http\Controllers\Api\AttendanceController::class, 'monthlyReport']);
 
@@ -68,6 +69,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('payrolls', App\Http\Controllers\Api\PayrollController::class);
     Route::get('/payrolls/template/download', [App\Http\Controllers\Api\PayrollController::class, 'downloadTemplate']);
     Route::post('/payrolls/approve-all', [App\Http\Controllers\Api\PayrollController::class, 'approveAll']);
+    Route::post('/payrolls/bulk-approve', [App\Http\Controllers\Api\PayrollController::class, 'bulkApprove']);
     Route::post('/payrolls/import', [App\Http\Controllers\Api\PayrollController::class, 'import']);
     Route::post('/payrolls/import/save', [App\Http\Controllers\Api\PayrollController::class, 'saveImport']);
     Route::post('/payrolls/calculate', [App\Http\Controllers\Api\PayrollController::class, 'calculate']);
@@ -86,11 +88,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard/analytics', [App\Http\Controllers\Api\DashboardController::class, 'analytics']);
         Route::get('/dashboard/turnover', [App\Http\Controllers\Api\DashboardController::class, 'turnover']);
         Route::get('/dashboard/attendance-heatmap', [App\Http\Controllers\Api\DashboardController::class, 'attendanceHeatmap']);
+        Route::get('/dashboard/attendance-trend', [App\Http\Controllers\Api\DashboardController::class, 'attendanceTrend']);
         Route::get('/dashboard/contract-expiring', [App\Http\Controllers\Api\DashboardController::class, 'contractExpiring']);
     });
 
     // AI Context Route
-    Route::get('/ai/context', [App\Http\Controllers\Api\AiContextController::class, 'getContext']);
+
 
 
     // Staff Invitation routes (Admin only)

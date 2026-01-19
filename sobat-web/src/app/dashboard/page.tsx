@@ -5,6 +5,27 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
+import LatenessChart from '@/components/dashboard/LatenessChart';
+
+interface DashboardStats {
+  employees: {
+    total: number;
+    active: number;
+  };
+  attendance: {
+    [key: string]: number; // present, late, absent, etc.
+  };
+  requests: {
+    pending: number;
+    approved: number;
+    rejected: number;
+  };
+  payroll: {
+    total: number;
+    period_month: number;
+    period_year: number;
+  };
+}
 
 interface ContractExpiringEmployee {
   id: number;
@@ -24,8 +45,10 @@ interface ContractExpiringEmployee {
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated, checkAuth } = useAuthStore();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [contractExpiring, setContractExpiring] = useState<ContractExpiringEmployee[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [latenessData, setLatenessData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     checkAuth();
@@ -38,13 +61,23 @@ export default function DashboardPage() {
   }, [isAuthenticated, router]);
 
   useEffect(() => {
-    const fetchContractExpiring = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get('/dashboard/contract-expiring?days=30');
-        setContractExpiring(response.data.data.employees || []);
+
+        // Parallel Fetch
+        const [analyticsRes, contractsRes, trendRes] = await Promise.all([
+          apiClient.get('/dashboard/analytics'),
+          apiClient.get('/dashboard/contract-expiring?days=30'),
+          apiClient.get('/dashboard/attendance-trend')
+        ]);
+
+        setStats(analyticsRes.data);
+        setContractExpiring(contractsRes.data.data.employees || []);
+        setLatenessData(trendRes.data.data || []);
+
       } catch (error) {
-        console.error('Failed to fetch contract expiring:', error);
+        console.error('Failed to fetch dashboard data:', error);
       } finally {
         setLoading(false);
       }
@@ -52,18 +85,32 @@ export default function DashboardPage() {
 
     if (isAuthenticated) {
       // Role Check
-      const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name; // Handle object or string
+      const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name;
       if (roleName === 'staff') {
         router.push('/attendance');
         return;
       }
-
-      fetchContractExpiring();
+      fetchData();
     }
   }, [isAuthenticated, user, router]);
 
-  if (!isAuthenticated) {
-    return null;
+  if (!isAuthenticated) return null;
+
+  // Calculators
+  const presentCount = stats?.attendance['present'] || 0;
+  const lateCount = stats?.attendance['late'] || 0;
+  const totalAttendance = presentCount + lateCount;
+  const totalEmployees = stats?.employees.total || 1; // Avoid div by 0
+  const attendanceRate = ((totalAttendance / totalEmployees) * 100).toFixed(1);
+
+  const formatCompactCurrency = (number: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      notation: "compact",
+      compactDisplay: "short",
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 2
+    }).format(number);
   }
 
   // Modern Stats Card Component
@@ -73,7 +120,9 @@ export default function DashboardPage() {
       <div className="relative z-10 flex justify-between items-start">
         <div>
           <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">{title}</p>
-          <h3 className="text-3xl font-bold text-gray-800 mt-1 mb-2 group-hover:translate-x-1 transition-transform">{value}</h3>
+          <h3 className="text-3xl font-bold text-gray-800 mt-1 mb-2 group-hover:translate-x-1 transition-transform">
+            {loading ? '...' : value}
+          </h3>
           <p className="text-xs text-gray-400 font-medium bg-gray-100 inline-block px-2 py-1 rounded-md">{subtext}</p>
         </div>
         <div className={`p-3 rounded-xl bg-gradient-to-br ${colorClass} text-white shadow-lg group-hover:shadow-2xl transition-all duration-300 transform group-hover:-rotate-6`}>
@@ -103,12 +152,15 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-4">
             <button className="p-2 text-gray-400 hover:text-[#462e37] transition-colors relative">
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+              {stats && stats.requests.pending > 0 && (
+                <>
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+                </>
+              )}
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
             </button>
             <div className="h-10 w-10 rounded-full bg-gray-200 border-2 border-white shadow-sm overflow-hidden">
-              {/* User Avatar Placeholder */}
               <div className="w-full h-full bg-[#462e37] flex items-center justify-center text-white font-bold">
                 {user?.name?.charAt(0)}
               </div>
@@ -124,28 +176,28 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatsCard
             title="Total Employees"
-            value="248"
-            subtext="+12% from last month"
+            value={stats?.employees.total || 0}
+            subtext={`${stats?.employees.active || 0} Active`}
             colorClass="from-[#462e37] to-[#729892]"
             icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
           />
           <StatsCard
             title="Attendance"
-            value="93.5%"
-            subtext="232 Present Today"
+            value={`${attendanceRate}%`}
+            subtext={`${totalAttendance} Present Today`}
             colorClass="from-[#a9eae2] to-[#729892]"
             icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
           />
           <StatsCard
             title="Pending Requests"
-            value="18"
+            value={stats?.requests.pending || 0}
             subtext="Requires Attention"
             colorClass="from-orange-400 to-orange-600"
             icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
           />
           <StatsCard
             title="Payroll"
-            value="2.4M"
+            value={formatCompactCurrency(stats?.payroll.total || 0)}
             subtext="Processed this month"
             colorClass="from-blue-400 to-indigo-600"
             icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
@@ -154,8 +206,12 @@ export default function DashboardPage() {
 
         {/* Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Contract Expiry */}
+          {/* Left Column: Charts & Tables */}
           <div className="lg:col-span-2 space-y-8">
+
+            {/* Lateness Chart */}
+            <LatenessChart data={latenessData} loading={loading} />
+
             <div className="glass-card p-6 bg-white/50">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -228,7 +284,10 @@ export default function DashboardPage() {
             <div className="glass-card p-6 bg-gradient-to-b from-white to-gray-50/50">
               <h2 className="text-lg font-bold text-gray-800 mb-4">Quick Shortcuts</h2>
               <div className="grid grid-cols-2 gap-3">
-                <button className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-[#a9eae2]/50 transition-all group text-left">
+                <button
+                  onClick={() => router.push('/employees')}
+                  className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-[#a9eae2]/50 transition-all group text-left"
+                >
                   <div className="w-8 h-8 rounded-lg bg-green-100 text-green-700 flex items-center justify-center mb-2 group-hover:bg-[#462e37] group-hover:text-[#a9eae2] transition-colors">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
                   </div>

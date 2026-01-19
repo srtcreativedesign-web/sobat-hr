@@ -14,6 +14,7 @@ import '../../screens/security/pin_screen.dart';
 import '../../screens/submission/submission_screen.dart';
 import '../../screens/submission/create_submission_screen.dart'; // Added
 import '../../screens/announcement/announcement_detail_screen.dart'; // Added
+
 import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -393,7 +394,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           Text(
-                            user?.role?.toUpperCase() ?? 'STAFF',
+                            (user?.jobLevel?.isNotEmpty == true
+                                    ? user!.jobLevel!
+                                    : (user?.role?.toUpperCase() ?? 'STAFF'))
+                                .toUpperCase(),
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,

@@ -41,7 +41,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
   // Office Location (Dummy for now - Monas)
   // TODO: Fetch from User -> Employee -> Organization -> Lat/Lng
-  static const LatLng _officeLocation = LatLng(-6.13755, 106.62293);
+  static const LatLng _officeLocation = LatLng(-6.13778, 106.62295);
   static const double _attendanceRadius = 100; // meters
 
   @override
@@ -200,31 +200,17 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       return;
     }
 
-    // Check Out might not need photo, but let's assume it doesn't for now or user request implies logic only.
-    // If photo is needed for checkout, we can add it later. Usually checkout is simpler.
-    // Let's Add confirmation dialog first
-    bool confirm =
-        await showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Konfirmasi Pulang'),
-            content: const Text('Apakah Anda yakin ingin Check Out sekarang?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Batal'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Ya, Pulang'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+    // 1. Photo Confirmation (Selfie)
+    final ImagePicker picker = ImagePicker();
+    final XFile? photo = await picker.pickImage(
+      source: ImageSource.camera,
+      preferredCameraDevice: CameraDevice.front,
+      imageQuality: 50,
+    );
 
-    if (!confirm) return;
+    if (photo == null) return; // User cancelled
 
+    // 2. Submit Checkout
     _showLoading();
 
     try {
@@ -235,7 +221,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       await _attendanceService.checkOut(
         attendanceId: _todayAttendance!['id'],
         checkOutTime: DateFormat('HH:mm:ss').format(DateTime.now()),
-        status: 'present', // or maintain current.
+        photo: File(photo.path),
+        status: 'present',
       );
 
       await _fetchTodayAttendance(); // Refresh status

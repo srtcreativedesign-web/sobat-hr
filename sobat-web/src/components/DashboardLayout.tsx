@@ -2,7 +2,7 @@
 
 import { ReactNode } from 'react';
 import Sidebar from './Sidebar';
-import VirtualAssistant from './VirtualAssistant';
+
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -15,7 +15,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <main className="flex-1 overflow-auto">
         {children}
       </main>
-      <VirtualAssistant />
     </div>
   );
 }

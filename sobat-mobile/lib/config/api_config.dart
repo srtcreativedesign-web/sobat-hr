@@ -1,14 +1,22 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+
 class ApiConfig {
   // Base URL for API
   // Android Emulator: use 10.0.2.2 instead of localhost
   // iOS Simulator & Web: use localhost (127.0.0.1)
 
   static String get baseUrl {
-    // If you are using Android Emulator, use 'http://10.0.2.2/...'
-    // For Physical Device (Android/iOS), use your LAN IP: 'http://192.168.1.3/...'
-
-    // Returning LAN IP for Physical Device support (User Request)
-    return 'http://192.168.1.3/sobat-hr/sobat-api/public/api';
+    if (Platform.isAndroid) {
+      // 10.0.2.2 is for Android Emulator to access localhost
+      // Use 192.168.x.x for Physical Android Device
+      return 'http://192.168.1.3:8000/api';
+    } else if (Platform.isIOS) {
+      // iOS Simulator: use localhost
+      // For Physical iOS Device, use: 'https://cold-colts-speak.loca.lt/api'
+      return 'http://127.0.0.1:8000/api';
+    }
+    return 'http://127.0.0.1:8000/api';
   }
 
   // API Endpoints

@@ -20,6 +20,7 @@ interface Attendance {
     status: 'present' | 'late' | 'absent' | 'leave' | 'sick';
     notes: string | null;
     photo_path: string | null;
+    checkout_photo_path: string | null;
     work_hours: number | null;
     location_address: string | null;
 }
@@ -231,27 +232,57 @@ export default function AttendancePage() {
                                             Detail Kehadiran
                                         </h3>
                                         <div className="mt-4 space-y-4">
-                                            {/* Photo */}
-                                            <div className="aspect-w-16 aspect-h-9 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center border border-gray-200">
-                                                {selectedAttendance.photo_path ? (
-                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                    <img
-                                                        src={getPhotoUrl(selectedAttendance.photo_path) || ''}
-                                                        alt="Bukti Absensi"
-                                                        className="object-cover w-full h-64"
-                                                    />
-                                                ) : (
-                                                    <div className="py-12 flex flex-col items-center text-gray-400">
-                                                        <svg className="h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                        </svg>
-                                                        <span>Tidak ada foto</span>
+                                            {/* Photos Grid */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                {/* Check In Photo */}
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-700 mb-2">Foto Check In</p>
+                                                    <div className="aspect-w-16 aspect-h-9 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center border border-gray-200 h-48">
+                                                        {selectedAttendance.photo_path ? (
+                                                            // eslint-disable-next-line @next/next/no-img-element
+                                                            <img
+                                                                src={getPhotoUrl(selectedAttendance.photo_path) || ''}
+                                                                alt="Foto Check In"
+                                                                className="object-cover w-full h-full"
+                                                            />
+                                                        ) : (
+                                                            <div className="flex flex-col items-center text-gray-400 p-4">
+                                                                <svg className="h-8 w-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                </svg>
+                                                                <span className="text-xs">Tidak ada foto</span>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                )}
+                                                </div>
+
+                                                {/* Check Out Photo */}
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-700 mb-2">Foto Check Out</p>
+                                                    <div className="aspect-w-16 aspect-h-9 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center border border-gray-200 h-48">
+                                                        {selectedAttendance.checkout_photo_path ? (
+                                                            // eslint-disable-next-line @next/next/no-img-element
+                                                            <img
+                                                                src={getPhotoUrl(selectedAttendance.checkout_photo_path) || ''}
+                                                                alt="Foto Check Out"
+                                                                className="object-cover w-full h-full"
+                                                            />
+                                                        ) : (
+                                                            <div className="flex flex-col items-center text-gray-400 p-4">
+                                                                <svg className="h-8 w-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                </svg>
+                                                                <span className="text-xs">Belum Checkout / Tanpa Foto</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             {/* Details Grid */}
-                                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                            <div className="grid grid-cols-2 gap-4 text-sm mt-6">
                                                 <div>
                                                     <p className="font-medium text-gray-500">Nama Karyawan</p>
                                                     <p className="text-gray-900 font-semibold">{selectedAttendance.employee?.full_name}</p>

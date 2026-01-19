@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { useState } from 'react';
@@ -169,9 +171,14 @@ export default function Sidebar() {
         {!isCollapsed && (
           <div className="flex items-center gap-3 animate-fade-in-up">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#462e37] to-[#2d1e24] flex items-center justify-center shadow-[0_0_15px_rgba(70,46,55,0.3)]">
-              <svg className="w-6 h-6 text-[#a9eae2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+              <div className="relative w-6 h-6">
+                <Image
+                  src="/logo/logo.png"
+                  alt="Logo"
+                  fill
+                  className="object-contain"
+                />
+              </div>
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight text-[#462e37] drop-shadow-sm">SOBAT <span className="text-white">HR</span></h1>

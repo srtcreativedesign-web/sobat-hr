@@ -46,16 +46,31 @@ class DashboardController extends Controller
 
         // Contract expiring soon (within 3 months)
         $contractExpiringSoon = Employee::where('status', 'active')
-            ->where('contract_type', 'contract')
+            ->where('employment_status', 'contract')
             ->whereNotNull('contract_end_date')
             ->whereDate('contract_end_date', '<=', $now->copy()->addMonths(3))
             ->whereDate('contract_end_date', '>=', $now)
             ->count();
 
+        // Payroll Stats (Current Month)
+        try {
+            $periodString = sprintf('%04d-%02d', $currentYear, $currentMonth);
+            $payrollTotal = \App\Models\Payroll::where('period', $periodString)
+                ->sum('net_salary');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Dashboard Payroll Stat Error: ' . $e->getMessage());
+            $payrollTotal = 0;
+        }
+
         return response()->json([
             'employees' => $employeeStats,
             'attendance' => $attendanceStats,
             'requests' => $requestStats,
+            'payroll' => [
+                'total' => $payrollTotal,
+                'period_month' => $currentMonth,
+                'period_year' => $currentYear,
+            ],
             'contract_expiring_soon' => $contractExpiringSoon,
             'period' => [
                 'month' => $currentMonth,
@@ -176,6 +191,44 @@ class DashboardController extends Controller
             'data' => [
                 'employees' => $employees,
             ],
+        ]);
+    }
+    /**
+     * Get attendance trend (Lateness % for last 6 months)
+     */
+    public function attendanceTrend(Request $request)
+    {
+        $months = 6;
+        $data = [];
+
+        // Loop last 6 months
+        for ($i = $months - 1; $i >= 0; $i--) {
+            $date = Carbon::now()->subMonths($i);
+            $month = $date->month;
+            $year = $date->year;
+
+            $totalAttendance = Attendance::whereMonth('date', $month)
+                ->whereYear('date', $year)
+                ->count();
+
+            $lateCount = Attendance::whereMonth('date', $month)
+                ->whereYear('date', $year)
+                ->where('status', 'late')
+                ->count();
+
+            $lateRate = $totalAttendance > 0 ? ($lateCount / $totalAttendance) * 100 : 0;
+
+            $data[] = [
+                'month' => $date->format('M'), // Jan, Feb
+                'year' => $year,
+                'total' => $totalAttendance,
+                'late' => $lateCount,
+                'rate' => round($lateRate, 1)
+            ];
+        }
+
+        return response()->json([
+            'data' => $data
         ]);
     }
 }

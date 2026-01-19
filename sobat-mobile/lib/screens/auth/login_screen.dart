@@ -12,8 +12,10 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: 'elian@sobat.co.id');
-  final _passwordController = TextEditingController(text: 'staff123');
+  final _emailController = TextEditingController(
+    text: 'maya.estianty@celeb.com',
+  );
+  final _passwordController = TextEditingController(text: 'Elianjhon100');
   bool _obscurePassword = true;
 
   @override
@@ -59,30 +61,12 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Logo & Title with Neon Mint accent
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: AppTheme.colorEggplant,
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.colorEggplant.withValues(alpha: 0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.business_center,
-                      size: 40,
-                      color: AppTheme.colorCyan,
-                    ),
+                  // Logo
+                  Image.asset(
+                    'assets/logo/logo.png',
+                    width: MediaQuery.of(context).size.width * 0.3,
+                    height: MediaQuery.of(context).size.width * 0.3,
+                    fit: BoxFit.contain,
                   ),
                   const SizedBox(height: 24),
                   Text(
@@ -319,7 +303,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Email: elian@sobat.co.id\nPassword: password123',
+                          'Email: maya.estianty@celeb.com\nPassword: Elianjhon100',
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
                                 color: AppTheme.colorEggplant.withValues(

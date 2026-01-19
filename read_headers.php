@@ -7,18 +7,19 @@ try {
     $sheet = $spreadsheet->getActiveSheet();
     echo "--- ROW 1 ---\n";
     $i = 0;
+    echo "Total Rows: " . $sheet->getHighestRow() . "\n";
     foreach ($sheet->getRowIterator() as $row) {
-        if ($i > 5) break; 
+        if ($i > 5) break; // Check Row 1-6 
         $cellIterator = $row->getCellIterator();
         $cellIterator->setIterateOnlyExistingCells(FALSE);
         $rowCells = [];
+        $colIndex = 0;
         foreach ($cellIterator as $cell) {
-            $val = $cell->getValue();
-            if ($val) $rowCells[] = $val;
+            $val = $cell->getCalculatedValue(); // Use calculated value to see raw data
+            $rowCells[] = "[$colIndex] $val";
+            $colIndex++;
         }
-        if (!empty($rowCells)) {
-            echo "Row " . ($i+1) . ": " . implode(" | ", $rowCells) . "\n";
-        }
+        echo "Row " . ($i+1) . ": " . implode(" | ", $rowCells) . "\n";
         $i++;
     }
 } catch (Exception $e) {

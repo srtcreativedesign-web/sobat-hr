@@ -143,7 +143,14 @@ class AttendanceController extends Controller
             'check_out' => 'nullable',
             'status' => 'sometimes|in:present,late,absent,leave,sick',
             'notes' => 'nullable|string',
+            'photo' => 'nullable|image|max:5120', // Add validation for checkout photo
         ]);
+
+        // Handle Checkout Photo Upload
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('attendance_photos', 'public');
+            $validated['checkout_photo_path'] = $path;
+        }
 
         // Recalculate work hours if check_in or check_out changes
         if (isset($validated['check_in']) || isset($validated['check_out'])) {
