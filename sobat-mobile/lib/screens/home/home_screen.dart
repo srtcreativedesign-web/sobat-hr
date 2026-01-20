@@ -533,16 +533,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
 
                   // Notification Bell
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.grey.shade100,
-                    ),
-                    child: Icon(
-                      Icons.notifications_outlined,
-                      color: AppTheme.textDark,
-                      size: 24,
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/notifications');
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.grey.shade100,
+                      ),
+                      child: Icon(
+                        Icons.notifications_outlined,
+                        color: AppTheme.textDark,
+                        size: 24,
+                      ),
                     ),
                   ),
                 ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
 import '../../widgets/submission_card.dart';
+import '../../services/request_service.dart';
 
 class SubmissionScreen extends StatefulWidget {
   const SubmissionScreen({super.key});
@@ -12,6 +13,36 @@ class SubmissionScreen extends StatefulWidget {
 class _SubmissionScreenState extends State<SubmissionScreen> {
   int _selectedFilterIndex = 0;
   final List<String> _filters = ['Semua', 'Menunggu', 'Disetujui', 'Ditolak'];
+  bool _isLoading = true;
+  List<Map<String, dynamic>> _submissions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSubmissions();
+  }
+
+  Future<void> _loadSubmissions() async {
+    setState(() => _isLoading = true);
+    try {
+      final data = await RequestService().getRequests();
+      // data is List<dynamic> from the service
+      if (mounted) {
+        setState(() {
+          _submissions = List<Map<String, dynamic>>.from(data);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading submissions: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal memuat data: $e')));
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,14 +51,20 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
         _buildHeader(),
         _buildFilters(),
         Expanded(
-          child: ListView(
-            padding: EdgeInsets.fromLTRB(
-              24,
-              16,
-              24,
-              100 + MediaQuery.of(context).padding.bottom,
-            ),
-            children: _buildFilteredList(),
+          child: RefreshIndicator(
+            onRefresh: _loadSubmissions,
+            color: AppTheme.colorEggplant,
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ListView(
+                    padding: EdgeInsets.fromLTRB(
+                      24,
+                      16,
+                      24,
+                      100 + MediaQuery.of(context).padding.bottom,
+                    ),
+                    children: _buildFilteredList(),
+                  ),
           ),
         ),
       ],
@@ -35,67 +72,21 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
   }
 
   List<Widget> _buildFilteredList() {
-    // 1. Define ALL mock data
-    final allSubmissions = [
-      {
-        'title': 'Cuti Tahunan',
-        'date': '12 Jan 2026 - 14 Jan 2026',
-        'status': 'Menunggu',
-        'icon': Icons.calendar_month,
-        'iconColor': const Color(0xFFEA580C),
-        'iconBgColor': const Color(0xFFFFF7ED),
-        'detailLabel': '3 Hari kerja',
-        'section': 'Terbaru',
-      },
-      {
-        'title': 'Reimbursement Medis',
-        'date': '10 Des 2025',
-        'status': 'Disetujui',
-        'icon': Icons.medical_services,
-        'iconColor': AppTheme.info,
-        'iconBgColor': AppTheme.info.withValues(alpha: 0.1),
-        'detailLabel': 'Rp 450.000',
-        'section': 'Terbaru',
-      },
-      {
-        'title': 'Cuti Sakit',
-        'date': '01 Nov 2025',
-        'status': 'Ditolak',
-        'icon': Icons.thermostat,
-        'iconColor': const Color(0xFFE11D48),
-        'iconBgColor': const Color(0xFFFFF1F2),
-        'detailLabel': '1 Hari • Lampiran kurang',
-        'section': '2025',
-      },
-      {
-        'title': 'Perjalanan Dinas',
-        'date': '15 Okt 2025',
-        'status': 'Disetujui',
-        'icon': Icons.flight_takeoff,
-        'iconColor': AppTheme.info,
-        'iconBgColor': AppTheme.info.withValues(alpha: 0.1),
-        'detailLabel': 'Jakarta - Bandung',
-        'section': '2025',
-      },
-      {
-        'title': 'Lembur',
-        'date': '02 Okt 2025',
-        'status': 'Disetujui',
-        'icon': Icons.schedule,
-        'iconColor': AppTheme.info,
-        'iconBgColor': AppTheme.info.withValues(alpha: 0.1),
-        'detailLabel': '4 Jam',
-        'section': '2025',
-      },
-    ];
-
-    // 2. Filter based on selection
+    // 1. Filter based on selection
     final selectedFilter = _filters[_selectedFilterIndex];
-    final filtered = selectedFilter == 'Semua'
-        ? allSubmissions
-        : allSubmissions
-              .where((item) => item['status'] == selectedFilter)
-              .toList();
+
+    // Map API status to Filter labels if necessary, or just match strings
+    // API Statuses: pending, approved, rejected
+    // Filters: Semua, Menunggu, Disetujui, Ditolak
+
+    final filtered = _submissions.where((item) {
+      final status = (item['status'] ?? '').toString().toLowerCase();
+      if (selectedFilter == 'Semua') return true;
+      if (selectedFilter == 'Menunggu' && status == 'pending') return true;
+      if (selectedFilter == 'Disetujui' && status == 'approved') return true;
+      if (selectedFilter == 'Ditolak' && status == 'rejected') return true;
+      return false;
+    }).toList();
 
     if (filtered.isEmpty) {
       return [
@@ -115,37 +106,68 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
       ];
     }
 
-    // 3. Group by Section if "Semua" or just list them
-    // For simplicity, we keep sections only if "Semua" is selected,
-    // or we can allow sections to appear if items match.
-    // Let's preserve sections for better UX.
-
     List<Widget> widgets = [];
-    String? currentSection;
+
+    // Sort by created_at descending
+    filtered.sort((a, b) {
+      final dateA = DateTime.tryParse(a['created_at'] ?? '') ?? DateTime(2000);
+      final dateB = DateTime.tryParse(b['created_at'] ?? '') ?? DateTime(2000);
+      return dateB.compareTo(dateA);
+    });
 
     for (var item in filtered) {
-      // Add Section Title if changed
-      if (item['section'] != currentSection) {
-        currentSection = item['section'] as String;
-        widgets.add(_buildSectionTitle(currentSection));
-      }
-
-      // Add Card
       widgets.add(
         SubmissionCard(
-          title: item['title'] as String,
-          date: item['date'] as String,
-          status: item['status'] as String,
-          icon: item['icon'] as IconData,
-          iconColor: item['iconColor'] as Color,
-          iconBgColor: item['iconBgColor'] as Color,
-          detailLabel: item['detailLabel'] as String,
-          onTap: () {},
+          title: _mapTypeToTitle(item['type']),
+          date: _formatDateRange(item['start_date'], item['end_date']),
+          status: _mapStatusToLabel(item['status']),
+          icon: _mapTypeToIcon(item['type']),
+          iconColor: _mapStatusToColor(item['status']),
+          iconBgColor: _mapStatusToColor(item['status']).withValues(alpha: 0.1),
+          detailLabel: item['reason'] ?? '-',
+          onTap: () {
+            // Show detail if needed
+          },
         ),
       );
     }
 
     return widgets;
+  }
+
+  String _mapTypeToTitle(String? type) {
+    if (type == 'leave') return 'Cuti';
+    if (type == 'permit') return 'Izin';
+    if (type == 'sick') return 'Sakit';
+    if (type == 'reimbursement') return 'Reimbursement'; // If implemented
+    return type?.toUpperCase() ?? 'PENGAJUAN';
+  }
+
+  IconData _mapTypeToIcon(String? type) {
+    if (type == 'leave') return Icons.calendar_month;
+    if (type == 'permit') return Icons.assignment_outlined;
+    if (type == 'sick') return Icons.local_hospital_outlined;
+    return Icons.description_outlined;
+  }
+
+  String _mapStatusToLabel(String? status) {
+    status = status?.toLowerCase();
+    if (status == 'approved') return 'Disetujui';
+    if (status == 'rejected') return 'Ditolak';
+    return 'Menunggu';
+  }
+
+  Color _mapStatusToColor(String? status) {
+    status = status?.toLowerCase();
+    if (status == 'approved') return AppTheme.info; // Cyan/Blue
+    if (status == 'rejected') return const Color(0xFFE11D48); // Red
+    return const Color(0xFFF59E0B); // Orange/Pending
+  }
+
+  String _formatDateRange(String? start, String? end) {
+    if (start == null) return '-';
+    if (end == null || start == end) return start;
+    return '$start s/d $end';
   }
 
   Widget _buildHeader() {

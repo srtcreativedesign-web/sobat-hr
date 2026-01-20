@@ -113,7 +113,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     icon: Icons.lock_outline,
                                     title: 'Ubah Password',
                                     subtitle: 'Perbarui kata sandi Anda',
-                                    onTap: () => _showComingSoon(context),
+                                    onTap: () {
+                                      Navigator.of(
+                                        context,
+                                      ).pushNamed('/profile/change-password');
+                                    },
                                   ),
                                   _buildDivider(),
                                   _buildMenuItem(

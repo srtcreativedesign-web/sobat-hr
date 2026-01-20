@@ -126,6 +126,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Policy & Announcement routes
     Route::apiResource('policies', App\Http\Controllers\Api\PolicyController::class);
     Route::apiResource('announcements', App\Http\Controllers\Api\AnnouncementController::class);
+    // Notification routes
+    Route::get('/notifications', [App\Http\Controllers\Api\NotificationController::class, 'index']);
+    Route::post('/notifications/read', [App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
 });
 
 // Public invitation routes

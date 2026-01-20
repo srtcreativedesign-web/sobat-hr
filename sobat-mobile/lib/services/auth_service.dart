@@ -220,6 +220,38 @@ class AuthService {
     }
   }
 
+  Future<void> changePassword(
+    String currentPassword,
+    String newPassword,
+    String confirmPassword,
+  ) async {
+    try {
+      final response = await _dio.put(
+        '/auth/password',
+        data: {
+          'current_password': currentPassword,
+          'new_password': newPassword,
+          'new_password_confirmation': confirmPassword,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return;
+      }
+      throw Exception('Gagal mengubah password');
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      if (status == 422) {
+        final data = e.response?.data;
+        final msg = data != null && data['message'] != null
+            ? data['message'].toString()
+            : 'Validasi gagal';
+        throw Exception(msg);
+      }
+      throw Exception(e.response?.data['message'] ?? e.message);
+    }
+  }
+
   Future<String?> getToken() async {
     return await StorageService.getToken();
   }

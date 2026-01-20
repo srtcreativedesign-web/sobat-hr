@@ -8,10 +8,12 @@ import 'screens/home/home_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/profile/edit_profile_screen.dart';
+import 'screens/profile/change_password_screen.dart'; // Added
 import 'screens/payroll/payroll_screen.dart';
 import 'screens/submission/submission_menu_screen.dart'; // Added
 import 'screens/submission/create_submission_screen.dart'; // Added
 import 'screens/announcement/announcement_list_screen.dart'; // Added
+import 'screens/notification/notification_screen.dart'; // Added
 import 'screens/attendance/attendance_screen.dart';
 import 'screens/attendance/attendance_history_screen.dart'; // Added
 
@@ -40,6 +42,7 @@ class MyApp extends StatelessWidget {
           '/dashboard': (context) => const DashboardScreen(),
           '/profile': (context) => const ProfileScreen(),
           '/profile/edit': (context) => const EditProfileScreen(),
+          '/profile/change-password': (context) => const ChangePasswordScreen(),
           '/payroll': (context) => const PayrollScreen(),
           '/submission/menu': (context) => const SubmissionMenuScreen(),
           '/submission/create': (context) {
@@ -47,6 +50,7 @@ class MyApp extends StatelessWidget {
             return CreateSubmissionScreen(type: args);
           },
           '/announcements': (context) => const AnnouncementListScreen(),
+          '/notifications': (context) => const NotificationScreen(),
           '/attendance': (context) => const AttendanceScreen(),
           '/attendance/history': (context) => const AttendanceHistoryScreen(),
         },

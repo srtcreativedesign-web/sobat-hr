@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\RequestModel;
 use App\Models\Approval;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\RequestNotification;
 
 class RequestController extends Controller
 {
@@ -203,6 +205,11 @@ class RequestController extends Controller
         if ($pendingApprovals === 0) {
             $requestModel->status = 'approved';
             $requestModel->save();
+
+            // Notify User
+            if ($requestModel->employee && $requestModel->employee->user) {
+                $requestModel->employee->user->notify(new RequestNotification($requestModel, 'approved'));
+            }
         }
 
         return response()->json([
@@ -243,6 +250,11 @@ class RequestController extends Controller
         // Reject the entire request
         $requestModel->status = 'rejected';
         $requestModel->save();
+
+        // Notify User
+        if ($requestModel->employee && $requestModel->employee->user) {
+            $requestModel->employee->user->notify(new RequestNotification($requestModel, 'rejected'));
+        }
 
         return response()->json([
             'message' => 'Request rejected',
