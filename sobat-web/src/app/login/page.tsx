@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
 
+import LiquidEther from '@/components/LiquidEther';
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -39,9 +41,33 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#a9eae2] to-[#729892] flex items-center justify-center p-4">
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4 bg-white">
+      {/* Liquid Ether Background */}
+      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}>
+        <LiquidEther
+          colors={['#5227FF', '#FF9FFC', '#B19EEF']}
+          mouseForce={20}
+          cursorSize={100}
+          isViscous
+          viscous={30}
+          iterationsViscous={32}
+          iterationsPoisson={32}
+          resolution={0.5}
+          isBounce={false}
+          autoDemo
+          autoSpeed={0.5}
+          autoIntensity={2.2}
+          takeoverDuration={0.25}
+          autoResumeDelay={3000}
+          autoRampDuration={0.6}
+          color0="#1cd48d"
+          color1="#3fc6b6"
+          color2="#10c19e"
+        />
+      </div>
+
       {/* Glass Card */}
-      <div className="w-full max-w-md bg-white/40 backdrop-blur-xl border border-white/60 rounded-3xl p-8 shadow-xl animate-fade-in-up">
+      <div className="relative z-10 w-full max-w-md bg-white/40 backdrop-blur-xl border border-white/60 rounded-3xl p-8 shadow-xl animate-fade-in-up">
 
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-[#462e37] mb-2">Welcome Back</h1>

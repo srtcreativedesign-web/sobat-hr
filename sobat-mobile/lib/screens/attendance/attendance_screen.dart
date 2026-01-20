@@ -286,7 +286,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 circles: [
                   CircleMarker(
                     point: _officeLocation,
-                    color: AppTheme.colorCyan.withOpacity(0.15),
+                    color: AppTheme.colorCyan.withValues(alpha: 0.15),
                     borderColor: AppTheme.colorCyan,
                     borderStrokeWidth: 1,
                     useRadiusInMeter: true,
@@ -339,8 +339,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 height: 40 * _pulseAnimation.value,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppTheme.colorCyan.withOpacity(
-                                    0.4 - (_pulseController.value * 0.4),
+                                  color: AppTheme.colorCyan.withValues(
+                                    alpha: 0.4 - (_pulseController.value * 0.4),
                                   ),
                                 ),
                               ),
@@ -408,8 +408,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                         ),
                         decoration: BoxDecoration(
                           color: _isWithinRange
-                              ? Colors.green.withOpacity(0.9)
-                              : Colors.red.withOpacity(0.9),
+                              ? Colors.green.withValues(alpha: 0.9)
+                              : Colors.red.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(30),
                           boxShadow: [
                             BoxShadow(color: Colors.black12, blurRadius: 10),
@@ -457,12 +457,14 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 child: Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: Colors.white.withOpacity(0.5)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.5),
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -478,7 +480,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: AppTheme.colorCyan.withOpacity(0.1),
+                              color: AppTheme.colorCyan.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(

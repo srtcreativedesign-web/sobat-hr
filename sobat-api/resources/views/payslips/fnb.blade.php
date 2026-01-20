@@ -11,52 +11,33 @@
             box-sizing: border-box;
         }
         body {
+        @page {
+            margin: 5mm 10mm;
+        }
+        body {
             font-family: 'Arial', sans-serif;
-            font-size: 12px;
+            font-size: 9px;
             color: #333;
-            padding: 30px;
+            padding: 0;
+            line-height: 1.2;
         }
         .header {
             text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 3px solid #2D1B22;
-            padding-bottom: 15px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #2D1B22;
+            padding-bottom: 5px;
         }
-        .company-name {
-            font-size: 20px;
-            font-weight: bold;
-            color: #2D1B22;
-            margin-bottom: 5px;
-        }
-        .slip-title {
-            font-size: 16px;
-            color: #666;
-            margin-top: 5px;
-        }
-        .employee-info {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .info-table {
-            width: 100%;
-        }
-        .info-table td {
-            padding: 4px;
-            vertical-align: top;
-        }
-        .info-label {
-            width: 150px;
-            font-weight: bold;
-            color: #666;
-        }
-        .info-value {
-            color: #333;
-        }
+        /* ... */
         
         .section {
-            margin: 20px 0;
+            margin: 10px 0;
+            page-break-inside: avoid;
+        }
+        
+        /* Compact tables */
+        td, th {
+            padding: 3px 6px !important;
+            font-size: 9px;
         }
         .section-title {
             font-size: 14px;
@@ -247,7 +228,12 @@
                         @endphp
                         @if($amount > 0)
                         <tr>
-                            <td class="positive">+ {{ $name }}</td>
+                            <td class="positive">
+                                + {{ $name }}
+                                @if(is_array($value) && isset($value['hours']) && $value['hours'] > 0)
+                                    ({{ $value['hours'] }} Jam)
+                                @endif
+                            </td>
                             <td class="amount-column positive">{{ number_format($amount, 0, ',', '.') }}</td>
                         </tr>
                         @endif
@@ -311,15 +297,20 @@
         <tr>
             <td>
                 <div>Diterima Oleh,</div>
-                <div class="signature-line">
-                    {{ $payroll->employee->full_name }}
-                </div>
+                <div style="margin-top: 60px; border-bottom: 1px solid #333; width: 60%; margin-left: auto; margin-right: auto;"></div>
+                <div style="margin-top: 5px;">{{ $payroll->employee->full_name }}</div>
             </td>
             <td>
                 <div>Mengetahui,</div>
-                <div class="signature-line">
-                    HRD
-                </div>
+                @if($payroll->approval_signature)
+                    <div style="margin-top: 10px; margin-bottom: 5px;">
+                        <img src="{{ $payroll->approval_signature }}" alt="Signature" style="height: 60px; max-width: 150px;">
+                    </div>
+                @else
+                    <div style="height: 75px;"></div>
+                @endif
+                <div style="border-bottom: 1px solid #333; width: 60%; margin-left: auto; margin-right: auto;"></div>
+                <div style="margin-top: 5px;">{{ $payroll->signer_name ?? 'HRD' }}</div>
             </td>
         </tr>
     </table>

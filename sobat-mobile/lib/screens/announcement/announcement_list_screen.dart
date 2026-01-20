@@ -60,7 +60,7 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen>
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppTheme.colorEggplant,
-          unselectedLabelColor: Colors.grey,
+          unselectedLabelColor: AppTheme.textLight,
           indicatorColor: AppTheme.colorEggplant,
           tabs: const [
             Tab(text: 'Pengumuman'),
@@ -94,7 +94,7 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen>
             const SizedBox(height: 16),
             Text(
               type == 'news' ? 'Belum ada pengumuman' : 'Belum ada kebijakan',
-              style: TextStyle(color: Colors.grey[500]),
+              style: TextStyle(color: AppTheme.textLight),
             ),
           ],
         ),
@@ -169,7 +169,7 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen>
                               formattedDate,
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: AppTheme.textLight,
                               ),
                             ),
                           ],

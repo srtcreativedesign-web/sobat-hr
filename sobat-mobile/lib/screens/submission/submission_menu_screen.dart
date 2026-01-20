@@ -7,9 +7,9 @@ class SubmissionMenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF9FAFB), // Cool Gray 50
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: BackButton(color: AppTheme.textDark),
         centerTitle: true,
@@ -23,31 +23,32 @@ class SubmissionMenuScreen extends StatelessWidget {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
         children: [
           // Header
           const Text(
-            'Mau mengajukan\napa hari ini?',
+            'Layanan\nMandiri',
             style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
               color: AppTheme.textDark,
-              height: 1.2,
-              letterSpacing: -0.5,
+              height: 1.1,
+              letterSpacing: -1.0,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Pilih jenis pengajuan yang sesuai dengan kebutuhan Anda.',
+            'Kelola kebutuhan kerja Anda dengan mudah.',
             style: TextStyle(
-              fontSize: 14,
-              color: AppTheme.textDark.withValues(alpha: 0.6),
+              fontSize: 15,
+              color: AppTheme.textDark, // Uses darkened text color
+              height: 1.5,
             ),
           ),
           const SizedBox(height: 32),
 
-          // Section 1: Kehadiran
-          _buildSectionTitle('KEHADIRAN'),
+          // Section 1: Kehadiran (Colored Cards)
+          _buildSectionTitle('KEHADIRAN & WAKTU'),
           const SizedBox(height: 16),
           GridView.count(
             physics: const NeverScrollableScrollPhysics(),
@@ -55,74 +56,88 @@ class SubmissionMenuScreen extends StatelessWidget {
             crossAxisCount: 2,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            childAspectRatio: 1.1,
+            childAspectRatio: 1.0, // Square-ish cards
             children: [
-              _buildLargeCard(
+              _buildModernCard(
                 context,
                 'Cuti',
-                Icons.calendar_month,
-                const Color(0xFFEA580C),
-                const Color(0xFFFFF7ED),
+                Icons.calendar_month_rounded,
+                const LinearGradient(
+                  colors: [Color(0xFFF97316), Color(0xFFEA580C)], // Orange
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
               ),
-              _buildLargeCard(
+              _buildModernCard(
                 context,
                 'Sakit',
-                Icons.thermostat,
-                const Color(0xFFE11D48),
-                const Color(0xFFFFF1F2),
+                Icons.medication_rounded,
+                const LinearGradient(
+                  colors: [Color(0xFFF43F5E), Color(0xFFE11D48)], // Rose
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
               ),
-              _buildLargeCard(
+              _buildModernCard(
                 context,
                 'Lembur',
-                Icons.schedule,
-                AppTheme.info,
-                AppTheme.info.withValues(alpha: 0.1),
+                Icons.timer_rounded,
+                const LinearGradient(
+                  colors: [Color(0xFF3B82F6), Color(0xFF2563EB)], // Blue
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              _buildModernCard(
+                context,
+                'Riwayat',
+                Icons.history_rounded,
+                const LinearGradient(
+                  colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)], // Violet
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                onTap: () =>
+                    Navigator.pushNamed(context, '/attendance/history'),
               ),
             ],
           ),
 
           const SizedBox(height: 32),
 
-          // Section 2: Administrasi
-          _buildSectionTitle('ADMINISTRASI'),
+          // Section 2: Administrasi (Clean Light Cards)
+          _buildSectionTitle('ADMINISTRASI & LAINNYA'),
           const SizedBox(height: 16),
-          GridView.count(
-            physics: const NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.3, // Slightly shorter cards for administration
-            children: [
-              _buildSmallCard(
-                context,
-                'Perjalanan Dinas',
-                Icons.flight_takeoff,
-                AppTheme.colorEggplant,
-                AppTheme.colorCyan.withValues(alpha: 0.2),
-              ),
-              _buildSmallCard(
-                context,
-                'Reimbursement',
-                Icons.attach_money,
-                const Color(0xFF059669),
-                const Color(0xFFD1FAE5),
-              ),
-              _buildSmallCard(
-                context,
-                'Pengajuan Aset',
-                Icons.devices_other,
-                const Color(0xFF7C3AED), // Violet 600
-                const Color(0xFFEDE9FE), // Violet 100
-              ),
-              _buildSmallCard(
-                context,
-                'Resign',
-                Icons.output,
-                Colors.grey,
-                Colors.grey.shade100,
-              ),
-            ],
+          _buildUtilityCard(
+            context,
+            'Perjalanan Dinas',
+            'Business Trip',
+            Icons.flight_takeoff_rounded,
+            AppTheme.colorEggplant,
+          ),
+          const SizedBox(height: 12),
+          _buildUtilityCard(
+            context,
+            'Reimbursement',
+            'Klaim Biaya',
+            Icons.receipt_long_rounded,
+            const Color(0xFF059669),
+          ),
+          const SizedBox(height: 12),
+          _buildUtilityCard(
+            context,
+            'Pengajuan Aset',
+            'Pinjam Barang',
+            Icons.devices_rounded,
+            const Color(0xFF7C3AED),
+          ),
+          const SizedBox(height: 12),
+          _buildUtilityCard(
+            context,
+            'Resign',
+            'Pengunduran Diri',
+            Icons.logout_rounded,
+            AppTheme.textLight,
           ),
           const SizedBox(height: 48),
         ],
@@ -131,93 +146,84 @@ class SubmissionMenuScreen extends StatelessWidget {
   }
 
   Widget _buildSectionTitle(String title) {
-    return Row(
-      children: [
-        Container(
-          width: 4,
-          height: 16,
-          decoration: BoxDecoration(
-            color: AppTheme.colorCyan,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textLight,
-            letterSpacing: 1.0,
-          ),
-        ),
-      ],
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
+        color: AppTheme.textLight,
+        letterSpacing: 1.2,
+      ),
     );
   }
 
-  Widget _buildLargeCard(
+  Widget _buildModernCard(
     BuildContext context,
     String label,
     IconData icon,
-    Color color,
-    Color bgColor,
-  ) {
+    Gradient gradient, {
+    VoidCallback? onTap,
+  }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => Navigator.pushNamed(
-          context,
-          '/submission/create',
-          arguments: label,
-        ),
-        borderRadius: BorderRadius.circular(20),
+        onTap:
+            onTap ??
+            () => Navigator.pushNamed(
+              context,
+              '/submission/create',
+              arguments: label,
+            ),
+        borderRadius: BorderRadius.circular(24),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.grey.shade100),
+            gradient: gradient,
+            borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                color: (gradient.colors.first).withValues(alpha: 0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 28),
                 ),
-                child: Icon(icon, color: color, size: 28),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textDark,
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildSmallCard(
+  Widget _buildUtilityCard(
     BuildContext context,
     String label,
+    String subLabel,
     IconData icon,
     Color color,
-    Color bgColor,
   ) {
     return Material(
       color: Colors.transparent,
@@ -229,11 +235,13 @@ class SubmissionMenuScreen extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade100),
+            border: Border.all(
+              color: Colors.grey.shade200,
+            ), // Adjusted from shade100
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.02),
@@ -245,26 +253,43 @@ class SubmissionMenuScreen extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(10),
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: color, size: 20),
+                child: Icon(icon, color: color, size: 24),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textDark,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textDark,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subLabel,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.textLight,
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+              const Icon(
+                // Fixed const
+                Icons.chevron_right_rounded,
+                color: AppTheme.textLight, // Fixed color
+                size: 20,
               ),
             ],
           ),

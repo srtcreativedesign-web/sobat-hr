@@ -139,6 +139,30 @@ export default function DashboardPage() {
     return 'Good Evening';
   };
 
+  const handleGenerateContract = async (id: number, name: string) => {
+    try {
+      if (!confirm(`Generate renewal contract for ${name}?`)) return;
+
+      const response = await apiClient.post(`/contracts/generate-pdf/${id}`, {}, {
+        responseType: 'blob'
+      });
+
+      // Create blob link to download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Kontrak_${name.replace(/\s+/g, '_')}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+    } catch (error) {
+      console.error('Failed to generate contract:', error);
+      alert('Failed to generate contract PDF');
+    }
+  };
+
+
+
   return (
     <DashboardLayout>
       {/* Header */}
@@ -218,7 +242,7 @@ export default function DashboardPage() {
                   <span className="w-2 h-8 bg-[#462e37] rounded-full"></span>
                   Contract Expiring Soon
                 </h2>
-                <button className="text-sm font-semibold text-[#462e37] hover:text-[#a9eae2] transition-colors">View All</button>
+                <button onClick={() => router.push('/employees/contracts')} className="text-sm font-semibold text-[#462e37] hover:text-[#a9eae2] transition-colors">View All</button>
               </div>
 
               {loading ? (
@@ -230,51 +254,63 @@ export default function DashboardPage() {
                   <p className="text-gray-500">No urgent contracts expiring.</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50/50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Employee</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Role</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Expiry</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {contractExpiring.map((emp) => (
-                        <tr key={emp.id} className="hover:bg-green-50/30 transition-colors cursor-pointer group">
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#462e37] to-[#729892] text-white flex items-center justify-center text-xs font-bold">
-                                {emp.user.name.charAt(0)}
-                              </div>
-                              <div>
-                                <p className="text-sm font-semibold text-gray-900 group-hover:text-[#462e37]">{emp.user.name}</p>
-                                <p className="text-xs text-gray-500">{emp.employee_code}</p>
-                              </div>
+                <table className="w-full">
+                  <thead className="bg-gray-50/50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Employee</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Role</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Expiry</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {contractExpiring.map((emp) => (
+                      <tr key={emp.id} className="hover:bg-green-50/30 transition-colors cursor-pointer group">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#462e37] to-[#729892] text-white flex items-center justify-center text-xs font-bold">
+                              {emp.user.name.charAt(0)}
                             </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <p className="text-sm text-gray-700">{emp.position}</p>
-                            <p className="text-xs text-gray-400">{emp.organization.name}</p>
-                          </td>
-                          <td className="px-4 py-3">
-                            <p className="text-sm font-medium text-gray-900">
-                              {new Date(emp.contract_end_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                            </p>
-                            <p className="text-xs text-red-500 font-medium">{emp.days_remaining} days left</p>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${emp.days_remaining <= 7 ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-600'
-                              }`}>
-                              {emp.days_remaining <= 7 ? 'CRITICAL' : 'WARNING'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900 group-hover:text-[#462e37]">{emp.user.name}</p>
+                              <p className="text-xs text-gray-500">{emp.employee_code}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-sm text-gray-700">{emp.position}</p>
+                          <p className="text-xs text-gray-400">{emp.organization.name}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-sm font-medium text-gray-900">
+                            {new Date(emp.contract_end_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </p>
+                          <p className="text-xs text-red-500 font-medium">{emp.days_remaining} days left</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-bold ${emp.days_remaining <= 7 ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-600'
+                            }`}>
+                            {emp.days_remaining <= 7 ? 'CRITICAL' : 'WARNING'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleGenerateContract(emp.id, emp.user.name);
+                            }}
+                            className="px-3 py-1.5 bg-[#462e37] text-white text-xs font-medium rounded-lg hover:bg-[#2d1e24] transition-colors flex items-center gap-1 shadow-sm"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            Generate PDF
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
               )}
             </div>
           </div>
@@ -334,6 +370,8 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </DashboardLayout >
   );
 }
+
+

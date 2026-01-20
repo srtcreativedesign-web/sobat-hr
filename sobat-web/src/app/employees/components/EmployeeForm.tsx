@@ -110,27 +110,27 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap *</label>
-                                    <input type="text" name="full_name" required value={formData.full_name || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" />
+                                    <input type="text" name="full_name" required value={formData.full_name || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                    <input type="email" name="email" value={formData.email || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" />
+                                    <input type="email" name="email" value={formData.email || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">No. Telepon</label>
-                                    <input type="text" name="phone" value={formData.phone || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" />
+                                    <input type="text" name="phone" value={formData.phone || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Tempat Lahir</label>
-                                    <input type="text" name="place_of_birth" value={formData.place_of_birth || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" />
+                                    <input type="text" name="place_of_birth" value={formData.place_of_birth || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Lahir</label>
-                                    <input type="date" name="birth_date" value={formData.birth_date || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" />
+                                    <input type="date" name="birth_date" value={formData.birth_date || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label>
-                                    <select name="gender" value={formData.gender || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none">
+                                    <select name="gender" value={formData.gender || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900">
                                         <option value="">Pilih...</option>
                                         <option value="male">Laki-laki</option>
                                         <option value="female">Perempuan</option>
@@ -138,7 +138,7 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Agama</label>
-                                    <select name="religion" value={formData.religion || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none">
+                                    <select name="religion" value={formData.religion || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900">
                                         <option value="">Pilih...</option>
                                         <option value="Islam">Islam</option>
                                         <option value="Kristen">Kristen</option>
@@ -150,7 +150,7 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Status Perkawinan</label>
-                                    <select name="marital_status" value={formData.marital_status || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none">
+                                    <select name="marital_status" value={formData.marital_status || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900">
                                         <option value="">Pilih...</option>
                                         <option value="Single">Single</option>
                                         <option value="Married">Menikah</option>
@@ -159,7 +159,7 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Pendidikan Terakhir</label>
-                                    <input type="text" name="education" value={typeof formData.education === 'object' ? JSON.stringify(formData.education) : (formData.education || '')} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" placeholder="Contoh: S1 Teknik Informatika" />
+                                    <input type="text" name="education" value={typeof formData.education === 'object' ? JSON.stringify(formData.education) : (formData.education || '')} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" placeholder="Contoh: S1 Teknik Informatika" />
                                 </div>
                             </div>
                         )}
@@ -168,12 +168,12 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Induk Karyawan (NIK Internal)</label>
-                                    <input type="text" name="employee_code" value={formData.employee_code || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none bg-gray-100" />
+                                    <input type="text" name="employee_code" value={formData.employee_code || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900 bg-gray-100" />
                                     <p className="text-xs text-gray-500 mt-1">Kosongkan untuk generate otomatis</p>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Status Karyawan *</label>
-                                    <select name="status" required value={formData.status || 'active'} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none">
+                                    <select name="status" required value={formData.status || 'active'} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900">
                                         <option value="active">Aktif</option>
                                         <option value="inactive">Non-Aktif (Cuti Panjang/Suspend)</option>
                                         <option value="resigned">Resign / Keluar</option>
@@ -181,7 +181,7 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Divisi / Organisasi</label>
-                                    <select name="organization_id" value={formData.organization_id || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none">
+                                    <select name="organization_id" value={formData.organization_id || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900">
                                         <option value="">Pilih Divisi...</option>
                                         {organizations.map(org => (
                                             <option key={org.id} value={org.id}>{org.name}</option>
@@ -190,11 +190,11 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Jabatan (Position)</label>
-                                    <input type="text" name="position" value={formData.position || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" />
+                                    <input type="text" name="position" value={formData.position || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Status Kepegawaian</label>
-                                    <select name="employment_status" value={formData.employment_status || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none">
+                                    <select name="employment_status" value={formData.employment_status || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900">
                                         <option value="permanent">Tetap (Permanent)</option>
                                         <option value="contract">Kontrak</option>
                                         <option value="probation">Probation</option>
@@ -202,19 +202,19 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Bergabung</label>
-                                    <input type="date" name="join_date" value={formData.join_date || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" />
+                                    <input type="date" name="join_date" value={formData.join_date || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Berakhir Kontrak</label>
-                                    <input type="date" name="contract_end_date" value={formData.contract_end_date || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" />
+                                    <input type="date" name="contract_end_date" value={formData.contract_end_date || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Gaji Pokok</label>
-                                    <input type="number" name="basic_salary" value={formData.basic_salary || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" />
+                                    <input type="number" name="basic_salary" value={formData.basic_salary || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Nama Atasan Langsung</label>
-                                    <input type="text" name="supervisor_name" value={formData.supervisor_name || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" />
+                                    <input type="text" name="supervisor_name" value={formData.supervisor_name || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" />
                                 </div>
                             </div>
                         )}
@@ -223,15 +223,15 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">NIK (KTP)</label>
-                                    <input type="text" name="nik" value={formData.nik || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" maxLength={16} />
+                                    <input type="text" name="nik" value={formData.nik || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" maxLength={16} />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">NPWP</label>
-                                    <input type="text" name="npwp" value={formData.npwp || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" />
+                                    <input type="text" name="npwp" value={formData.npwp || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Status PTKP</label>
-                                    <select name="ptkp_status" value={formData.ptkp_status || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none">
+                                    <select name="ptkp_status" value={formData.ptkp_status || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900">
                                         <option value="">Pilih...</option>
                                         <option value="TK/0">TK/0</option>
                                         <option value="TK/1">TK/1</option>
@@ -243,15 +243,15 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Nama Bank</label>
-                                    <input type="text" name="bank_name" placeholder="BCA/Mandiri/dll" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" />
+                                    <input type="text" name="bank_name" placeholder="BCA/Mandiri/dll" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Rekening</label>
-                                    <input type="text" name="bank_account_number" value={formData.bank_account_number || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" />
+                                    <input type="text" name="bank_account_number" value={formData.bank_account_number || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Nama Pemilik Rekening</label>
-                                    <input type="text" name="bank_account_name" value={formData.bank_account_name || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" />
+                                    <input type="text" name="bank_account_name" value={formData.bank_account_name || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" />
                                 </div>
                             </div>
                         )}
@@ -260,19 +260,19 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Nama Ayah Kandung</label>
-                                    <input type="text" name="father_name" value={formData.father_name || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" />
+                                    <input type="text" name="father_name" value={formData.father_name || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Nama Ibu Kandung</label>
-                                    <input type="text" name="mother_name" value={formData.mother_name || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" />
+                                    <input type="text" name="mother_name" value={formData.mother_name || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Nama Pasangan (Suami/Istri)</label>
-                                    <input type="text" name="spouse_name" value={formData.spouse_name || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" />
+                                    <input type="text" name="spouse_name" value={formData.spouse_name || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Kontak Darurat / Keluarga</label>
-                                    <input type="text" name="family_contact_number" value={formData.family_contact_number || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none" />
+                                    <input type="text" name="family_contact_number" value={formData.family_contact_number || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" />
                                 </div>
                             </div>
                         )}
@@ -281,11 +281,11 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                             <div className="space-y-6 animate-fade-in-up">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Alamat Sesuai KTP</label>
-                                    <textarea name="ktp_address" rows={3} value={formData.ktp_address || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none"></textarea>
+                                    <textarea name="ktp_address" rows={3} value={formData.ktp_address || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900"></textarea>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Alamat Domisili Saat Ini</label>
-                                    <textarea name="current_address" rows={3} value={formData.current_address || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none"></textarea>
+                                    <textarea name="current_address" rows={3} value={formData.current_address || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900"></textarea>
                                 </div>
                             </div>
                         )}

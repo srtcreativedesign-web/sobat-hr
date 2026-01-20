@@ -65,6 +65,9 @@ class PayrollFnb extends Model
         'status',
         'details',
         'notes',
+        'approval_signature',
+        'approved_by',
+        'signer_name',
     ];
 
     protected $casts = [

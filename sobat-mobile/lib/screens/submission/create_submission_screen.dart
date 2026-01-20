@@ -412,7 +412,11 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
             ),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 12),
-              child: Icon(Icons.arrow_forward, size: 20, color: Colors.grey),
+              child: Icon(
+                Icons.arrow_forward,
+                size: 20,
+                color: AppTheme.textLight,
+              ),
             ),
             Expanded(
               child: _buildClickableInput(
@@ -486,7 +490,11 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
             ),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 12),
-              child: Icon(Icons.horizontal_rule, size: 20, color: Colors.grey),
+              child: Icon(
+                Icons.horizontal_rule,
+                size: 20,
+                color: AppTheme.textLight,
+              ),
             ),
             Expanded(
               child: _buildClickableInput(
@@ -529,14 +537,14 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
             Icon(
               icon,
               size: 20,
-              color: isPlaceholder ? Colors.grey : AppTheme.textDark,
+              color: isPlaceholder ? AppTheme.textLight : AppTheme.textDark,
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 value,
                 style: TextStyle(
-                  color: isPlaceholder ? Colors.grey : AppTheme.textDark,
+                  color: isPlaceholder ? AppTheme.textLight : AppTheme.textDark,
                   fontWeight: isPlaceholder
                       ? FontWeight.normal
                       : FontWeight.w600,

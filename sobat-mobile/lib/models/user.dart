@@ -15,6 +15,7 @@ class User {
   final int? organizationId;
   final bool hasPin;
   final bool hasOfficeLocation;
+  final DateTime? contractEnd;
 
   User({
     required this.id,
@@ -33,6 +34,7 @@ class User {
     this.organizationId,
     this.hasPin = false,
     this.hasOfficeLocation = false,
+    this.contractEnd,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -87,6 +89,11 @@ class User {
       organizationId: orgId,
       hasPin: json['has_pin'] as bool? ?? false,
       hasOfficeLocation: hasLoc,
+      contractEnd:
+          (json['employee'] != null &&
+              json['employee']['contract_end_date'] != null)
+          ? DateTime.parse(json['employee']['contract_end_date'])
+          : null,
     );
   }
 

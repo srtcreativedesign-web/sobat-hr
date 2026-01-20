@@ -76,7 +76,10 @@ class AttendanceService {
       final response = await _dio.get('/attendance/today');
 
       // If response data is empty or null, return null (Belum Absen)
-      if (response.data == null || response.data.toString().isEmpty) {
+      if (response.data == null ||
+          response.data.toString().isEmpty ||
+          (response.data is Map && response.data.isEmpty) ||
+          (response.data is List && response.data.isEmpty)) {
         return null;
       }
       return response.data;

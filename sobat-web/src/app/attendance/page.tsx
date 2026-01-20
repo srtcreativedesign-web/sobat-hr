@@ -17,7 +17,7 @@ interface Attendance {
     date: string;
     check_in: string | null;
     check_out: string | null;
-    status: 'present' | 'late' | 'absent' | 'leave' | 'sick';
+    status: 'present' | 'late' | 'absent' | 'leave' | 'sick' | 'pending';
     notes: string | null;
     photo_path: string | null;
     checkout_photo_path: string | null;
@@ -71,6 +71,25 @@ export default function AttendancePage() {
         fetchAttendances();
     };
 
+    const handleApprove = async (id: number, status: string) => {
+        try {
+            const noteInput = document.getElementById('approvalNote') as HTMLInputElement;
+            const note = noteInput?.value || '';
+
+            await apiClient.post(`/attendances/${id}/approve`, {
+                status,
+                admin_note: note
+            });
+
+            // Refresh data
+            fetchAttendances();
+            setSelectedAttendance(null);
+        } catch (error) {
+            console.error('Failed to approve attendance:', error);
+            alert('Gagal memproses approval.');
+        }
+    };
+
     const formatDate = (dateString: string) => {
         if (!dateString) return '-';
         return new Date(dateString).toLocaleDateString('id-ID', {
@@ -96,6 +115,7 @@ export default function AttendancePage() {
             case 'absent': return 'bg-red-100 text-red-800';
             case 'leave': return 'bg-blue-100 text-blue-800';
             case 'sick': return 'bg-orange-100 text-orange-800';
+            case 'pending': return 'bg-orange-100 text-orange-800 ring-1 ring-orange-500';
             default: return 'bg-gray-100 text-gray-800';
         }
     };
@@ -133,6 +153,7 @@ export default function AttendancePage() {
                                 <option value="absent">Absen</option>
                                 <option value="leave">Cuti</option>
                                 <option value="sick">Sakit</option>
+                                <option value="pending">Menunggu Approval</option>
                             </select>
                         </div>
                         <button
@@ -328,7 +349,7 @@ export default function AttendancePage() {
                                     </div>
                                 </div>
                             </div>
-                            <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                            <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse justify-between items-center">
                                 <button
                                     type="button"
                                     className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
@@ -336,6 +357,39 @@ export default function AttendancePage() {
                                 >
                                     Tutup
                                 </button>
+
+                                {selectedAttendance.status === 'pending' && (
+                                    <div className="w-full sm:w-auto mt-3 sm:mt-0 flex flex-col sm:flex-row gap-2">
+                                        <div className="flex-grow">
+                                            <input
+                                                type="text"
+                                                placeholder="Catatan Approval..."
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                id="approvalNote"
+                                            />
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleApprove(selectedAttendance.id, 'late')}
+                                                className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-yellow-600 text-base font-medium text-white hover:bg-yellow-700 focus:outline-none sm:text-sm"
+                                            >
+                                                Approve (Late)
+                                            </button>
+                                            <button
+                                                onClick={() => handleApprove(selectedAttendance.id, 'present')}
+                                                className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none sm:text-sm"
+                                            >
+                                                Approve (Present)
+                                            </button>
+                                            <button
+                                                onClick={() => handleApprove(selectedAttendance.id, 'absent')}
+                                                className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:text-sm"
+                                            >
+                                                Reject
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

@@ -41,6 +41,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isEligibleLeave = true;
   bool _isLoadingLeave = true;
 
+  List<Map<String, dynamic>> _recentActivities = [];
+  bool _isLoadingRecentActivities = true;
+
   @override
   void initState() {
     super.initState();
@@ -48,7 +51,9 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadTodayAttendance();
     _loadLeaveBalance();
     _loadLastPayroll();
+    _loadLastPayroll();
     _loadAnnouncements();
+    _loadRecentActivities();
   }
 
   Future<void> _loadLeaveBalance() async {
@@ -125,6 +130,114 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       debugPrint('Error loading last payroll: $e');
       if (mounted) setState(() => _isLoadingPayroll = false);
+    }
+  }
+
+  Future<void> _loadRecentActivities() async {
+    if (!mounted) return;
+    setState(() => _isLoadingRecentActivities = true);
+
+    try {
+      final List<Map<String, dynamic>> activities = [];
+
+      // 1. Fetch Attendance History (Current Month)
+      final now = DateTime.now();
+      try {
+        final attendanceData = await AttendanceService().getHistory(
+          month: now.month,
+          year: now.year,
+        );
+        for (var item in attendanceData) {
+          if (item['check_in'] != null) {
+            activities.add({
+              'type': 'attendance',
+              'date': DateTime.parse('${item['date']} ${item['check_in']}'),
+              'title': 'Absen Masuk',
+              'desc': 'Anda melakukan absen masuk pada ${item['check_in']}',
+              'status': 'success',
+            });
+          }
+          if (item['check_out'] != null) {
+            activities.add({
+              'type': 'attendance',
+              'date': DateTime.parse('${item['date']} ${item['check_out']}'),
+              'title': 'Absen Keluar',
+              'desc': 'Anda melakukan absen keluar pada ${item['check_out']}',
+              'status': 'neutral',
+            });
+          }
+        }
+      } catch (e) {
+        debugPrint('Error loading attendance history: $e');
+      }
+
+      // 2. Fetch Requests (Leave/Permit)
+      try {
+        final requestsData = await RequestService().getRequests();
+        for (var item in requestsData) {
+          final date = DateTime.parse(item['created_at']);
+          String status = item['status'] ?? 'pending';
+          String type = item['type'] ?? 'Request';
+          String title =
+              '$type ${status == 'approved' ? 'Disetujui' : (status == 'rejected' ? 'Ditolak' : 'Diajukan')}';
+
+          activities.add({
+            'type': 'request',
+            'date': date,
+            'title': title,
+            'desc': 'Pengajuan $type tanggal ${item['start_date']}',
+            'status': status == 'approved'
+                ? 'success'
+                : (status == 'rejected' ? 'error' : 'warning'),
+          });
+        }
+      } catch (e) {
+        debugPrint('Error loading requests: $e');
+      }
+
+      // 3. Fetch Payrolls
+      try {
+        final payrolls = await PayrollService().getPayrolls(year: now.year);
+        for (var item in payrolls) {
+          final period = item['period'] ?? item['period_start'];
+          if (period != null) {
+            // Approximate date as 25th of the month or created_at if avail?
+            final dateStr = '$period-25 00:00:00';
+            DateTime date;
+            try {
+              date = DateTime.parse(dateStr);
+            } catch (_) {
+              date = now; // Fallback
+            }
+
+            activities.add({
+              'type': 'payroll',
+              'date': date,
+              'title': 'Gaji Bulan ${DateFormat('MMMM', 'id_ID').format(date)}',
+              'desc': 'Slip gaji telah diterbitkan.',
+              'status': 'info',
+            });
+          }
+        }
+      } catch (e) {
+        debugPrint('Error loading payrolls activity: $e');
+      }
+
+      // Sort by Date Descending
+      activities.sort((a, b) => b['date'].compareTo(a['date']));
+
+      // Take Top 5
+      final recent = activities.take(5).toList();
+
+      if (mounted) {
+        setState(() {
+          _recentActivities = recent;
+          _isLoadingRecentActivities = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error consolidating activities: $e');
+      if (mounted) setState(() => _isLoadingRecentActivities = false);
     }
   }
 
@@ -242,6 +355,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _loadLeaveBalance(),
       _loadLastPayroll(),
       _loadAnnouncements(),
+      _loadRecentActivities(),
     ]);
   }
 
@@ -317,11 +431,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(height: 32),
 
-                  // Banner - REMOVED
-                  // Padding(
-                  //   padding: const EdgeInsets.symmetric(horizontal: 24),
-                  //   child: _buildBanner(),
-                  // ),
+                  // Banner
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: _buildBanner(user),
+                  ),
 
                   // const SizedBox(height: 32);
 
@@ -487,15 +601,25 @@ class _HomeScreenState extends State<HomeScreen> {
         buttonColor = Colors.grey;
         buttonIcon = Icons.check_circle;
       } else if (_todayAttendance!['check_in'] != null) {
-        // Only if check_in is valid
-        status = 'Sedang Bekerja';
-        statusColor = Colors.blue;
-        buttonText = 'Clock Out Sekarang';
-        buttonColor = AppTheme.colorEggplant;
-        buttonIcon = Icons.logout;
-        isButtonDisabled =
-            false; // Enable if working, even on weekends if data exists?
-        // If data exists on weekend, assume they are working overtime.
+        // Check for specific statuses
+        String statusStr =
+            _todayAttendance!['status']?.toString().toLowerCase() ?? '';
+
+        if (statusStr == 'pending') {
+          status = 'Menunggu Approval';
+          statusColor = Colors.orange;
+          buttonText = 'Clock Out Sekarang'; // Still allow clock out? Yes.
+          buttonColor = AppTheme.colorEggplant;
+          buttonIcon = Icons.logout;
+          isButtonDisabled = false;
+        } else {
+          status = 'Sedang Bekerja';
+          statusColor = Colors.blue;
+          buttonText = 'Clock Out Sekarang';
+          buttonColor = AppTheme.colorEggplant;
+          buttonIcon = Icons.logout;
+          isButtonDisabled = false;
+        }
       }
       // If check_in is null but record exists, we treat as default/error, or 'Belum Hadir'.
       // With isWeekend check above, 'Libur' might be overwritten if record exists?
@@ -510,7 +634,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -552,7 +676,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -1431,53 +1555,86 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: AppTheme.textDark,
               ),
             ),
-            Text(
-              'Lihat Semua',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.colorEggplant,
-              ),
-            ),
+            // Text(
+            //   'Lihat Semua',
+            //   style: TextStyle(
+            //     fontSize: 12,
+            //     fontWeight: FontWeight.bold,
+            //     color: AppTheme.colorEggplant,
+            //   ),
+            // ),
           ],
         ),
         const SizedBox(height: 16),
-        Stack(
-          children: [
-            // Timeline Line
-            Positioned(
-              top: 16,
-              bottom: 16,
-              left: 19,
-              child: Container(width: 2, color: Colors.grey.shade100),
+        if (_isLoadingRecentActivities)
+          const Center(child: CircularProgressIndicator())
+        else if (_recentActivities.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Text(
+              'Belum ada aktivitas terkini.',
+              style: TextStyle(color: Colors.grey),
             ),
-            Column(
-              children: [
-                _buildTimelineItem(
-                  Icons.check_circle,
-                  Colors.green,
-                  'Cuti Tahunan Disetujui',
-                  '2j yang lalu',
-                  'Pengajuan cuti Anda untuk tanggal 24-25 Okt telah disetujui.',
-                ),
-                _buildTimelineItem(
-                  Icons.schedule,
-                  Colors.orange,
-                  'Reimbursement Diproses',
-                  '09:00',
-                  'Klaim transportasi Anda sedang dalam peninjauan.',
-                ),
-                _buildTimelineItem(
-                  Icons.payments,
-                  Colors.blue,
-                  'Gaji Masuk',
-                  '25 Sep',
-                  'Slip gaji periode September telah diterbitkan.',
-                ),
-              ],
-            ),
-          ],
-        ),
+          )
+        else
+          Stack(
+            children: [
+              // Timeline Line
+              Positioned(
+                top: 16,
+                bottom: 16,
+                left: 19,
+                child: Container(width: 2, color: Colors.grey.shade100),
+              ),
+              Column(
+                children: _recentActivities.map((activity) {
+                  IconData icon;
+                  Color color;
+
+                  switch (activity['type']) {
+                    case 'attendance':
+                      icon = Icons.access_time;
+                      color = activity['status'] == 'success'
+                          ? Colors.green
+                          : Colors.orange;
+                      if (activity['title'] == 'Absen Keluar')
+                        color = Colors.orange;
+                      break;
+                    case 'request':
+                      icon = Icons.description;
+                      color = activity['status'] == 'success'
+                          ? Colors.green
+                          : (activity['status'] == 'error'
+                                ? Colors.red
+                                : Colors.blue);
+                      break;
+                    case 'payroll':
+                      icon = Icons.payments;
+                      color = Colors.purple;
+                      break;
+                    default:
+                      icon = Icons.notifications;
+                      color = Colors.grey;
+                  }
+
+                  // Format time relative or absolute
+                  final date = activity['date'] as DateTime;
+                  final timeStr = DateFormat(
+                    'dd MMM, HH:mm',
+                    'id_ID',
+                  ).format(date);
+
+                  return _buildTimelineItem(
+                    icon,
+                    color,
+                    activity['title'],
+                    timeStr,
+                    activity['desc'],
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
       ],
     );
   }
@@ -1558,6 +1715,78 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBanner(User? user) {
+    if (user == null || user.contractEnd == null)
+      return const SizedBox.shrink();
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final contractDate = DateTime(
+      user.contractEnd!.year,
+      user.contractEnd!.month,
+      user.contractEnd!.day,
+    );
+
+    final difference = contractDate.difference(today).inDays;
+
+    if (difference > 30 || difference < -30) {
+      return const SizedBox.shrink();
+    }
+
+    Color bgColor = Colors.orange.shade50;
+    Color borderColor = Colors.orange.shade200;
+    Color textColor = Colors.orange.shade800;
+    IconData icon = Icons.warning_amber_rounded;
+    String message =
+        'Kontrak Anda akan berakhir dalam $difference hari (${DateFormat('d MMM y', 'id_ID').format(contractDate)}). Hubungi HRD.';
+
+    if (difference <= 7 && difference >= 0) {
+      bgColor = Colors.red.shade50;
+      borderColor = Colors.red.shade200;
+      textColor = Colors.red.shade800;
+      icon = Icons.error_outline_rounded;
+      message = 'URGENT: Kontrak berakhir dalam $difference hari!';
+    } else if (difference < 0) {
+      bgColor = Colors.red.shade50;
+      borderColor = Colors.red.shade200;
+      textColor = Colors.red.shade800;
+      icon = Icons.error_outline_rounded;
+      message =
+          'Kontrak Anda telah berakhir pada ${DateFormat('d MMM y', 'id_ID').format(contractDate)}. Hubungi HRD.';
+    } else if (difference == 0) {
+      message = 'KONTRAK ANDA BERAKHIR HARI INI!';
+      bgColor = Colors.red.shade50;
+      borderColor = Colors.red.shade200;
+      textColor = Colors.red.shade800;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: textColor, size: 24),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                height: 1.4,
               ),
             ),
           ),

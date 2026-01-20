@@ -667,9 +667,16 @@ class _PayrollScreenState extends State<PayrollScreen> {
                                     0)
                               : (double.tryParse(lembur.toString()) ?? 0);
 
+                          // Extract hours
+                          final rawHours = lembur is Map
+                              ? (lembur['hours'] ?? 0)
+                              : 0;
+                          final hours =
+                              double.tryParse(rawHours.toString()) ?? 0;
+
                           if (amount > 0) {
                             return _buildDetailRow(
-                              'Lembur',
+                              hours > 0 ? 'Lembur ($hours Jam)' : 'Lembur',
                               amount,
                               isPlus: true,
                             );
@@ -679,10 +686,35 @@ class _PayrollScreenState extends State<PayrollScreen> {
                       },
                     ),
                   ] else if (payroll['overtime_pay'] != null) ...[
-                    _buildDetailRow(
-                      'Lembur',
-                      payroll['overtime_pay'],
-                      isPlus: true,
+                    // Generic Payroll Overtime
+                    Builder(
+                      builder: (context) {
+                        final amount =
+                            double.tryParse(
+                              payroll['overtime_pay'].toString(),
+                            ) ??
+                            0;
+                        final details = payroll['details'];
+                        var hours = 0;
+                        if (details != null &&
+                            details is Map &&
+                            details['overtime_hours'] != null) {
+                          hours =
+                              int.tryParse(
+                                details['overtime_hours'].toString(),
+                              ) ??
+                              0;
+                        }
+
+                        if (amount > 0) {
+                          return _buildDetailRow(
+                            hours > 0 ? 'Lembur ($hours Jam)' : 'Lembur',
+                            amount,
+                            isPlus: true,
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
                     ),
                   ],
 

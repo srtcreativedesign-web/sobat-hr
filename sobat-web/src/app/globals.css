@@ -84,3 +84,13 @@ body {
 /* Line Styles */
 .org-tree li.line-dashed::before, .org-tree li.line-dashed::after { border-top-style: dashed !important; border-left-style: dashed !important; border-right-style: dashed !important; }
 .org-tree li.line-dotted::before, .org-tree li.line-dotted::after { border-top-style: dotted !important; border-left-style: dotted !important; border-right-style: dotted !important; }
+
+/* Quill Custom Fonts */
+.ql-font-times-new-roman {
+  font-family: 'Times New Roman', Times, serif;
+}
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="times-new-roman"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="times-new-roman"]::before {
+  content: 'Times New Roman';
+  font-family: 'Times New Roman', Times, serif;
+}

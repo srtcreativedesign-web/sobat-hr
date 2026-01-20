@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/attendance/history', [App\Http\Controllers\Api\AttendanceController::class, 'history']); // New History Route
     Route::get('/attendances', [App\Http\Controllers\Api\AttendanceController::class, 'index']); // Added for Web Admin
     Route::post('/attendances', [App\Http\Controllers\Api\AttendanceController::class, 'store']);
+    Route::post('/attendances/{id}/approve', [App\Http\Controllers\Api\AttendanceController::class, 'approveLate']); // Late Approval Route
     Route::put('/attendances/{id}', [App\Http\Controllers\Api\AttendanceController::class, 'update']); // Checkout Route
     Route::post('/attendances/sync', [App\Http\Controllers\Api\AttendanceController::class, 'syncFingerprint']);
     Route::get('/attendances/report/{month}/{year}', [App\Http\Controllers\Api\AttendanceController::class, 'monthlyReport']);
@@ -101,6 +102,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard/attendance-heatmap', [App\Http\Controllers\Api\DashboardController::class, 'attendanceHeatmap']);
         Route::get('/dashboard/attendance-trend', [App\Http\Controllers\Api\DashboardController::class, 'attendanceTrend']);
         Route::get('/dashboard/contract-expiring', [App\Http\Controllers\Api\DashboardController::class, 'contractExpiring']);
+        Route::post('/contracts/generate-pdf/{id}', [App\Http\Controllers\Api\ContractController::class, 'generatePdf']);
+        
+        // Contract Template
+        Route::get('/contract-templates', [App\Http\Controllers\Api\ContractTemplateController::class, 'index']);
+        Route::put('/contract-templates', [App\Http\Controllers\Api\ContractTemplateController::class, 'update']);
+        Route::post('/contract-templates/restore', [App\Http\Controllers\Api\ContractTemplateController::class, 'restore']);
     });
 
     // AI Context Route

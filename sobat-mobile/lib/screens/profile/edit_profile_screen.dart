@@ -729,7 +729,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                     const Text(
                       'Riwayat Pendidikan (Wajib diisi SD-SMK)',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(fontSize: 12, color: AppTheme.textLight),
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -767,7 +767,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const SizedBox(height: 12),
                     const Text(
                       'Pendidikan Tinggi (Opsional)',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(fontSize: 12, color: AppTheme.textLight),
                     ),
                     const SizedBox(height: 8),
                     Row(

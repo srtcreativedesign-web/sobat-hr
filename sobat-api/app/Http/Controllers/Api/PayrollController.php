@@ -714,7 +714,15 @@ class PayrollController extends Controller
         ]);
 
         $payroll = Payroll::findOrFail($id);
+        
         $payroll->status = $request->status;
+
+        if ($request->status === 'approved' && $request->has('approval_signature')) {
+            $payroll->approval_signature = $request->approval_signature;
+            $payroll->signer_name = $request->signer_name;
+            $payroll->approved_by = auth()->id();
+        }
+
         $payroll->save();
 
         return response()->json([
@@ -757,9 +765,17 @@ class PayrollController extends Controller
 
         $ids = $request->input('ids');
 
+        $updateData = ['status' => 'approved'];
+
+        if ($request->has('approval_signature')) {
+            $updateData['approval_signature'] = $request->approval_signature;
+            $updateData['signer_name'] = $request->signer_name;
+            $updateData['approved_by'] = auth()->id();
+        }
+
         $updated = Payroll::whereIn('id', $ids)
             ->where('status', 'draft')
-            ->update(['status' => 'approved']);
+            ->update($updateData);
 
         return response()->json([
             'message' => "Successfully approved {$updated} selected payrolls",

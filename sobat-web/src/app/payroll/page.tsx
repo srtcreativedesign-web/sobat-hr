@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
+import SignatureCanvas from 'react-signature-canvas';
 
 interface Payroll {
   id: number;
@@ -15,9 +16,9 @@ interface Payroll {
   period_start: string;
   period_end: string;
   basic_salary: number;
-  allowances: number;
+  allowances: any; // Allow object or number
   overtime_pay: number;
-  deductions: number;
+  deductions: any;
   total_deductions: number; // Added from backend calculation
   bpjs_health: number;
   bpjs_employment: number;
@@ -29,6 +30,7 @@ interface Payroll {
   // FnB Specific Properties
   attendance?: Record<string, number>;
   ewa_amount?: number | string;
+  approval_signature?: string;
 }
 
 export default function PayrollPage() {
@@ -43,6 +45,13 @@ export default function PayrollPage() {
   const [parsedRows, setParsedRows] = useState<any[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null);
+
+  // Signature Modal State
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [pendingApprovalId, setPendingApprovalId] = useState<number | null>(null);
+  const [isBulkApproval, setIsBulkApproval] = useState(false);
+  const [signerName, setSignerName] = useState('');
+  const sigPad = useRef<SignatureCanvas>(null);
 
   // Division selector
   const [selectedDivision, setSelectedDivision] = useState<'fnb' | 'generic'>('fnb');
@@ -143,6 +152,57 @@ export default function PayrollPage() {
     } catch (error: any) {
       alert(error.response?.data?.message || 'Import gagal');
     }
+  };
+
+  const handleConfirmApproval = async () => {
+    if (sigPad.current?.isEmpty()) {
+      alert('Harap tanda tangan terlebih dahulu');
+      return;
+    }
+
+    const signatureData = sigPad.current?.getCanvas().toDataURL('image/png');
+
+    try {
+      setLoading(true);
+      if (isBulkApproval) {
+        // Bulk Approve Logic with Signature
+        const response = await apiClient.post('/payrolls/bulk-approve', {
+          ids: selectedIds,
+          approval_signature: signatureData,
+          signer_name: signerName
+        });
+        alert(response.data.message);
+        setSelectedIds([]);
+      } else if (pendingApprovalId) {
+        // Single Approve
+        const endpoint = selectedDivision === 'fnb'
+          ? `/payrolls/fnb/${pendingApprovalId}/status`
+          : `/payrolls/${pendingApprovalId}/status`; // Generic usually PUT with status
+
+        // Note: FNB uses updateStatus which takes 'status' and 'approval_signature'
+        // Generic Controller might need update. Assuming Generic uses PATCH /payrolls/{id}/status
+
+        await apiClient.patch(endpoint, {
+          status: 'approved',
+          approval_signature: signatureData,
+          signer_name: signerName
+        });
+      }
+
+      fetchPayrolls();
+      setShowSignatureModal(false);
+      setPendingApprovalId(null);
+      setIsBulkApproval(false);
+
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Approval failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearSignature = () => {
+    sigPad.current?.clear();
   };
 
   const formatCurrency = (value: number) => {
@@ -339,20 +399,8 @@ export default function PayrollPage() {
             {selectedIds.length > 0 && (
               <button
                 onClick={async () => {
-                  if (!confirm(`Approve ${selectedIds.length} selected payrolls?`)) return;
-                  try {
-                    setLoading(true);
-                    const response = await apiClient.post('/payrolls/bulk-approve', {
-                      ids: selectedIds
-                    });
-                    alert(response.data.message);
-                    setSelectedIds([]);
-                    fetchPayrolls();
-                  } catch (error: any) {
-                    alert(error.response?.data?.message || 'Failed to approve selected');
-                  } finally {
-                    setLoading(false);
-                  }
+                  setIsBulkApproval(true);
+                  setShowSignatureModal(true);
                 }}
                 className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm animate-fade-in-up"
               >
@@ -546,19 +594,10 @@ export default function PayrollPage() {
 
                           {payroll.status === 'pending' && (
                             <button
-                              onClick={async () => {
-                                if (!confirm(`Approve payroll for ${payroll.employee.full_name}?`)) return;
-                                try {
-                                  setLoading(true);
-                                  await apiClient.patch(`/payrolls/${payroll.id}/status`, {
-                                    status: 'approved'
-                                  });
-                                  fetchPayrolls();
-                                } catch (error: any) {
-                                  alert('Failed to approve');
-                                } finally {
-                                  setLoading(false);
-                                }
+                              onClick={() => {
+                                setPendingApprovalId(Number(payroll.id));
+                                setIsBulkApproval(false);
+                                setShowSignatureModal(true);
                               }}
                               className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors ml-2"
                               title="Approve"
@@ -650,6 +689,17 @@ export default function PayrollPage() {
 
                             // Handle nested objects (like Kehadiran, Transport, Lembur)
                             if (typeof value === 'object' && value.amount) {
+                              // Special handling for Lembur to show hours
+                              if (key === 'Lembur') {
+                                const hours = value.hours || 0;
+                                return (
+                                  <div key={key} className="flex justify-between text-sm">
+                                    <span className="text-gray-600">Lembur {hours > 0 ? `(${hours} Jam)` : ''}</span>
+                                    <span className="font-medium text-gray-800">{formatCurrency(parseFloat(value.amount))}</span>
+                                  </div>
+                                );
+                              }
+
                               return (
                                 <div key={key} className="flex justify-between text-sm">
                                   <span className="text-gray-600">{key}</span>
@@ -659,15 +709,22 @@ export default function PayrollPage() {
                             }
 
                             // Handle simple values
-                            if (key !== 'Lembur') { // Lembur shown in overtime section
+                            // Since we handled Lembur above (if it was an object), we check if it's simple Lembur (unlikely but safe)
+                            if (key === 'Lembur') {
                               return (
                                 <div key={key} className="flex justify-between text-sm">
-                                  <span className="text-gray-600">{key}</span>
+                                  <span className="text-gray-600">Lembur</span>
                                   <span className="font-medium text-gray-800">{formatCurrency(parseFloat(value))}</span>
                                 </div>
                               );
                             }
-                            return null;
+
+                            return (
+                              <div key={key} className="flex justify-between text-sm">
+                                <span className="text-gray-600">{key}</span>
+                                <span className="font-medium text-gray-800">{formatCurrency(parseFloat(value))}</span>
+                              </div>
+                            );
                           })}
                         </>
                       )}
@@ -685,6 +742,19 @@ export default function PayrollPage() {
                             <div className="flex justify-between text-sm">
                               <span className="text-gray-600">Tunj. Kesehatan</span>
                               <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.details.health_allowance)}</span>
+                            </div>
+                          )}
+                          {/* Add Generic Overtime if available in details */}
+                          {selectedPayroll.details?.overtime_hours > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Lembur ({selectedPayroll.details.overtime_hours} Jam)</span>
+                              <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.overtime_pay)}</span>
+                            </div>
+                          )}
+                          {!selectedPayroll.details?.overtime_hours && selectedPayroll.overtime_pay > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Lembur</span>
+                              <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.overtime_pay)}</span>
                             </div>
                           )}
                         </>
@@ -802,234 +872,287 @@ export default function PayrollPage() {
                         alert('Gagal download slip gaji');
                       }
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+                    className="flex-1 bg-[#462e37] text-white px-4 py-3 rounded-xl font-semibold hover:bg-[#523640] transition-colors flex items-center justify-center gap-2"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    Download Slip
+                    Download Slip Gaji (PDF)
                   </button>
 
-                  {/* Approve Button (only for draft status) */}
-                  {selectedPayroll.status === 'draft' && (
+                  {/* Approve Button (only for draft/pending status) */}
+                  {(selectedPayroll.status === 'draft' || selectedPayroll.status === 'pending') && (
                     <button
-                      onClick={async () => {
-                        try {
-                          const endpoint = selectedDivision === 'fnb'
-                            ? `/payrolls/fnb/${selectedPayroll.id}/status`
-                            : `/payrolls/${selectedPayroll.id}/status`;
-
-                          await apiClient.patch(endpoint, {
-                            status: 'approved',
-                          });
-                          alert('Payroll berhasil diapprove');
-                          setSelectedPayroll(null);
-                          fetchPayrolls();
-                        } catch (error) {
-                          alert('Gagal approve payroll');
-                        }
+                      onClick={() => {
+                        setPendingApprovalId(Number(selectedPayroll.id));
+                        setIsBulkApproval(false);
+                        setShowSignatureModal(true);
                       }}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors"
+                      className="flex-1 bg-green-600 text-white px-4 py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                       Approve
                     </button>
                   )}
-                </div>
 
-                <button
-                  onClick={() => setSelectedPayroll(null)}
-                  className="px-6 py-2 border border-gray-300 rounded-xl font-semibold hover:bg-white transition-colors"
-                >
-                  Tutup
-                </button>
+                  <button
+                    onClick={() => setSelectedPayroll(null)}
+                    className="px-6 py-3 border border-gray-300 rounded-xl font-semibold hover:bg-white transition-colors"
+                  >
+                    Tutup
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         )
       }
 
+      {/* Signature Modal */}
+      {showSignatureModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4 text-black">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Tanda Tangan Approval</h3>
+              <button onClick={() => setShowSignatureModal(false)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-500 mb-4">
+              Silakan tanda tangan di bawah ini untuk menyetujui payroll {isBulkApproval ? `(${selectedIds.length} items)` : ''}.
+            </p>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nama Penanda Tangan</label>
+              <input
+                type="text"
+                value={signerName}
+                onChange={(e) => setSignerName(e.target.value)}
+                placeholder="Masukkan nama lengkap (e.g. Budi Santoso, HRD)"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#729892]"
+              />
+            </div>
+
+            <div className="border-2 border-dashed border-gray-300 rounded-xl mb-4 bg-gray-50">
+              <SignatureCanvas
+                ref={sigPad}
+                penColor="black"
+                canvasProps={{
+                  className: 'w-full h-48 rounded-xl cursor-crosshair'
+                }}
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={clearSignature}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+              >
+                Hapus
+              </button>
+              <button
+                onClick={handleConfirmApproval}
+                disabled={loading}
+                className="flex-1 px-4 py-2 bg-[#462e37] text-white rounded-xl font-bold hover:bg-[#5e3d4a] transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Processing...' : 'Approve & Sign'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Upload Modal */}
-      {
-        showUploadModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">Import Excel</h3>
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 text-black">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">Import Excel</h3>
+              <button
+                onClick={() => {
+                  setShowUploadModal(false);
+                  setSelectedFile(null);
+                  setUploadProgress(0);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* File Input */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Pilih File Excel
+                </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#a9eae2] transition-colors">
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label htmlFor="file-upload" className="cursor-pointer">
+                    <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    {selectedFile ? (
+                      <p className="text-sm text-gray-900 font-semibold">{selectedFile.name}</p>
+                    ) : (
+                      <>
+                        <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
+                        <p className="text-xs text-gray-400 mt-1">Excel/CSV files (.xlsx, .xls, .csv)</p>
+                      </>
+                    )}
+                  </label>
+                </div>
+              </div>
+
+              {/* Upload Progress */}
+              {uploadProgress > 0 && uploadProgress < 100 && (
+                <div>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-600">Uploading...</span>
+                    <span className="text-[#462e37] font-semibold">{uploadProgress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-gradient-to-r from-[#a9eae2] to-[#729892] h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
                 <button
                   onClick={() => {
                     setShowUploadModal(false);
                     setSelectedFile(null);
                     setUploadProgress(0);
                   }}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUpload}
+                  disabled={!selectedFile || uploadProgress > 0}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-[#a9eae2] to-[#729892] text-[#462e37] rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  Upload
                 </button>
               </div>
 
-              <div className="space-y-6">
-                {/* File Input */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Pilih File Excel
-                  </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#a9eae2] transition-colors">
-                    <input
-                      type="file"
-                      accept=".xlsx,.xls,.csv"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      id="file-upload"
-                    />
-                    <label htmlFor="file-upload" className="cursor-pointer">
-                      <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                      {selectedFile ? (
-                        <p className="text-sm text-gray-900 font-semibold">{selectedFile.name}</p>
-                      ) : (
-                        <>
-                          <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
-                          <p className="text-xs text-gray-400 mt-1">Excel/CSV files (.xlsx, .xls, .csv)</p>
-                        </>
-                      )}
-                    </label>
-                  </div>
-                </div>
-
-                {/* Upload Progress */}
-                {uploadProgress > 0 && uploadProgress < 100 && (
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-600">Uploading...</span>
-                      <span className="text-[#462e37] font-semibold">{uploadProgress}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-gradient-to-r from-[#a9eae2] to-[#729892] h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      setShowUploadModal(false);
-                      setSelectedFile(null);
-                      setUploadProgress(0);
-                    }}
-                    className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleUpload}
-                    disabled={!selectedFile || uploadProgress > 0}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-[#a9eae2] to-[#729892] text-[#462e37] rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                  >
-                    Upload
-                  </button>
-                </div>
-
-                {/* Parsed Preview */}
-                {parsedRows.length > 0 && (
-                  <div className="mt-6">
-                    <h4 className="text-sm font-semibold mb-2">Preview Data ({parsedRows.length} baris)</h4>
-                    <div className="max-h-64 overflow-auto border rounded-lg">
-                      <table className="w-full text-sm">
-                        <thead className="bg-gray-50">
-                          <tr>
+              {/* Parsed Preview */}
+              {parsedRows.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="text-sm font-semibold mb-2">Preview Data ({parsedRows.length} baris)</h4>
+                  <div className="max-h-64 overflow-auto border rounded-lg">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          {Object.keys(parsedRows[0]).map((col) => (
+                            <th key={col} className="text-left p-2 font-medium text-gray-600 whitespace-nowrap">{col}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {parsedRows.map((row: any, idx: number) => (
+                          <tr key={idx} className="even:bg-white odd:bg-gray-50">
                             {Object.keys(parsedRows[0]).map((col) => (
-                              <th key={col} className="text-left p-2 font-medium text-gray-600 whitespace-nowrap">{col}</th>
+                              <td key={col} className="p-2 whitespace-nowrap">
+                                {typeof row[col] === 'object' && row[col] !== null
+                                  ? JSON.stringify(row[col])
+                                  : row[col]}
+                              </td>
                             ))}
                           </tr>
-                        </thead>
-                        <tbody>
-                          {parsedRows.map((row: any, idx: number) => (
-                            <tr key={idx} className="even:bg-white odd:bg-gray-50">
-                              {Object.keys(parsedRows[0]).map((col) => (
-                                <td key={col} className="p-2 whitespace-nowrap">
-                                  {typeof row[col] === 'object' && row[col] !== null
-                                    ? JSON.stringify(row[col])
-                                    : row[col]}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="mt-4 flex gap-3">
-                      <button
-                        onClick={() => {
-                          setParsedRows([]);
-                          setSelectedFile(null);
-                          setUploadProgress(0);
-                        }}
-                        className="px-4 py-2 border rounded-lg"
-                      >
-                        Clear
-                      </button>
-                      <button
-                        onClick={async () => {
-                          try {
-                            // Use division-specific save endpoint
-                            const saveEndpoint = selectedDivision === 'fnb' ? '/payrolls/fnb/import/save' : '/payrolls/import/save';
-
-                            const response = await apiClient.post(saveEndpoint, {
-                              rows: parsedRows,
-                            });
-                            const data = response.data;
-
-                            // Show detailed results
-                            let message = `Import selesai!\n\nTotal: ${data.summary.total}\nBerhasil: ${data.summary.saved}\nGagal: ${data.summary.failed}`;
-
-                            if (data.failed && data.failed.length > 0) {
-                              message += '\n\nBaris yang gagal:';
-                              data.failed.slice(0, 5).forEach((fail: any) => {
-                                message += `\n- Row ${fail.row}: ${fail.employee_name} - ${fail.reason}`;
-                              });
-                              if (data.failed.length > 5) {
-                                message += `\n... dan ${data.failed.length - 5} lainnya (lihat console)`;
-                              }
-                              console.log('All failed rows:', data.failed);
-                            }
-
-                            alert(message);
-
-                            // Close modal and refresh only if some succeeded
-                            if (data.summary.saved > 0) {
-                              setShowUploadModal(false);
-                              setParsedRows([]);
-                              setSelectedFile(null);
-                              setUploadProgress(0);
-                              fetchPayrolls();
-                            }
-                          } catch (error: any) {
-                            alert(error.response?.data?.message || 'Gagal menyimpan data');
-                            console.error('Save error:', error.response?.data);
-                          }
-                        }}
-                        className="px-4 py-2 bg-gradient-to-r from-[#a9eae2] to-[#729892] text-[#462e37] rounded-lg"
-                      >
-                        Save to DB
-                      </button>
-                    </div>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                )}
-              </div>
+                  <div className="mt-4 flex gap-3">
+                    <button
+                      onClick={() => {
+                        setParsedRows([]);
+                        setSelectedFile(null);
+                        setUploadProgress(0);
+                      }}
+                      className="px-4 py-2 border rounded-lg"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          // Use division-specific save endpoint
+                          const saveEndpoint = selectedDivision === 'fnb' ? '/payrolls/fnb/import/save' : '/payrolls/import/save';
+
+                          const response = await apiClient.post(saveEndpoint, {
+                            rows: parsedRows,
+                          });
+                          const data = response.data;
+
+                          // Show detailed results
+                          // Show detailed results
+                          let message = `Import selesai!`;
+
+                          if (data.summary) {
+                            message += `\n\nTotal: ${data.summary.total}\nBerhasil: ${data.summary.saved}\nGagal: ${data.summary.failed}`;
+                          }
+
+                          if (data.failed && data.failed.length > 0) {
+                            message += '\n\nBaris yang gagal:';
+                            data.failed.slice(0, 5).forEach((fail: any) => {
+                              message += `\n- Row ${fail.row}: ${fail.employee_name} - ${fail.reason}`;
+                            });
+                            if (data.failed.length > 5) {
+                              message += `\n... dan ${data.failed.length - 5} lainnya (lihat console)`;
+                            }
+                            console.log('All failed rows:', data.failed);
+                          }
+
+                          alert(message);
+
+                          // Close modal and refresh only if some succeeded
+                          if (data.summary && data.summary.saved > 0) {
+                            setShowUploadModal(false);
+                            setParsedRows([]);
+                            setSelectedFile(null);
+                            setUploadProgress(0);
+                            fetchPayrolls();
+                          }
+                        } catch (error: any) {
+                          alert(error.response?.data?.message || 'Gagal menyimpan data');
+                          console.error('Save error details:', error);
+                          if (error.response) {
+                            console.error('Response data:', error.response.data);
+                            console.error('Response status:', error.response.status);
+                          }
+                        }
+                      }}
+                      className="px-4 py-2 bg-gradient-to-r from-[#a9eae2] to-[#729892] text-[#462e37] rounded-lg"
+                    >
+                      Save to DB
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        )
-      }
-    </DashboardLayout >
+        </div>
+      )}
+    </DashboardLayout>
   );
 }

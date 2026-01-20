@@ -13,166 +13,51 @@
 
         body {
             font-family: 'Arial', sans-serif;
-            font-size: 10px;
+            font-size: 9px;
             color: #333;
-            line-height: 1.4;
+            line-height: 1.2;
         }
 
         .container {
-            padding: 15px 20px;
+            padding: 0;
             max-width: 100%;
         }
 
         .header {
             background: linear-gradient(135deg, #1A4D2E 0%, #2d7a4a 100%);
             color: white;
-            padding: 12px 15px;
-            border-radius: 6px 6px 0 0;
-            margin-bottom: 12px;
+            padding: 8px 10px;
+            border-radius: 4px;
+            margin-bottom: 8px;
         }
 
-        .header h1 {
-            font-size: 20px;
-            margin-bottom: 2px;
-        }
-
-        .header .company {
-            font-size: 11px;
-            opacity: 0.9;
-        }
-
-        .info-section {
-            margin-bottom: 12px;
-        }
-
-        .info-grid {
-            display: table;
-            width: 100%;
-            margin-bottom: 10px;
-        }
-
-        .info-row {
-            display: table-row;
-        }
-
-        .info-label {
-            display: table-cell;
-            width: 160px;
-            font-weight: bold;
-            color: #555;
-            padding: 3px 0;
-            font-size: 10px;
-        }
-
-        .info-value {
-            display: table-cell;
-            padding: 3px 0;
-            color: #333;
-            font-size: 10px;
-        }
-
-        .divider {
-            border-top: 1px solid #e5e7eb;
-            margin: 12px 0;
-        }
+        /* ... existing styles ... */
 
         h3 {
-            font-size: 12px;
-            margin-bottom: 8px;
+            font-size: 10px;
+            margin-bottom: 4px;
+            margin-top: 10px !important;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-bottom: 4px;
         }
 
         th {
-            background: #f9fafb;
-            color: #1A4D2E;
-            text-align: left;
-            padding: 6px 8px;
-            font-weight: bold;
-            border-bottom: 2px solid #1A4D2E;
-            font-size: 10px;
-        }
-
-        td {
-            padding: 5px 8px;
-            border-bottom: 1px solid #e5e7eb;
-            font-size: 10px;
-        }
-
-        .amount {
-            text-align: right;
-            font-weight: 600;
-        }
-
-        .positive {
-            color: #059669;
-        }
-
-        .negative {
-            color: #dc2626;
-        }
-
-        .summary {
-            background: #f0fdf4;
-            border: 2px solid #1A4D2E;
-            border-radius: 6px;
-            padding: 12px;
-            margin: 12px 0;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 4px 0;
-            font-size: 11px;
-        }
-
-        .summary-total {
-            font-size: 14px;
-            font-weight: bold;
-            color: #1A4D2E;
-            border-top: 2px solid #1A4D2E;
-            padding-top: 8px;
-            margin-top: 6px;
-        }
-
-        .ai-message {
-            background: #eff6ff;
-            border-left: 3px solid #3b82f6;
-            padding: 10px;
-            margin: 12px 0;
-            border-radius: 4px;
-            font-style: italic;
-            color: #1e40af;
-            line-height: 1.5;
+            padding: 4px 6px;
             font-size: 9px;
         }
 
-        .footer {
-            text-align: center;
-            color: #6b7280;
-            font-size: 8px;
-            margin-top: 15px;
-            padding-top: 10px;
-            border-top: 1px solid #e5e7eb;
+        td {
+            padding: 3px 6px;
+            font-size: 9px;
+            border-bottom: 1px solid #e5e7eb;
         }
-
+        
         @page {
-            margin: 10mm 15mm;
-        }
-
-        @media print {
-            .container {
-                padding: 0;
-            }
-
-            body {
-                font-size: 10px;
-            }
+            margin: 5mm 10mm;
         }
     </style>
 </head>
@@ -316,7 +201,7 @@
                 @endif
                 
                 <tr>
-                    <td>Uang Lembur</td>
+                    <td>Uang Lembur {{ isset($payroll->details['overtime_hours']) && $payroll->details['overtime_hours'] > 0 ? '(' . $payroll->details['overtime_hours'] . ' Jam)' : '' }}</td>
                     <td class="amount positive">{{ number_format($payroll->overtime_pay ?? 0, 0, ',', '.') }}</td>
                 </tr>
                 <tr style="background: #f9fafb; font-weight: bold;">
@@ -428,20 +313,20 @@
         </table>
 
         <!-- Summary -->
-        <div class="summary">
-            <div class="summary-row">
-                <span>Total Penghasilan</span>
-                <span>Rp {{ number_format($gross_salary, 0, ',', '.') }}</span>
-            </div>
-            <div class="summary-row">
-                <span>Total Potongan</span>
-                <span>(Rp {{ number_format($total_deductions, 0, ',', '.') }})</span>
-            </div>
-            <div class="summary-total summary-row">
-                <span>TAKE HOME PAY</span>
-                <span>Rp {{ number_format($gross_salary - $total_deductions, 0, ',', '.') }}</span>
-            </div>
-        </div>
+        <table style="width: 100%; margin-top: 15px; border: 2px solid #1A4D2E; background: #f0fdf4; border-collapse: separate; border-spacing: 0; border-radius: 6px;">
+            <tr>
+                <td style="padding: 10px; border: none; font-size: 11px;">Total Penghasilan</td>
+                <td style="padding: 10px; border: none; text-align: right; font-weight: bold;">Rp {{ number_format($gross_salary, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border: none; font-size: 11px;">Total Potongan</td>
+                <td style="padding: 10px; border: none; text-align: right; font-weight: bold; color: #dc2626;">(Rp {{ number_format($total_deductions, 0, ',', '.') }})</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border-top: 2px solid #1A4D2E; font-size: 14px; font-weight: bold; color: #1A4D2E; background: #dcfce7;">TAKE HOME PAY</td>
+                <td style="padding: 10px; border-top: 2px solid #1A4D2E; text-align: right; font-size: 14px; font-weight: bold; color: #1A4D2E; background: #dcfce7;">Rp {{ number_format($gross_salary - $total_deductions, 0, ',', '.') }}</td>
+            </tr>
+        </table>
 
         <!-- AI Generated Message -->
         @if(!empty($aiMessage))
@@ -450,6 +335,30 @@
                 {{ $aiMessage }}
             </div>
         @endif
+
+        <!-- Signature Section -->
+        <table style="width: 100%; margin-top: 30px; margin-bottom: 20px;">
+            <tr>
+                <td style="width: 50%; text-align: center; border: none;">
+                    <div>Diterima Oleh,</div>
+                    <div style="margin-top: 60px; border-bottom: 1px solid #333; width: 60%; margin-left: auto; margin-right: auto;"></div>
+                    <div style="margin-top: 5px;">{{ $employee->full_name }}</div>
+                </td>
+                <td style="width: 50%; text-align: center; border: none;">
+                    <div>Mengetahui,</div>
+                    @if(!empty($payroll->approval_signature))
+                        <div style="margin-top: 10px; margin-bottom: 5px;">
+                            <img src="{{ $payroll->approval_signature }}" alt="Signature" style="height: 60px; max-width: 150px;">
+                        </div>
+                        <div style="border-bottom: 1px solid #333; width: 60%; margin-left: auto; margin-right: auto;"></div>
+                        <div style="margin-top: 5px;">{{ $payroll->signer_name ?? 'HRD' }}</div>
+                    @else
+                        <div style="margin-top: 60px; border-bottom: 1px solid #333; width: 60%; margin-left: auto; margin-right: auto;"></div>
+                        <div style="margin-top: 5px;">HRD</div>
+                    @endif
+                </td>
+            </tr>
+        </table>
 
         <!-- Footer -->
         <div class="footer">

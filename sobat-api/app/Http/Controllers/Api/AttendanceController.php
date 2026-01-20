@@ -38,7 +38,7 @@ class AttendanceController extends Controller
             'date' => 'required|date',
             'check_in' => 'required',
             'check_out' => 'nullable',
-            'status' => 'required|in:present,late,absent,leave,sick',
+            'status' => 'required|in:present,late,absent,leave,sick,pending', // Added pending
             'notes' => 'nullable|string',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
@@ -80,9 +80,35 @@ class AttendanceController extends Controller
         $workStartTime = Carbon::parse($validated['date'] . ' 08:00:00');
         $clockInTime = Carbon::parse($validated['date'] . ' ' . $validated['check_in']);
         
+        \Illuminate\Support\Facades\Log::info('Attendance Logic:', [
+            'date' => $validated['date'],
+            'check_in_input' => $validated['check_in'],
+            'work_start' => $workStartTime->toDateTimeString(),
+            'clock_in_parsed' => $clockInTime->toDateTimeString(),
+            'is_gt' => $clockInTime->gt($workStartTime) ? 'YES' : 'NO'
+        ]);
+
+        // Late Logic
+        // Late Logic
         if ($clockInTime->gt($workStartTime)) {
-            $validated['status'] = 'late';
-            $validated['late_duration'] = $clockInTime->diffInMinutes($workStartTime);
+            // Use abs() because diffInMinutes is returning negative values on this environment
+            $lateDuration = abs($clockInTime->diffInMinutes($workStartTime));
+            $validated['late_duration'] = $lateDuration;
+            
+            \Illuminate\Support\Facades\Log::info('Late Duration Check (Fixed):', ['duration' => $lateDuration]);
+
+            // If late more than 5 minutes (> 08:05), need approval
+            if ($lateDuration > 5) {
+                $validated['status'] = 'pending';
+                \Illuminate\Support\Facades\Log::info('Status set to pending');
+            } else {
+                $validated['status'] = 'late';
+                \Illuminate\Support\Facades\Log::info('Status set to late');
+            }
+        } else {
+             // On time
+             $validated['status'] = 'present';
+             \Illuminate\Support\Facades\Log::info('Status set to present');
         }
 
         // Calculate work hours if check_out exists (e.g., manual full day input)
@@ -279,5 +305,33 @@ class AttendanceController extends Controller
         $history = $query->orderBy('date', 'desc')->get();
 
         return response()->json($history);
+    }
+
+    /**
+     * Approve late attendance
+     */
+    public function approveLate(Request $request, $id)
+    {
+        $attendance = Attendance::findOrFail($id);
+
+        if ($attendance->status !== 'pending') {
+            return response()->json(['message' => 'Attendance is not pending approval'], 400);
+        }
+
+        $validated = $request->validate([
+            'status' => 'required|in:late,present,absent', // Admin decides final status
+            'admin_note' => 'nullable|string'
+        ]);
+
+        $attendance->status = $validated['status'];
+        if (!empty($validated['admin_note'])) {
+            // Append note if existing, or set new
+            $existingNotes = $attendance->notes ? $attendance->notes . "\n" : "";
+            $attendance->notes = $existingNotes . "[Admin Verification]: " . $validated['admin_note'];
+        }
+
+        $attendance->save();
+
+        return response()->json($attendance);
     }
 }

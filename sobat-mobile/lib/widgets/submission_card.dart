@@ -150,7 +150,7 @@ class SubmissionCard extends StatelessWidget {
                     Icon(
                       Icons.chevron_right,
                       size: 20,
-                      color: Colors.grey.shade400,
+                      color: AppTheme.textLight,
                     ),
                   ],
                 ),

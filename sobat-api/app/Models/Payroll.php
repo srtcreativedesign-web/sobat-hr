@@ -25,6 +25,9 @@ class Payroll extends Model
         'details',
         'status',
         'paid_at',
+        'approval_signature',
+        'approved_by',
+        'signer_name',
     ];
 
     protected $casts = [
