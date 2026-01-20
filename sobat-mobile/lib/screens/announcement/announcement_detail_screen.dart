@@ -10,16 +10,6 @@ class AnnouncementDetailScreen extends StatelessWidget {
   const AnnouncementDetailScreen({super.key, required this.item});
 
   Future<void> _downloadAttachment(String url) async {
-    final fullUrl = url.startsWith('http')
-        ? url
-        : '${ApiConfig.baseUrl}/storage/$url'; // Adjust based on storage link
-    // Note: storage link usually needs correct base URL.
-    // If backend returns full URL, use it. If relative, prepend.
-    // Our Controller returns Storage::url($path) which is usually /storage/path.
-    // So we need ApiConfig.baseUrl (without /api) + url.
-    // But let's assume ApiConfig.baseUrl is http://10.0.2.2:8000/api
-    // We need http://10.0.2.2:8000 + url.
-
     String downloadUrl = url;
     if (!url.startsWith('http')) {
       final baseUrlObj = Uri.parse(ApiConfig.baseUrl);

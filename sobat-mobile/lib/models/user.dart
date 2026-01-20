@@ -16,6 +16,9 @@ class User {
   final bool hasPin;
   final bool hasOfficeLocation;
   final DateTime? contractEnd;
+  final double? officeLatitude;
+  final double? officeLongitude;
+  final int? officeRadius;
 
   User({
     required this.id,
@@ -35,6 +38,9 @@ class User {
     this.hasPin = false,
     this.hasOfficeLocation = false,
     this.contractEnd,
+    this.officeLatitude,
+    this.officeLongitude,
+    this.officeRadius,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -45,6 +51,9 @@ class User {
     String? orgName;
     int? orgId;
     bool hasLoc = false;
+    double? lat;
+    double? lng;
+    int? rad;
 
     if (json['employee'] != null) {
       empRecordId = json['employee']['id']; // Store integer ID
@@ -55,8 +64,20 @@ class User {
       if (json['employee']['organization'] != null) {
         orgName = json['employee']['organization']['name'];
         orgId = json['employee']['organization']['id'];
-        // Check if latitude exists and is not null/empty
-        hasLoc = json['employee']['organization']['latitude'] != null;
+
+        // Parse Location
+        if (json['employee']['organization']['latitude'] != null) {
+          lat = double.tryParse(
+            json['employee']['organization']['latitude'].toString(),
+          );
+          lng = double.tryParse(
+            json['employee']['organization']['longitude'].toString(),
+          );
+          rad = int.tryParse(
+            json['employee']['organization']['radius_meters'].toString(),
+          );
+          hasLoc = lat != null && lng != null;
+        }
       } else {
         orgId = json['employee']['organization_id'];
       }
@@ -68,7 +89,7 @@ class User {
       id: json['id'] as int,
       name: json['name'] as String,
       email: json['email'] as String,
-      employeeRecordId: empRecordId, // Added
+      employeeRecordId: empRecordId,
       employeeId: empId,
       avatar: json['avatar'] as String?,
       role: (json['role'] is Map)
@@ -94,6 +115,9 @@ class User {
               json['employee']['contract_end_date'] != null)
           ? DateTime.parse(json['employee']['contract_end_date'])
           : null,
+      officeLatitude: lat,
+      officeLongitude: lng,
+      officeRadius: rad,
     );
   }
 

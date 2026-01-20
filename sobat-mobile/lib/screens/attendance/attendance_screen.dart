@@ -30,7 +30,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   final MapController _mapController = MapController();
   Position? _currentPosition;
   bool _isLoading = true;
-  String _statusMessage = 'Mencari lokasi...';
+  String? _statusMessage;
   String? _currentAddress;
   bool _isWithinRange = false;
   Map<String, dynamic>? _todayAttendance;
@@ -39,14 +39,14 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
-  // Office Location (Dummy for now - Monas)
-  // TODO: Fetch from User -> Employee -> Organization -> Lat/Lng
-  static const LatLng _officeLocation = LatLng(-6.13778, 106.62295);
-  static const double _attendanceRadius = 100; // meters
+  // Office Location
+  LatLng? _officeLocation;
+  double _attendanceRadius = 100; // Default
 
   @override
   void initState() {
     super.initState();
+    _initOfficeLocation();
     _checkPermissionsAndLocate();
     _fetchTodayAttendance();
 
@@ -59,6 +59,21 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       begin: 0.8,
       end: 1.5,
     ).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeOut));
+  }
+
+  void _initOfficeLocation() {
+    final user = context.read<AuthProvider>().user;
+    if (user != null &&
+        user.officeLatitude != null &&
+        user.officeLongitude != null) {
+      _officeLocation = LatLng(user.officeLatitude!, user.officeLongitude!);
+      if (user.officeRadius != null) {
+        _attendanceRadius = user.officeRadius!.toDouble();
+      }
+    } else {
+      // Fallback or Handle Error? For now keep dummy as worst case fallback or null
+      // _officeLocation = const LatLng(-6.13778, 106.62295);
+    }
   }
 
   @override
@@ -105,11 +120,13 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           _currentAddress = 'Lokasi tidak diketahui';
         }
 
-        setState(() {
-          _currentPosition = position;
-          _isLoading = false;
-          _checkDistance(position);
-        });
+        if (mounted) {
+          setState(() {
+            _currentPosition = position;
+            _isLoading = false;
+            _checkDistance(position);
+          });
+        }
 
         // Move map to user location
         _mapController.move(
@@ -117,38 +134,45 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           18.0,
         );
       } catch (e) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    } else {
+      if (mounted) {
         setState(() {
-          _statusMessage = 'Gagal mendapatkan lokasi: $e';
           _isLoading = false;
         });
       }
-    } else {
-      setState(() {
-        _statusMessage = 'Izin lokasi ditolak. Mohon aktifkan di pengaturan.';
-        _isLoading = false;
-      });
     }
   }
 
   void _checkDistance(Position userPos) {
+    if (_officeLocation == null) {
+      if (mounted) {
+        setState(() {
+          _statusMessage = 'Lokasi kantor tidak ditemukan.';
+          _isWithinRange = false;
+        });
+      }
+      return;
+    }
+
     double distance = Geolocator.distanceBetween(
       userPos.latitude,
       userPos.longitude,
-      _officeLocation.latitude,
-      _officeLocation.longitude,
+      _officeLocation!.latitude,
+      _officeLocation!.longitude,
     );
 
     setState(() {
       _isWithinRange = distance <= _attendanceRadius;
-      if (_currentAddress != null) {
-        _statusMessage = 'Jarak ke kantor: ${distance.toStringAsFixed(0)}m';
-      } else {
-        _statusMessage = _isWithinRange
-            ? 'Anda berada di dalam area kantor (${distance.toStringAsFixed(0)}m)'
-            : 'Anda berada di luar area kantor (${distance.toStringAsFixed(0)}m)';
-      }
     });
   }
+
+  // ... (Keep existing methods until build)
 
   Future<void> _handleCheckIn() async {
     if (!_isWithinRange) {
@@ -167,6 +191,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       _showLoading();
 
       try {
+        if (!mounted) return;
         final user = context.read<AuthProvider>().user;
         if (user?.employeeRecordId == null) {
           throw 'Data Karyawan tidak valid. Silakan login ulang.';
@@ -259,12 +284,22 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
   @override
   Widget build(BuildContext context) {
+    // ... (Keep existing var declarations)
     // Logic for Buttons
     bool hasCheckedIn = _todayAttendance != null;
     bool hasCheckedOut = hasCheckedIn && _todayAttendance!['check_out'] != null;
 
     bool canCheckIn = !hasCheckedIn;
     bool canCheckOut = hasCheckedIn && !hasCheckedOut;
+
+    if (_officeLocation == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Presensi')),
+        body: const Center(
+          child: Text('Lokasi kantor belum diatur untuk Anda.'),
+        ),
+      );
+    }
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -274,7 +309,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              initialCenter: _officeLocation,
+              initialCenter: _officeLocation!,
               initialZoom: 18.0,
             ),
             children: [
@@ -284,42 +319,47 @@ class _AttendanceScreenState extends State<AttendanceScreen>
               ),
               CircleLayer(
                 circles: [
-                  CircleMarker(
-                    point: _officeLocation,
-                    color: AppTheme.colorCyan.withValues(alpha: 0.15),
-                    borderColor: AppTheme.colorCyan,
-                    borderStrokeWidth: 1,
-                    useRadiusInMeter: true,
-                    radius: _attendanceRadius,
-                  ),
+                  if (_officeLocation != null)
+                    CircleMarker(
+                      point: _officeLocation!,
+                      color: AppTheme.colorCyan.withValues(alpha: 0.15),
+                      borderColor: AppTheme.colorCyan,
+                      borderStrokeWidth: 1,
+                      useRadiusInMeter: true,
+                      radius: _attendanceRadius,
+                    ),
                 ],
               ),
               MarkerLayer(
                 markers: [
-                  Marker(
-                    point: _officeLocation,
-                    width: 60,
-                    height: 60,
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(color: Colors.black26, blurRadius: 10),
-                            ],
+                  if (_officeLocation != null)
+                    Marker(
+                      point: _officeLocation!,
+                      width: 60,
+                      height: 60,
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 10,
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.business,
+                              color: AppTheme.colorEggplant,
+                              size: 24,
+                            ),
                           ),
-                          child: Icon(
-                            Icons.business,
-                            color: AppTheme.colorEggplant,
-                            size: 24,
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
                   if (_currentPosition != null)
                     Marker(
                       point: LatLng(
