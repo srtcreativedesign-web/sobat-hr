@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../config/api_config.dart';
 import '../../config/theme.dart';
@@ -28,6 +30,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _placeOfBirthCtrl = TextEditingController();
   DateTime? _dateOfBirth;
   DateTime? _joinDate;
+  File? _photoFile;
+  String? _photoUrl;
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? picked = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+        maxWidth: 800,
+      );
+      if (picked != null) {
+        setState(() {
+          _photoFile = File(picked.path);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+    }
+  }
+
   final TextEditingController _ktpAddressCtrl = TextEditingController();
   final TextEditingController _currentAddressCtrl = TextEditingController();
   String? _gender;
@@ -114,6 +137,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   bool _saving = false;
   int? _employeeRecordId;
+  int _joinDateEditCount = 0;
 
   @override
   void initState() {
@@ -136,7 +160,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           current['employee_record'];
       if (emp != null && emp is Map<String, dynamic>) {
         _employeeRecordId = emp['id'] as int?;
+        _joinDateEditCount = emp['join_date_edit_count'] ?? 0;
         _employeeIdCtrl.text = emp['employee_code'] ?? emp['employee_id'] ?? '';
+
+        if (emp['photo_path'] != null) {
+          final path = emp['photo_path'] as String;
+          if (!path.startsWith('http')) {
+            final base = ApiConfig.baseUrl.replaceAll('/api', '');
+            _photoUrl = '$base/storage/$path';
+          } else {
+            _photoUrl = path;
+          }
+        }
+
         _placeOfBirthCtrl.text = emp['place_of_birth'] ?? '';
         if (emp['date_of_birth'] != null) {
           try {
@@ -286,6 +322,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickJoinDate() async {
+    // Logic:
+    // - If date is null (not set), allow set (count remains 0)
+    // - If date is NOT null:
+    //    - If count < 1, allow edit
+    //    - If count >= 1, block
+    if (_joinDate != null && _joinDateEditCount >= 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tanggal bergabung hanya dapat diubah satu kali.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
@@ -332,42 +383,104 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
 
-    final payload = {
-      'full_name': _nameCtrl.text.trim(),
-      'email': _emailCtrl.text.trim(),
-      'phone': _phoneCtrl.text.trim(),
-      'employee_code': _employeeIdCtrl.text.trim(),
-      'place_of_birth': _placeOfBirthCtrl.text.trim(),
-      'date_of_birth': _dateOfBirth?.toIso8601String(),
-      'join_date': _joinDate?.toIso8601String(),
-      'ktp_address': _ktpAddressCtrl.text.trim(),
-      'current_address': _currentAddressCtrl.text.trim(),
-      'gender': _gender,
-      'religion': _religion,
-      'marital_status': _maritalStatus,
-      'ptkp_status': _ptkpStatus,
-      'nik': _nikCtrl.text.trim(),
-      'npwp': _npwpCtrl.text.trim(),
-      'bank_account_number': _bankAccCtrl.text.trim(),
-      'bank_account_name': _bankAccNameCtrl.text.trim(),
-      'father_name': _fatherNameCtrl.text.trim(),
-      'mother_name': _motherNameCtrl.text.trim(),
-      'spouse_name': _spouseNameCtrl.text.trim(),
-      'family_contact_number': _familyContactCtrl.text.trim(),
+    // Prepare Payload
+    Object payload;
+    if (_photoFile != null) {
+      // Use FormData for file upload
+      final map = <String, dynamic>{
+        'full_name': _nameCtrl.text.trim(),
+        'email': _emailCtrl.text.trim(),
+        'phone': _phoneCtrl.text.trim(),
+        'employee_code': _employeeIdCtrl.text.trim(),
+        'place_of_birth': _placeOfBirthCtrl.text.trim(),
+        'date_of_birth': _dateOfBirth?.toIso8601String(),
+        'join_date': _joinDate?.toIso8601String(),
+        'ktp_address': _ktpAddressCtrl.text.trim(),
+        'current_address': _currentAddressCtrl.text.trim(),
+        'gender': _gender,
+        'religion': _religion,
+        'marital_status': _maritalStatus,
+        'ptkp_status': _ptkpStatus,
+        'nik': _nikCtrl.text.trim(),
+        'npwp': _npwpCtrl.text.trim(),
+        'bank_account_number': _bankAccCtrl.text.trim(),
+        'bank_account_name': _bankAccNameCtrl.text.trim(),
+        'father_name': _fatherNameCtrl.text.trim(),
+        'mother_name': _motherNameCtrl.text.trim(),
+        'spouse_name': _spouseNameCtrl.text.trim(),
+        'family_contact_number': _familyContactCtrl.text.trim(),
+        'department': _departmentCtrl.text.trim(),
+        'position': _positionCtrl.text.trim(),
+        'supervisor_name': _supervisorNameCtrl.text.trim(),
+        'supervisor_position': _supervisorPositionCtrl.text.trim(),
+      };
 
-      'education': {
-        'sd': _eduSdCtrl.text.trim(),
-        'smp': _eduSmpCtrl.text.trim(),
-        'smk': _eduSmkCtrl.text.trim(),
-        's1': _eduS1Ctrl.text.trim(),
-        's2': _eduS2Ctrl.text.trim(),
-        's3': _eduS3Ctrl.text.trim(),
-      },
-      'department': _departmentCtrl.text.trim(),
-      'position': _positionCtrl.text.trim(),
-      'supervisor_name': _supervisorNameCtrl.text.trim(),
-      'supervisor_position': _supervisorPositionCtrl.text.trim(),
-    };
+      // Only add _method: PUT if we are updating (not creating)
+      if (_employeeRecordId != null) {
+        map['_method'] = 'PUT';
+      }
+
+      // Add education manually as array fields or json string depend on backend
+      // Since FormData doesn't support nested maps well, send as JSON string if backed supports it
+      // or flat keys. Let's try sending flat keys for simplicity if meaningful,
+      // but education is nested.
+      // BEST PRACTICE: Laravel validation for 'education' => 'nullable' usually accepts JSON string or array.
+      // Let's send it as individual fields 'education[sd]', 'education[smp]' etc.
+      map['education[sd]'] = _eduSdCtrl.text.trim();
+      map['education[smp]'] = _eduSmpCtrl.text.trim();
+      map['education[smk]'] = _eduSmkCtrl.text.trim();
+      map['education[s1]'] = _eduS1Ctrl.text.trim();
+      map['education[s2]'] = _eduS2Ctrl.text.trim();
+      map['education[s3]'] = _eduS3Ctrl.text.trim();
+
+      payload = FormData.fromMap(map);
+      (payload as FormData).files.add(
+        MapEntry(
+          'photo_path',
+          await MultipartFile.fromFile(
+            _photoFile!.path,
+            filename: 'profile.jpg',
+          ),
+        ),
+      );
+    } else {
+      // Standard JSON Payload
+      payload = {
+        'full_name': _nameCtrl.text.trim(),
+        'email': _emailCtrl.text.trim(),
+        'phone': _phoneCtrl.text.trim(),
+        'employee_code': _employeeIdCtrl.text.trim(),
+        'place_of_birth': _placeOfBirthCtrl.text.trim(),
+        'date_of_birth': _dateOfBirth?.toIso8601String(),
+        'join_date': _joinDate?.toIso8601String(),
+        'ktp_address': _ktpAddressCtrl.text.trim(),
+        'current_address': _currentAddressCtrl.text.trim(),
+        'gender': _gender,
+        'religion': _religion,
+        'marital_status': _maritalStatus,
+        'ptkp_status': _ptkpStatus,
+        'nik': _nikCtrl.text.trim(),
+        'npwp': _npwpCtrl.text.trim(),
+        'bank_account_number': _bankAccCtrl.text.trim(),
+        'bank_account_name': _bankAccNameCtrl.text.trim(),
+        'father_name': _fatherNameCtrl.text.trim(),
+        'mother_name': _motherNameCtrl.text.trim(),
+        'spouse_name': _spouseNameCtrl.text.trim(),
+        'family_contact_number': _familyContactCtrl.text.trim(),
+        'education': {
+          'sd': _eduSdCtrl.text.trim(),
+          'smp': _eduSmpCtrl.text.trim(),
+          'smk': _eduSmkCtrl.text.trim(),
+          's1': _eduS1Ctrl.text.trim(),
+          's2': _eduS2Ctrl.text.trim(),
+          's3': _eduS3Ctrl.text.trim(),
+        },
+        'department': _departmentCtrl.text.trim(),
+        'position': _positionCtrl.text.trim(),
+        'supervisor_name': _supervisorNameCtrl.text.trim(),
+        'supervisor_position': _supervisorPositionCtrl.text.trim(),
+      };
+    }
 
     // Debug: print payload and target id to console
     print(
@@ -437,21 +550,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Profil'),
-        actions: [
-          TextButton(
-            onPressed: _saving ? null : _save,
-            child: _saving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Simpan', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Edit Profil'), centerTitle: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -459,6 +558,56 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Avatar Section
+              Center(
+                child: Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppTheme.colorCyan.withValues(alpha: 0.5),
+                          width: 4,
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.grey.shade200,
+                        backgroundImage: _photoFile != null
+                            ? FileImage(_photoFile!)
+                            : (_photoUrl != null
+                                  ? NetworkImage(_photoUrl!) as ImageProvider
+                                  : null),
+                        child: (_photoFile == null && _photoUrl == null)
+                            ? Icon(Icons.person, size: 50, color: Colors.grey)
+                            : null,
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: InkWell(
+                        onTap: _pickImage,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.colorCyan,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
               // Header inputs
               _sectionCard(
                 Column(
@@ -844,9 +993,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     InkWell(
                       onTap: _pickJoinDate,
                       child: InputDecorator(
-                        decoration: const InputDecoration(
-                          prefixIcon: Icon(Icons.date_range),
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.date_range),
                           labelText: 'Tanggal Bergabung',
+                          helperText: _joinDate == null
+                              ? 'Setelah disimpan, hanya dapat diubah 1 kali.'
+                              : (_joinDateEditCount >= 1
+                                    ? 'Status: Terkunci (Maksimal perubahan tercapai)'
+                                    : 'Dapat diubah 1 kali lagi.'),
+                          helperStyle: TextStyle(
+                            color:
+                                (_joinDate != null && _joinDateEditCount >= 1)
+                                ? Colors.red
+                                : Colors.grey,
+                          ),
                         ),
                         child: Text(
                           _joinDate == null

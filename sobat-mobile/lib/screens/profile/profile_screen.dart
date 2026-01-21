@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../config/api_config.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/custom_navbar.dart';
@@ -118,21 +119,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         context,
                                       ).pushNamed('/profile/change-password');
                                     },
-                                  ),
-                                  _buildDivider(),
-                                  _buildMenuItem(
-                                    icon: Icons.notifications_outlined,
-                                    title: 'Notifikasi',
-                                    subtitle: 'Atur preferensi notifikasi',
-                                    trailing: Switch(
-                                      value: true,
-                                      onChanged: (value) =>
-                                          _showComingSoon(context),
-                                      activeColor: AppTheme.colorCyan,
-                                      activeTrackColor: AppTheme.colorCyan
-                                          .withValues(alpha: 0.2),
-                                    ),
-                                    onTap: null,
                                   ),
                                 ],
                               ),
@@ -353,16 +339,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: CircleAvatar(
                   radius: 40,
                   backgroundColor: Colors.white.withValues(alpha: 0.1),
-                  child: Text(
-                    (user?.name?.isNotEmpty == true)
-                        ? user!.name.substring(0, 1).toUpperCase()
-                        : 'U',
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                  backgroundImage: (user?.avatar != null)
+                      ? NetworkImage(
+                          user!.avatar!.startsWith('http')
+                              ? user.avatar!
+                              : '${(ApiConfig.baseUrl.replaceAll('/api', ''))}/storage/${user.avatar}',
+                        )
+                      : null,
+                  child: (user?.avatar == null)
+                      ? Text(
+                          (user?.name?.isNotEmpty == true)
+                              ? user!.name.substring(0, 1).toUpperCase()
+                              : 'U',
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        )
+                      : null,
                 ),
               ),
               Positioned(

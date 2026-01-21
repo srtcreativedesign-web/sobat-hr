@@ -131,12 +131,12 @@ class AuthService {
     }
   }
 
-  Future<void> updateEmployee(int id, Map<String, dynamic> payload) async {
+  Future<void> updateEmployee(int id, Object payload) async {
     try {
-      final response = await _dio.put(
-        '${ApiConfig.employees}/$id',
-        data: payload,
-      );
+      final isFormData = payload is FormData;
+      final response = await (isFormData
+          ? _dio.post('${ApiConfig.employees}/$id', data: payload)
+          : _dio.put('${ApiConfig.employees}/$id', data: payload));
       if (response.statusCode == 200) {
         // Optionally refresh stored user/profile
         await getProfile();
@@ -171,7 +171,7 @@ class AuthService {
     }
   }
 
-  Future<void> createEmployee(Map<String, dynamic> payload) async {
+  Future<void> createEmployee(Object payload) async {
     try {
       final response = await _dio.post(ApiConfig.employees, data: payload);
       if (response.statusCode == 201 || response.statusCode == 200) {

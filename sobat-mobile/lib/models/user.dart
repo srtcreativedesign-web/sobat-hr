@@ -43,7 +43,10 @@ class User {
     this.officeLatitude,
     this.officeLongitude,
     this.officeRadius,
+    this.joinDateEditCount = 0,
   });
+
+  final int joinDateEditCount;
 
   factory User.fromJson(Map<String, dynamic> json) {
     int? empRecordId;
@@ -57,6 +60,7 @@ class User {
     double? lat;
     double? lng;
     int? rad;
+    int editCount = 0;
 
     if (json['employee'] != null) {
       empRecordId = json['employee']['id']; // Store integer ID
@@ -64,6 +68,7 @@ class User {
       jobLvl = json['employee']['job_level'];
       trk = json['employee']['track'];
       pos = json['employee']['position'];
+      editCount = json['employee']['join_date_edit_count'] ?? 0;
 
       print('=== USER.DART fromJson ===');
       print('Raw track value: $trk');
@@ -100,7 +105,10 @@ class User {
       email: json['email'] as String,
       employeeRecordId: empRecordId,
       employeeId: empId,
-      avatar: json['avatar'] as String?,
+      avatar:
+          (json['employee'] != null && json['employee']['photo_path'] != null)
+          ? json['employee']['photo_path'] as String
+          : json['avatar'] as String?,
       role: (json['role'] is Map)
           ? json['role']['name'] as String?
           : json['role'] as String?,
@@ -128,6 +136,7 @@ class User {
       officeLatitude: lat,
       officeLongitude: lng,
       officeRadius: rad,
+      joinDateEditCount: editCount,
     );
   }
 
@@ -148,6 +157,7 @@ class User {
       'position': position,
       'organization': organization,
       'organization_id': organizationId,
+      'join_date_edit_count': joinDateEditCount,
     };
   }
 

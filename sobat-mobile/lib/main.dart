@@ -5,7 +5,7 @@ import 'config/theme.dart';
 import 'providers/auth_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/home_screen.dart';
-import 'screens/dashboard/dashboard_screen.dart';
+
 import 'screens/profile/profile_screen.dart';
 import 'screens/profile/edit_profile_screen.dart';
 import 'screens/profile/change_password_screen.dart'; // Added
@@ -39,7 +39,7 @@ class MyApp extends StatelessWidget {
           '/': (context) => const AuthWrapper(),
           '/login': (context) => const LoginScreen(),
           '/home': (context) => const HomeScreen(),
-          '/dashboard': (context) => const DashboardScreen(),
+
           '/profile': (context) => const ProfileScreen(),
           '/profile/edit': (context) => const EditProfileScreen(),
           '/profile/change-password': (context) => const ChangePasswordScreen(),
