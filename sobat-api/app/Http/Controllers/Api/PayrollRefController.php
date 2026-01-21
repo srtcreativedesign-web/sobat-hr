@@ -400,6 +400,18 @@ class PayrollRefController extends Controller
         $formatted['days_long_shift'] = $payroll->days_long_shift;
         $formatted['years_of_service'] = $payroll->years_of_service;
         $formatted['notes'] = $payroll->notes;
+
+        // Add attendance data for Mobile App (PayrollScreen.dart expects this map)
+        $formatted['attendance'] = [
+            'Total Hari' => $payroll->days_total,
+            'Long Shift' => $payroll->days_long_shift, // Specific to Reflexiology
+            'Off' => $payroll->days_off,
+            'Sakit' => $payroll->days_sick,
+            'Ijin' => $payroll->days_permission,
+            'Alfa' => $payroll->days_alpha,
+            'Cuti' => $payroll->days_leave,
+            'Hadir' => $payroll->days_present,
+        ];
         
         return $formatted;
     }

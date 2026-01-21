@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Slip Gaji Minimarket</title>
+    <title>Slip Gaji Reflexiology</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -105,11 +105,11 @@
             <td class="info-label">Nama</td>
             <td>: {{ strtoupper($payroll->employee->full_name) }}</td>
             <td class="info-label" style="text-align: right;">No. Slip</td>
-            <td style="width: 100px; text-align: right;">: SAL-MM-{{ $payroll->id }}</td>
+            <td style="width: 100px; text-align: right;">: SAL-REF-{{ $payroll->id }}</td>
         </tr>
         <tr>
             <td class="info-label">Divisi</td>
-            <td>: MINIMARKET</td>
+            <td>: REFLEXIOLOGY</td>
             <td class="info-label" style="text-align: right;">Tanggal</td>
             <td style="text-align: right;">: {{ date('d/m/Y') }}</td>
         </tr>
