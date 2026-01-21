@@ -18,7 +18,7 @@ class PayrollWrappingController extends Controller
 
         // Check scope
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        if (!in_array($roleName, ['admin', 'super_admin', 'hr'])) {
+        if (!in_array($roleName, ['admin', 'super_admin', 'hr', 'admin_cabang'])) {
             $employeeId = $user->employee ? $user->employee->id : null;
             if ($employeeId) {
                 $query->where('employee_id', $employeeId);
@@ -155,48 +155,31 @@ class PayrollWrappingController extends Controller
                     'transport_rate' => $getCellValue('P', $row),
                     'transport_amount' => $getCellValue('Q', $row),
                     
-                    'attendance_allowance' => $getCellValue('R', $row), // Amount?
-                    // S skipped/Unsure? Assuming T is Health
-                    'health_allowance' => $getCellValue('T', $row),
-                    'bonus' => $getCellValue('U', $row),
-                    // V is Total Gaji Subtotal
+                    'attendance_allowance' => $getCellValue('R', $row), 
+                    'health_allowance' => $getCellValue('S', $row),
+                    'bonus' => $getCellValue('T', $row),
                     
-                    'overtime_amount' => $getCellValue('W', $row), // "Lembur  Rp"
-                    'overtime_hours' => 0, // Not explicitly in simple columns? Or maybe hidden
+                    'overtime_amount' => $getCellValue('X', $row), 
+                    'overtime_hours' => $getCellValue('W', $row),
                     
-                    'target_koli' => $getCellValue('AA', $row),
-                    'fee_aksesoris' => $getCellValue('AB', $row),
+                    'target_koli' => $getCellValue('Y', $row),
+                    'fee_aksesoris' => $getCellValue('Z', $row),
                     
-                    'total_salary_gross' => $getCellValue('AC', $row),
-                    'adj_bpjs' => $getCellValue('AD', $row),
+                    'total_salary_gross' => $getCellValue('AA', $row),
+                    'adj_bpjs' => $getCellValue('AB', $row),
                     
                     // Deductions
-                    'deduction_absent' => $getCellValue('AE', $row), // Potongan Header starts at AE?
-                     // Header Row 3 for Potongan: Absen 1X | Terlambat | Tidak Hadir | Pinjaman | Adm Bank | BPJS TK
-                     // AE is likely Absen 1X?
-                     // Wait, Row 2: ... | Adj (AD) | Potongan (AE) ... 
-                     // No, Row 2 "Potongan (Rp)" is a merged header probably?
-                     // Let's rely on Row 3 headers if AE is start of deductions.
-                     // AE: Absen 1X ?
-                     // AF: Terlambat ?
-                     // AG: Tidak Hadir ?
-                     // AH: Pinjaman ?
-                     // AI: Adm Bank ?
-                     // AJ: BPJS TK ? 
-                     // AK: Total Potongan ?
-                     // AL: Grand Total ?
-                     
-                    'deduction_absent' => $getCellValue('AE', $row),
-                    'deduction_late' => $getCellValue('AF', $row),
-                    'deduction_alpha' => $getCellValue('AG', $row),
-                    'deduction_loan' => $getCellValue('AH', $row),
-                    'deduction_admin_fee' => $getCellValue('AI', $row),
-                    'deduction_bpjs_tk' => $getCellValue('AJ', $row),
+                    'deduction_absent' => $getCellValue('AC', $row),
+                    'deduction_late' => $getCellValue('AD', $row),
+                    'deduction_alpha' => $getCellValue('AE', $row),
+                    'deduction_loan' => $getCellValue('AF', $row),
+                    'deduction_admin_fee' => $getCellValue('AG', $row),
+                    'deduction_bpjs_tk' => $getCellValue('AH', $row),
                     
-                    'deduction_total' => $getCellValue('AK', $row),
-                    'net_salary' => $getCellValue('AL', $row),
+                    'deduction_total' => $getCellValue('AI', $row),
+                    'net_salary' => $getCellValue('AM', $row) > 0 ? $getCellValue('AM', $row) : $getCellValue('AL', $row), // Try AM (empty?) fallback to AL
                     
-                    'ewa_amount' => $getCellValue('AM', $row), // Pinjaman EWA
+                    'ewa_amount' => $getCellValue('AK', $row),
                  ];
                  
                  // If period is date from excel (46023)
@@ -277,6 +260,10 @@ class PayrollWrappingController extends Controller
     {
         $payroll = PayrollWrapping::with('employee')->findOrFail($id);
         $data = $this->formatPayroll($payroll); 
+        
+        // Remove 'employee' to prevent overwriting the relationship object with an array
+        unset($data['employee']);
+        
         // Inject into model for blade
         foreach ($data as $key => $val) {
             $payroll->$key = $val;
