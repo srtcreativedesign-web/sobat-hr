@@ -88,6 +88,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollMmController::class, 'generateSlip']);
     });
 
+    // Reflexiology Payroll routes
+    Route::prefix('payrolls/ref')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\PayrollRefController::class, 'index']);
+        Route::post('/import', [App\Http\Controllers\Api\PayrollRefController::class, 'import']);
+        Route::post('/import/save', [App\Http\Controllers\Api\PayrollRefController::class, 'saveImport']);
+        Route::get('/{id}', [App\Http\Controllers\Api\PayrollRefController::class, 'show']);
+        Route::patch('/{id}/status', [App\Http\Controllers\Api\PayrollRefController::class, 'updateStatus']);
+        Route::delete('/{id}', [App\Http\Controllers\Api\PayrollRefController::class, 'destroy']);
+        Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollRefController::class, 'generateSlip']);
+    });
+
     // Payroll routes (generic)
     Route::apiResource('payrolls', App\Http\Controllers\Api\PayrollController::class);
     Route::get('/payrolls/template/download', [App\Http\Controllers\Api\PayrollController::class, 'downloadTemplate']);

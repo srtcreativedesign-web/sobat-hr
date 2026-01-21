@@ -103,6 +103,29 @@ class PayrollService {
       debugPrint('Failed to fetch MM payrolls: $e');
     }
 
+    // Try to fetch from Reflexiology endpoint
+    try {
+      final response = await _dio.get(
+        '/payrolls/ref',
+        queryParameters: {if (year != null) 'year': year},
+      );
+
+      if (response.statusCode == 200 && response.data['data'] != null) {
+        final refData = response.data['data'];
+        if (refData is List) {
+          // Mark Ref payrolls with division type
+          for (var item in refData) {
+            if (item is Map<String, dynamic>) {
+              item['division'] = 'reflexiology';
+            }
+          }
+          allPayrolls.addAll(refData);
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to fetch Ref payrolls: $e');
+    }
+
     // Sort by period descending (latest first)
     try {
       allPayrolls.sort((a, b) {
@@ -131,6 +154,8 @@ class PayrollService {
         endpoint = '/payrolls/mm/$payrollId/slip';
       } else if (division == 'fnb') {
         endpoint = '/payrolls/fnb/$payrollId/slip';
+      } else if (division == 'reflexiology') {
+        endpoint = '/payrolls/ref/$payrollId/slip';
       } else {
         endpoint = '/payrolls/$payrollId/slip';
       }
