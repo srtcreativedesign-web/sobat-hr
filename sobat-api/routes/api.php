@@ -99,6 +99,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollRefController::class, 'generateSlip']);
     });
 
+    // Wrapping Payroll routes
+    Route::prefix('payrolls/wrapping')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\PayrollWrappingController::class, 'index']);
+        Route::post('/import', [App\Http\Controllers\Api\PayrollWrappingController::class, 'import']);
+        Route::post('/import/save', [App\Http\Controllers\Api\PayrollWrappingController::class, 'saveImport']);
+        Route::get('/{id}', [App\Http\Controllers\Api\PayrollWrappingController::class, 'show']);
+        Route::patch('/{id}/status', [App\Http\Controllers\Api\PayrollWrappingController::class, 'updateStatus']);
+        Route::delete('/{id}', [App\Http\Controllers\Api\PayrollWrappingController::class, 'destroy']);
+        Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollWrappingController::class, 'generateSlip']);
+    });
+
     // Payroll routes (generic)
     Route::apiResource('payrolls', App\Http\Controllers\Api\PayrollController::class);
     Route::get('/payrolls/template/download', [App\Http\Controllers\Api\PayrollController::class, 'downloadTemplate']);

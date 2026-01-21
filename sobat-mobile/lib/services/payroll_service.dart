@@ -39,23 +39,8 @@ class PayrollService {
   Future<List<dynamic>> getPayrolls({int? year}) async {
     List<dynamic> allPayrolls = [];
 
-    // Try to fetch from generic endpoint
-    try {
-      final response = await _dio.get(
-        '/payrolls',
-        queryParameters: {if (year != null) 'year': year},
-      );
-
-      if (response.statusCode == 200 && response.data['data'] != null) {
-        final genericData = response.data['data'];
-        if (genericData is List) {
-          allPayrolls.addAll(genericData);
-        }
-      }
-    } catch (e) {
-      debugPrint('Failed to fetch generic payrolls: $e');
-      // Continue to try FnB endpoint
-    }
+    // Generic payrolls removed - fetching only division specific data
+    // List<dynamic> allPayrolls = [];
 
     // Try to fetch from FnB endpoint
     try {
@@ -126,6 +111,29 @@ class PayrollService {
       debugPrint('Failed to fetch Ref payrolls: $e');
     }
 
+    // Try to fetch from Wrapping endpoint
+    try {
+      final response = await _dio.get(
+        '/payrolls/wrapping',
+        queryParameters: {if (year != null) 'year': year},
+      );
+
+      if (response.statusCode == 200 && response.data['data'] != null) {
+        final wraData = response.data['data'];
+        if (wraData is List) {
+          // Mark Wra payrolls with division type
+          for (var item in wraData) {
+            if (item is Map<String, dynamic>) {
+              item['division'] = 'wrapping';
+            }
+          }
+          allPayrolls.addAll(wraData);
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to fetch Wrapping payrolls: $e');
+    }
+
     // Sort by period descending (latest first)
     try {
       allPayrolls.sort((a, b) {
@@ -156,8 +164,11 @@ class PayrollService {
         endpoint = '/payrolls/fnb/$payrollId/slip';
       } else if (division == 'reflexiology') {
         endpoint = '/payrolls/ref/$payrollId/slip';
+      } else if (division == 'wrapping') {
+        endpoint = '/payrolls/wrapping/$payrollId/slip';
       } else {
-        endpoint = '/payrolls/$payrollId/slip';
+        // Fallback or Error? Since generic is removed, we should probably throw error or default to one
+        throw Exception('Unknown Division for download');
       }
 
       debugPrint('Downloading slip from: $endpoint');
