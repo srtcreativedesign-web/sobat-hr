@@ -188,15 +188,34 @@ class DashboardScreen extends StatelessWidget {
                                             6,
                                           ),
                                         ),
-                                        child: Text(
-                                          user?.role?.toUpperCase() ?? 'USER',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                color: AppTheme.colorCyan,
-                                                fontWeight: FontWeight.w700,
-                                              ),
+                                        child: Builder(
+                                          builder: (ctx) {
+                                            final badgeText =
+                                                (user?.position ??
+                                                        user?.role ??
+                                                        'USER')
+                                                    .toUpperCase();
+                                            print('=== DASHBOARD BADGE ===');
+                                            print(
+                                              'user.position: ${user?.position}',
+                                            );
+                                            print('user.role: ${user?.role}');
+                                            print('user.track: ${user?.track}');
+                                            print(
+                                              'Displaying badge: $badgeText',
+                                            );
+                                            print('=====================');
+                                            return Text(
+                                              badgeText,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: AppTheme.colorCyan,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                            );
+                                          },
                                         ),
                                       ),
                                     ],
@@ -229,15 +248,20 @@ class DashboardScreen extends StatelessWidget {
                           icon: Icons.people_outline,
                           title: 'Karyawan',
                           color: AppTheme.info,
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.pushNamed(context, '/employees');
+                          },
                         ),
-                        _buildMenuCard(
-                          context,
-                          icon: Icons.access_time,
-                          title: 'Absensi',
-                          color: AppTheme.success,
-                          onTap: () {},
-                        ),
+                        if (user?.track != 'operational')
+                          _buildMenuCard(
+                            context,
+                            icon: Icons.access_time,
+                            title: 'Absensi',
+                            color: AppTheme.success,
+                            onTap: () {
+                              Navigator.pushNamed(context, '/attendance');
+                            },
+                          ),
                         _buildMenuCard(
                           context,
                           icon: Icons.beach_access,

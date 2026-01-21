@@ -11,6 +11,7 @@ class User {
   final DateTime? updatedAt;
   final String? jobLevel;
   final String? track;
+  final String? position;
   final String? organization;
   final int? organizationId;
   final bool hasPin;
@@ -33,6 +34,7 @@ class User {
     this.updatedAt,
     this.jobLevel,
     this.track,
+    this.position,
     this.organization,
     this.organizationId,
     this.hasPin = false,
@@ -48,6 +50,7 @@ class User {
     String? empId;
     String? jobLvl;
     String? trk;
+    String? pos;
     String? orgName;
     int? orgId;
     bool hasLoc = false;
@@ -60,6 +63,12 @@ class User {
       empId = json['employee']['employee_code'];
       jobLvl = json['employee']['job_level'];
       trk = json['employee']['track'];
+      pos = json['employee']['position'];
+
+      print('=== USER.DART fromJson ===');
+      print('Raw track value: $trk');
+      print('Raw position value: $pos');
+      print('========================');
 
       if (json['employee']['organization'] != null) {
         orgName = json['employee']['organization']['name'];
@@ -106,6 +115,7 @@ class User {
           : null,
       jobLevel: jobLvl,
       track: trk,
+      position: pos,
       organization: orgName,
       organizationId: orgId,
       hasPin: json['has_pin'] as bool? ?? false,
@@ -135,6 +145,7 @@ class User {
       'has_pin': hasPin,
       'job_level': jobLevel,
       'track': track,
+      'position': position,
       'organization': organization,
       'organization_id': organizationId,
     };

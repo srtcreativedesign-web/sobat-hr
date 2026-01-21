@@ -407,7 +407,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 24),
 
                   // Attendance Card
-                  _buildAttendanceCard(user),
+                  // Attendance Card (hidden for operational staff)
+                  if (user?.track != 'operational') _buildAttendanceCard(user),
                   const SizedBox(height: 24),
 
                   // Horizontal Cards (Carousel)
@@ -516,9 +517,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           Text(
-                            (user?.jobLevel?.isNotEmpty == true
-                                    ? user!.jobLevel!
-                                    : (user?.role?.toUpperCase() ?? 'STAFF'))
+                            (user?.position?.isNotEmpty == true
+                                    ? user!.position!
+                                    : (user?.jobLevel?.isNotEmpty == true
+                                          ? user!.jobLevel!
+                                          : (user?.role?.toUpperCase() ??
+                                                'STAFF')))
                                 .toUpperCase(),
                             style: TextStyle(
                               fontSize: 10,

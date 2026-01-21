@@ -27,6 +27,7 @@ class EmployeeResource extends JsonResource
             'department' => $this->department,
             'base_salary' => $this->base_salary,
             'status' => $this->status,
+            'track' => $this->track, // 'office' or 'operational'
             'contract_type' => $this->contract_type,
             'contract_end_date' => $this->contract_end_date?->format('Y-m-d'),
             'organization' => new OrganizationResource($this->whenLoaded('organization')),

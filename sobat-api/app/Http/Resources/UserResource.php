@@ -20,6 +20,7 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'role' => new RoleResource($this->whenLoaded('role')),
             'employee' => new EmployeeResource($this->whenLoaded('employee')),
+            'has_pin' => $this->has_pin,
             'created_at' => $this->created_at?->toISOString(),
         ];
     }

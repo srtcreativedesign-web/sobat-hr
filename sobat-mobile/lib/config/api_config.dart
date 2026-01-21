@@ -9,10 +9,11 @@ class ApiConfig {
     if (Platform.isAndroid) {
       // 10.0.2.2 is for Android Emulator to access localhost
       // Use 192.168.x.x for Physical Android Device
+      // Detected Local IP: 192.168.1.3
       return 'http://192.168.1.3:8000/api';
     } else if (Platform.isIOS) {
       // iOS Simulator: use localhost
-      // For Physical iOS Device, use: 'https://cold-colts-speak.loca.lt/api'
+      // For Physical iOS Device, change to your machine's IP
       return 'http://127.0.0.1:8000/api';
     }
     return 'http://127.0.0.1:8000/api';

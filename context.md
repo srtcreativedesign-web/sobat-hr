@@ -115,6 +115,7 @@ Aplikasi tidak boleh terlihat kaku seperti dashboard admin konvensional. Harus t
 
 
 
+/Applications/XAMPP/xamppfiles/bin/php artisan serve --host 0.0.0.0 --port 8000
 
 /Applications/XAMPP/xamppfiles/bin/php artisan serve
 

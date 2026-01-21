@@ -53,6 +53,16 @@ class AuthService {
         final token = data['access_token'] as String;
         final userData = data['user'] as Map<String, dynamic>;
 
+        // DEBUG: Print full user data
+        print('=== LOGIN API RESPONSE ===');
+        print('Full userData: $userData');
+        if (userData['employee'] != null) {
+          print('Employee data: ${userData['employee']}');
+          print('Track: ${userData['employee']['track']}');
+          print('Position: ${userData['employee']['position']}');
+        }
+        print('========================');
+
         // Save token dan user data
         await StorageService.saveToken(token);
         await StorageService.saveUser(userData);

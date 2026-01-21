@@ -34,6 +34,9 @@ class AuthController extends Controller
             // Delete old tokens
             $user->tokens()->delete();
 
+            // Load relationships for UserResource
+            $user->load(['role', 'employee.organization']);
+
             // Create new token
             $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -43,14 +46,7 @@ class AuthController extends Controller
                 'data' => [
                     'access_token' => $token,
                     'token_type' => 'Bearer',
-                    'user' => [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email,
-                        'role' => $user->role, // Return full role object
-                        'employee' => $user->employee, // Return employee object
-                        'has_pin' => $user->has_pin,
-                    ]
+                    'user' => new \App\Http\Resources\UserResource($user),
                 ]
             ]);
         } catch (\Exception $e) {
@@ -85,14 +81,8 @@ class AuthController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role, // Return full role object
-                'employee' => $user->employee, // Return employee object (usually null for new reg)
-                'has_pin' => $user->has_pin,
-            ]
+            'token_type' => 'Bearer',
+            'user' => new \App\Http\Resources\UserResource($user),
         ], 201);
     }
 
@@ -119,14 +109,9 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'User profile fetched successfully',
-            'data' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role, // Return full role object
-                'employee' => $user->employee,
-                'has_pin' => $user->has_pin,
-            ]
+            'success' => true,
+            'message' => 'User profile fetched successfully',
+            'data' => new \App\Http\Resources\UserResource($user),
         ]);
     }
     /**
