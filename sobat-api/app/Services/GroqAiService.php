@@ -27,16 +27,41 @@ class GroqAiService
         $overtime = number_format($payrollData['overtime'] ?? 0, 0, ',', '.');
         $netSalary = number_format($payrollData['net_salary'], 0, ',', '.');
         
+        // Calculate Tenure if join_date provided
+        $tenureInfo = "";
+        if (!empty($payrollData['join_date'])) {
+            try {
+                $joinDate = \Carbon\Carbon::parse($payrollData['join_date']);
+                $now = \Carbon\Carbon::now();
+                $diff = $joinDate->diff($now);
+                
+                $tenureString = [];
+                if ($diff->y > 0) $tenureString[] = "{$diff->y} tahun";
+                if ($diff->m > 0) $tenureString[] = "{$diff->m} bulan";
+                
+                if (empty($tenureString)) {
+                    $tenure = "kurang dari 1 bulan";
+                } else {
+                    $tenure = implode(" ", $tenureString);
+                }
+                
+                $tenureInfo = "Lama Bekerja: {$tenure} (sejak {$joinDate->format('d M Y')})";
+            } catch (\Exception $e) {
+                // Ignore parse error
+            }
+        }
+        
         $prompt = "Kamu adalah asisten HR yang ramah. Buatkan pesan singkat dan personal untuk slip gaji karyawan dengan data berikut:
         
 Nama: {$employeeName}
 Periode: {$period}
 Gaji Pokok: Rp {$basicSalary}
 Take Home Pay: Rp {$netSalary}
+{$tenureInfo}
 
 Buatkan:
 1. Ucapan apresiasi singkat (1-2 kalimat)
-2. Tips financial planning singkat (1 kalimat)
+2. Sebutkan masa kerja karyawan ({$tenure}) sebagai bentuk apresiasi loyalitas (1 kalimat)
 3. harapan perusahaan untuk karyawan (1 kalimat)
 
 Gunakan bahasa Indonesia yang hangat dan profesional. Maksimal 150 kata.";

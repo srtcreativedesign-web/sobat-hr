@@ -8,6 +8,7 @@ use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use PDF;
+use App\Services\GroqAiService;
 
 class PayrollFnbController extends Controller
 {
@@ -453,8 +454,27 @@ class PayrollFnbController extends Controller
                 'Cuti' => $payroll->days_leave,
                 'Hadir' => $payroll->days_present,
             ];
+            
+            // Generate AI-powered personalized message
+            $aiMessage = null;
+            try {
+                $groqService = new GroqAiService();
+                $aiMessage = $groqService->generatePayslipMessage([
+                    'employee_name' => $payroll->employee->full_name,
+                    'period' => date('F Y', strtotime($payroll->period . '-01')),
+                    'basic_salary' => $payroll->basic_salary,
+                    'overtime' => $payroll->overtime_amount,
+                    'net_salary' => $payroll->net_salary,
+                    'join_date' => $payroll->employee->join_date,
+                ]);
+            } catch (\Exception $e) {
+                // Ignore AI error
+            }
 
-            $pdf = PDF::loadView('payslips.fnb', ['payroll' => $payroll]);
+            $pdf = PDF::loadView('payslips.fnb', [
+                'payroll' => $payroll,
+                'aiMessage' => $aiMessage
+            ]);
             
             $filename = 'payslip_' . str_replace(' ', '_', $payroll->employee->full_name) . '_' . $payroll->period . '.pdf';
             

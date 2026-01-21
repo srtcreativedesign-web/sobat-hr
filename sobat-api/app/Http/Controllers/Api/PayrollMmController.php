@@ -10,6 +10,7 @@ use App\Models\PayrollMm;
 use App\Models\Employee;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\GroqAiService;
 
 class PayrollMmController extends Controller
 {
@@ -315,10 +316,29 @@ class PayrollMmController extends Controller
                  }
             }
             
-            $formatted = $this->formatPayroll($payroll); // Reuse formatting for view data if needed, or pass object
+            $formatted = $this->formatPayroll($payroll); 
             
+            // Generate AI-powered personalized message
+            $aiMessage = null;
+            try {
+                $groqService = new GroqAiService();
+                $aiMessage = $groqService->generatePayslipMessage([
+                    'employee_name' => $payroll->employee->full_name,
+                    'period' => date('F Y', strtotime($payroll->period . '-01')),
+                    'basic_salary' => $payroll->basic_salary,
+                    'overtime' => $payroll->overtime_amount,
+                    'net_salary' => $payroll->net_salary,
+                    'join_date' => $payroll->employee->join_date,
+                ]);
+            } catch (\Exception $e) {
+                // Ignore AI error
+            }
+
             // Pass simple object to view, view can format
-            $pdf = PDF::loadView('payslips.mm', ['payroll' => $payroll]);
+            $pdf = PDF::loadView('payslips.mm', [
+                'payroll' => $payroll,
+                'aiMessage' => $aiMessage
+            ]);
             
             $filename = 'payslip_mm_' . str_replace(' ', '_', $payroll->employee->full_name) . '_' . $payroll->period . '.pdf';
             

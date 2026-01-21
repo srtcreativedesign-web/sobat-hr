@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Arial', sans-serif;
-            font-size: 9px;
+            font-size: 10px; /* Reduced */
             color: #333;
             line-height: 1.2;
         }
@@ -51,13 +51,13 @@
         }
 
         td {
-            padding: 3px 6px;
+            padding: 2px 4px; /* Reduced */
             font-size: 9px;
             border-bottom: 1px solid #e5e7eb;
         }
         
         @page {
-            margin: 5mm 10mm;
+            margin: 10px 20px;
         }
     </style>
 </head>
@@ -337,7 +337,8 @@
         @endif
 
         <!-- Signature Section -->
-        <table style="width: 100%; margin-top: 30px; margin-bottom: 20px;">
+        <!-- Signature Section -->
+        <table style="width: 100%; margin-top: 20px; margin-bottom: 10px; page-break-inside: avoid;">
             <tr>
                 <td style="width: 50%; text-align: center; border: none;">
                     <div>Diterima Oleh,</div>

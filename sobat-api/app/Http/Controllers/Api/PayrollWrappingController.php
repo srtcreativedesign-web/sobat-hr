@@ -8,6 +8,7 @@ use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use PDF;
+use App\Services\GroqAiService;
 
 class PayrollWrappingController extends Controller
 {
@@ -269,7 +270,25 @@ class PayrollWrappingController extends Controller
             $payroll->$key = $val;
         }
         
-        $pdf = PDF::loadView('payslips.wrapping', ['payroll' => $payroll]);
+        // Generate AI-powered personalized message
+        try {
+            $groqService = new GroqAiService();
+            $aiMessage = $groqService->generatePayslipMessage([
+                'employee_name' => $payroll->employee->full_name,
+                'period' => date('F Y', strtotime($payroll->period . '-01')),
+                'basic_salary' => $payroll->basic_salary,
+                'overtime' => $payroll->overtime_amount, 
+                'net_salary' => $payroll->net_salary,
+                'join_date' => $payroll->employee->join_date,
+            ]);
+        } catch (\Exception $e) {
+            $aiMessage = null; // Fallback if AI fails
+        }
+        
+        $pdf = PDF::loadView('payslips.wrapping', [
+            'payroll' => $payroll,
+            'aiMessage' => $aiMessage
+        ]);
         return $pdf->download('payslip_wrapping.pdf');
     }
 }

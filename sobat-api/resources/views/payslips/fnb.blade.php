@@ -4,17 +4,20 @@
     <meta charset="utf-8">
     <title>Slip Gaji FnB</title>
     <style>
+        @page {
+            margin: 10px 20px;
+        }
         body {
             font-family: Arial, sans-serif;
-            font-size: 11px;
+            font-size: 10px; /* Reduced from 11px */
             color: #333;
-            line-height: 1.4;
+            line-height: 1.2; /* Reduced from 1.4 */
         }
         .header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 20px; /* Reduced */
             border-bottom: 2px solid #5d3a50;
-            padding-bottom: 10px;
+            padding-bottom: 5px; /* Reduced */
         }
         .company-name {
             font-size: 16px;
@@ -38,18 +41,19 @@
         .section-title {
             background-color: #fce4ec;
             color: #5d3a50;
-            padding: 5px 10px;
+            padding: 4px 8px; /* Reduced */
             font-weight: bold;
-            margin-top: 15px;
-            margin-bottom: 10px;
+            margin-top: 10px; /* Reduced */
+            margin-bottom: 5px; /* Reduced */
             border-left: 4px solid #5d3a50;
+            font-size: 10px;
         }
         .details-table {
             width: 100%;
             border-collapse: collapse;
         }
         .details-table td {
-            padding: 4px 0;
+            padding: 2px 0; /* Reduced from 4px */
         }
         .amount {
             text-align: right;
@@ -79,8 +83,9 @@
             font-size: 10px;
         }
         .signature-section {
-            margin-top: 40px;
+            margin-top: 20px;
             width: 100%;
+            page-break-inside: avoid;
         }
         .signature-box {
             width: 40%;
@@ -268,6 +273,14 @@
             </tr>
         </table>
     </div>
+
+    <!-- AI Generated Message -->
+    @if(!empty($aiMessage))
+        <div style="margin-top: 15px; background-color: #f0fdf4; border: 1px solid #1A4D2E; border-radius: 6px; padding: 10px;">
+            <strong style="display: block; margin-bottom: 8px; color: #1e40af; font-size: 11px;">📌 Pesan Personal untuk Anda:</strong>
+            <div style="font-style: italic; color: #374151;">"{{ $aiMessage }}"</div>
+        </div>
+    @endif
     
     <div class="signature-section">
         <div class="signature-box">

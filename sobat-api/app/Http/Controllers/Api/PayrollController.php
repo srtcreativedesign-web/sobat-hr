@@ -169,6 +169,7 @@ class PayrollController extends Controller
             'basic_salary' => $payroll->basic_salary,
             'overtime' => $payroll->overtime_pay,
             'net_salary' => $payroll->net_salary,
+            'join_date' => $payroll->employee->join_date,
         ]);
 
         // Generate PDF
