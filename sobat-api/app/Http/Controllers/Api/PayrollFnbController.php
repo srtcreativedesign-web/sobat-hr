@@ -16,14 +16,28 @@ class PayrollFnbController extends Controller
      */
     public function index(Request $request)
     {
+        $user = auth()->user();
         $query = PayrollFnb::with('employee');
+
+        // Check scope
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        if (!in_array($roleName, ['admin', 'super_admin', 'hr'])) {
+            $employeeId = $user->employee ? $user->employee->id : null;
+            if ($employeeId) {
+                $query->where('employee_id', $employeeId);
+                // Also scope status for non-admins
+                $query->whereIn('status', ['approved', 'paid']);
+            } else {
+                return response()->json([]);
+            }
+        }
         
         // Filter by period
         if ($request->has('period')) {
             $query->where('period', $request->period);
         }
         
-        // Filter by status
+        // Filter by status (allow overriding if user is checking 'draft' etc, but mostly for admins)
         if ($request->has('status')) {
             $query->where('status', $request->status);
         }

@@ -78,7 +78,29 @@ class PayrollService {
       }
     } catch (e) {
       debugPrint('Failed to fetch FnB payrolls: $e');
-      // Continue with whatever data we have
+    }
+
+    // Try to fetch from Minimarket endpoint
+    try {
+      final response = await _dio.get(
+        '/payrolls/mm',
+        queryParameters: {if (year != null) 'year': year},
+      );
+
+      if (response.statusCode == 200 && response.data['data'] != null) {
+        final mmData = response.data['data'];
+        if (mmData is List) {
+          // Mark MM payrolls with division type
+          for (var item in mmData) {
+            if (item is Map<String, dynamic>) {
+              item['division'] = 'minimarket';
+            }
+          }
+          allPayrolls.addAll(mmData);
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to fetch MM payrolls: $e');
     }
 
     // Sort by period descending (latest first)
@@ -103,10 +125,15 @@ class PayrollService {
     try {
       final token = await StorageService.getToken();
 
-      // Use division-specific endpoint if FnB
-      final endpoint = division == 'fnb'
-          ? '/payrolls/fnb/$payrollId/slip'
-          : '/payrolls/$payrollId/slip';
+      // Use division-specific endpoint
+      String endpoint;
+      if (division == 'minimarket') {
+        endpoint = '/payrolls/mm/$payrollId/slip';
+      } else if (division == 'fnb') {
+        endpoint = '/payrolls/fnb/$payrollId/slip';
+      } else {
+        endpoint = '/payrolls/$payrollId/slip';
+      }
 
       debugPrint('Downloading slip from: $endpoint');
 

@@ -54,7 +54,7 @@ export default function PayrollPage() {
   const sigPad = useRef<SignatureCanvas>(null);
 
   // Division selector
-  const [selectedDivision, setSelectedDivision] = useState<'fnb' | 'generic'>('fnb');
+  const [selectedDivision, setSelectedDivision] = useState<'fnb' | 'minimarket' | 'generic'>('fnb');
 
   // Filter States
   const [selectedMonth, setSelectedMonth] = useState(0); // 0 = Semua
@@ -86,7 +86,9 @@ export default function PayrollPage() {
       setLoading(true);
 
       // Use division-specific endpoint
-      const endpoint = selectedDivision === 'fnb' ? '/payrolls/fnb' : '/payrolls';
+      let endpoint = '/payrolls';
+      if (selectedDivision === 'fnb') endpoint = '/payrolls/fnb';
+      if (selectedDivision === 'minimarket') endpoint = '/payrolls/mm';
 
       const response = await apiClient.get(endpoint, {
         params: {
@@ -96,7 +98,7 @@ export default function PayrollPage() {
       });
 
       // Handle different response structures
-      if (selectedDivision === 'fnb') {
+      if (selectedDivision === 'fnb' || selectedDivision === 'minimarket') {
         setPayrolls(response.data.data || []);
       } else {
         setPayrolls(response.data.data || []);
@@ -125,7 +127,9 @@ export default function PayrollPage() {
       setParsedRows([]);
 
       // Use division-specific import endpoint
-      const importEndpoint = selectedDivision === 'fnb' ? '/payrolls/fnb/import' : '/payrolls/import';
+      let importEndpoint = '/payrolls/import';
+      if (selectedDivision === 'fnb') importEndpoint = '/payrolls/fnb/import';
+      if (selectedDivision === 'minimarket') importEndpoint = '/payrolls/mm/import';
 
       const response = await apiClient.post(importEndpoint, formData, {
         headers: {
@@ -175,9 +179,9 @@ export default function PayrollPage() {
         setSelectedIds([]);
       } else if (pendingApprovalId) {
         // Single Approve
-        const endpoint = selectedDivision === 'fnb'
-          ? `/payrolls/fnb/${pendingApprovalId}/status`
-          : `/payrolls/${pendingApprovalId}/status`; // Generic usually PUT with status
+        let endpoint = `/payrolls/${pendingApprovalId}/status`;
+        if (selectedDivision === 'fnb') endpoint = `/payrolls/fnb/${pendingApprovalId}/status`;
+        if (selectedDivision === 'minimarket') endpoint = `/payrolls/mm/${pendingApprovalId}/status`;
 
         // Note: FNB uses updateStatus which takes 'status' and 'approval_signature'
         // Generic Controller might need update. Assuming Generic uses PATCH /payrolls/{id}/status
@@ -213,10 +217,10 @@ export default function PayrollPage() {
     }).format(value);
   };
 
-  // Helper to calculate total allowances for FnB payroll
+  // Helper to calculate total allowances for FnB/MM payroll
   const calculateTotalAllowances = (payroll: any) => {
-    if (selectedDivision === 'fnb') {
-      // FnB backend returns structured allowances object
+    if (selectedDivision === 'fnb' || selectedDivision === 'minimarket') {
+      // FnB/MM backend returns structured allowances object
       if (payroll.allowances && typeof payroll.allowances === 'object') {
         const allowances = payroll.allowances;
 
@@ -228,15 +232,20 @@ export default function PayrollPage() {
           return parseFloat(val) || 0;
         };
 
+        // Common keys plus new ones for MM
         return (
           parseValue(allowances['Kehadiran']) +
           parseValue(allowances['Transport']) +
           parseValue(allowances['Tunjangan Kesehatan']) +
           parseValue(allowances['Tunjangan Jabatan']) +
           parseValue(allowances['Lembur']) +
-          parseValue(allowances['Insentif Lebaran']) +
+          parseValue(allowances['Insentif Lebaran'] || allowances['THR']) +
           parseValue(allowances['Adjustment']) +
-          parseValue(allowances['Kebijakan HO'])
+          parseValue(allowances['Kebijakan HO']) +
+          // MM specific
+          parseValue(allowances['Uang Makan']) +
+          parseValue(allowances['Bonus']) +
+          parseValue(allowances['Insentif'])
         );
       }
       // Fallback to direct fields if structured object not available
@@ -248,16 +257,19 @@ export default function PayrollPage() {
         (parseFloat(payroll.overtime_amount) || 0) +
         (parseFloat(payroll.holiday_allowance) || 0) +
         (parseFloat(payroll.adjustment) || 0) +
-        (parseFloat(payroll.policy_ho) || 0)
+        (parseFloat(payroll.policy_ho) || 0) +
+        (parseFloat(payroll.meal_amount) || 0) +
+        (parseFloat(payroll.bonus) || 0) +
+        (parseFloat(payroll.incentive) || 0)
       );
     }
     // Generic payroll - allowances is a single number
     return parseFloat(payroll.allowances) || 0;
   };
 
-  // Helper to calculate overtime pay for FnB payroll
+  // Helper to calculate overtime pay for FnB/MM payroll
   const calculateOvertimePay = (payroll: any) => {
-    if (selectedDivision === 'fnb') {
+    if (selectedDivision === 'fnb' || selectedDivision === 'minimarket') {
       // Check structured allowances first
       if (payroll.allowances?.Lembur) {
         const lembur = payroll.allowances.Lembur;
@@ -271,10 +283,19 @@ export default function PayrollPage() {
     return parseFloat(payroll.overtime_pay) || 0;
   };
 
-  // Helper to calculate gross salary for FnB payroll
+  // Helper to calculate total deductions for FnB/MM payroll
+  const calculateTotalDeductions = (payroll: any) => {
+    if (selectedDivision === 'minimarket') {
+      return parseFloat(payroll.deduction_total) || 0;
+    }
+    // Generic
+    return parseFloat(payroll.total_deductions) || 0;
+  };
+
+  // Helper to calculate gross salary for FnB/MM payroll
   const calculateGrossSalary = (payroll: any) => {
-    if (selectedDivision === 'fnb') {
-      // For FnB, use total_salary_2 which includes everything
+    if (selectedDivision === 'fnb' || selectedDivision === 'minimarket') {
+      // For FnB/MM, use total_salary_2 which includes everything
       return parseFloat(payroll.total_salary_2) || 0;
     }
     return parseFloat(payroll.gross_salary) || 0;
@@ -361,10 +382,11 @@ export default function PayrollPage() {
             <span className="text-sm font-semibold text-gray-700">Divisi:</span>
             <select
               value={selectedDivision}
-              onChange={(e) => setSelectedDivision(e.target.value as 'fnb' | 'generic')}
+              onChange={(e) => setSelectedDivision(e.target.value as 'fnb' | 'minimarket' | 'generic')}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#462e37] text-sm font-medium"
             >
               <option value="fnb">FnB</option>
+              <option value="minimarket">Minimarket</option>
               <option value="generic">Generic</option>
             </select>
           </div>
@@ -533,13 +555,16 @@ export default function PayrollPage() {
                         <p className="text-xs text-gray-500">{payroll.employee.employee_code}</p>
                       </td>
                       <td className="py-4 px-6 text-sm text-gray-900">
-                        {new Date(payroll.period_start).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}
+                        {(payroll as any).period
+                          ? new Date((payroll as any).period + '-01').toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })
+                          : new Date(payroll.period_start).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })
+                        }
                       </td>
                       <td className="py-4 px-6 text-right text-sm text-gray-900">{formatCurrency(payroll.basic_salary)}</td>
                       <td className="py-4 px-6 text-right text-sm text-gray-900">{formatCurrency(calculateTotalAllowances(payroll))}</td>
                       <td className="py-4 px-6 text-right text-sm text-green-600">{formatCurrency(calculateOvertimePay(payroll))}</td>
                       <td className="py-4 px-6 text-right text-sm font-bold text-gray-800 bg-gray-50">{formatCurrency(calculateGrossSalary(payroll))}</td>
-                      <td className="py-4 px-6 text-right text-sm font-bold text-red-600 bg-red-50">-{formatCurrency(payroll.total_deductions)}</td>
+                      <td className="py-4 px-6 text-right text-sm font-bold text-red-600 bg-red-50">-{formatCurrency(calculateTotalDeductions(payroll))}</td>
                       <td className="py-4 px-6 text-right text-sm font-bold text-[#462e37]">{formatCurrency(payroll.net_salary)}</td>
                       <td className="py-4 px-6 text-center">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBadge(payroll.status)}`}>
@@ -565,7 +590,9 @@ export default function PayrollPage() {
                               try {
                                 const endpoint = selectedDivision === 'fnb'
                                   ? `/payrolls/fnb/${payroll.id}/slip`
-                                  : `/payrolls/${payroll.id}/slip`;
+                                  : selectedDivision === 'minimarket'
+                                    ? `/payrolls/mm/${payroll.id}/slip`
+                                    : `/payrolls/${payroll.id}/slip`;
 
                                 const response = await apiClient.get(endpoint, {
                                   responseType: 'blob',
@@ -656,8 +683,8 @@ export default function PayrollPage() {
               </div>
 
               <div className="p-6 overflow-y-auto flex-1">
-                {/* Attendance Summary (for FnB) */}
-                {selectedDivision === 'fnb' && (selectedPayroll as any).attendance && (
+                {/* Attendance Summary (for FnB/MM) */}
+                {(selectedDivision === 'fnb' || selectedDivision === 'minimarket') && (selectedPayroll as any).attendance && (
                   <div className="mb-6 bg-blue-50 p-4 rounded-xl">
                     <h4 className="text-sm font-bold text-blue-700 uppercase tracking-wider mb-3">Data Kehadiran</h4>
                     <div className="grid grid-cols-4 gap-2 text-xs">
@@ -681,8 +708,8 @@ export default function PayrollPage() {
                         <span className="font-semibold">{formatCurrency(selectedPayroll.basic_salary)}</span>
                       </div>
 
-                      {/* FnB Allowances Breakdown */}
-                      {selectedDivision === 'fnb' && selectedPayroll.allowances && (
+                      {/* FnB/MM Allowances Breakdown */}
+                      {(selectedDivision === 'fnb' || selectedDivision === 'minimarket') && selectedPayroll.allowances && (
                         <>
                           {Object.entries(selectedPayroll.allowances).map(([key, value]: [string, any]) => {
                             if (!value || value === 0 || value === '0.00') return null;
@@ -730,7 +757,7 @@ export default function PayrollPage() {
                       )}
 
                       {/* Generic Payroll Allowances */}
-                      {selectedDivision !== 'fnb' && (
+                      {selectedDivision !== 'fnb' && selectedDivision !== 'minimarket' && (
                         <>
                           {selectedPayroll.details?.transport_allowance > 0 && (
                             <div className="flex justify-between text-sm">
@@ -772,8 +799,8 @@ export default function PayrollPage() {
                   <div>
                     <h4 className="text-sm font-bold text-red-500 uppercase tracking-wider mb-4 border-b border-red-100 pb-2">Potongan</h4>
                     <div className="space-y-3">
-                      {/* FnB Deductions Breakdown */}
-                      {selectedDivision === 'fnb' && selectedPayroll.deductions && (
+                      {/* FnB/MM Deductions Breakdown */}
+                      {(selectedDivision === 'fnb' || selectedDivision === 'minimarket') && selectedPayroll.deductions && (
                         <>
                           {Object.entries(selectedPayroll.deductions).map(([key, value]: [string, any]) => {
                             const numValue = parseFloat(value);
@@ -790,7 +817,7 @@ export default function PayrollPage() {
                       )}
 
                       {/* Generic Payroll Deductions */}
-                      {selectedDivision !== 'fnb' && (
+                      {selectedDivision !== 'fnb' && selectedDivision !== 'minimarket' && (
                         <>
                           {selectedPayroll.bpjs_health > 0 && (
                             <div className="flex justify-between text-sm">
@@ -807,8 +834,8 @@ export default function PayrollPage() {
                         </>
                       )}
 
-                      {/* EWA Display (for FnB) */}
-                      {selectedDivision === 'fnb' && selectedPayroll.ewa_amount && (
+                      {/* EWA Display (for FnB/MM) */}
+                      {(selectedDivision === 'fnb' || selectedDivision === 'minimarket') && selectedPayroll.ewa_amount && (
                         <div className="bg-red-50 p-2 rounded-lg mt-2">
                           <div className="text-xs font-semibold text-red-700 mb-1">EWA (Kasbon)</div>
                           <div className="flex justify-between text-sm">
@@ -824,8 +851,8 @@ export default function PayrollPage() {
                         <span>Total Potongan</span>
                         <span className="text-red-600">
                           -{formatCurrency(
-                            (typeof selectedPayroll.total_deductions === 'string' ? parseFloat(selectedPayroll.total_deductions) : selectedPayroll.total_deductions) +
-                            (selectedDivision === 'fnb' && selectedPayroll.ewa_amount ? (typeof selectedPayroll.ewa_amount === 'string' ? parseFloat(selectedPayroll.ewa_amount) : selectedPayroll.ewa_amount) : 0)
+                            calculateTotalDeductions(selectedPayroll) +
+                            ((selectedDivision === 'fnb' || selectedDivision === 'minimarket') && selectedPayroll.ewa_amount ? (typeof selectedPayroll.ewa_amount === 'string' ? parseFloat(selectedPayroll.ewa_amount) : selectedPayroll.ewa_amount) : 0)
                           )}
                         </span>
                       </div>
@@ -855,7 +882,9 @@ export default function PayrollPage() {
                       try {
                         const endpoint = selectedDivision === 'fnb'
                           ? `/payrolls/fnb/${selectedPayroll.id}/slip`
-                          : `/payrolls/${selectedPayroll.id}/slip`;
+                          : selectedDivision === 'minimarket'
+                            ? `/payrolls/mm/${selectedPayroll.id}/slip`
+                            : `/payrolls/${selectedPayroll.id}/slip`;
 
                         const response = await apiClient.get(endpoint, {
                           responseType: 'blob',
@@ -911,248 +940,254 @@ export default function PayrollPage() {
       }
 
       {/* Signature Modal */}
-      {showSignatureModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4 text-black">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-900">Tanda Tangan Approval</h3>
-              <button onClick={() => setShowSignatureModal(false)} className="text-gray-400 hover:text-gray-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <p className="text-sm text-gray-500 mb-4">
-              Silakan tanda tangan di bawah ini untuk menyetujui payroll {isBulkApproval ? `(${selectedIds.length} items)` : ''}.
-            </p>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nama Penanda Tangan</label>
-              <input
-                type="text"
-                value={signerName}
-                onChange={(e) => setSignerName(e.target.value)}
-                placeholder="Masukkan nama lengkap (e.g. Budi Santoso, HRD)"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#729892]"
-              />
-            </div>
-
-            <div className="border-2 border-dashed border-gray-300 rounded-xl mb-4 bg-gray-50">
-              <SignatureCanvas
-                ref={sigPad}
-                penColor="black"
-                canvasProps={{
-                  className: 'w-full h-48 rounded-xl cursor-crosshair'
-                }}
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={clearSignature}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
-              >
-                Hapus
-              </button>
-              <button
-                onClick={handleConfirmApproval}
-                disabled={loading}
-                className="flex-1 px-4 py-2 bg-[#462e37] text-white rounded-xl font-bold hover:bg-[#5e3d4a] transition-colors disabled:opacity-50"
-              >
-                {loading ? 'Processing...' : 'Approve & Sign'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Upload Modal */}
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 text-black">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-gray-900">Import Excel</h3>
-              <button
-                onClick={() => {
-                  setShowUploadModal(false);
-                  setSelectedFile(null);
-                  setUploadProgress(0);
-                }}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              {/* File Input */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Pilih File Excel
-                </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#a9eae2] transition-colors">
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls,.csv"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="file-upload"
-                  />
-                  <label htmlFor="file-upload" className="cursor-pointer">
-                    <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    {selectedFile ? (
-                      <p className="text-sm text-gray-900 font-semibold">{selectedFile.name}</p>
-                    ) : (
-                      <>
-                        <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
-                        <p className="text-xs text-gray-400 mt-1">Excel/CSV files (.xlsx, .xls, .csv)</p>
-                      </>
-                    )}
-                  </label>
-                </div>
+      {
+        showSignatureModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4 text-black">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-900">Tanda Tangan Approval</h3>
+                <button onClick={() => setShowSignatureModal(false)} className="text-gray-400 hover:text-gray-600">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
 
-              {/* Upload Progress */}
-              {uploadProgress > 0 && uploadProgress < 100 && (
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-600">Uploading...</span>
-                    <span className="text-[#462e37] font-semibold">{uploadProgress}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-[#a9eae2] to-[#729892] h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${uploadProgress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
+              <p className="text-sm text-gray-500 mb-4">
+                Silakan tanda tangan di bawah ini untuk menyetujui payroll {isBulkApproval ? `(${selectedIds.length} items)` : ''}.
+              </p>
 
-              {/* Action Buttons */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Penanda Tangan</label>
+                <input
+                  type="text"
+                  value={signerName}
+                  onChange={(e) => setSignerName(e.target.value)}
+                  placeholder="Masukkan nama lengkap (e.g. Budi Santoso, HRD)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#729892]"
+                />
+              </div>
+
+              <div className="border-2 border-dashed border-gray-300 rounded-xl mb-4 bg-gray-50">
+                <SignatureCanvas
+                  ref={sigPad}
+                  penColor="black"
+                  canvasProps={{
+                    className: 'w-full h-48 rounded-xl cursor-crosshair'
+                  }}
+                />
+              </div>
+
               <div className="flex gap-3">
+                <button
+                  onClick={clearSignature}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Hapus
+                </button>
+                <button
+                  onClick={handleConfirmApproval}
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 bg-[#462e37] text-white rounded-xl font-bold hover:bg-[#5e3d4a] transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Processing...' : 'Approve & Sign'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {/* Upload Modal */}
+      {
+        showUploadModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 text-black">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-gray-900">Import Excel</h3>
                 <button
                   onClick={() => {
                     setShowUploadModal(false);
                     setSelectedFile(null);
                     setUploadProgress(0);
                   }}
-                  className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleUpload}
-                  disabled={!selectedFile || uploadProgress > 0}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-[#a9eae2] to-[#729892] text-[#462e37] rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                  Upload
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
 
-              {/* Parsed Preview */}
-              {parsedRows.length > 0 && (
-                <div className="mt-6">
-                  <h4 className="text-sm font-semibold mb-2">Preview Data ({parsedRows.length} baris)</h4>
-                  <div className="max-h-64 overflow-auto border rounded-lg">
-                    <table className="w-full text-sm">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          {Object.keys(parsedRows[0]).map((col) => (
-                            <th key={col} className="text-left p-2 font-medium text-gray-600 whitespace-nowrap">{col}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {parsedRows.map((row: any, idx: number) => (
-                          <tr key={idx} className="even:bg-white odd:bg-gray-50">
-                            {Object.keys(parsedRows[0]).map((col) => (
-                              <td key={col} className="p-2 whitespace-nowrap">
-                                {typeof row[col] === 'object' && row[col] !== null
-                                  ? JSON.stringify(row[col])
-                                  : row[col]}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="mt-4 flex gap-3">
-                    <button
-                      onClick={() => {
-                        setParsedRows([]);
-                        setSelectedFile(null);
-                        setUploadProgress(0);
-                      }}
-                      className="px-4 py-2 border rounded-lg"
-                    >
-                      Clear
-                    </button>
-                    <button
-                      onClick={async () => {
-                        try {
-                          // Use division-specific save endpoint
-                          const saveEndpoint = selectedDivision === 'fnb' ? '/payrolls/fnb/import/save' : '/payrolls/import/save';
-
-                          const response = await apiClient.post(saveEndpoint, {
-                            rows: parsedRows,
-                          });
-                          const data = response.data;
-
-                          // Show detailed results
-                          // Show detailed results
-                          let message = `Import selesai!`;
-
-                          if (data.summary) {
-                            message += `\n\nTotal: ${data.summary.total}\nBerhasil: ${data.summary.saved}\nGagal: ${data.summary.failed}`;
-                          }
-
-                          if (data.failed && data.failed.length > 0) {
-                            message += '\n\nBaris yang gagal:';
-                            data.failed.slice(0, 5).forEach((fail: any) => {
-                              message += `\n- Row ${fail.row}: ${fail.employee_name} - ${fail.reason}`;
-                            });
-                            if (data.failed.length > 5) {
-                              message += `\n... dan ${data.failed.length - 5} lainnya (lihat console)`;
-                            }
-                            console.log('All failed rows:', data.failed);
-                          }
-
-                          alert(message);
-
-                          // Close modal and refresh only if some succeeded
-                          if (data.summary && data.summary.saved > 0) {
-                            setShowUploadModal(false);
-                            setParsedRows([]);
-                            setSelectedFile(null);
-                            setUploadProgress(0);
-                            fetchPayrolls();
-                          }
-                        } catch (error: any) {
-                          alert(error.response?.data?.message || 'Gagal menyimpan data');
-                          console.error('Save error details:', error);
-                          if (error.response) {
-                            console.error('Response data:', error.response.data);
-                            console.error('Response status:', error.response.status);
-                          }
-                        }
-                      }}
-                      className="px-4 py-2 bg-gradient-to-r from-[#a9eae2] to-[#729892] text-[#462e37] rounded-lg"
-                    >
-                      Save to DB
-                    </button>
+              <div className="space-y-6">
+                {/* File Input */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Pilih File Excel
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#a9eae2] transition-colors">
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      id="file-upload"
+                    />
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                      <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      {selectedFile ? (
+                        <p className="text-sm text-gray-900 font-semibold">{selectedFile.name}</p>
+                      ) : (
+                        <>
+                          <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
+                          <p className="text-xs text-gray-400 mt-1">Excel/CSV files (.xlsx, .xls, .csv)</p>
+                        </>
+                      )}
+                    </label>
                   </div>
                 </div>
-              )}
+
+                {/* Upload Progress */}
+                {uploadProgress > 0 && uploadProgress < 100 && (
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-gray-600">Uploading...</span>
+                      <span className="text-[#462e37] font-semibold">{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-gradient-to-r from-[#a9eae2] to-[#729892] h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowUploadModal(false);
+                      setSelectedFile(null);
+                      setUploadProgress(0);
+                    }}
+                    className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleUpload}
+                    disabled={!selectedFile || uploadProgress > 0}
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-[#a9eae2] to-[#729892] text-[#462e37] rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    Upload
+                  </button>
+                </div>
+
+                {/* Parsed Preview */}
+                {parsedRows.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="text-sm font-semibold mb-2">Preview Data ({parsedRows.length} baris)</h4>
+                    <div className="max-h-64 overflow-auto border rounded-lg">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            {Object.keys(parsedRows[0]).map((col) => (
+                              <th key={col} className="text-left p-2 font-medium text-gray-600 whitespace-nowrap">{col}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {parsedRows.map((row: any, idx: number) => (
+                            <tr key={idx} className="even:bg-white odd:bg-gray-50">
+                              {Object.keys(parsedRows[0]).map((col) => (
+                                <td key={col} className="p-2 whitespace-nowrap">
+                                  {typeof row[col] === 'object' && row[col] !== null
+                                    ? JSON.stringify(row[col])
+                                    : row[col]}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="mt-4 flex gap-3">
+                      <button
+                        onClick={() => {
+                          setParsedRows([]);
+                          setSelectedFile(null);
+                          setUploadProgress(0);
+                        }}
+                        className="px-4 py-2 border rounded-lg"
+                      >
+                        Clear
+                      </button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            // Use division-specific save endpoint
+                            let saveEndpoint = '/payrolls/import/save';
+                            if (selectedDivision === 'fnb') saveEndpoint = '/payrolls/fnb/import/save';
+                            if (selectedDivision === 'minimarket') saveEndpoint = '/payrolls/mm/import/save';
+
+                            const response = await apiClient.post(saveEndpoint, {
+                              rows: parsedRows,
+                            });
+                            const data = response.data;
+
+                            // Show detailed results
+                            // Show detailed results
+                            let message = `Import selesai!`;
+
+                            if (data.summary) {
+                              message += `\n\nTotal: ${data.summary.total}\nBerhasil: ${data.summary.saved}\nGagal: ${data.summary.failed}`;
+                            }
+
+                            if (data.failed && data.failed.length > 0) {
+                              message += '\n\nBaris yang gagal:';
+                              data.failed.slice(0, 5).forEach((fail: any) => {
+                                message += `\n- Row ${fail.row}: ${fail.employee_name} - ${fail.reason}`;
+                              });
+                              if (data.failed.length > 5) {
+                                message += `\n... dan ${data.failed.length - 5} lainnya (lihat console)`;
+                              }
+                              console.log('All failed rows:', data.failed);
+                            }
+
+                            alert(message);
+
+                            // Close modal and refresh only if some succeeded
+                            if (data.summary && data.summary.saved > 0) {
+                              setShowUploadModal(false);
+                              setParsedRows([]);
+                              setSelectedFile(null);
+                              setUploadProgress(0);
+                              fetchPayrolls();
+                            }
+                          } catch (error: any) {
+                            alert(error.response?.data?.message || 'Gagal menyimpan data');
+                            console.error('Save error details:', error);
+                            if (error.response) {
+                              console.error('Response data:', error.response.data);
+                              console.error('Response status:', error.response.status);
+                            }
+                          }
+                        }}
+                        className="px-4 py-2 bg-gradient-to-r from-[#a9eae2] to-[#729892] text-[#462e37] rounded-lg"
+                      >
+                        Save to DB
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </DashboardLayout>
+        )
+      }
+    </DashboardLayout >
   );
 }

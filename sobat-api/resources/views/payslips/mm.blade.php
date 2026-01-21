@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Slip Gaji FnB</title>
+    <title>Slip Gaji Minimarket</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -105,19 +105,17 @@
             <td class="info-label">Nama</td>
             <td>: {{ strtoupper($payroll->employee->full_name) }}</td>
             <td class="info-label" style="text-align: right;">No. Slip</td>
-            <td style="width: 100px; text-align: right;">: SAL-FNB-{{ $payroll->id }}</td>
+            <td style="width: 100px; text-align: right;">: SAL-MM-{{ $payroll->id }}</td>
         </tr>
         <tr>
             <td class="info-label">Divisi</td>
-            <td>: FOOD & BEVERAGE</td>
+            <td>: MINIMARKET</td>
             <td class="info-label" style="text-align: right;">Tanggal</td>
             <td style="text-align: right;">: {{ date('d/m/Y') }}</td>
         </tr>
         <tr>
-            <td class="info-label">Jabatan</td>
-            <td>: {{ $payroll->employee->position ?? '-' }}</td>
-            <td class="info-label" style="text-align: right;">No. Rekening</td>
-            <td style="text-align: right;">: {{ $payroll->account_number ?? '-' }}</td>
+            <td class="info-label">No. Rekening</td>
+            <td>: {{ $payroll->account_number ?? '-' }}</td>
         </tr>
     </table>
 
@@ -138,21 +136,19 @@
             <td>Gaji Pokok</td>
             <td class="amount">Rp {{ number_format($payroll->basic_salary, 0, ',', '.') }}</td>
         </tr>
-        
-        @if($payroll->attendance_amount > 0)
         <tr>
-            <td>Tunjangan Kehadiran ({{ number_format($payroll->attendance_rate, 0) }} x {{ $payroll->days_present }})</td>
-            <td class="amount">Rp {{ number_format($payroll->attendance_amount, 0, ',', '.') }}</td>
+            <td>Uang Makan ({{ number_format($payroll->meal_rate, 0) }} x {{ $payroll->days_present }})</td>
+            <td class="amount">Rp {{ number_format($payroll->meal_amount, 0, ',', '.') }}</td>
         </tr>
-        @endif
-
-        @if($payroll->transport_amount > 0)
         <tr>
             <td>Transport ({{ number_format($payroll->transport_rate, 0) }} x {{ $payroll->days_present }})</td>
             <td class="amount">Rp {{ number_format($payroll->transport_amount, 0, ',', '.') }}</td>
         </tr>
-        @endif
-
+        <tr>
+            <td>Tunjangan Kehadiran ({{ number_format($payroll->attendance_rate, 0) }} x {{ $payroll->days_present }})</td>
+            <td class="amount">Rp {{ number_format($payroll->attendance_amount, 0, ',', '.') }}</td>
+        </tr>
+        
         @if($payroll->health_allowance > 0)
         <tr>
             <td>Tunjangan Kesehatan</td>
@@ -174,6 +170,20 @@
         </tr>
         @endif
         
+        @if($payroll->bonus > 0)
+        <tr>
+            <td>Bonus</td>
+            <td class="amount">Rp {{ number_format($payroll->bonus, 0, ',', '.') }}</td>
+        </tr>
+        @endif
+        
+        @if($payroll->incentive > 0)
+        <tr>
+            <td>Insentif</td>
+            <td class="amount">Rp {{ number_format($payroll->incentive, 0, ',', '.') }}</td>
+        </tr>
+        @endif
+        
         @if($payroll->holiday_allowance > 0)
         <tr>
             <td>THR / Insentif Lebaran</td>
@@ -188,17 +198,10 @@
         </tr>
         @endif
         
-        @if($payroll->policy_ho > 0)
-        <tr>
-            <td>Kebijakan HO</td>
-            <td class="amount">Rp {{ number_format($payroll->policy_ho, 0, ',', '.') }}</td>
-        </tr>
-        @endif
-        
          <tr style="height: 10px;"></tr>
          <tr>
             <td style="font-weight: bold;">TOTAL PENDAPATAN KOTOR</td>
-            <td class="amount" style="font-weight: bold;">Rp {{ number_format($payroll->total_salary_2 > 0 ? $payroll->total_salary_2 : ($payroll->grand_total + $payroll->total_deductions), 0, ',', '.') }}</td>
+            <td class="amount" style="font-weight: bold;">Rp {{ number_format($payroll->gross_salary ?? ($payroll->total_salary_2 > 0 ? $payroll->total_salary_2 : $payroll->grand_total + $payroll->deduction_total), 0, ',', '.') }}</td>
         </tr>
     </table>
 
@@ -211,10 +214,10 @@
         </tr>
         @endif
         
-        @if($payroll->deduction_late > 0)
+        @if($payroll->deduction_alpha > 0)
         <tr>
-            <td>Potongan Terlambat</td>
-            <td class="amount">Rp {{ number_format($payroll->deduction_late, 0, ',', '.') }}</td>
+            <td>Potongan Alfa</td>
+            <td class="amount">Rp {{ number_format($payroll->deduction_alpha, 0, ',', '.') }}</td>
         </tr>
         @endif
         
@@ -256,7 +259,7 @@
         <tr style="height: 5px;"></tr>
         <tr>
             <td style="font-weight: bold; color: #d32f2f;">TOTAL POTONGAN</td>
-            <td class="amount" style="font-weight: bold; color: #d32f2f;">(Rp {{ number_format($payroll->total_deductions + $payroll->ewa_amount, 0, ',', '.') }})</td>
+            <td class="amount" style="font-weight: bold; color: #d32f2f;">(Rp {{ number_format($payroll->deduction_total + $payroll->ewa_amount, 0, ',', '.') }})</td>
         </tr>
     </table>
 
