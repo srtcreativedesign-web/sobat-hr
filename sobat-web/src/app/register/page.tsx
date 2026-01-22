@@ -141,9 +141,9 @@ function RegisterForm() {
                         {/* Job Details Section */}
                         <div className="space-y-3 pt-2">
                             <div>
-                                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Track (Jalur Karir)</label>
+                                <label className="block text-xs font-bold text-gray-800 uppercase tracking-wider mb-2">Track (Jalur Karir)</label>
                                 <select
-                                    className="w-full px-4 py-2 border rounded-lg text-sm bg-white"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:border-[#462e37] focus:ring-2 focus:ring-[#462e37]/20 outline-none"
                                     value={formData.track}
                                     onChange={e => setFormData({ ...formData, track: e.target.value, job_level: e.target.value === 'office' ? 'staff' : 'crew' })}
                                 >
@@ -153,9 +153,9 @@ function RegisterForm() {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Job Level (Jabatan)</label>
+                                <label className="block text-xs font-bold text-gray-800 uppercase tracking-wider mb-2">Job Level (Jabatan)</label>
                                 <select
-                                    className="w-full px-4 py-2 border rounded-lg text-sm bg-white"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:border-[#462e37] focus:ring-2 focus:ring-[#462e37]/20 outline-none"
                                     value={formData.job_level}
                                     onChange={e => setFormData({ ...formData, job_level: e.target.value })}
                                 >
@@ -180,14 +180,14 @@ function RegisterForm() {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Divisi / Penempatan</label>
+                                <label className="block text-xs font-bold text-gray-800 uppercase tracking-wider mb-2">Divisi / Penempatan</label>
                                 <select
-                                    className="w-full px-4 py-2 border rounded-lg text-sm bg-white"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:border-[#462e37] focus:ring-2 focus:ring-[#462e37]/20 outline-none"
                                     value={formData.organization_id}
                                     onChange={e => setFormData({ ...formData, organization_id: e.target.value })}
                                     required
                                 >
-                                    <option value="">Pilih Divisi...</option>
+                                    <option value="" className="text-gray-500">Pilih Divisi...</option>
                                     {organizations
                                         .filter(org => !['Board Of Directors', 'Holdings'].includes(org.type))
                                         .map(org => (
@@ -197,30 +197,30 @@ function RegisterForm() {
                             </div>
                         </div>
 
-                        <hr className="border-gray-100 my-4" />
+                        <hr className="border-gray-200 my-6" />
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Buat Password Baru</label>
+                            <label className="block text-sm font-bold text-gray-800 mb-2">Buat Password Baru</label>
                             <input
                                 type="password"
                                 required
                                 minLength={8}
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#462e37] focus:ring-2 focus:ring-[#462e37]/20 outline-none transition-all placeholder:text-gray-300"
+                                className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 focus:border-[#462e37] focus:ring-2 focus:ring-[#462e37]/20 outline-none transition-all placeholder:text-gray-500"
                                 placeholder="Minimal 8 karakter"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Konfirmasi Password</label>
+                            <label className="block text-sm font-bold text-gray-800 mb-2">Konfirmasi Password</label>
                             <input
                                 type="password"
                                 required
                                 minLength={8}
                                 value={formData.password_confirmation}
                                 onChange={(e) => setFormData({ ...formData, password_confirmation: e.target.value })}
-                                className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#462e37] focus:ring-2 focus:ring-[#462e37]/20 outline-none transition-all placeholder:text-gray-300"
+                                className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 focus:border-[#462e37] focus:ring-2 focus:ring-[#462e37]/20 outline-none transition-all placeholder:text-gray-500"
                                 placeholder="Ulangi password"
                             />
                         </div>

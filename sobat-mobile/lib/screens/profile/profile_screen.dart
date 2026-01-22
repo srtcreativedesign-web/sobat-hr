@@ -248,8 +248,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: CustomNavbar(
                     currentIndex: 4,
                     onTap: (index) {
-                      if (index == 0)
+                      if (index == 0) {
                         Navigator.popUntil(context, (route) => route.isFirst);
+                      } else if (index == 1) {
+                        Navigator.pushNamed(context, '/submission/list');
+                      } else if (index == 3) {
+                        Navigator.pushNamed(context, '/payroll');
+                      }
                     },
                   ),
                 ),
@@ -265,7 +270,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       width: 64,
                       child: FloatingActionButton(
                         heroTag: 'profile_fab',
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/submission/menu');
+                        },
                         backgroundColor: AppTheme.colorEggplant,
                         elevation: 4,
                         shape: const CircleBorder(),

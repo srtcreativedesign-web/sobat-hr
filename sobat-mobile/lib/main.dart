@@ -11,6 +11,7 @@ import 'screens/profile/edit_profile_screen.dart';
 import 'screens/profile/change_password_screen.dart'; // Added
 import 'screens/payroll/payroll_screen.dart';
 import 'screens/submission/submission_menu_screen.dart'; // Added
+import 'screens/submission/submission_screen.dart'; // Added
 import 'screens/submission/create_submission_screen.dart'; // Added
 import 'screens/announcement/announcement_list_screen.dart'; // Added
 import 'screens/notification/notification_screen.dart'; // Added
@@ -45,6 +46,10 @@ class MyApp extends StatelessWidget {
           '/profile/change-password': (context) => const ChangePasswordScreen(),
           '/payroll': (context) => const PayrollScreen(),
           '/submission/menu': (context) => const SubmissionMenuScreen(),
+          '/submission/list': (context) => const Scaffold(
+            backgroundColor: Color(0xFFF9FAFB),
+            body: SubmissionScreen(),
+          ),
           '/submission/create': (context) {
             final args = ModalRoute.of(context)!.settings.arguments as String;
             return CreateSubmissionScreen(type: args);

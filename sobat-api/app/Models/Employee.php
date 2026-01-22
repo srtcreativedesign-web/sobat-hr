@@ -30,6 +30,7 @@ class Employee extends Model
         'contract_end_date',
         'job_level',
         'track',
+        'join_date_edit_count',
         // New fields
         'place_of_birth',
         'ktp_address',

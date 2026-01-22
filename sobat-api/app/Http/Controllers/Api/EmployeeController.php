@@ -229,11 +229,16 @@ class EmployeeController extends Controller
     {
         $employee = Employee::findOrFail($id);
 
+        // Fix for frontend sending existing photo_path string
+        if ($request->has('photo_path') && !$request->hasFile('photo_path')) {
+            $request->merge(['photo_path' => null]);
+        }
+
         $validated = $request->validate([
             'organization_id' => 'sometimes|exists:organizations,id',
             'role_id' => 'sometimes|exists:roles,id',
-            'employee_number' => 'sometimes|string|unique:employees,employee_code,' . $id,
-            'employee_code' => 'sometimes|string|unique:employees,employee_code,' . $id,
+            'employee_number' => 'sometimes|nullable|string|unique:employees,employee_code,' . $id,
+            'employee_code' => 'sometimes|nullable|string|unique:employees,employee_code,' . $id,
             'full_name' => 'sometimes|string|max:255',
             'email' => 'sometimes|email|unique:employees,email,' . $id,
             'phone' => 'nullable', // allow string or number
@@ -270,7 +275,7 @@ class EmployeeController extends Controller
             'education' => 'nullable', // Accept array/json or string
             'supervisor_name' => 'nullable|string',
             'supervisor_position' => 'nullable|string',
-            'photo_path' => 'nullable|string',
+            'photo_path' => 'nullable|image|max:2048', // 2MB Max
         ]);
 
         // Map validated to actual DB columns similar to store()
@@ -295,8 +300,30 @@ class EmployeeController extends Controller
             $data['birth_date'] = $validated['date_of_birth'];
         if (isset($validated['birth_date']))
             $data['birth_date'] = $validated['birth_date'];
-        if (isset($validated['join_date']))
-            $data['join_date'] = $validated['join_date'];
+        if (isset($validated['join_date'])) {
+            $newDateInput = $validated['join_date'];
+            $newDate = $newDateInput ? \Carbon\Carbon::parse($newDateInput)->format('Y-m-d') : null;
+            $oldDate = $employee->join_date ? $employee->join_date->format('Y-m-d') : null;
+
+            // Debug logging
+            \Illuminate\Support\Facades\Log::info("Join Date Check: Old={$oldDate}, New={$newDate}, Input={$newDateInput}");
+
+            // If date is changing
+            if ($newDate !== $oldDate) {
+                // If old date was null, this is the first set (count remains 0)
+                // If old date was NOT null, this is an edit
+                if ($oldDate !== null) {
+                    if ($employee->join_date_edit_count >= 1) {
+                        return response()->json([
+                            'message' => 'Tanggal bergabung hanya dapat diubah satu kali.'
+                        ], 422);
+                    }
+                    $data['join_date_edit_count'] = $employee->join_date_edit_count + 1;
+                }
+                $data['join_date'] = $newDate;
+            }
+        }
+        
         if (isset($validated['position']))
             $data['position'] = $validated['position'];
         if (isset($validated['level']))
@@ -338,11 +365,26 @@ class EmployeeController extends Controller
             'supervisor_name',
             'supervisor_position',
             'department',
-            'photo_path'
+            // 'photo_path' handled separately below
         ];
         foreach ($extraFields as $f) {
             if (isset($validated[$f]))
                 $data[$f] = $validated[$f];
+        }
+
+        // Handle File Upload
+        if ($request->hasFile('photo_path')) {
+            $file = $request->file('photo_path');
+            // Store details: public/avatars/FILENAME
+            // URL will be storage/avatars/FILENAME
+            $path = $file->store('avatars', 'public');
+            
+            // If replacing, maybe delete old? (Optional for now)
+            if ($employee->photo_path) {
+                // \Illuminate\Support\Facades\Storage::disk('public')->delete($employee->photo_path);
+            }
+
+            $data['photo_path'] = $path;
         }
 
         $employee->update($data);

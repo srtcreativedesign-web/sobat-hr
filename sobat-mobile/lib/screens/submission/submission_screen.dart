@@ -184,14 +184,30 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'Pengajuan',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textDark,
-              letterSpacing: -1,
-            ),
+          Row(
+            children: [
+              if (Navigator.canPop(context)) ...[
+                IconButton(
+                  icon: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: AppTheme.textDark,
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                const SizedBox(width: 12),
+              ],
+              const Text(
+                'Pengajuan',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textDark,
+                  letterSpacing: -1,
+                ),
+              ),
+            ],
           ),
           Container(
             width: 40,
