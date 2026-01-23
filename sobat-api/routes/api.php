@@ -112,6 +112,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollWrappingController::class, 'generateSlip']);
     });
 
+    // Hans Payroll routes
+    Route::prefix('payrolls/hans')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\PayrollHansController::class, 'index']);
+        Route::post('/import', [App\Http\Controllers\Api\PayrollHansController::class, 'import']);
+        Route::post('/import/save', [App\Http\Controllers\Api\PayrollHansController::class, 'saveImport']);
+        Route::get('/{id}', [App\Http\Controllers\Api\PayrollHansController::class, 'show']);
+        Route::patch('/{id}/status', [App\Http\Controllers\Api\PayrollHansController::class, 'updateStatus']);
+        Route::delete('/{id}', [App\Http\Controllers\Api\PayrollHansController::class, 'destroy']);
+        Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollHansController::class, 'generateSlip']);
+    });
+
     // Payroll routes (generic)
     Route::apiResource('payrolls', App\Http\Controllers\Api\PayrollController::class);
     Route::get('/payrolls/template/download', [App\Http\Controllers\Api\PayrollController::class, 'downloadTemplate']);

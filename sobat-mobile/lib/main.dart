@@ -83,10 +83,6 @@ class AuthWrapper extends StatelessWidget {
         }
 
         if (authProvider.isAuthenticated) {
-          // Force Enrollment Check
-          if (authProvider.user?.facePhotoPath == null) {
-            return const EnrollFaceScreen(isFirstTime: true);
-          }
           return const HomeScreen();
         }
 

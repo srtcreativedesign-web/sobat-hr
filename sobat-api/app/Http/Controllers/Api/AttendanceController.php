@@ -102,7 +102,7 @@ class AttendanceController extends Controller
 
                 // Call Python Script
                 // Fix: Force arm64 architecture
-                $command = "/usr/bin/arch -arm64 python3 " . escapeshellarg($scriptPath) . " " . escapeshellarg($referencePhotoPath) . " " . escapeshellarg($checkInPhotoPath) . " 2>&1";
+                $command = "/usr/bin/arch -arm64 /usr/bin/python3 " . escapeshellarg($scriptPath) . " " . escapeshellarg($referencePhotoPath) . " " . escapeshellarg($checkInPhotoPath) . " 2>&1";
                 $output = shell_exec($command);
                 $result = json_decode($output, true);
 

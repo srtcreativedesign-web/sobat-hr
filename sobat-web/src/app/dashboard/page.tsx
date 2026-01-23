@@ -55,12 +55,6 @@ export default function DashboardPage() {
   }, [checkAuth]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, router]);
-
-  useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -83,18 +77,14 @@ export default function DashboardPage() {
       }
     };
 
-    if (isAuthenticated) {
-      // Role Check
-      const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name;
-      if (roleName === 'staff') {
-        router.push('/attendance');
-        return;
-      }
-      fetchData();
+    // Role Check
+    const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name;
+    if (roleName === 'staff') {
+      router.push('/attendance');
+      return;
     }
-  }, [isAuthenticated, user, router]);
-
-  if (!isAuthenticated) return null;
+    fetchData();
+  }, [user, router]); // Removed isAuthenticated dependency since it is guaranteed by layout
 
   // Calculators
   const presentCount = stats?.attendance['present'] || 0;

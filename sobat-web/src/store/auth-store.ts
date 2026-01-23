@@ -17,11 +17,14 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   lastChecked: number | null;
+  lastActivity: number | null;
+  isInitialized: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   initAuth: () => void;
   setUser: (user: User | null) => void;
+  updateActivity: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -32,6 +35,12 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       lastChecked: null,
+      lastActivity: null,
+      isInitialized: false,
+
+      updateActivity: () => {
+        set({ lastActivity: Date.now() });
+      },
 
       setUser: (user: User | null) => {
         set({ user });
@@ -54,10 +63,14 @@ export const useAuthStore = create<AuthState>()(
               user,
               token,
               isAuthenticated: true,
+              isInitialized: true,
             });
           } catch (e) {
             console.error('Failed to parse stored user:', e);
+            set({ isInitialized: true });
           }
+        } else {
+          set({ isInitialized: true });
         }
       },
 
@@ -88,6 +101,7 @@ export const useAuthStore = create<AuthState>()(
             token: access_token,
             isAuthenticated: true,
             isLoading: false,
+            lastActivity: Date.now(),
           });
         } catch (error: any) {
           set({ isLoading: false });
@@ -109,6 +123,7 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             token: null,
             isAuthenticated: false,
+            lastActivity: null,
           });
         }
       },
@@ -133,6 +148,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await apiClient.get(API_ENDPOINTS.AUTH.ME);
           const userData = response.data?.data || response.data;
+
           set({
             user: userData,
             token,
@@ -153,7 +169,6 @@ export const useAuthStore = create<AuthState>()(
             });
           } else {
             // Network error or other - keep existing session
-            console.warn('Auth check failed, keeping existing session:', error);
             set({ lastChecked: now });
           }
         }
@@ -166,6 +181,7 @@ export const useAuthStore = create<AuthState>()(
         token: state.token,
         isAuthenticated: state.isAuthenticated,
         lastChecked: state.lastChecked,
+        lastActivity: state.lastActivity,
       }),
     }
   )

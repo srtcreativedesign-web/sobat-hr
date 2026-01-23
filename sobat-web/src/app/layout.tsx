@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   },
 };
 
+import SessionProvider from "@/components/SessionProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -19,7 +21,9 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <AuthProvider>
-          {children}
+          <SessionProvider>
+            {children}
+          </SessionProvider>
         </AuthProvider>
       </body>
     </html>

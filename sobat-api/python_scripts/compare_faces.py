@@ -1,8 +1,13 @@
 import sys
 import json
+import os
+import platform
 
 # Ensure user site-packages are visible (fix for PHP shell_exec environment)
-sys.path.append('/Users/itsrtcorp/Library/Python/3.9/lib/python/site-packages')
+user_site_packages = '/Users/itsrtcorp/Library/Python/3.9/lib/python/site-packages'
+if user_site_packages not in sys.path:
+    sys.path.append(user_site_packages)
+
 
 try:
     import face_recognition

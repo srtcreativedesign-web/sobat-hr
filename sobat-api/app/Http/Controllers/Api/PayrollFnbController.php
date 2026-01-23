@@ -175,61 +175,65 @@ class PayrollFnbController extends Controller
                 $parsed = [
                     'employee_name' => $employeeName,
                     'period' => date('Y-m'), // Current period
-                    'account_number' => $getCellValue('C', $row),
+                    'account_number' => $getCellValue('D', $row), // Shifted +1 (C->D)
                     
-                    // Attendance (D-J)
-                    'days_total' => (int) $getCellValue('D', $row),
-                    'days_off' => (int) $getCellValue('E', $row),
-                    'days_sick' => (int) $getCellValue('F', $row),
-                    'days_permission' => (int) $getCellValue('G', $row),
-                    'days_alpha' => (int) $getCellValue('H', $row),
-                    'days_leave' => (int) $getCellValue('I', $row),
-                    'days_present' => (int) $getCellValue('J', $row),
+                    // Attendance (E-J)
+                    'days_total' => (int) $getCellValue('E', $row),
+                    'days_off' => (int) $getCellValue('F', $row),
+                    'days_sick' => (int) $getCellValue('G', $row),
+                    'days_permission' => (int) $getCellValue('H', $row),
+                    'days_alpha' => (int) $getCellValue('I', $row),
+                    'days_leave' => (int) $getCellValue('J', $row),
+                    // 'days_present' not explicitly in file between Leave and Basic
+                    'days_present' => (int) $getCellValue('E', $row) - ((int) $getCellValue('F', $row) + (int) $getCellValue('G', $row) + (int) $getCellValue('H', $row) + (int) $getCellValue('I', $row) + (int) $getCellValue('J', $row)), 
                     
                     // Basic Salary (K)
                     'basic_salary' => $getCellValue('K', $row),
                     
-                    // Allowances (L-Q)
-                    'attendance_rate' => $getCellValue('L', $row),
-                    'attendance_amount' => $getCellValue('M', $row),
+                    // Allowances
+                    // L, M are Meal (Skip as DB doesn't have it)
                     'transport_rate' => $getCellValue('N', $row),
                     'transport_amount' => $getCellValue('O', $row),
-                    'health_allowance' => $getCellValue('P', $row),
-                    'position_allowance' => $getCellValue('Q', $row),
                     
-                    // Total Salary 1 (R)
-                    'total_salary_1' => $getCellValue('R', $row),
+                    'attendance_rate' => $getCellValue('P', $row), // Shift +4 (L->P)
+                    'attendance_amount' => $getCellValue('Q', $row), // Shift +4 (M->Q)
                     
-                    // Overtime (S-U)
-                    'overtime_rate' => $getCellValue('S', $row),
-                    'overtime_hours' => $getCellValue('T', $row),
-                    'overtime_amount' => $getCellValue('U', $row),
+                    'position_allowance' => $getCellValue('R', $row), // Shift +1 (Q->R)
+                    'health_allowance' => $getCellValue('S', $row), // Shift +3 (P->S)
                     
-                    // Other Income (V-W)
-                    'holiday_allowance' => $getCellValue('V', $row),
-                    'adjustment' => $getCellValue('W', $row),
+                    // Total Salary 1 (T)
+                    'total_salary_1' => $getCellValue('T', $row), // Shift +2 (R->T)
                     
-                    // Total Salary 2 (X)
-                    'total_salary_2' => $getCellValue('X', $row),
+                    // Overtime (U-W)
+                    'overtime_rate' => $getCellValue('U', $row), // Shift +2 (S->U)
+                    'overtime_hours' => $getCellValue('V', $row), // Shift +2 (T->V)
+                    'overtime_amount' => $getCellValue('W', $row), // Shift +2 (U->W)
                     
-                    // Policy (Y)
-                    'policy_ho' => $getCellValue('Y', $row),
+                    // Other Income
+                    'holiday_allowance' => $getCellValue('Y', $row), // Usually shift +? assuming alignment allows
+                    'adjustment' => $getCellValue('Z', $row),
                     
-                    // Deductions (Z-AE)
-                    'deduction_absent' => $getCellValue('Z', $row),
-                    'deduction_late' => $getCellValue('AA', $row),
-                    'deduction_shortage' => $getCellValue('AB', $row),
-                    'deduction_loan' => $getCellValue('AC', $row),
-                    'deduction_admin_fee' => $getCellValue('AD', $row),
-                    'deduction_bpjs_tk' => $getCellValue('AE', $row),
+                    // Total Salary 2 (AA)
+                    'total_salary_2' => $getCellValue('AA', $row),
                     
-                    // Total Deductions (AF)
-                    'total_deductions' => $getCellValue('AF', $row),
+                    // Policy (AB)
+                    'policy_ho' => $getCellValue('AB', $row),
                     
-                    // Final Calculations (AG-AI)
-                    'grand_total' => $getCellValue('AG', $row),
-                    'ewa_amount' => $getCellValue('AH', $row),
-                    'net_salary' => $getCellValue('AI', $row),
+                    // Deductions (AC-AH)
+                    'deduction_absent' => $getCellValue('AC', $row),
+                    'deduction_late' => $getCellValue('AD', $row),
+                    'deduction_shortage' => $getCellValue('AE', $row), // Assuming Sequence
+                    'deduction_loan' => $getCellValue('AF', $row),
+                    'deduction_admin_fee' => $getCellValue('AG', $row),
+                    'deduction_bpjs_tk' => $getCellValue('AH', $row),
+                    
+                    // Total Deductions (AI)
+                    'total_deductions' => $getCellValue('AI', $row),
+                    
+                    // Final Calculations
+                    'grand_total' => $getCellValue('AJ', $row),
+                    // 'ewa_amount' => $getCellValue('AK', $row), // Assuming AK
+                    'net_salary' => $getCellValue('AJ', $row), // Duplicate Grand Total or check column
                 ];
                 
                 $dataRows[] = $parsed;

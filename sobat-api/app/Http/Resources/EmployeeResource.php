@@ -58,6 +58,7 @@ class EmployeeResource extends JsonResource
             'supervisor_name' => $this->supervisor_name,
             'supervisor_position' => $this->supervisor_position,
             'photo_path' => $this->photo_path,
+            'face_photo_path' => $this->face_photo_path,
         ];
     }
 }

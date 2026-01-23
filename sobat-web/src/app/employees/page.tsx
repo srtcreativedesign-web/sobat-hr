@@ -65,15 +65,10 @@ export default function EmployeesPage() {
   }, [checkAuth]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
-
     fetchEmployees();
     fetchOrganizations();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, router]);
+  }, []);
 
   const fetchEmployees = async () => {
     try {

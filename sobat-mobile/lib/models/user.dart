@@ -143,7 +143,7 @@ class User {
           (json['employee'] != null &&
               json['employee']['face_photo_path'] != null)
           ? json['employee']['face_photo_path'] as String
-          : null,
+          : json['face_photo_path'] as String?,
     );
   }
 
@@ -165,6 +165,7 @@ class User {
       'organization': organization,
       'organization_id': organizationId,
       'join_date_edit_count': joinDateEditCount,
+      'face_photo_path': facePhotoPath,
     };
   }
 

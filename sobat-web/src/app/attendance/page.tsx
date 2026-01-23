@@ -42,15 +42,11 @@ export default function AttendancePage() {
     }, [checkAuth]);
 
     useEffect(() => {
-        if (!isAuthenticated) {
-            router.push('/login');
-            return;
-        }
-
+        // Only fetch if authenticated (guaranteed by layout, but good practice to keep logic clean)
         fetchOrganizations();
         fetchAttendances();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isAuthenticated, router]);
+    }, []);
 
     const fetchOrganizations = async () => {
         try {

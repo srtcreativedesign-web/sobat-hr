@@ -54,7 +54,7 @@ export default function PayrollPage() {
   const sigPad = useRef<SignatureCanvas>(null);
 
   // Division selector
-  const [selectedDivision, setSelectedDivision] = useState<'fnb' | 'minimarket' | 'reflexiology' | 'wrapping'>('fnb');
+  const [selectedDivision, setSelectedDivision] = useState<'fnb' | 'minimarket' | 'reflexiology' | 'wrapping' | 'hans'>('fnb');
 
   // Filter States
   const [selectedMonth, setSelectedMonth] = useState(0); // 0 = Semua
@@ -72,14 +72,9 @@ export default function PayrollPage() {
   }, [checkAuth]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
-
     fetchPayrolls();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, router, selectedMonth, selectedYear, selectedDivision]);
+  }, [selectedMonth, selectedYear, selectedDivision]);
 
   const fetchPayrolls = async () => {
     try {
@@ -91,6 +86,7 @@ export default function PayrollPage() {
       if (selectedDivision === 'minimarket') endpoint = '/payrolls/mm';
       if (selectedDivision === 'reflexiology') endpoint = '/payrolls/ref';
       if (selectedDivision === 'wrapping') endpoint = '/payrolls/wrapping';
+      if (selectedDivision === 'hans') endpoint = '/payrolls/hans';
 
       const response = await apiClient.get(endpoint, {
         params: {
@@ -132,6 +128,7 @@ export default function PayrollPage() {
       if (selectedDivision === 'minimarket') importEndpoint = '/payrolls/mm/import';
       if (selectedDivision === 'reflexiology') importEndpoint = '/payrolls/ref/import';
       if (selectedDivision === 'wrapping') importEndpoint = '/payrolls/wrapping/import';
+      if (selectedDivision === 'hans') importEndpoint = '/payrolls/hans/import';
 
       const response = await apiClient.post(importEndpoint, formData, {
         headers: {
@@ -193,6 +190,7 @@ export default function PayrollPage() {
         if (selectedDivision === 'minimarket') endpoint = `/payrolls/mm/${pendingApprovalId}/status`;
         if (selectedDivision === 'reflexiology') endpoint = `/payrolls/ref/${pendingApprovalId}/status`;
         if (selectedDivision === 'wrapping') endpoint = `/payrolls/wrapping/${pendingApprovalId}/status`;
+        if (selectedDivision === 'hans') endpoint = `/payrolls/hans/${pendingApprovalId}/status`;
 
         // Note: FNB uses updateStatus which takes 'status' and 'approval_signature'
         // Generic Controller might need update. Assuming Generic uses PATCH /payrolls/{id}/status
@@ -232,7 +230,7 @@ export default function PayrollPage() {
 
   // Helper to calculate total allowances for FnB/MM/Ref/Wrapping payroll
   const calculateTotalAllowances = (payroll: any) => {
-    if (['fnb', 'minimarket', 'reflexiology', 'wrapping'].includes(selectedDivision)) {
+    if (['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans'].includes(selectedDivision)) {
       // FnB/MM/Ref backend returns structured allowances object
       if (payroll.allowances && typeof payroll.allowances === 'object') {
         const allowances = payroll.allowances;
@@ -282,7 +280,7 @@ export default function PayrollPage() {
 
   // Helper to calculate overtime pay for FnB/MM/Ref/Wrapping payroll
   const calculateOvertimePay = (payroll: any) => {
-    if (['fnb', 'minimarket', 'reflexiology', 'wrapping'].includes(selectedDivision)) {
+    if (['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans'].includes(selectedDivision)) {
       // Check structured allowances first
       if (payroll.allowances?.Lembur) {
         const lembur = payroll.allowances.Lembur;
@@ -298,7 +296,7 @@ export default function PayrollPage() {
 
   // Helper to calculate total deductions for FnB/MM/Ref payroll
   const calculateTotalDeductions = (payroll: any) => {
-    if (selectedDivision === 'minimarket' || selectedDivision === 'reflexiology' || selectedDivision === 'wrapping') {
+    if (['minimarket', 'reflexiology', 'wrapping', 'hans'].includes(selectedDivision)) {
       return parseFloat(payroll.deduction_total) || 0;
     }
     // Generic
@@ -310,7 +308,7 @@ export default function PayrollPage() {
     if (selectedDivision === 'wrapping') {
       return parseFloat(payroll.total_salary_gross) || 0;
     }
-    if (['fnb', 'minimarket', 'reflexiology'].includes(selectedDivision)) {
+    if (['fnb', 'minimarket', 'reflexiology', 'hans'].includes(selectedDivision)) {
       // For FnB/MM/Ref, use total_salary_2 which includes everything
       return parseFloat(payroll.total_salary_2) || 0;
     }
@@ -398,13 +396,14 @@ export default function PayrollPage() {
             <span className="text-sm font-semibold text-gray-700">Divisi:</span>
             <select
               value={selectedDivision}
-              onChange={(e) => setSelectedDivision(e.target.value as 'fnb' | 'minimarket' | 'reflexiology' | 'wrapping')}
+              onChange={(e) => setSelectedDivision(e.target.value as 'fnb' | 'minimarket' | 'reflexiology' | 'wrapping' | 'hans')}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#462e37] text-sm font-medium"
             >
               <option value="fnb">FnB</option>
               <option value="minimarket">Minimarket</option>
               <option value="reflexiology">Reflexiology</option>
               <option value="wrapping">Wrapping</option>
+              <option value="hans">Hans</option>
             </select>
           </div>
 
@@ -613,7 +612,9 @@ export default function PayrollPage() {
                                       ? `/payrolls/ref/${payroll.id}/slip`
                                       : selectedDivision === 'wrapping'
                                         ? `/payrolls/wrapping/${payroll.id}/slip`
-                                        : `/payrolls/${payroll.id}/slip`;
+                                        : selectedDivision === 'hans'
+                                          ? `/payrolls/hans/${payroll.id}/slip`
+                                          : `/payrolls/${payroll.id}/slip`;
 
                                 const response = await apiClient.get(endpoint, {
                                   responseType: 'blob',
@@ -705,7 +706,7 @@ export default function PayrollPage() {
 
               <div className="p-6 overflow-y-auto flex-1">
                 {/* Attendance Summary (for FnB/MM/Ref/Wrapping) */}
-                {['fnb', 'minimarket', 'reflexiology', 'wrapping'].includes(selectedDivision) && (selectedPayroll as any).attendance && (
+                {['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans'].includes(selectedDivision) && (selectedPayroll as any).attendance && (
                   <div className="mb-6 bg-blue-50 p-4 rounded-xl">
                     <h4 className="text-sm font-bold text-blue-700 uppercase tracking-wider mb-3">Data Kehadiran</h4>
                     <div className="grid grid-cols-4 gap-2 text-xs">
@@ -730,7 +731,7 @@ export default function PayrollPage() {
                       </div>
 
                       {/* FnB/MM/Ref/Wrapping Allowances Breakdown */}
-                      {['fnb', 'minimarket', 'reflexiology', 'wrapping'].includes(selectedDivision) && selectedPayroll.allowances && (
+                      {['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans'].includes(selectedDivision) && selectedPayroll.allowances && (
                         <>
                           {Object.entries(selectedPayroll.allowances).map(([key, value]: [string, any]) => {
                             if (!value || value === 0 || value === '0.00') return null;
@@ -778,7 +779,7 @@ export default function PayrollPage() {
                       )}
 
                       {/* Generic Payroll Allowances */}
-                      {!['fnb', 'minimarket', 'reflexiology', 'wrapping'].includes(selectedDivision) && (
+                      {!['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans'].includes(selectedDivision) && (
                         <>
                           {selectedPayroll.details?.transport_allowance > 0 && (
                             <div className="flex justify-between text-sm">
@@ -820,8 +821,8 @@ export default function PayrollPage() {
                   <div>
                     <h4 className="text-sm font-bold text-red-500 uppercase tracking-wider mb-4 border-b border-red-100 pb-2">Potongan</h4>
                     <div className="space-y-3">
-                      {/* FnB/MM/Ref/Wrapping Deductions Breakdown */}
-                      {(selectedDivision === 'fnb' || selectedDivision === 'minimarket' || selectedDivision === 'reflexiology' || selectedDivision === 'wrapping') && selectedPayroll.deductions && (
+                      {/* FnB/MM/Ref/Wrapping/Hans Deductions Breakdown */}
+                      {(selectedDivision === 'fnb' || selectedDivision === 'minimarket' || selectedDivision === 'reflexiology' || selectedDivision === 'wrapping' || selectedDivision === 'hans') && selectedPayroll.deductions && (
                         <>
                           {Object.entries(selectedPayroll.deductions).map(([key, value]: [string, any]) => {
                             const numValue = parseFloat(value);
@@ -838,7 +839,7 @@ export default function PayrollPage() {
                       )}
 
                       {/* Generic Payroll Deductions */}
-                      {selectedDivision !== 'fnb' && selectedDivision !== 'minimarket' && selectedDivision !== 'reflexiology' && selectedDivision !== 'wrapping' && (
+                      {selectedDivision !== 'fnb' && selectedDivision !== 'minimarket' && selectedDivision !== 'reflexiology' && selectedDivision !== 'wrapping' && selectedDivision !== 'hans' && (
                         <>
                           {selectedPayroll.bpjs_health > 0 && (
                             <div className="flex justify-between text-sm">
@@ -855,7 +856,7 @@ export default function PayrollPage() {
                         </>
                       )}
 
-                      {/* EWA Display (for FnB/MM/Ref/Wrapping) */}
+                      {/* EWA Display (for FnB/MM/Ref/Wrapping only, Hans excluded) */}
                       {(selectedDivision === 'fnb' || selectedDivision === 'minimarket' || selectedDivision === 'reflexiology' || selectedDivision === 'wrapping') && selectedPayroll.ewa_amount && (
                         <div className="bg-red-50 p-2 rounded-lg mt-2">
                           <div className="text-xs font-semibold text-red-700 mb-1">EWA (Kasbon)</div>
@@ -907,7 +908,11 @@ export default function PayrollPage() {
                             ? `/payrolls/mm/${selectedPayroll.id}/slip`
                             : selectedDivision === 'reflexiology'
                               ? `/payrolls/ref/${selectedPayroll.id}/slip`
-                              : `/payrolls/${selectedPayroll.id}/slip`;
+                              : selectedDivision === 'wrapping'
+                                ? `/payrolls/wrapping/${selectedPayroll.id}/slip`
+                                : selectedDivision === 'hans'
+                                  ? `/payrolls/hans/${selectedPayroll.id}/slip`
+                                  : `/payrolls/${selectedPayroll.id}/slip`;
 
                         const response = await apiClient.get(endpoint, {
                           responseType: 'blob',
@@ -1157,6 +1162,7 @@ export default function PayrollPage() {
                             if (selectedDivision === 'minimarket') saveEndpoint = '/payrolls/mm/import/save';
                             if (selectedDivision === 'reflexiology') saveEndpoint = '/payrolls/ref/import/save';
                             if (selectedDivision === 'wrapping') saveEndpoint = '/payrolls/wrapping/import/save';
+                            if (selectedDivision === 'hans') saveEndpoint = '/payrolls/hans/import/save';
 
                             const response = await apiClient.post(saveEndpoint, {
                               rows: parsedRows,

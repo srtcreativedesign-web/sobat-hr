@@ -18,6 +18,7 @@ import '../../screens/submission/create_submission_screen.dart'; // Added
 import '../../screens/announcement/announcement_detail_screen.dart'; // Added
 
 import 'package:intl/intl.dart';
+import '../profile/enroll_face_screen.dart'; // Added
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -55,6 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadLastPayroll();
     _loadAnnouncements();
     _loadRecentActivities();
+    _checkFaceEnrollment();
   }
 
   Future<void> _loadLeaveBalance() async {
@@ -275,6 +277,52 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _checkFaceEnrollment() {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final user = auth.user;
+
+    if (user != null && user.facePhotoPath == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        showDialog(
+          context: context,
+          barrierDismissible: true,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Registrasi Wajah Diperlukan'),
+            content: const Text(
+              'Untuk melakukan absensi, Anda wajib mendaftarkan wajah terlebih dahulu.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text(
+                  'Nanti',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const EnrollFaceScreen(isFirstTime: false),
+                    ),
+                  ).then((result) {
+                    if (result == true) {
+                      auth.refreshProfile();
+                    }
+                  });
+                },
+                child: const Text('Daftarkan Sekarang'),
+              ),
+            ],
+          ),
+        );
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Use AuthProvider
@@ -483,14 +531,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       CircleAvatar(
                         radius: 20,
                         backgroundColor: AppTheme.colorCyan.withAlpha(50),
-                        backgroundImage: (user?.avatar != null && user!.avatar!.isNotEmpty)
+                        backgroundImage:
+                            (user?.avatar != null && user!.avatar!.isNotEmpty)
                             ? NetworkImage(
-                                ApiConfig.baseUrl.replaceAll('/api', '') + '/storage/${user.avatar}',
+                                ApiConfig.baseUrl.replaceAll('/api', '') +
+                                    '/storage/${user.avatar}',
                               )
                             : null,
                         child: (user?.avatar == null || user!.avatar!.isEmpty)
                             ? Text(
-                                (user?.name.isNotEmpty == true) ? user!.name[0].toUpperCase() : 'U',
+                                (user?.name.isNotEmpty == true)
+                                    ? user!.name[0].toUpperCase()
+                                    : 'U',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: AppTheme.colorEggplant,
