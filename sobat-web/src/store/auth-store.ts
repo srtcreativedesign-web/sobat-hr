@@ -112,8 +112,11 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         try {
           await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT);
-        } catch (error) {
-          console.error('Logout error:', error);
+        } catch (error: any) {
+          // Ignore 401 Unauthorized during logout, as it means we're already logged out
+          if (error?.response?.status !== 401) {
+            console.error('Logout error:', error);
+          }
         } finally {
           // Clear storage
           localStorage.removeItem(STORAGE_KEYS.TOKEN);

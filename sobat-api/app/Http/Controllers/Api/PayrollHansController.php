@@ -128,63 +128,64 @@ class PayrollHansController extends Controller
                 $parsed = [
                     'employee_name' => $employeeName,
                     'period' => date('Y-m'), // Default to current
-                    'account_number' => $getCellValue('C', $row), 
+                    'account_number' => $getCellValue('D', $row),
                     
                     // Attendance
-                    'days_total' => (int) $getCellValue('D', $row),
-                    'days_off' => (int) $getCellValue('E', $row),
-                    'days_sick' => (int) $getCellValue('F', $row),
-                    'days_permission' => (int) $getCellValue('G', $row),
-                    'days_alpha' => (int) $getCellValue('H', $row),
-                    'days_leave' => (int) $getCellValue('I', $row),
-                    'days_long_shift' => (int) $getCellValue('J', $row), 
-                    'days_present' => (int) $getCellValue('K', $row),
+                    'days_total' => (int) $getCellValue('E', $row),
+                    'days_off' => (int) $getCellValue('F', $row),
+                    'days_sick' => (int) $getCellValue('G', $row),
+                    'days_permission' => (int) $getCellValue('H', $row),
+                    'days_alpha' => (int) $getCellValue('I', $row),
+                    'days_leave' => (int) $getCellValue('J', $row),
+                    'days_long_shift' => 0, // Not present in Excel K
+                    'days_present' => (int) $getCellValue('K', $row), // K is Ada/Hadir
                     
                     // Salary
                     'basic_salary' => $getCellValue('L', $row),
                     
                     // Allowances
-                    'meal_rate' => $getCellValue('M', $row),
-                    'meal_amount' => $getCellValue('N', $row),
+                    'meal_rate' => $getCellValue('N', $row),
+                    'meal_amount' => $getCellValue('O', $row),
                     
-                    'transport_rate' => $getCellValue('O', $row),
-                    'transport_amount' => $getCellValue('P', $row),
+                    'transport_rate' => $getCellValue('P', $row),
+                    'transport_amount' => $getCellValue('Q', $row),
                     
-                    'attendance_rate' => $getCellValue('Q', $row),
+                    'attendance_rate' => 0, // No rate column for Attendance in Excel
                     'attendance_amount' => $getCellValue('R', $row),
                     
-                    'position_allowance' => $getCellValue('S', $row),
-                    'health_allowance' => $getCellValue('T', $row),
+                    'position_allowance' => $getCellValue('M', $row), // M is Tunj Jabatan
+                    'health_allowance' => $getCellValue('S', $row), // S is Tunj Kesehatan
                     
-                    'total_salary_1' => $getCellValue('U', $row),
+                    'total_salary_1' => $getCellValue('T', $row), 
                     
                     // Overtime
-                    'overtime_rate' => $getCellValue('V', $row),
-                    'overtime_hours' => $getCellValue('W', $row),
-                    'overtime_amount' => $getCellValue('X', $row),
+                    'overtime_rate' => $getCellValue('U', $row),
+                    'overtime_hours' => $getCellValue('V', $row),
+                    'overtime_amount' => $getCellValue('W', $row),
                     
                     // Bonus & Incentives
-                    'bonus' => $getCellValue('Y', $row),
-                    'incentive' => $getCellValue('Z', $row),
-                    'holiday_allowance' => 0, 
-                    
+                    'bonus' => $getCellValue('X', $row),
+                    'holiday_allowance' => $getCellValue('Y', $row), // Insentif Lebaran
+                    'adjustment' => $getCellValue('Z', $row), // Adj Kekurangan Gaji
+                    'incentive' => 0, 
+
                     'total_salary_2' => $getCellValue('AA', $row), 
                     'policy_ho' => $getCellValue('AB', $row), 
                     
                     // Deductions
                     'deduction_absent' => $getCellValue('AC', $row), 
                     'deduction_late' => $getCellValue('AD', $row), 
-                    'deduction_alpha' => $getCellValue('AE', $row), 
-                    'deduction_loan' => $getCellValue('AF', $row), 
-                    'deduction_admin_fee' => $getCellValue('AG', $row), 
-                    'deduction_bpjs_tk' => $getCellValue('AH', $row), 
+                    'deduction_so_shortage' => $getCellValue('AE', $row), // Selisih SO
+                    'deduction_alpha' => 0, 
+                    'deduction_loan' => $getCellValue('AF', $row), // Pinjaman
+                    'deduction_admin_fee' => $getCellValue('AG', $row), // Adm Bank
+                    'deduction_bpjs_tk' => $getCellValue('AH', $row), // BPJS TK
                     
                     'deduction_total' => $getCellValue('AI', $row),
                     
                     // Finals
                     'net_salary' => $getCellValue('AJ', $row),
                     'grand_total' => $getCellValue('AJ', $row), 
-                    // REMOVED EWA_AMOUNT HERE
                     
                     // Extras
                     'years_of_service' => $getCellValue('AK', $row),
@@ -243,6 +244,8 @@ class PayrollHansController extends Controller
                 PayrollHans::create(array_merge($row, [
                     'employee_id' => $employee->id,
                     'status' => 'draft',
+                    'adjustment' => $row['adjustment'] ?? 0,
+                    'deduction_so_shortage' => $row['deduction_so_shortage'] ?? 0,
                 ]));
                 
                 $saved++;
@@ -389,12 +392,14 @@ class PayrollHansController extends Controller
              'Bonus' => $payroll->bonus,
              'Insentif' => $payroll->incentive,
              'THR' => $payroll->holiday_allowance,
+             'Adj Kekurangan Gaji' => $payroll->adjustment, // New
              'Kebijakan HO' => $payroll->policy_ho,
         ];
         
         $formatted['deductions'] = [
             'Absen 1X' => $payroll->deduction_absent,
-            'Terlambat' => $payroll->deduction_late, // New
+            'Terlambat' => $payroll->deduction_late, 
+            'Selisih SO' => $payroll->deduction_so_shortage, // New
             'Tidak Hadir' => $payroll->deduction_alpha,
             'Pinjaman' => $payroll->deduction_loan,
             'Adm Bank' => $payroll->deduction_admin_fee,

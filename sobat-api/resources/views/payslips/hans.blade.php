@@ -202,6 +202,13 @@
             <td class="amount">Rp {{ number_format($payroll->holiday_allowance, 0, ',', '.') }}</td>
         </tr>
         @endif
+
+        @if($payroll->adjustment > 0)
+        <tr>
+            <td>Adj Kekurangan Gaji</td>
+            <td class="amount">Rp {{ number_format($payroll->adjustment, 0, ',', '.') }}</td>
+        </tr>
+        @endif
         
         @if($payroll->policy_ho > 0)
         <tr>
@@ -230,6 +237,13 @@
         <tr>
             <td>Terlambat</td>
             <td class="amount">Rp {{ number_format($payroll->deduction_late, 0, ',', '.') }}</td>
+        </tr>
+        @endif
+
+        @if($payroll->deduction_so_shortage > 0)
+        <tr>
+            <td>Selisih SO</td>
+            <td class="amount">Rp {{ number_format($payroll->deduction_so_shortage, 0, ',', '.') }}</td>
         </tr>
         @endif
         
