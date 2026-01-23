@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/auth-store';
 import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
 import LatenessChart from '@/components/dashboard/LatenessChart';
+import TextType from '@/components/TextType';
 
 interface DashboardStats {
   employees: {
@@ -162,7 +163,21 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-bold text-gray-800">
               {getGreeting()}, <span className="bg-gradient-to-r from-[#462e37] to-[#a9eae2] bg-clip-text text-transparent">{user?.name}</span> 👋
             </h1>
-            <p className="text-sm text-gray-500 mt-1">Here's what's happening in your organization today.</p>
+            <div className="mt-1">
+              <TextType
+                text={[
+                  "Here's what's happening in your organization today.",
+                  "Don't forget to check pending requests.",
+                  "Have a productive day!"
+                ]}
+                typingSpeed={75}
+                pauseDuration={1500}
+                showCursor
+                cursorCharacter="▎"
+                deletingSpeed={50}
+                className="text-sm text-gray-500"
+              />
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <button className="p-2 text-gray-400 hover:text-[#462e37] transition-colors relative">
