@@ -20,6 +20,7 @@ class User {
   final double? officeLatitude;
   final double? officeLongitude;
   final int? officeRadius;
+  final String? facePhotoPath;
 
   User({
     required this.id,
@@ -44,6 +45,7 @@ class User {
     this.officeLongitude,
     this.officeRadius,
     this.joinDateEditCount = 0,
+    this.facePhotoPath,
   });
 
   final int joinDateEditCount;
@@ -137,6 +139,11 @@ class User {
       officeLongitude: lng,
       officeRadius: rad,
       joinDateEditCount: editCount,
+      facePhotoPath:
+          (json['employee'] != null &&
+              json['employee']['face_photo_path'] != null)
+          ? json['employee']['face_photo_path'] as String
+          : null,
     );
   }
 

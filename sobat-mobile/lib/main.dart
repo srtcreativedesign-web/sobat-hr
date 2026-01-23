@@ -17,6 +17,7 @@ import 'screens/announcement/announcement_list_screen.dart'; // Added
 import 'screens/notification/notification_screen.dart'; // Added
 import 'screens/attendance/attendance_screen.dart';
 import 'screens/attendance/attendance_history_screen.dart'; // Added
+import 'screens/profile/enroll_face_screen.dart'; // Added
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -82,6 +83,10 @@ class AuthWrapper extends StatelessWidget {
         }
 
         if (authProvider.isAuthenticated) {
+          // Force Enrollment Check
+          if (authProvider.user?.facePhotoPath == null) {
+            return const EnrollFaceScreen(isFirstTime: true);
+          }
           return const HomeScreen();
         }
 

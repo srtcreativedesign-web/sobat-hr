@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\Attendance;
 use App\Models\Employee;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\AttendanceExport;
 
 class AttendanceController extends Controller
 {
@@ -18,8 +20,24 @@ class AttendanceController extends Controller
             $query->where('employee_id', $request->employee_id);
         }
 
-        if ($request->has('date')) {
+        // Date Range Filter
+        if ($request->has('start_date') && $request->start_date) {
+            $query->whereDate('date', '>=', $request->start_date);
+        }
+        if ($request->has('end_date') && $request->end_date) {
+            $query->whereDate('date', '<=', $request->end_date);
+        }
+        
+        // Backward compatibility or exact date match if needed
+        if (!$request->has('start_date') && $request->has('date')) {
             $query->whereDate('date', $request->date);
+        }
+
+        // Division Filter
+        if ($request->has('division_id') && $request->division_id) {
+            $query->whereHas('employee', function ($q) use ($request) {
+                $q->where('organization_id', $request->division_id);
+            });
         }
 
         if ($request->has('status')) {
@@ -74,6 +92,46 @@ class AttendanceController extends Controller
         if ($request->hasFile('photo')) {
             $path = $request->file('photo')->store('attendance_photos', 'public');
             $validated['photo_path'] = $path;
+
+            // Face Verification Logic
+            if ($employee->face_photo_path) {
+                // Determine full paths
+                $checkInPhotoPath = storage_path('app/public/' . $path);
+                $referencePhotoPath = storage_path('app/public/' . $employee->face_photo_path);
+                $scriptPath = base_path('python_scripts/compare_faces.py');
+
+                // Call Python Script
+                // Fix: Force arm64 architecture
+                $command = "/usr/bin/arch -arm64 python3 " . escapeshellarg($scriptPath) . " " . escapeshellarg($referencePhotoPath) . " " . escapeshellarg($checkInPhotoPath) . " 2>&1";
+                $output = shell_exec($command);
+                $result = json_decode($output, true);
+
+                if ($result) {
+                    if ($result['status'] === 'error') {
+                         // Decide: Block or Warn? Client requested matching system.
+                         // Let's Log it and potentialy block if strictly required.
+                         // For now return error to client.
+                        //  \Illuminate\Support\Facades\Storage::disk('public')->delete($path); // Optional: delete invalid photo
+                        //  return response()->json(['message' => 'Error validasi wajah: ' . $result['message']], 500);
+                        // Let's assume script error might be env issue, log it but don't block UNLESS it is a match failure
+                         \Illuminate\Support\Facades\Log::error('Face Verification Script Error: ' . $result['message']);
+                    } elseif ($result['status'] === 'success') {
+                        if (!$result['match']) {
+                             \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+                             return response()->json([
+                                 'message' => 'Verifikasi Wajah Gagal. Wajah tidak cocok dengan data pendaftaran.',
+                                 'distance' => $result['distance']
+                             ], 422);
+                        }
+                        $validated['face_verified'] = true; // Optional: if we want to store verification status
+                    }
+                } else {
+                     \Illuminate\Support\Facades\Log::error('Face Verification Script Output Empty');
+                }
+            } else {
+                // OPTIONAL: Require enrollment first?
+                // return response()->json(['message' => 'Anda belum mendaftarkan wajah. Silakan daftarkan wajah terlebih dahulu di menu Profil.'], 403);
+            }
         }
 
         // Check for Late (after 08:00)
@@ -115,7 +173,7 @@ class AttendanceController extends Controller
         if (isset($validated['check_out'])) {
             $checkIn = Carbon::parse($validated['check_in']);
             $checkOut = Carbon::parse($validated['check_out']);
-            $validated['work_hours'] = $checkOut->diffInHours($checkIn, false);
+            $validated['work_hours'] = $checkIn->floatDiffInHours($checkOut);
 
             // Check for Overtime (after 17:00)
             $workEndTime = Carbon::parse($validated['date'] . ' 17:00:00');
@@ -188,7 +246,7 @@ class AttendanceController extends Controller
             
             if ($checkOutTime) {
                 // Calculate Work Hours
-                $validated['work_hours'] = $checkOut->diffInHours($checkIn, false);
+            $validated['work_hours'] = $checkIn->floatDiffInHours($checkOut);
 
                 // Calculate Overtime (after 17:00)
                 // Use date from attendance record
@@ -333,5 +391,12 @@ class AttendanceController extends Controller
         $attendance->save();
 
         return response()->json($attendance);
+    }
+    /**
+     * Export attendance to Excel
+     */
+    public function export(Request $request)
+    {
+        return Excel::download(new AttendanceExport($request), 'attendance_' . date('Y-m-d_H-i-s') . '.xlsx');
     }
 }

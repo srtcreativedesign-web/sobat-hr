@@ -10,9 +10,10 @@ import 'dart:async';
 import 'dart:ui';
 import '../../config/theme.dart';
 import '../../services/attendance_service.dart';
-import 'package:image_picker/image_picker.dart';
+
 import 'dart:io';
 import 'package:intl/intl.dart';
+import 'selfie_screen.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -180,14 +181,13 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       return;
     }
 
-    final ImagePicker picker = ImagePicker();
-    final XFile? photo = await picker.pickImage(
-      source: ImageSource.camera,
-      preferredCameraDevice: CameraDevice.front,
-      imageQuality: 50,
+    // Navigate to SelfieScreen
+    final String? photoPath = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SelfieScreen()),
     );
 
-    if (photo != null) {
+    if (photoPath != null) {
       _showLoading();
 
       try {
@@ -201,7 +201,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           employeeId: user!.employeeRecordId!,
           latitude: _currentPosition!.latitude,
           longitude: _currentPosition!.longitude,
-          photo: File(photo.path),
+          photo: File(photoPath),
           status: 'present',
           address: _currentAddress,
         );
@@ -226,14 +226,12 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     }
 
     // 1. Photo Confirmation (Selfie)
-    final ImagePicker picker = ImagePicker();
-    final XFile? photo = await picker.pickImage(
-      source: ImageSource.camera,
-      preferredCameraDevice: CameraDevice.front,
-      imageQuality: 50,
+    final String? photoPath = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SelfieScreen()),
     );
 
-    if (photo == null) return; // User cancelled
+    if (photoPath == null) return; // User cancelled
 
     // 2. Submit Checkout
     _showLoading();
@@ -246,7 +244,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       await _attendanceService.checkOut(
         attendanceId: _todayAttendance!['id'],
         checkOutTime: DateFormat('HH:mm:ss').format(DateTime.now()),
-        photo: File(photo.path),
+        photo: File(photoPath),
         status: 'present',
       );
 

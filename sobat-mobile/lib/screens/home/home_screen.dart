@@ -1,3 +1,4 @@
+import 'package:sobat_hr/config/api_config.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -479,29 +480,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Row(
                     children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black12, blurRadius: 4),
-                          ],
-                        ),
-                        child: CircleAvatar(
-                          radius: 20,
-                          backgroundColor: AppTheme.colorCyan.withValues(
-                            alpha: 0.2,
-                          ),
-                          child: Text(
-                            (user?.name != null && user!.name.isNotEmpty)
-                                ? user.name.substring(0, 1).toUpperCase()
-                                : 'U',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.colorEggplant,
-                            ),
-                          ),
-                        ),
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: AppTheme.colorCyan.withAlpha(50),
+                        backgroundImage: (user?.avatar != null && user!.avatar!.isNotEmpty)
+                            ? NetworkImage(
+                                ApiConfig.baseUrl.replaceAll('/api', '') + '/storage/${user.avatar}',
+                              )
+                            : null,
+                        child: (user?.avatar == null || user!.avatar!.isEmpty)
+                            ? Text(
+                                (user?.name.isNotEmpty == true) ? user!.name[0].toUpperCase() : 'U',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.colorEggplant,
+                                ),
+                              )
+                            : null,
                       ),
                       const SizedBox(width: 12),
                       Column(

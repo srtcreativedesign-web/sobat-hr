@@ -35,6 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('employees', App\Http\Controllers\Api\EmployeeController::class);
     Route::get('/employees/{id}/attendances', [App\Http\Controllers\Api\EmployeeController::class, 'attendances']);
     Route::get('/employees/{id}/payrolls', [App\Http\Controllers\Api\EmployeeController::class, 'payrolls']);
+    Route::post('/employees/enroll-face', [App\Http\Controllers\Api\EmployeeController::class, 'enrollFace']);
 
     // Organization routes
     Route::delete('/organizations/reset', [App\Http\Controllers\Api\OrganizationController::class, 'reset']);
@@ -44,6 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Attendance routes
     Route::get('/attendance/today', [App\Http\Controllers\Api\AttendanceController::class, 'today']);
     Route::get('/attendance/history', [App\Http\Controllers\Api\AttendanceController::class, 'history']); // New History Route
+    Route::get('/attendances/export', [App\Http\Controllers\Api\AttendanceController::class, 'export']); // Export Route
     Route::get('/attendances', [App\Http\Controllers\Api\AttendanceController::class, 'index']); // Added for Web Admin
     Route::post('/attendances', [App\Http\Controllers\Api\AttendanceController::class, 'store']);
     Route::post('/attendances/{id}/approve', [App\Http\Controllers\Api\AttendanceController::class, 'approveLate']); // Late Approval Route

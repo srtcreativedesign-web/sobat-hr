@@ -29,9 +29,12 @@ export default function AttendancePage() {
     const router = useRouter();
     const { isAuthenticated, checkAuth } = useAuthStore();
     const [attendances, setAttendances] = useState<Attendance[]>([]);
+    const [organizations, setOrganizations] = useState<{ id: number; name: string }[]>([]);
     const [loading, setLoading] = useState(false);
-    const [filterDate, setFilterDate] = useState('');
+    const [filterStartDate, setFilterStartDate] = useState('');
+    const [filterEndDate, setFilterEndDate] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
+    const [filterDivision, setFilterDivision] = useState('');
     const [selectedAttendance, setSelectedAttendance] = useState<Attendance | null>(null);
 
     useEffect(() => {
@@ -44,16 +47,28 @@ export default function AttendancePage() {
             return;
         }
 
+        fetchOrganizations();
         fetchAttendances();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAuthenticated, router]);
+
+    const fetchOrganizations = async () => {
+        try {
+            const response = await apiClient.get('/organizations');
+            setOrganizations(response.data.data || response.data);
+        } catch (error) {
+            console.error('Failed to fetch organizations:', error);
+        }
+    };
 
     const fetchAttendances = async () => {
         try {
             setLoading(true);
             const params = new URLSearchParams();
-            if (filterDate) params.append('date', filterDate);
+            if (filterStartDate) params.append('start_date', filterStartDate);
+            if (filterEndDate) params.append('end_date', filterEndDate);
             if (filterStatus) params.append('status', filterStatus);
+            if (filterDivision) params.append('division_id', filterDivision);
 
             const response = await apiClient.get(`/attendances?${params.toString()}`);
             // Pagination handling might be needed, assuming API returns paginated data structure
@@ -69,6 +84,33 @@ export default function AttendancePage() {
     const handleFilter = (e: React.FormEvent) => {
         e.preventDefault();
         fetchAttendances();
+    };
+
+    const handleExport = async () => {
+        try {
+            const params = new URLSearchParams();
+            if (filterStartDate) params.append('start_date', filterStartDate);
+            if (filterEndDate) params.append('end_date', filterEndDate);
+            if (filterStatus) params.append('status', filterStatus);
+            if (filterDivision) params.append('division_id', filterDivision);
+
+            // Fetch as blob
+            const response = await apiClient.get(`/attendances/export?${params.toString()}`, {
+                responseType: 'blob',
+            });
+
+            // Create download link
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Attendance_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode?.removeChild(link);
+        } catch (error) {
+            console.error('Failed to export:', error);
+            alert('Gagal mengexport data.');
+        }
     };
 
     const handleApprove = async (id: number, status: string) => {
@@ -131,14 +173,40 @@ export default function AttendancePage() {
                 {/* Filters */}
                 <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
                     <form onSubmit={handleFilter} className="flex flex-wrap gap-4 items-end">
+                        <div className="flex gap-2">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Dari Tanggal</label>
+                                <input
+                                    type="date"
+                                    value={filterStartDate}
+                                    onChange={(e) => setFilterStartDate(e.target.value)}
+                                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#462e37] focus:border-transparent"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Sampai Tanggal</label>
+                                <input
+                                    type="date"
+                                    value={filterEndDate}
+                                    onChange={(e) => setFilterEndDate(e.target.value)}
+                                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#462e37] focus:border-transparent"
+                                />
+                            </div>
+                        </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Tanggal</label>
-                            <input
-                                type="date"
-                                value={filterDate}
-                                onChange={(e) => setFilterDate(e.target.value)}
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Divisi</label>
+                            <select
+                                value={filterDivision}
+                                onChange={(e) => setFilterDivision(e.target.value)}
                                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#462e37] focus:border-transparent"
-                            />
+                            >
+                                <option value="">Semua Divisi</option>
+                                {organizations.map((org) => (
+                                    <option key={org.id} value={org.id}>
+                                        {org.name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
@@ -161,6 +229,13 @@ export default function AttendancePage() {
                             className="px-6 py-2 bg-[#a9eae2] text-[#462e37] rounded-lg hover:bg-[#729892] transition-colors font-medium"
                         >
                             Filter
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleExport}
+                            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                        >
+                            Export Excel
                         </button>
                     </form>
                 </div>

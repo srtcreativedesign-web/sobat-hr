@@ -7,7 +7,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../config/api_config.dart';
 import '../../config/theme.dart';
+import '../../config/theme.dart';
 import '../../services/auth_service.dart';
+import 'enroll_face_screen.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -606,6 +608,81 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ],
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // Face Enrollment Status
+              Center(
+                child: FutureBuilder<Map<String, dynamic>?>(
+                  future: _authService.getCurrentUser(),
+                  builder: (context, snapshot) {
+                    final user = snapshot.data;
+                    final isEnrolled =
+                        user != null &&
+                        user['employee'] != null &&
+                        user['employee']['face_photo_path'] != null;
+
+                    return InkWell(
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EnrollFaceScreen(),
+                          ),
+                        );
+                        if (result == true) {
+                          _loadInitial(); // Reload to update status
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isEnrolled
+                              ? Colors.green.withOpacity(0.1)
+                              : Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isEnrolled ? Colors.green : Colors.orange,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isEnrolled ? Icons.check_circle : Icons.face,
+                              color: isEnrolled ? Colors.green : Colors.orange,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              isEnrolled
+                                  ? 'Wajah Terdaftar'
+                                  : 'Daftarkan Wajah (Wajib)',
+                              style: TextStyle(
+                                color: isEnrolled
+                                    ? Colors.green
+                                    : Colors.orange,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (!isEnrolled) ...[
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.arrow_forward_ios,
+                                size: 12,
+                                color: Colors.orange,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
               const SizedBox(height: 24),
 
               // Header inputs

@@ -23,6 +23,9 @@ class OrganizationResource extends JsonResource
             'phone' => $this->phone,
             'email' => $this->email,
             'parent' => new OrganizationResource($this->whenLoaded('parentOrganization')),
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
+            'radius_meters' => $this->radius_meters,
             'created_at' => $this->created_at?->toISOString(),
         ];
     }

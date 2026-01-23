@@ -510,4 +510,57 @@ class EmployeeController extends Controller
             'data' => null
         ]);
     }
+    /**
+     * Enroll face for recognition
+     */
+    public function enrollFace(Request $request)
+    {
+        $request->validate([
+            'photo' => 'required|image|max:10240', // Max 10MB
+        ]);
+
+        $user = $request->user();
+        if (!$user->employee) {
+            return response()->json(['message' => 'Employee record not found'], 404);
+        }
+
+        $file = $request->file('photo');
+        $path = $file->store('face_enrollments', 'public');
+        $fullPath = storage_path('app/public/' . $path);
+
+        // Call Python script to detect face
+        $scriptPath = base_path('python_scripts/detect_face.py');
+        $command = "python3 " . escapeshellarg($scriptPath) . " " . escapeshellarg($fullPath);
+        $output = shell_exec($command);
+        $result = json_decode($output, true);
+
+        if (!$result || (isset($result['status']) && $result['status'] === 'error')) {
+            // Delete the file if validation fails
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+            return response()->json([
+                'message' => 'Gagal memproses validasi wajah.',
+                'error' => $result['message'] ?? 'Script Failure',
+                'debug_output' => $output // Debug Info for User
+            ], 500);
+        }
+
+        if ($result['face_count'] === 0) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+            return response()->json(['message' => 'Wajah tidak terdeteksi. Pastikan wajah terlihat jelas.'], 422);
+        }
+
+        if ($result['face_count'] > 1) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+            return response()->json(['message' => 'Terdeteksi lebih dari satu wajah. Pastikan hanya Anda di dalam foto.'], 422);
+        }
+
+        // Save path to employee record
+        $user->employee->face_photo_path = $path;
+        $user->employee->save();
+
+        return response()->json([
+            'message' => 'Wajah berhasil didaftarkan.',
+            'face_photo_path' => $path
+        ]);
+    }
 }
