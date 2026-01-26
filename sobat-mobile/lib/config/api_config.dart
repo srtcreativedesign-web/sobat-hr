@@ -1,25 +1,53 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 class ApiConfig {
-  // Base URL for API
-  // Android Emulator: use 10.0.2.2 instead of localhost
-  // iOS Simulator & Web: use localhost (127.0.0.1)
+  // ==========================================================================
+  // 🔧 CONFIGURATION (AUTO-DETECTED)
+  // ==========================================================================
 
+  // IP Address Laptop/Host Anda (Jaringan Wi-Fi)
+  // Saya sudah mendeteksi IP laptop Anda adalah: 192.168.1.26
+  static const String _hostIp = '192.168.1.26';
+  static const String _port = '8000';
+
+  // Base URL Logic
   static String get baseUrl {
-    if (Platform.isAndroid) {
-      // 10.0.2.2 is for Android Emulator to access localhost
-      // Use 192.168.x.x for Physical Android Device
-      // Detected Local IP: 192.168.1.3
-      return 'http://192.168.1.3:8000/api';
-    } else if (Platform.isIOS) {
-      // iOS Simulator: use localhost
-      // For Physical iOS Device, change to your machine's IP
-      return 'http://127.0.0.1:8000/api';
+    // 1. Web Support
+    if (kIsWeb) {
+      debugPrint('🌐 Environment: Web Browser');
+      return 'http://127.0.0.1:$_port/api';
     }
-    return 'http://127.0.0.1:8000/api';
+
+    // 2. Android Support
+    if (Platform.isAndroid) {
+      debugPrint('🤖 Environment: Android Device Detected');
+      // Note: Menggunakan Host IP agar jalan di Emulator MAUPUN Fisik
+      // Jika pakai 10.0.2.2 hanya jalan di Emulator
+      debugPrint(
+        '👉 Config: Using Host IP ($_hostIp) for Android compatibility',
+      );
+      return 'http://$_hostIp:$_port/api';
+    }
+
+    // 3. iOS Support
+    if (Platform.isIOS) {
+      debugPrint('🍎 Environment: iOS Device Detected');
+      // Note: iOS Simulator bisa localhost, tapi Fisik butuh IP
+      // Kita gunakan IP Host agar universal
+      debugPrint('👉 Config: Using Host IP ($_hostIp) for iOS compatibility');
+      return 'http://$_hostIp:$_port/api';
+    }
+
+    // 4. Fallback (MacOS/Windows Desktop)
+    debugPrint('💻 Environment: Desktop/Other');
+    return 'http://127.0.0.1:$_port/api';
   }
 
-  // API Endpoints
+  // ==========================================================================
+  // 🔌 ENDPOINTS
+  // ==========================================================================
+
   static const String login = '/auth/login';
   static const String logout = '/auth/logout';
   static const String profile = '/auth/me';

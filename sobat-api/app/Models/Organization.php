@@ -46,4 +46,36 @@ class Organization extends Model
     {
         return $this->hasMany(Shift::class);
     }
+
+    /**
+     * Get effective coordinates (traverse up to parent if null)
+     */
+    public function getEffectiveCoordinates()
+    {
+        if ($this->latitude && $this->longitude) {
+            return [
+                'latitude' => $this->latitude,
+                'longitude' => $this->longitude,
+                'radius_meters' => $this->radius_meters
+            ];
+        }
+
+        if ($this->parentOrganization) {
+            return $this->parentOrganization->getEffectiveCoordinates();
+        }
+
+        // Try to fetch parent if not loaded (lazy load fallback)
+        if ($this->parent_id) {
+            $parent = Organization::find($this->parent_id);
+            if ($parent) {
+                return $parent->getEffectiveCoordinates();
+            }
+        }
+
+        return [
+            'latitude' => null,
+            'longitude' => null,
+            'radius_meters' => null
+        ];
+    }
 }
