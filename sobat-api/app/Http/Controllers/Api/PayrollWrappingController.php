@@ -29,14 +29,22 @@ class PayrollWrappingController extends Controller
             }
         }
         
-        if ($request->has('month') && $request->month != 0) {
-             $query->whereRaw('MONTH(period) = ?', [$request->month]);
+        if ($request->has('month') && $request->has('year') && $request->month != 0 && $request->year != 0) {
+            $period = $request->year . '-' . str_pad($request->month, 2, '0', STR_PAD_LEFT);
+            $query->where('period', $period);
         }
-        if ($request->has('year') && $request->year != 0) {
-             $query->whereRaw('YEAR(period) = ?', [$request->year]);
+        // Fallback if only one provided (rare but robust)
+        else {
+             if ($request->has('month') && $request->month != 0) {
+                 $query->whereRaw('MONTH(STR_TO_DATE(CONCAT(period, "-01"), "%Y-%m-%d")) = ?', [$request->month]);
+             }
+             if ($request->has('year') && $request->year != 0) {
+                 $query->whereRaw('LEFT(period, 4) = ?', [$request->year]);
         }
         
-        $payrolls = $query->orderBy('period', 'desc')->paginate(50);
+        }
+        
+        $payrolls = $query->orderBy('period', 'desc')->paginate(20);
         
         $payrolls->getCollection()->transform(function ($payroll) {
             return $this->formatPayroll($payroll);

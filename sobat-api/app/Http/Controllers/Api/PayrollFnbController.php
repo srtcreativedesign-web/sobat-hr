@@ -45,7 +45,7 @@ class PayrollFnbController extends Controller
         
         $payrolls = $query->orderBy('period', 'desc')
             ->orderBy('created_at', 'desc')
-            ->paginate(50);
+            ->paginate(20);
         
         // Format each payroll with grouped allowances and deductions
         $payrolls->getCollection()->transform(function ($payroll) {

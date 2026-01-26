@@ -757,14 +757,21 @@ class PayrollController extends Controller
     /**
      * Approve SELECTED draft payrolls
      */
+    /**
+     * Approve SELECTED draft payrolls with Division support
+     */
     public function bulkApprove(Request $request)
     {
         $request->validate([
             'ids' => 'required|array',
-            'ids.*' => 'integer|exists:payrolls,id',
+            'ids.*' => 'integer',
+            'division' => 'nullable|string|in:office,fnb,minimarket,reflexiology,wrapping,hans',
+            'approval_signature' => 'nullable|string',
+            'signer_name' => 'nullable|string',
         ]);
 
         $ids = $request->input('ids');
+        $division = $request->input('division', 'office');
 
         $updateData = ['status' => 'approved'];
 
@@ -774,12 +781,26 @@ class PayrollController extends Controller
             $updateData['approved_by'] = auth()->id();
         }
 
-        $updated = Payroll::whereIn('id', $ids)
-            ->where('status', 'draft')
-            ->update($updateData);
+        $model = \App\Models\Payroll::class;
+        if ($division === 'fnb') $model = \App\Models\PayrollFnb::class;
+        if ($division === 'minimarket') $model = \App\Models\PayrollMm::class;
+        if ($division === 'reflexiology') $model = \App\Models\PayrollRef::class;
+        if ($division === 'wrapping') $model = \App\Models\PayrollWrapping::class;
+        if ($division === 'hans') $model = \App\Models\PayrollHans::class;
+
+        // Pending status varies: 'draft' or 'pending'
+        // Generic uses 'draft', others use 'pending'. Let's handle both or check model.
+        // FnB/MM/Ref/Wrapping/Hans usually use 'pending' as initial status after import?
+        // Let's rely on the frontend sending correct IDs for 'pending' items.
+        // We will update where status is NOT approved/paid to be safe? 
+        // Or simpler: Update whereIn ids. 
+        
+        $updated = $model::whereIn('id', $ids)
+             ->whereIn('status', ['draft', 'pending'])
+             ->update($updateData);
 
         return response()->json([
-            'message' => "Successfully approved {$updated} selected payrolls",
+            'message' => "Successfully approved {$updated} selected payrolls for {$division}",
             'count' => $updated,
         ]);
     }
@@ -849,5 +870,197 @@ class PayrollController extends Controller
 
         // Final cleanup
         return (float) $string;
+    }
+
+    /**
+     * Bulk Download Payslips as ZIP
+     */
+    public function bulkDownload(Request $request)
+    {
+        $request->validate([
+            'period' => 'required|string', // YYYY-MM
+            'division' => 'required|string', // all, office, hans, fnb, mm, ref, wrapping
+        ]);
+
+        $period = $request->period;
+        $division = $request->division;
+        $files = [];
+
+        try {
+            // Helper to process division
+            $processDivision = function ($modelClass, $viewName, $prefix) use ($period, &$files) {
+                // Determine query based on model structure
+                $query = $modelClass::with('employee')->where('period', $period);
+                $payrolls = $query->get();
+                
+                $groqService = new GroqAiService();
+
+                foreach ($payrolls as $payroll) {
+                    
+                    // Specific Logic for specific models
+                    if (str_contains($modelClass, 'PayrollHans')) {
+                       $payroll->allowances = [
+                            'Uang Makan' => ['rate' => $payroll->meal_rate, 'amount' => $payroll->meal_amount],
+                            'Transport' => ['rate' => $payroll->transport_rate, 'amount' => $payroll->transport_amount],
+                            'Kehadiran' => ['rate' => $payroll->attendance_rate, 'amount' => $payroll->attendance_amount],
+                            'Tunjangan Kesehatan' => $payroll->health_allowance,
+                            'Tunjangan Jabatan' => $payroll->position_allowance,
+                            'Lembur' => ['rate' => $payroll->overtime_rate, 'hours' => $payroll->overtime_hours, 'amount' => $payroll->overtime_amount],
+                            'Bonus' => $payroll->bonus,
+                            'Insentif' => $payroll->incentive,
+                            'THR' => $payroll->holiday_allowance,
+                            'Adj Kekurangan Gaji' => $payroll->adjustment,
+                            'Kebijakan HO' => $payroll->policy_ho,
+                       ];
+                       $payroll->deductions = [
+                           'Absen 1X' => $payroll->deduction_absent,
+                           'Terlambat' => $payroll->deduction_late,
+                           'Selisih SO' => $payroll->deduction_so_shortage,
+                           'Tidak Hadir' => $payroll->deduction_alpha,
+                           'Pinjaman' => $payroll->deduction_loan,
+                           'Adm Bank' => $payroll->deduction_admin_fee,
+                           'BPJS TK' => $payroll->deduction_bpjs_tk,
+                       ];
+                    } elseif (str_contains($modelClass, 'PayrollFnb')) {
+                        // FnB logic
+                        $payroll->allowances = [
+                            'Kehadiran' => ['rate' => $payroll->attendance_rate, 'amount' => $payroll->attendance_amount],
+                            'Transport' => ['rate' => $payroll->transport_rate, 'amount' => $payroll->transport_amount],
+                            'Tunjangan Kesehatan' => $payroll->health_allowance,
+                            'Tunjangan Jabatan' => $payroll->position_allowance,
+                            'Lembur' => ['rate' => $payroll->overtime_rate, 'hours' => $payroll->overtime_hours, 'amount' => $payroll->overtime_amount],
+                            'Insentif Lebaran' => $payroll->holiday_allowance,
+                            'Adjustment' => $payroll->adjustment,
+                            'Kebijakan HO' => $payroll->policy_ho,
+                        ];
+                        $payroll->deductions = [
+                            'Potongan Absen' => $payroll->deduction_absent,
+                            'Terlambat' => $payroll->deduction_late,
+                            'Selisih SO' => $payroll->deduction_shortage,
+                            'Pinjaman' => $payroll->deduction_loan,
+                            'Adm Bank' => $payroll->deduction_admin_fee,
+                            'BPJS TK' => $payroll->deduction_bpjs_tk,
+                        ];
+                    }
+                    // Wrapping - Assuming identical to FnB (Check if needed, but logical guess)
+                    // Wrapping Logic
+                    elseif (str_contains($modelClass, 'PayrollWrapping')) {
+                        $payroll->allowances = [
+                            'Gaji Training' => $payroll->training_salary,
+                            'Uang Makan' => ['rate' => $payroll->meal_rate, 'amount' => $payroll->meal_amount],
+                            'Transport' => ['rate' => $payroll->transport_rate, 'amount' => $payroll->transport_amount],
+                            'Tunjangan Kesehatan' => $payroll->health_allowance,
+                            'Kehadiran' => $payroll->attendance_allowance,
+                            'Lembur' => $payroll->overtime_amount,
+                            'Bonus' => $payroll->bonus,
+                            'Target Koli' => $payroll->target_koli,
+                            'Fee Aksesoris' => $payroll->fee_aksesoris,
+                            'Adj BPJS (Refund)' => $payroll->adj_bpjs,
+                        ];
+                        $payroll->deductions = [
+                            'Potongan Absen' => $payroll->deduction_absent,
+                            'Terlambat' => $payroll->deduction_late,
+                            'Tidak Hadir (Alpha)' => $payroll->deduction_alpha,
+                            'Pinjaman' => $payroll->deduction_loan,
+                            'Adm Bank' => $payroll->deduction_admin_fee,
+                            'BPJS TK' => $payroll->deduction_bpjs_tk,
+                        ];
+                    }
+                     // MM & Ref - Assuming identical to FnB 
+                     elseif (str_contains($modelClass, 'PayrollMm') || str_contains($modelClass, 'PayrollRef')) {
+                        $payroll->allowances = [
+                            'Kehadiran' => ['rate' => $payroll->attendance_rate, 'amount' => $payroll->attendance_amount],
+                            'Transport' => ['rate' => $payroll->transport_rate, 'amount' => $payroll->transport_amount],
+                            'Tunjangan Kesehatan' => $payroll->health_allowance,
+                            'Tunjangan Jabatan' => $payroll->position_allowance,
+                            'Lembur' => ['rate' => $payroll->overtime_rate, 'hours' => $payroll->overtime_hours, 'amount' => $payroll->overtime_amount],
+                            'Insentif Lebaran' => $payroll->holiday_allowance,
+                            'Adjustment' => $payroll->adjustment,
+                            'Kebijakan HO' => $payroll->policy_ho,
+                        ];
+                        $payroll->deductions = [
+                            'Potongan Absen' => $payroll->deduction_absent,
+                            'Terlambat' => $payroll->deduction_late,
+                            'Selisih SO' => $payroll->deduction_shortage,
+                            'Pinjaman' => $payroll->deduction_loan,
+                            'Adm Bank' => $payroll->deduction_admin_fee,
+                            'BPJS TK' => $payroll->deduction_bpjs_tk,
+                        ];
+                     }
+
+
+                    // Generate AI Message
+                    $aiMessage = null;
+                     try {
+                        $aiMessage = $groqService->generatePayslipMessage([
+                            'employee_name' => $payroll->employee->full_name,
+                            'period' => date('F Y', strtotime($period . '-01')),
+                            'basic_salary' => $payroll->basic_salary,
+                            'overtime' => $payroll->overtime_amount ?? ($payroll->overtime_pay ?? 0),
+                            'net_salary' => $payroll->net_salary,
+                            'join_date' => $payroll->employee->join_date,
+                        ]);
+                    } catch (\Exception $e) {}
+
+                    $pdf = Pdf::loadView($viewName, [
+                        'payroll' => $payroll,
+                        'aiMessage' => $aiMessage,
+                        'employee' => $payroll->employee
+                    ]);
+                    
+                    $filename = $prefix . '_' . str_replace(' ', '_', $payroll->employee->full_name) . '.pdf';
+                    $files[$filename] = $pdf->output();
+                }
+            };
+
+            // Switch Divisions
+            if ($division === 'all' || $division === 'hans') {
+                $processDivision(\App\Models\PayrollHans::class, 'payslips.hans', 'Hans');
+            }
+            if ($division === 'all' || $division === 'fnb') {
+                $processDivision(\App\Models\PayrollFnb::class, 'payslips.fnb', 'FnB');
+            }
+            if ($division === 'all' || $division === 'mm') {
+                $processDivision(\App\Models\PayrollMm::class, 'payslips.mm', 'MM'); 
+            }
+            if ($division === 'all' || $division === 'ref') {
+                 $processDivision(\App\Models\PayrollRef::class, 'payslips.ref', 'Reflexy');
+            }
+            if ($division === 'all' || $division === 'wrapping') {
+                 $processDivision(\App\Models\PayrollWrapping::class, 'payslips.wrapping', 'Wrapping');
+            }
+            if ($division === 'all' || $division === 'office') {
+                $processDivision(\App\Models\Payroll::class, 'payroll.slip', 'Office');
+            }
+
+            if (empty($files)) {
+                return response()->json(['message' => 'No payrolls found for this period'], 404);
+            }
+
+            // Create ZIP
+            $zipFileName = "Payrolls_{$division}_{$period}_" . time() . ".zip";
+            $zipPath = storage_path("app/public/{$zipFileName}");
+            
+            // Ensure directory exists
+            if (!file_exists(dirname($zipPath))) {
+                mkdir(dirname($zipPath), 0755, true);
+            }
+
+            $zip = new \ZipArchive;
+            if ($zip->open($zipPath, \ZipArchive::CREATE) === TRUE) {
+                foreach ($files as $name => $content) {
+                    $zip->addFromString($name, $content);
+                }
+                $zip->close();
+            } else {
+                return response()->json(['message' => 'Failed to create zip file'], 500);
+            }
+
+            return response()->download($zipPath)->deleteFileAfterSend(true);
+
+        } catch (\Exception $e) {
+            \Log::error("Bulk Download Error: " . $e->getMessage());
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
 }

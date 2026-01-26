@@ -53,7 +53,7 @@ class PayrollRefController extends Controller
         
         $payrolls = $query->orderBy('period', 'desc')
             ->orderBy('created_at', 'desc')
-            ->paginate(50);
+            ->paginate(20);
         
         // Transform data structurally for the frontend
         $payrolls->getCollection()->transform(function ($payroll) {

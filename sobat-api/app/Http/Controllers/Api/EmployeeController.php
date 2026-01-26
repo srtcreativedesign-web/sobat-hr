@@ -564,4 +564,5 @@ class EmployeeController extends Controller
             'face_photo_path' => $path
         ]);
     }
+
 }

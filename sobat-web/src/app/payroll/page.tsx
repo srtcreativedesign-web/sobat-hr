@@ -54,11 +54,14 @@ export default function PayrollPage() {
   const sigPad = useRef<SignatureCanvas>(null);
 
   // Division selector
-  const [selectedDivision, setSelectedDivision] = useState<'fnb' | 'minimarket' | 'reflexiology' | 'wrapping' | 'hans'>('fnb');
+  const [selectedDivision, setSelectedDivision] = useState<'all' | 'office' | 'fnb' | 'minimarket' | 'reflexiology' | 'wrapping' | 'hans'>('fnb');
 
   // Filter States
-  const [selectedMonth, setSelectedMonth] = useState(0); // 0 = Semua
-  const [selectedYear, setSelectedYear] = useState(0); // 0 = Semua
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // Default current month
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear()); // Default current year
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   const months = [
     { value: 1, label: 'Januari' }, { value: 2, label: 'Februari' }, { value: 3, label: 'Maret' },
@@ -74,14 +77,21 @@ export default function PayrollPage() {
   useEffect(() => {
     fetchPayrolls();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedMonth, selectedYear, selectedDivision]);
+  }, [selectedMonth, selectedYear, selectedDivision, currentPage]);
 
   const fetchPayrolls = async () => {
     try {
       setLoading(true);
 
+      if (selectedDivision === 'all') {
+        setPayrolls([]); // Clear table for 'All' view as it aggregates different structures
+        setLoading(false);
+        return;
+      }
+
       // Use division-specific endpoint
       let endpoint = '';
+      if (selectedDivision === 'office') endpoint = '/payrolls';
       if (selectedDivision === 'fnb') endpoint = '/payrolls/fnb';
       if (selectedDivision === 'minimarket') endpoint = '/payrolls/mm';
       if (selectedDivision === 'reflexiology') endpoint = '/payrolls/ref';
@@ -90,6 +100,7 @@ export default function PayrollPage() {
 
       const response = await apiClient.get(endpoint, {
         params: {
+          page: currentPage,
           ...(selectedMonth !== 0 && { month: selectedMonth }),
           ...(selectedYear !== 0 && { year: selectedYear })
         }
@@ -97,10 +108,63 @@ export default function PayrollPage() {
 
       // Handle different response structures
       if (endpoint) {
-        setPayrolls(response.data.data || []);
+        const data = response.data;
+        if (data.data && Array.isArray(data.data)) {
+          setPayrolls(data.data);
+          setLastPage(data.last_page || 1);
+          setTotalItems(data.total || 0);
+        } else {
+          setPayrolls(data || []);
+          setLastPage(1);
+          setTotalItems(data.length || 0);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch payrolls:', error);
+      setPayrolls([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBulkDownload = async () => {
+    if (selectedMonth === 0 || selectedYear === 0) {
+      alert('Harap pilih Bulan dan Tahun spesifik untuk mengunduh semua slip gaji.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const period = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
+
+      const response = await apiClient.post('/payrolls/bulk-download', {
+        period,
+        division: selectedDivision
+      }, {
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Payrolls_${selectedDivision}_${period}.zip`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error: any) {
+      console.error('Download failed:', error);
+      // Try to read blob error message
+      if (error.response?.data instanceof Blob) {
+        const text = await error.response.data.text();
+        try {
+          const json = JSON.parse(text);
+          alert(json.message || 'Download gagal');
+        } catch (e) {
+          alert('Gagal mengunduh file ZIP');
+        }
+      } else {
+        alert('Gagal mengunduh file ZIP');
+      }
     } finally {
       setLoading(false);
     }
@@ -179,7 +243,8 @@ export default function PayrollPage() {
         const response = await apiClient.post('/payrolls/bulk-approve', {
           ids: selectedIds,
           approval_signature: signatureData,
-          signer_name: signerName
+          signer_name: signerName,
+          division: selectedDivision
         });
         alert(response.data.message);
         setSelectedIds([]);
@@ -256,7 +321,12 @@ export default function PayrollPage() {
           // MM specific
           parseValue(allowances['Uang Makan']) +
           parseValue(allowances['Bonus']) +
-          parseValue(allowances['Insentif'])
+          parseValue(allowances['Insentif']) +
+          // Wrapping specific
+          parseValue(allowances['Target Koli']) +
+          parseValue(allowances['Fee Aksesoris']) +
+          parseValue(allowances['Adj BPJS']) +
+          parseValue(allowances['Gaji Training'])
         );
       }
       // Fallback to direct fields if structured object not available
@@ -271,7 +341,11 @@ export default function PayrollPage() {
         (parseFloat(payroll.policy_ho) || 0) +
         (parseFloat(payroll.meal_amount) || 0) +
         (parseFloat(payroll.bonus) || 0) +
-        (parseFloat(payroll.incentive) || 0)
+        (parseFloat(payroll.incentive) || 0) +
+        (parseFloat(payroll.target_koli) || 0) +
+        (parseFloat(payroll.fee_aksesoris) || 0) +
+        (parseFloat(payroll.adj_bpjs) || 0) +
+        (parseFloat(payroll.training_salary) || 0)
       );
     }
     // Generic payroll - allowances is a single number
@@ -396,9 +470,11 @@ export default function PayrollPage() {
             <span className="text-sm font-semibold text-gray-700">Divisi:</span>
             <select
               value={selectedDivision}
-              onChange={(e) => setSelectedDivision(e.target.value as 'fnb' | 'minimarket' | 'reflexiology' | 'wrapping' | 'hans')}
+              onChange={(e) => setSelectedDivision(e.target.value as any)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#462e37] text-sm font-medium"
             >
+              <option value="all">Semua Divisi (Bulk Download)</option>
+              <option value="office">Office (Pusat)</option>
               <option value="fnb">FnB</option>
               <option value="minimarket">Minimarket</option>
               <option value="reflexiology">Reflexiology</option>
@@ -430,6 +506,17 @@ export default function PayrollPage() {
                 <option key={y} value={y}>{y}</option>
               ))}
             </select>
+            {/* Bulk Download Button */}
+            <button
+              onClick={handleBulkDownload}
+              className="ml-2 flex items-center gap-2 px-4 py-2 bg-[#462e37] text-white rounded-lg hover:bg-[#2d1e24] transition-colors"
+              title="Download All Payslips as ZIP"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              ZIP
+            </button>
           </div>
 
           {/* Bulk Actions */}
@@ -450,7 +537,7 @@ export default function PayrollPage() {
             )}
 
             {/* Approve All Button if Drafts Exist */}
-            {payrolls.some(p => p.status === 'pending') && (
+            {payrolls.some(p => ['pending', 'draft'].includes(p.status)) && (
               <button
                 onClick={async () => {
                   if (!confirm('Are you sure you want to approve all pending payrolls for this period?')) return;
@@ -518,14 +605,14 @@ export default function PayrollPage() {
                         className="rounded border-gray-300 text-[#462e37] focus:ring-[#462e37] cursor-pointer"
                         checked={
                           payrolls.length > 0 &&
-                          payrolls.some(p => p.status === 'pending') &&
-                          payrolls.filter(p => p.status === 'pending').every(p => selectedIds.includes(Number(p.id)))
+                          payrolls.some(p => ['pending', 'draft'].includes(p.status)) &&
+                          payrolls.filter(p => ['pending', 'draft'].includes(p.status)).every(p => selectedIds.includes(Number(p.id)))
                         }
                         onChange={(e) => {
                           if (e.target.checked) {
-                            // Select all PENDING only
+                            // Select all PENDING/DRAFT only
                             const pendingIds = payrolls
-                              .filter(p => p.status === 'pending')
+                              .filter(p => ['pending', 'draft'].includes(p.status))
                               .map(p => Number(p.id));
                             setSelectedIds(pendingIds);
                           } else {
@@ -550,7 +637,7 @@ export default function PayrollPage() {
                   {payrolls.map((payroll) => (
                     <tr key={payroll.id} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${selectedIds.includes(payroll.id) ? 'bg-blue-50' : ''}`}>
                       <td className="py-4 px-6">
-                        {payroll.status === 'pending' && (
+                        {['pending', 'draft'].includes(payroll.status) && (
                           <input
                             type="checkbox"
                             className="rounded border-gray-300 text-[#462e37] focus:ring-[#462e37] cursor-pointer"
@@ -641,7 +728,7 @@ export default function PayrollPage() {
                             </svg>
                           </button>
 
-                          {payroll.status === 'pending' && (
+                          {['pending', 'draft'].includes(payroll.status) && (
                             <button
                               onClick={() => {
                                 setPendingApprovalId(Number(payroll.id));
@@ -673,6 +760,46 @@ export default function PayrollPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {totalItems > 0 && (
+            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-b-2xl">
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Menampilkan <span className="font-medium">{(currentPage - 1) * 20 + 1}</span> sampai <span className="font-medium">{Math.min(currentPage * 20, totalItems)}</span> dari <span className="font-medium">{totalItems}</span> data
+                  </p>
+                </div>
+                <div>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="sr-only">Previous</span>
+                      <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                      Hal. {currentPage} dari {lastPage}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, lastPage))}
+                      disabled={currentPage === lastPage}
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="sr-only">Next</span>
+                      <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </nav>
+                </div>
+              </div>
             </div>
           )}
         </div>
