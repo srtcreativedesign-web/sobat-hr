@@ -398,10 +398,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            (user?.position != null)
-                ? user!.position!.toUpperCase()
-                : (user?.jobLevel != null)
+            (user?.jobLevel != null && user!.jobLevel!.isNotEmpty)
                 ? (user!.jobLevel!.toUpperCase().replaceAll('_', ' '))
+                : (user?.position != null && user!.position!.isNotEmpty)
+                ? user!.position!.toUpperCase()
                 : (user?.role?.toUpperCase() ?? 'STAFF'),
             style: TextStyle(
               fontSize: 14,

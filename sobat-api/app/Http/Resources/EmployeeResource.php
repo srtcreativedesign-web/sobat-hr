@@ -25,7 +25,9 @@ class EmployeeResource extends JsonResource
             'date_of_birth' => $this->date_of_birth?->format('Y-m-d'),
             'join_date' => $this->join_date?->format('Y-m-d'),
             'join_date_edit_count' => $this->join_date_edit_count ?? 0,
+
             'position' => $this->position,
+            'job_level' => $this->job_level,
             'department' => $this->department,
             'base_salary' => $this->base_salary,
             'status' => $this->status,

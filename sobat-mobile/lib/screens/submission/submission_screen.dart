@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'submission_detail_screen.dart';
 import '../../config/theme.dart';
 import '../../widgets/submission_card.dart';
 import '../../services/request_service.dart';
@@ -126,7 +128,12 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
           iconBgColor: _mapStatusToColor(item['status']).withValues(alpha: 0.1),
           detailLabel: item['reason'] ?? '-',
           onTap: () {
-            // Show detail if needed
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SubmissionDetailScreen(submission: item),
+              ),
+            );
           },
         ),
       );
@@ -139,14 +146,16 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
     if (type == 'leave') return 'Cuti';
     if (type == 'permit') return 'Izin';
     if (type == 'sick') return 'Sakit';
-    if (type == 'reimbursement') return 'Reimbursement'; // If implemented
-    return type?.toUpperCase() ?? 'PENGAJUAN';
+    if (type == 'reimbursement') return 'Reimbursement';
+    if (type == 'business_trip') return 'Perjalanan Dinas';
+    return type?.replaceAll('_', ' ').toUpperCase() ?? 'PENGAJUAN';
   }
 
   IconData _mapTypeToIcon(String? type) {
     if (type == 'leave') return Icons.calendar_month;
     if (type == 'permit') return Icons.assignment_outlined;
     if (type == 'sick') return Icons.local_hospital_outlined;
+    if (type == 'business_trip') return Icons.flight_takeoff;
     return Icons.description_outlined;
   }
 
@@ -165,9 +174,20 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
   }
 
   String _formatDateRange(String? start, String? end) {
-    if (start == null) return '-';
-    if (end == null || start == end) return start;
-    return '$start s/d $end';
+    try {
+      if (start == null) return '-';
+      final startDate = DateTime.parse(start);
+      final startStr = DateFormat('d MMM y', 'id_ID').format(startDate);
+
+      if (end == null || start == end) return startStr;
+
+      final endDate = DateTime.parse(end);
+      final endStr = DateFormat('d MMM y', 'id_ID').format(endDate);
+
+      return '$startStr s/d $endStr';
+    } catch (_) {
+      return start ?? '-';
+    }
   }
 
   Widget _buildHeader() {
@@ -219,7 +239,9 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
             child: IconButton(
               icon: const Icon(Icons.add, color: AppTheme.colorEggplant),
               onPressed: () {
-                Navigator.pushNamed(context, '/submission/menu');
+                Navigator.pushNamed(context, '/submission/menu').then((_) {
+                  _loadSubmissions();
+                });
               },
             ),
           ),

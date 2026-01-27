@@ -926,17 +926,26 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
           apiType = 'leave';
           break;
         case 'Sakit':
-          apiType = 'leave';
-          break; // Maybe distinguish via description/title
+          apiType = 'sick_leave';
+          break;
         case 'Lembur':
           apiType = 'overtime';
           break;
         case 'Reimbursement':
           apiType = 'reimbursement';
           break;
+        case 'Pengajuan Aset':
+          apiType = 'asset';
+          break;
+        case 'Perjalanan Dinas':
+          apiType = 'business_trip';
+          break;
+        case 'Resign':
+          apiType = 'resignation';
+          break;
         default:
           apiType = 'reimbursement';
-          break; // Fallback
+          break;
       }
 
       final Map<String, dynamic> data = {
@@ -952,6 +961,33 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
               )
             : null,
       };
+
+      // Add Specific Fields
+      if (apiType == 'overtime' && _startTime != null && _endTime != null) {
+        data['start_time'] =
+            '${_startTime!.hour.toString().padLeft(2, '0')}:${_startTime!.minute.toString().padLeft(2, '0')}';
+        data['end_time'] =
+            '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}';
+        // Calculate duration in minutes
+        final start = DateTime(
+          2024,
+          1,
+          1,
+          _startTime!.hour,
+          _startTime!.minute,
+        );
+        var end = DateTime(2024, 1, 1, _endTime!.hour, _endTime!.minute);
+        if (end.isBefore(start)) {
+          end = end.add(const Duration(days: 1)); // Cross midnight
+        }
+        data['duration'] = end.difference(start).inMinutes;
+      }
+
+      if (apiType == 'asset') {
+        data['brand'] = _brandCtrl.text;
+        data['specification'] = _specCtrl.text;
+        data['is_urgent'] = _isUrgent;
+      }
 
       try {
         // Upload image if exists? Implementation complexity.
@@ -970,6 +1006,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
           Navigator.pop(context);
         }
       } catch (e) {
+        debugPrint('❌ Submission Failed: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),

@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('approvals', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('request_id');
+            $table->unsignedBigInteger('approvable_id');
+            $table->string('approvable_type');
             $table->unsignedBigInteger('approver_id');
             $table->integer('level'); // 1 = Manager, 2 = HR, 3 = Super Admin
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
@@ -21,7 +22,7 @@ return new class extends Migration
             $table->timestamp('acted_at')->nullable();
             $table->timestamps();
             
-            $table->index(['request_id', 'level']);
+            $table->index(['approvable_type', 'approvable_id', 'level']);
         });
     }
 

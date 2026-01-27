@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/api_config.dart';
 
@@ -40,8 +41,12 @@ class RequestService {
       final response = await _dio.post('/requests', data: data);
       return response.data;
     } on DioException catch (e) {
+      debugPrint(
+        '❌ Create Request Error: ${e.response?.statusCode} - ${e.response?.data}',
+      );
       throw e.response?.data['message'] ?? 'Gagal mengirim pengajuan';
     } catch (e) {
+      debugPrint('❌ General Error: $e');
       throw 'Terjadi kesalahan: $e';
     }
   }

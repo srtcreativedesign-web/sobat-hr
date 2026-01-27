@@ -11,20 +11,26 @@ class ApprovalController extends Controller
     /**
      * Get all approvals for authenticated user
      */
+    /**
+     * Get all approvals for authenticated user
+     */
     public function index(Request $request)
     {
         $user = $request->user();
+        $query = Approval::with(['approvable.employee']);
 
-        if (!$user->employee) {
-            return response()->json([
-                'message' => 'User is not associated with an employee'
-            ], 403);
+        // Check Role
+        $roleName = $user->role ? $user->role->name : '';
+        $isAdmin = in_array($roleName, ['super_admin', 'admin_cabang', 'hrd']);
+
+        if (!$isAdmin) {
+             if (!$user->employee) {
+                return response()->json(['message' => 'User is not associated with an employee'], 403);
+            }
+            $query->where('approver_id', $user->employee->id);
         }
 
-        $approvals = Approval::with(['request.employee'])
-            ->where('approver_id', $user->employee->id)
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        $approvals = $query->orderBy('created_at', 'desc')->paginate(20);
 
         return response()->json($approvals);
     }
@@ -35,16 +41,21 @@ class ApprovalController extends Controller
     public function pending(Request $request)
     {
         $user = $request->user();
+        $query = Approval::with(['approvable.employee']);
 
-        if (!$user->employee) {
-            return response()->json([
-                'message' => 'User is not associated with an employee'
-            ], 403);
+        // Check Role
+        $user->load('role');
+        $roleName = $user->role ? $user->role->name : '';
+        $isAdmin = in_array($roleName, ['super_admin', 'admin_cabang', 'hrd']);
+
+        if (!$isAdmin) {
+             if (!$user->employee) {
+                return response()->json(['message' => 'User is not associated with an employee'], 403);
+            }
+            $query->where('approver_id', $user->employee->id);
         }
 
-        $approvals = Approval::with(['request.employee'])
-            ->where('approver_id', $user->employee->id)
-            ->where('status', 'pending')
+        $approvals = $query->where('status', 'pending')
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 

@@ -399,4 +399,12 @@ class AttendanceController extends Controller
     {
         return Excel::download(new AttendanceExport($request), 'attendance_' . date('Y-m-d_H-i-s') . '.xlsx');
     }
+    /**
+     * Get count of pending attendance approvals
+     */
+    public function getPendingCount()
+    {
+        $count = Attendance::where('status', 'pending')->count();
+        return response()->json(['count' => $count]);
+    }
 }

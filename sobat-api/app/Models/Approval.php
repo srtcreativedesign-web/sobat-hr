@@ -10,25 +10,27 @@ class Approval extends Model
     use HasFactory;
 
     protected $fillable = [
-        'request_id',
+        'approvable_type',
+        'approvable_id',
         'approver_id',
         'level',
         'status',
-        'notes',
-        'approved_at',
+        'note',
+        'signature',
+        'acted_at',
     ];
 
     protected $casts = [
         'level' => 'integer',
-        'approved_at' => 'datetime',
+        'acted_at' => 'datetime',
     ];
 
     /**
      * Relationships
      */
-    public function request()
+    public function approvable()
     {
-        return $this->belongsTo(RequestModel::class, 'request_id');
+        return $this->morphTo();
     }
 
     public function approver()

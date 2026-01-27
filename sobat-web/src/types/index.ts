@@ -108,9 +108,10 @@ export interface Request {
   start_date?: string;
   end_date?: string;
   amount?: number;
-  status: 'draft' | 'pending' | 'approved' | 'rejected';
+  status: 'draft' | 'pending' | 'approved' | 'rejected' | 'cancelled';
+  step_now?: number;
   submitted_at?: string;
-  attachments?: string[];
+  attachments?: string[] | string; // Flexible for JSON string or array
   employee?: Employee;
   approvals?: Approval[];
   created_at?: string;
@@ -120,13 +121,18 @@ export interface Request {
 // Approval Types
 export interface Approval {
   id: number;
-  request_id: number;
+  approvable_type?: string;
+  approvable_id?: number;
+  request_id?: number; // Backward compatibility or alias
   approver_id: number;
   level: number;
   status: 'pending' | 'approved' | 'rejected';
-  notes?: string;
-  approved_at?: string;
-  request?: Request;
+  note?: string; // Standardized to note (singular)
+  notes?: string; // Backward compatibility
+  acted_at?: string;
+  approved_at?: string; // Backward compatibility
+  request?: Request; // Alias for approvable if loaded
+  approvable?: Request; // Polymorphic relation loaded correctly
   approver?: Employee;
   created_at?: string;
   updated_at?: string;

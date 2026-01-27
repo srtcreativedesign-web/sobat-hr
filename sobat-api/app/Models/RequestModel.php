@@ -16,6 +16,7 @@ class RequestModel extends Model
         'type',
         'title',
         'description',
+        'reason', // Legacy column support
         'start_date',
         'end_date',
         'amount',
@@ -42,6 +43,60 @@ class RequestModel extends Model
 
     public function approvals()
     {
-        return $this->hasMany(Approval::class, 'request_id');
+        return $this->morphMany(Approval::class, 'approvable');
+    }
+
+    public function leaveDetail()
+    {
+        return $this->hasOne(LeaveDetail::class, 'request_id');
+    }
+
+    public function overtimeDetail()
+    {
+        return $this->hasOne(OvertimeDetail::class, 'request_id');
+    }
+
+    public function sickLeaveDetail()
+    {
+        return $this->hasOne(SickLeaveDetail::class, 'request_id');
+    }
+
+    public function businessTripDetail()
+    {
+        return $this->hasOne(BusinessTripDetail::class, 'request_id');
+    }
+
+    public function reimbursementDetail()
+    {
+        return $this->hasOne(ReimbursementDetail::class, 'request_id');
+    }
+
+    public function assetDetail()
+    {
+        return $this->hasOne(AssetDetail::class, 'request_id');
+    }
+
+    public function getDetailAttribute()
+    {
+        switch ($this->type) {
+            case 'leave':
+                // Check if it's sick leave based on title? Or should we use a subtype column?
+                // For now, assume 'leave' type might be LeaveDetail.
+                // But wait, create_submission_screen sends 'leave' for Cuti and Sakit.
+                // We need to distinguish.
+                return $this->leaveDetail ?? $this->sickLeaveDetail; 
+            case 'sick_leave':
+                return $this->sickLeaveDetail;
+            case 'overtime':
+                return $this->overtimeDetail;
+            case 'reimbursement': // used for Reimburse
+                return $this->reimbursementDetail;
+            case 'asset':
+                return $this->assetDetail;
+            case 'business_trip':
+                return $this->businessTripDetail;
+            default:
+                return null;
+        }
     }
 }

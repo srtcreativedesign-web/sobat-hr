@@ -3,8 +3,8 @@
 import Image from 'next/image';
 
 import { usePathname, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth-store';
-import { useState } from 'react';
 import { Role } from '@/types';
 
 interface MenuItem {
@@ -25,6 +25,36 @@ export default function Sidebar() {
   const { user, logout } = useAuthStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['Employees']);
+  const [pendingAttendanceCount, setPendingAttendanceCount] = useState(0);
+
+  // Fetch Pending Count on Mount
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      try {
+        // Only fetch if user has access (Super Admin & Admin Cabang likely)
+        if (user?.role === 'super_admin' || (typeof user?.role === 'object' && (user.role as Role).name === 'admin_cabang')) {
+          const token = localStorage.getItem('token');
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/attendance/pending-count`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setPendingAttendanceCount(data.count);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch pending attendance count", error);
+      }
+    };
+
+    fetchPendingCount();
+
+    // Optional: Poll every 1 minute
+    const interval = setInterval(fetchPendingCount, 60000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const toggleMenu = (name: string) => {
     if (isCollapsed) setIsCollapsed(false);
@@ -96,6 +126,8 @@ export default function Sidebar() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
         </svg>
       ),
+      // Add logic to display badge in render loop, passing it here as a property if interface allows, 
+      // OR handle it in the mapping below. since interface is strict, let's just use the state variable in the map function.
     },
     {
       name: 'Shifts',
@@ -107,15 +139,7 @@ export default function Sidebar() {
       ),
       roles: ['super_admin', 'admin_cabang'],
     },
-    {
-      name: 'Requests',
-      href: '/requests',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
-    },
+
     {
       name: 'Payroll',
       href: '/payroll',
@@ -230,6 +254,9 @@ export default function Sidebar() {
           const isExpanded = expandedMenus.includes(item.name);
           const hasSubItems = item.subItems && item.subItems.length > 0;
 
+          // Badge Logic
+          const showBadge = item.name === 'Attendance' && pendingAttendanceCount > 0;
+
           return (
             <div key={item.name}>
               <button
@@ -250,12 +277,25 @@ export default function Sidebar() {
                 {!isCollapsed && (
                   <>
                     <span className="text-sm tracking-wide flex-1 text-left">{item.name}</span>
+
+                    {/* Badge */}
+                    {showBadge && (
+                      <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">
+                        {pendingAttendanceCount}
+                      </span>
+                    )}
+
                     {hasSubItems && (
                       <svg className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     )}
                   </>
+                )}
+
+                {/* Collapsed Badge (Dot) */}
+                {isCollapsed && showBadge && (
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></div>
                 )}
 
                 {!isCollapsed && isActive && !hasSubItems && (

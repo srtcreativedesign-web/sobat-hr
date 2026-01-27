@@ -19,6 +19,7 @@ import '../../screens/announcement/announcement_detail_screen.dart'; // Added
 
 import 'package:intl/intl.dart';
 import '../profile/enroll_face_screen.dart'; // Added
+import '../approval/approval_list_screen.dart'; // Added
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -564,10 +565,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           Text(
-                            (user?.position?.isNotEmpty == true
-                                    ? user!.position!
-                                    : (user?.jobLevel?.isNotEmpty == true
-                                          ? user!.jobLevel!
+                            (user?.jobLevel?.isNotEmpty == true
+                                    ? user!.jobLevel!.replaceAll('_', ' ')
+                                    : (user?.position?.isNotEmpty == true
+                                          ? user!.position!
                                           : (user?.role?.toUpperCase() ??
                                                 'STAFF')))
                                 .toUpperCase(),
@@ -1548,6 +1549,51 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ],
+        ),
+
+        // Approval Button for Managers
+        Builder(
+          builder: (context) {
+            final user = Provider.of<AuthProvider>(context).user;
+            final jobLevel = user?.jobLevel?.toLowerCase() ?? '';
+            final role = user?.role?.toLowerCase() ?? '';
+
+            final canApprove =
+                [
+                  'director',
+                  'manager',
+                  'manager_ops',
+                  'manager_divisi',
+                  'spv',
+                  'deputy_manager',
+                  'team_leader',
+                ].contains(jobLevel) ||
+                role == 'super_admin' ||
+                role == 'admin_cabang'; // Admin cabang sometimes approves?
+
+            if (!canApprove) return const SizedBox.shrink();
+
+            return Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Row(
+                children: [
+                  _buildActionItem(
+                    Icons.approval,
+                    'Persetujuan',
+                    AppTheme.colorEggplant,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ApprovalListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ],
     );
