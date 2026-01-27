@@ -61,6 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Request routes (Cuti, Lembur, Reimburse, Resign)
     Route::get('/requests/leave-balance', [App\Http\Controllers\Api\RequestController::class, 'leaveBalance']);
+    Route::get('/requests/{id}/proof', [App\Http\Controllers\Api\RequestController::class, 'exportProof']);
     Route::apiResource('requests', App\Http\Controllers\Api\RequestController::class);
     Route::post('/requests/{id}/submit', [App\Http\Controllers\Api\RequestController::class, 'submit']);
     Route::post('/requests/{id}/approve', [App\Http\Controllers\Api\RequestController::class, 'approve']);

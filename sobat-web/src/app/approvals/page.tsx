@@ -4,6 +4,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { STORAGE_KEYS } from '@/lib/config';
 import { useAuthStore } from '@/store/auth-store';
 import { Approval, PaginatedResponse } from '@/types';
+import { format, differenceInDays } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -12,18 +13,30 @@ export default function ApprovalsPage() {
     const { user } = useAuthStore();
     const [approvals, setApprovals] = useState<Approval[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [filter, setFilter] = useState<'pending' | 'history'>('pending');
+    const [activeTab, setActiveTab] = useState('pending'); // Renamed from filter
+    const [activeType, setActiveType] = useState('all');
+    const [currentPage, setCurrentPage] = useState(1);
+
 
     useEffect(() => {
         const fetchApprovals = async () => {
+            setIsLoading(true); // Set loading to true when fetching starts
             try {
                 const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
-                // We will fetch approvals. 
+                // We will fetch approvals.
                 // Note: The ApprovalController needs to support filtering by "my pending action".
+                const query = new URLSearchParams({
+                    page: currentPage.toString(),
+                    status: activeTab === 'history' ? 'approved,rejected' : 'pending' // pending is default
+                });
+
+                if (activeType !== 'all') {
+                    query.append('type', activeType);
+                }
+
                 // The endpoint GET /approvals/pending is typically for this.
-                const endpoint = filter === 'pending'
-                    ? `${process.env.NEXT_PUBLIC_API_URL}/approvals/pending`
-                    : `${process.env.NEXT_PUBLIC_API_URL}/approvals?status=finished`; // Or a specific history endpoint
+                // Changed to /requests as per instruction, assuming approvals are now part of requests
+                const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/requests?${query.toString()}`;
 
                 const response = await fetch(endpoint, {
                     headers: {
@@ -40,16 +53,20 @@ export default function ApprovalsPage() {
                     } else if (data.data && Array.isArray(data.data)) {
                         setApprovals(data.data);
                     }
+                } else {
+                    console.error("Failed to fetch approvals, status:", response.status);
+                    setApprovals([]); // Clear approvals on error
                 }
             } catch (error) {
                 console.error("Failed to fetch approvals", error);
+                setApprovals([]); // Clear approvals on error
             } finally {
                 setIsLoading(false);
             }
         };
 
         fetchApprovals();
-    }, [filter]);
+    }, [activeTab, activeType, currentPage]); // Dependencies for re-fetching
 
     return (
         <DashboardLayout>
@@ -62,8 +79,8 @@ export default function ApprovalsPage() {
                 <div className="mb-6">
                     <div className="inline-flex bg-gray-100 p-1 rounded-xl">
                         <button
-                            onClick={() => setFilter('pending')}
-                            className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${filter === 'pending'
+                            onClick={() => { setActiveTab('pending'); setCurrentPage(1); }}
+                            className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'pending'
                                 ? 'bg-white text-[#462e37] shadow-sm'
                                 : 'text-gray-500 hover:text-gray-700'
                                 }`}
@@ -71,8 +88,8 @@ export default function ApprovalsPage() {
                             Pending
                         </button>
                         <button
-                            onClick={() => setFilter('history')}
-                            className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${filter === 'history'
+                            onClick={() => { setActiveTab('history'); setCurrentPage(1); }}
+                            className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'history'
                                 ? 'bg-white text-[#462e37] shadow-sm'
                                 : 'text-gray-500 hover:text-gray-700'
                                 }`}
@@ -82,7 +99,30 @@ export default function ApprovalsPage() {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-[#462e37]/5 overflow-hidden min-h-[400px]">
+                {/* Type Filters / Sub-menus */}
+                <div className="flex overflow-x-auto pb-4 gap-2 no-scrollbar mb-2">
+                    {[
+                        { id: 'all', label: 'All' },
+                        { id: 'business_trip', label: 'Business Trip' },
+                        { id: 'reimbursement', label: 'Reimbursement' },
+                        { id: 'leave', label: 'Leave' },
+                        { id: 'overtime', label: 'Overtime' },
+                        { id: 'sick_leave', label: 'Sick' },
+                    ].map((type) => (
+                        <button
+                            key={type.id}
+                            onClick={() => { setActiveType(type.id); setCurrentPage(1); }}
+                            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all
+                            ${activeType === type.id
+                                    ? 'bg-[#462e37] text-white shadow-md'
+                                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
+                        >
+                            {type.label}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden min-h-[400px]">
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center h-[400px] gap-3">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#462e37]"></div>
@@ -105,16 +145,16 @@ export default function ApprovalsPage() {
                                         <th className="px-6 py-4 text-left text-xs font-bold text-[#462e37]/70 uppercase tracking-wider">Request Type</th>
                                         <th className="px-6 py-4 text-left text-xs font-bold text-[#462e37]/70 uppercase tracking-wider">Details</th>
                                         <th className="px-6 py-4 text-left text-xs font-bold text-[#462e37]/70 uppercase tracking-wider">Submitted</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#462e37]/70 uppercase tracking-wider">Status</th>
                                         <th className="px-6 py-4 text-left text-xs font-bold text-[#462e37]/70 uppercase tracking-wider">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-[#462e37]/5">
-                                    {approvals.map((approval) => {
-                                        // Helper to extract nested data safely
-                                        const req = (approval.approvable || {}) as unknown as any; // Cast to any to avoid strict checks on partial data or Request type
+                                    {approvals.map((req: any) => {
+                                        // The API returns RequestModel objects directly when using /requests endpoint
 
                                         return (
-                                            <tr key={approval.id} className="hover:bg-[#462e37]/[0.02] transition-colors group">
+                                            <tr key={req.id} className="hover:bg-[#462e37]/[0.02] transition-colors group">
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center">
                                                         <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#462e37] to-[#2d1e24] flex items-center justify-center text-white text-xs font-bold mr-3 shadow-md">
@@ -131,25 +171,35 @@ export default function ApprovalsPage() {
                                             ${req.type === 'leave' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
                                                             req.type === 'overtime' ? 'bg-purple-50 text-purple-700 border border-purple-100' :
                                                                 'bg-gray-50 text-gray-700 border border-gray-100'}`}>
-                                                        {req.type}
+                                                        {req.type?.replace(/_/g, ' ')}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="text-sm font-medium text-[#462e37] line-clamp-1">{req.title || req.description}</div>
                                                     <div className="text-xs text-[#462e37]/60 mt-0.5">
-                                                        {req.amount} Days • {req.start_date}
+                                                        {req.amount || (req.start_date && req.end_date ? differenceInDays(new Date(req.end_date), new Date(req.start_date)) + 1 : 1)} {['leave', 'business_trip', 'sick_leave'].includes(req.type) ? 'Days' : req.type === 'overtime' ? 'Hours' : 'Units'} • {req.start_date ? format(new Date(req.start_date), 'dd MMM yyyy') : '-'}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-[#462e37]/50">
                                                     {new Date(req.submitted_at || '').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <button
-                                                        onClick={() => router.push(`/approvals/${req.id}`)}
-                                                        className="inline-flex items-center px-4 py-1.5 border border-[#462e37]/20 text-sm font-bold rounded-lg text-[#462e37] bg-white hover:bg-[#462e37] hover:text-white hover:border-[#462e37] transition-all shadow-sm hover:shadow-md"
-                                                    >
-                                                        Review
-                                                    </button>
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold capitalize shadow-sm
+                                                        ${req.status === 'approved' ? 'bg-green-50 text-green-700 border border-green-100' :
+                                                            req.status === 'rejected' ? 'bg-red-50 text-red-700 border border-red-100' :
+                                                                'bg-amber-50 text-amber-700 border border-amber-100'}`}>
+                                                        {req.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    {req.id && (
+                                                        <button
+                                                            onClick={() => router.push(`/approvals/${req.id}`)}
+                                                            className="inline-flex items-center px-4 py-1.5 border border-[#462e37]/20 text-sm font-bold rounded-lg text-[#462e37] bg-white hover:bg-[#462e37] hover:text-white hover:border-[#462e37] transition-all shadow-sm hover:shadow-md"
+                                                        >
+                                                            Review
+                                                        </button>
+                                                    )}
                                                 </td>
                                             </tr>
                                         );

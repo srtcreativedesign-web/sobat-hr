@@ -44,6 +44,26 @@ export default function ApprovalTimeline({ approvals }: ApprovalTimelineProps) {
                         );
                     }
 
+                    const displayNote = approval.note || approval.notes || '';
+                    let approverName = (approval.approver?.full_name || 'Approver').replace(/\b\w/g, (l) => l.toUpperCase());
+                    let noteToDisplay = displayNote;
+
+                    const match = displayNote.match(/Approved by[:\s]+(.*)/i);
+                    if (match) {
+                        const extractedName = match[1].trim();
+                        // Only override title if it's a real name (not generic 'system/user')
+                        if (extractedName.toLowerCase() !== 'system/user') {
+                            approverName = extractedName;
+                        }
+                        // Clean up the note from the display
+                        noteToDisplay = displayNote.replace(/Approved by[:\s]+.*/i, '').trim();
+                    }
+
+                    // Extra guard to hide generic system note entirely
+                    if (noteToDisplay.toLowerCase() === 'approved by system/user') {
+                        noteToDisplay = '';
+                    }
+
                     return (
                         <li key={approval.id}>
                             <div className="relative pb-8">
@@ -58,21 +78,23 @@ export default function ApprovalTimeline({ approvals }: ApprovalTimelineProps) {
                                         {icon}
                                     </div>
                                     <div className="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-900">
-                                                Level {approval.level}: {approval.approver?.full_name || 'Approver'}
+                                        <div className="flex-1">
+                                            <p className="text-sm font-bold text-gray-900 leading-tight">
+                                                Level {approval.level}: <span>{approverName}</span>
                                             </p>
-                                            <p className="text-sm text-gray-500">
-                                                {approval.note || approval.notes}
-                                            </p>
+                                            {noteToDisplay && (
+                                                <p className="text-sm text-gray-500 mt-1 leading-snug">
+                                                    {noteToDisplay}
+                                                </p>
+                                            )}
                                         </div>
-                                        <div className="whitespace-nowrap text-right text-sm text-gray-500">
+                                        <div className="whitespace-nowrap text-right text-xs text-gray-500 tabular-nums">
                                             {approval.acted_at || approval.approved_at ? (
                                                 <time dateTime={approval.acted_at || approval.approved_at}>
                                                     {format(new Date(approval.acted_at || approval.approved_at!), 'dd MMM yyyy HH:mm')}
                                                 </time>
                                             ) : (
-                                                <span className="italic text-xs">Waiting...</span>
+                                                <span className="italic opacity-60">Waiting...</span>
                                             )}
                                         </div>
                                     </div>

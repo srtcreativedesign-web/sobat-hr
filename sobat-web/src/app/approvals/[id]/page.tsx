@@ -4,10 +4,11 @@ import DashboardLayout from '@/components/DashboardLayout';
 import ApprovalTimeline from '@/components/ApprovalTimeline';
 import { STORAGE_KEYS } from '@/lib/config';
 import { useAuthStore } from '@/store/auth-store';
+import { format, differenceInDays } from 'date-fns';
 import { Request } from '@/types';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { use, use as ReactUse } from 'react';
+import { useEffect, useState, useRef, use as ReactUse } from 'react';
+import SignatureCanvas from 'react-signature-canvas';
 
 export default function ApprovalDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
@@ -16,17 +17,23 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
     const [isLoading, setIsLoading] = useState(true);
     const [actionNote, setActionNote] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
+
+    // Signature State
+    const [showApproveModal, setShowApproveModal] = useState(false);
+    const [signerName, setSignerName] = useState('');
+    const sigCanvas = useRef<any>(null);
+
+    // Unwrap params using React.use() which is standard in Next.js 15 for async params
     const { id } = ReactUse(params);
 
     useEffect(() => {
         const fetchDetail = async () => {
+            if (!id || id === 'undefined') return;
+
             try {
                 const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
-                // We use the generic RequestController@show endpoint which eagerly loads approvals
                 const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/requests/${id}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
 
                 if (response.ok) {
@@ -40,7 +47,7 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
             }
         };
 
-        fetchDetail();
+        if (id) fetchDetail();
     }, [id]);
 
     const handleAction = async (action: 'approve' | 'reject') => {
@@ -48,11 +55,29 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
             alert('Please provide a reason for rejection.');
             return;
         }
+
+        if (action === 'approve') {
+            setSignerName(user?.name || '');
+            setShowApproveModal(true);
+            return;
+        }
+
         if (!confirm(`Are you sure you want to ${action} this request?`)) return;
 
+        processAction(action);
+    };
+
+    const processAction = async (action: 'approve' | 'reject', signatureData: string | null = null, extraNote: string = '') => {
         setIsProcessing(true);
         try {
             const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+
+            // Note logic: Rejection uses 'reason', Approval uses 'notes'
+            let finalNote = actionNote;
+            if (action === 'approve' && extraNote) {
+                finalNote = extraNote;
+            }
+
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/requests/${id}/${action}`, {
                 method: 'POST',
                 headers: {
@@ -60,10 +85,9 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    notes: actionNote, // Backend uses 'notes' or 'reason' depending on controller. RequestController uses 'notes' for approve, 'reason' for reject, let's normalize or check Backend.
-                    // Checking RequestController.php: approve uses 'notes', reject uses 'reason'. I will send both or fix backend. 
-                    // Let's send both to be safe or context sensitive.
-                    reason: actionNote,
+                    notes: finalNote,
+                    reason: finalNote,
+                    signature: signatureData
                 })
             });
 
@@ -79,6 +103,44 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
             alert('Failed to process action');
         } finally {
             setIsProcessing(false);
+            setShowApproveModal(false);
+        }
+    };
+
+    const submitApproval = () => {
+        if (sigCanvas.current?.isEmpty()) {
+            alert("Please sign before approving");
+            return;
+        }
+        if (!signerName) {
+            alert("Please enter signer name");
+            return;
+        }
+
+        const signatureData = sigCanvas.current.getCanvas().toDataURL('image/png');
+        const noteWithContext = `${actionNote ? actionNote + '\n\n' : ''}Approved by: ${signerName}`;
+
+        processAction('approve', signatureData, noteWithContext);
+    };
+
+    const handleDownloadProof = async () => {
+        try {
+            const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/requests/${id}/proof`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Download failed');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Proof-REQ-${id}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } catch (e) {
+            alert('Failed to download proof');
         }
     };
 
@@ -100,110 +162,165 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
 
     return (
         <DashboardLayout>
-            <div className="max-w-4xl mx-auto p-6 md:p-8">
-                {/* Header */}
-                <div className="mb-8">
-                    <button
-                        onClick={() => router.back()}
-                        className="text-sm text-gray-500 hover:text-gray-700 mb-2 flex items-center gap-1"
-                    >
-                        ← Back to Inbox
-                    </button>
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <h1 className="text-2xl font-bold text-[#462e37]">{request.title}</h1>
-                            <p className="text-[#462e37]/70">Submitted by {request.employee?.full_name}</p>
+            <div className="max-w-5xl mx-auto p-6 md:p-10 font-sans">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+                    <div>
+                        <div className="flex items-center justify-between w-full">
+                            <button
+                                onClick={() => router.back()}
+                                className="group flex items-center text-sm font-medium text-gray-500 hover:text-[#462e37] mb-4 transition-colors"
+                            >
+                                <svg className="w-4 h-4 mr-1 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                </svg>
+                                Back to Inbox
+                            </button>
+                            <button
+                                onClick={handleDownloadProof}
+                                className="inline-flex items-center px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 shadow-sm transition-all mb-4"
+                            >
+                                <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Export Proof
+                            </button>
                         </div>
-                        <div className={`px-4 py-1.5 rounded-full text-sm font-bold capitalize
-                     ${request.status === 'approved' ? 'bg-green-100 text-green-800' :
-                                request.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                                    request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
-                            }`}>
-                            {request.status}
+                        <h1 className="text-3xl md:text-4xl font-extrabold text-[#462e37] tracking-tight mb-2">{request.title}</h1>
+                        <div className="flex items-center gap-3 text-gray-500 text-sm">
+                            <span className="flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-md font-medium text-gray-700">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                {request.employee?.full_name}
+                            </span>
+                            <span>•</span>
+                            <span>Submitted on {request.submitted_at ? format(new Date(request.submitted_at), 'dd MMM yyyy') : '-'}</span>
                         </div>
+                    </div>
+
+                    <div className={`px-5 py-2 rounded-full text-sm font-bold tracking-wide uppercase shadow-sm border
+                        ${request.status === 'approved' ? 'bg-green-50 text-green-700 border-green-100' :
+                            request.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-100' :
+                                request.status === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-gray-50 text-gray-700 border-gray-200'
+                        }`}>
+                        {request.status}
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {/* Left: Detail Content */}
-                    <div className="md:col-span-2 space-y-6">
-                        <div className="bg-white rounded-2xl shadow-sm border border-[#462e37]/10 p-6">
-                            <h3 className="text-lg font-bold text-[#462e37] mb-4 border-b border-gray-100 pb-2">Request Details</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Left Column: Details */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Main Detail Card */}
+                        <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100/50 p-8 overflow-hidden relative">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#462e37] to-[#8a5d6e] opacity-20"></div>
+                            <h3 className="text-xl font-bold text-[#462e37] mb-8 flex items-center gap-2">
+                                <svg className="w-5 h-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Request Details
+                            </h3>
 
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-xs uppercase text-gray-400 font-semibold">Type</label>
-                                        <p className="font-medium text-gray-900 capitalize">{request.type}</p>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs uppercase text-gray-400 font-semibold">Duration/Amount</label>
-                                        <p className="font-medium text-gray-900">{request.amount} Days/Unit</p>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs uppercase text-gray-400 font-semibold">Start Date</label>
-                                        <p className="font-medium text-gray-900">{request.start_date || '-'}</p>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs uppercase text-gray-400 font-semibold">End Date</label>
-                                        <p className="font-medium text-gray-900">{request.end_date || '-'}</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
+                                <div className="space-y-1">
+                                    <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Request Type</label>
+                                    <div className="font-semibold text-lg text-gray-900 capitalize flex items-center gap-2">
+                                        {request.type === 'leave' && '🌴'}
+                                        {request.type === 'business_trip' && '✈️'}
+                                        {request.type === 'overtime' && '⏰'}
+                                        {request.type.replace('_', ' ')}
                                     </div>
                                 </div>
-
-                                <div>
-                                    <label className="text-xs uppercase text-gray-400 font-semibold">Description / Reason</label>
-                                    <div className="bg-gray-50 p-4 rounded-lg text-gray-700 mt-1 whitespace-pre-wrap">
-                                        {request.description}
+                                <div className="space-y-1">
+                                    <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Duration / Amount</label>
+                                    <div className="font-semibold text-lg text-gray-900">
+                                        {request.amount || (request.start_date && request.end_date ? differenceInDays(new Date(request.end_date), new Date(request.start_date)) + 1 : 1)}
+                                        <span className="text-sm text-gray-500 ml-1 font-normal">
+                                            {
+                                                ['leave', 'business_trip', 'sick_leave'].includes(request.type) ? 'Days' :
+                                                    request.type === 'overtime' ? 'Hours' :
+                                                        request.type === 'reimbursement' ? 'IDR' : 'Units'
+                                            }
+                                        </span>
                                     </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Start Date</label>
+                                    <div className="font-semibold text-lg text-gray-900">{request.start_date ? format(new Date(request.start_date), 'dd MMM yyyy') : '-'}</div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">End Date</label>
+                                    <div className="font-semibold text-lg text-gray-900">{request.end_date ? format(new Date(request.end_date), 'dd MMM yyyy') : '-'}</div>
+                                </div>
+                            </div>
+
+                            <div className="mt-10 pt-8 border-t border-gray-50">
+                                <label className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-3 block">Description / Reason</label>
+                                <div className="bg-gray-50 rounded-2xl p-6 text-gray-700 leading-relaxed text-sm md:text-base border border-gray-100">
+                                    {request.description}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Attachments (Placeholder) */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-[#462e37]/10 p-6">
-                            <h3 className="text-lg font-bold text-[#462e37] mb-4">Attachments</h3>
+                        {/* Attachments Card */}
+                        <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100/50 p-8">
+                            <h3 className="text-xl font-bold text-[#462e37] mb-6 flex items-center gap-2">
+                                <svg className="w-5 h-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                </svg>
+                                Attachments
+                            </h3>
                             {request.attachments ? (
-                                <div className="text-sm text-blue-600 underline cursor-pointer">View Attachment</div>
+                                <div className="flex items-center gap-3 p-4 bg-blue-50/50 rounded-xl border border-blue-100 group cursor-pointer hover:bg-blue-50 transition-colors">
+                                    <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
+                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">View Attached Document</p>
+                                        <p className="text-xs text-gray-500">Click to preview</p>
+                                    </div>
+                                </div>
                             ) : (
-                                <div className="text-sm text-gray-400 italic">No attachments provided.</div>
+                                <div className="text-center py-8 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                                    <p className="text-gray-400 text-sm">No attachments provided</p>
+                                </div>
                             )}
                         </div>
                     </div>
 
-                    {/* Right: Timeline & Actions */}
+                    {/* Right Column: Timeline & Actions */}
                     <div className="space-y-6">
                         {/* Timeline */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-[#462e37]/10 p-6">
+                        <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100/50 p-6 md:p-8">
                             <ApprovalTimeline approvals={request.approvals || []} />
                         </div>
 
-                        {/* Action Panel - Only show if Pending and User has permission (Checked by Backend, but frontend should hide if not relevant) 
-                     Ideally we check if current user is the current approver using logic. 
-                     For MVP we show form, backend will reject with 403 if unauthorized.
-                 */}
+                        {/* Action Panel */}
                         {request.status === 'pending' && (
-                            <div className="bg-white rounded-2xl shadow-sm border border-[#462e37]/10 p-6">
-                                <h3 className="text-lg font-bold text-[#462e37] mb-4">Your Action</h3>
+                            <div className="bg-white rounded-3xl shadow-[0_4px_30px_rgba(0,0,0,0.06)] border border-gray-100/50 p-6 md:p-8 sticky top-6">
+                                <h3 className="text-lg font-bold text-[#462e37] mb-4">Take Action</h3>
                                 <textarea
-                                    className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-[#462e37] focus:border-[#462e37] mb-4"
-                                    rows={3}
-                                    placeholder="Add a note (Optional for Approve, Required for Reject)..."
+                                    className="w-full bg-gray-50 border-0 ring-1 ring-gray-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-[#462e37]/20 focus:bg-white transition-all mb-6 resize-none"
+                                    rows={4}
+                                    placeholder="Add a reason or note (Required for rejection)..."
                                     value={actionNote}
                                     onChange={(e) => setActionNote(e.target.value)}
                                 ></textarea>
 
-                                <div className="flex gap-3">
+                                <div className="grid grid-cols-2 gap-4">
                                     <button
                                         onClick={() => handleAction('reject')}
                                         disabled={isProcessing}
-                                        className="flex-1 bg-red-50 text-red-600 border border-red-200 py-2.5 rounded-lg font-bold hover:bg-red-100 transition-all disabled:opacity-50"
+                                        className="w-full bg-white text-red-600 border border-red-100 hover:bg-red-50 hover:border-red-200 py-3.5 rounded-xl font-bold transition-all disabled:opacity-50 text-sm shadow-sm"
                                     >
                                         Reject
                                     </button>
                                     <button
                                         onClick={() => handleAction('approve')}
                                         disabled={isProcessing}
-                                        className="flex-1 bg-gradient-to-r from-[#462e37] to-[#2d1e24] text-white py-2.5 rounded-lg font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                                        className="w-full bg-[#462e37] text-white hover:bg-[#2d1e24] py-3.5 rounded-xl font-bold shadow-lg shadow-[#462e37]/20 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 text-sm"
                                     >
                                         Approve
                                     </button>
@@ -213,6 +330,51 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                     </div>
                 </div>
             </div>
+
+            {showApproveModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+                        <button onClick={() => setShowApproveModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                        <h3 className="text-xl font-bold text-[#462e37] mb-6">Confirm Approval</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Signer Name</label>
+                                <input
+                                    type="text"
+                                    value={signerName}
+                                    onChange={(e) => setSignerName(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#462e37] focus:border-[#462e37]"
+                                    placeholder="Enter your name"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Signature</label>
+                                <div className="border border-gray-300 rounded-lg overflow-hidden bg-gray-50 h-[200px] relative">
+                                    <SignatureCanvas
+                                        ref={sigCanvas}
+                                        penColor="black"
+                                        canvasProps={{ className: 'signature-canvas w-full h-full' }}
+                                    />
+                                    <button
+                                        onClick={() => sigCanvas.current.clear()}
+                                        className="absolute bottom-2 right-2 text-xs bg-white border border-gray-200 px-2 py-1 rounded shadow-sm hover:bg-gray-100"
+                                    >Clear</button>
+                                </div>
+                            </div>
+
+                            <div className="pt-4 flex gap-3">
+                                <button onClick={() => setShowApproveModal(false)} className="flex-1 py-3 border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
+                                <button onClick={submitApproval} disabled={isProcessing} className="flex-1 py-3 bg-[#462e37] text-white rounded-xl font-bold hover:bg-[#2d1e24]">
+                                    {isProcessing ? 'Processing...' : 'Confirm Approve'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </DashboardLayout>
     );
 }

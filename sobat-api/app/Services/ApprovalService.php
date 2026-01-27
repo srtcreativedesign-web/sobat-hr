@@ -37,9 +37,9 @@ class ApprovalService
     /**
      * Execute Approval Logic
      */
-    public function approve(Model $request, Employee $actor, ?string $signature = null)
+    public function approve(Model $request, Employee $actor, ?string $signature = null, ?string $note = null)
     {
-        return DB::transaction(function () use ($request, $actor, $signature) {
+        return DB::transaction(function () use ($request, $actor, $signature, $note) {
             // 1. Validate Actor
             // Check if actor has admin role
             $isAdmin = false;
@@ -68,7 +68,7 @@ class ApprovalService
             $currentStep->update([
                 'status' => 'approved',
                 'acted_at' => now(),
-                'note' => 'Approved by system/user',
+                'note' => $note ?? ('Approved by: ' . $actor->full_name),
                 'signature' => $signature, 
             ]);
 

@@ -9,6 +9,7 @@ use App\Models\Approval;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\DB;
 use App\Notifications\RequestNotification;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class RequestController extends Controller
 {
@@ -238,6 +239,14 @@ class RequestController extends Controller
         return response()->json(['message' => 'Request deleted successfully']);
     }
 
+    public function exportProof($id)
+    {
+        $requestModel = RequestModel::with(['employee', 'approvals.approver', 'businessTripDetail', 'leaveDetail', 'reimbursementDetail', 'assetDetail', 'overtimeDetail'])->findOrFail($id);
+        
+        $pdf = Pdf::loadView('pdf.approval_proof', ['request' => $requestModel]);
+        return $pdf->download("Proof-REQ-{$id}.pdf");
+    }
+
     /**
      * Submit request for approval
      */
@@ -323,7 +332,7 @@ class RequestController extends Controller
         }
 
         try {
-            $updatedRequest = $approvalService->approve($requestModel, $user->employee, $request->input('signature'));
+            $updatedRequest = $approvalService->approve($requestModel, $user->employee, $request->input('signature'), $request->input('notes'));
             
             // Notify User if fully approved
             if ($updatedRequest->status == 'approved' && $requestModel->employee && $requestModel->employee->user) {

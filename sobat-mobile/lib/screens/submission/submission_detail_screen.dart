@@ -1,52 +1,114 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../config/theme.dart';
+import '../../config/api_config.dart';
 
-class SubmissionDetailScreen extends StatelessWidget {
+class SubmissionDetailScreen extends StatefulWidget {
   final Map<String, dynamic> submission;
 
   const SubmissionDetailScreen({super.key, required this.submission});
 
   @override
+  State<SubmissionDetailScreen> createState() => _SubmissionDetailScreenState();
+}
+
+class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
+  bool _isDownloading = false;
+
+  Future<void> _downloadProof() async {
+    setState(() => _isDownloading = true);
+    try {
+      final id = widget.submission['id'];
+      final storage = const FlutterSecureStorage();
+      final token = await storage.read(key: 'auth_token');
+
+      if (token == null) {
+        throw Exception('Not authenticated');
+      }
+
+      final dio = Dio();
+      final dir = await getApplicationDocumentsDirectory();
+      final filePath = '${dir.path}/Proof-REQ-$id.pdf';
+
+      await dio.download(
+        '${ApiConfig.baseUrl}/requests/$id/proof',
+        filePath,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/pdf',
+          },
+        ),
+      );
+
+      await OpenFile.open(filePath);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mengunduh: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isDownloading = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     // Extract data
     final type =
-        submission['type']?.toString().replaceAll('_', ' ').toUpperCase() ??
+        widget.submission['type']
+            ?.toString()
+            .replaceAll('_', ' ')
+            .toUpperCase() ??
         'PENGAJUAN';
-    final status = submission['status']?.toString().toLowerCase() ?? 'pending';
-    final reason = submission['reason'] ?? submission['description'] ?? '-';
+    final status =
+        widget.submission['status']?.toString().toLowerCase() ?? 'pending';
+    final reason =
+        widget.submission['reason'] ?? widget.submission['description'] ?? '-';
 
     // Dates
     String duration = '';
-    if (submission['start_date'] != null && submission['end_date'] != null) {
+    if (widget.submission['start_date'] != null &&
+        widget.submission['end_date'] != null) {
       try {
-        final start = DateTime.parse(submission['start_date']);
-        final end = DateTime.parse(submission['end_date']);
+        final start = DateTime.parse(widget.submission['start_date']);
+        final end = DateTime.parse(widget.submission['end_date']);
         final dayDiff = end.difference(start).inDays + 1;
         duration =
             '${DateFormat('d MMM y', 'id_ID').format(start)} - ${DateFormat('d MMM y', 'id_ID').format(end)} ($dayDiff Hari)';
       } catch (_) {
-        duration = '${submission['start_date']} - ${submission['end_date']}';
+        duration =
+            '${widget.submission['start_date']} - ${widget.submission['end_date']}';
       }
-    } else if (submission['start_date'] != null) {
+    } else if (widget.submission['start_date'] != null) {
       try {
         duration = DateFormat(
           'd MMM y',
           'id_ID',
-        ).format(DateTime.parse(submission['start_date']));
+        ).format(DateTime.parse(widget.submission['start_date']));
       } catch (_) {
-        duration = submission['start_date'];
+        duration = widget.submission['start_date'];
       }
     }
 
     // Amount
     String amount = '';
-    if (submission['amount'] != null) {
+    if (widget.submission['amount'] != null) {
       amount = NumberFormat.currency(
         locale: 'id_ID',
         symbol: 'Rp ',
         decimalDigits: 0,
-      ).format(submission['amount']);
+      ).format(widget.submission['amount']);
     }
 
     // Status Color
@@ -112,6 +174,38 @@ class SubmissionDetailScreen extends StatelessWidget {
                 ],
               ),
             ),
+
+            if (status == 'approved') ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _isDownloading ? null : _downloadProof,
+                  icon: _isDownloading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.download),
+                  label: Text(
+                    _isDownloading ? 'Mengunduh...' : 'Download Bukti Approval',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.colorCyan,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+
             const SizedBox(height: 32),
 
             _buildDetailRow('Jenis Pengajuan', type),
@@ -125,14 +219,14 @@ class SubmissionDetailScreen extends StatelessWidget {
             _buildDetailRow('Keterangan', reason),
 
             const SizedBox(height: 32),
-            if (submission['approvals'] != null &&
-                (submission['approvals'] as List).isNotEmpty) ...[
+            if (widget.submission['approvals'] != null &&
+                (widget.submission['approvals'] as List).isNotEmpty) ...[
               const Text(
                 'Riwayat Persetujuan',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 12),
-              ...((submission['approvals'] as List).map((approval) {
+              ...((widget.submission['approvals'] as List).map((approval) {
                 final approver = approval['approver'] != null
                     ? (approval['approver']['full_name'] ?? 'Approver')
                     : 'System';
