@@ -103,12 +103,13 @@ export default function ApprovalsPage() {
                 <div className="flex overflow-x-auto pb-4 gap-2 no-scrollbar mb-2">
                     {[
                         { id: 'all', label: 'All' },
-                        { id: 'business_trip', label: 'Business Trip' },
-                        { id: 'reimbursement', label: 'Reimbursement' },
-                        { id: 'asset', label: 'Asset' },
+                        // { id: 'business_trip', label: 'Business Trip' },
+                        // { id: 'reimbursement', label: 'Reimbursement' },
+                        // { id: 'asset', label: 'Asset' },
                         { id: 'leave', label: 'Leave' },
                         { id: 'overtime', label: 'Overtime' },
                         { id: 'sick_leave', label: 'Sick' },
+                        // { id: 'resignation', label: 'Resignation' },
                     ].map((type) => (
                         <button
                             key={type.id}
@@ -180,7 +181,10 @@ export default function ApprovalsPage() {
                                                     <div className="text-xs text-[#462e37]/60 mt-0.5">
                                                         {['asset', 'reimbursement'].includes(req.type)
                                                             ? `IDR ${Number(req.amount).toLocaleString('id-ID')}`
-                                                            : `${req.amount || (req.start_date && req.end_date ? differenceInDays(new Date(req.end_date), new Date(req.start_date)) + 1 : 1)} ${['leave', 'business_trip', 'sick_leave'].includes(req.type) ? 'Days' : req.type === 'overtime' ? 'Hours' : 'Units'} • ${req.start_date ? format(new Date(req.start_date), 'dd MMM yyyy') : '-'}`}
+                                                            : req.type === 'resignation'
+                                                                ? `${req.detail?.last_working_date ? format(new Date(req.detail.last_working_date), 'dd MMM yyyy') : req.start_date ? format(new Date(req.start_date), 'dd MMM yyyy') : '-'}`
+                                                                : `${req.amount || (req.start_date && req.end_date ? differenceInDays(new Date(req.end_date), new Date(req.start_date)) + 1 : 1)} ${['leave', 'business_trip', 'sick_leave'].includes(req.type) ? 'Days' : req.type === 'overtime' ? 'Hours' : 'Units'} • ${req.start_date ? format(new Date(req.start_date), 'dd MMM yyyy') : '-'}`
+                                                        }
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-[#462e37]/50">

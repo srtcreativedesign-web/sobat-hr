@@ -116,6 +116,7 @@ class SubmissionMenuScreen extends StatelessWidget {
             AppTheme.colorEggplant,
           ),
           const SizedBox(height: 12),
+          /*
           _buildUtilityCard(
             context,
             'Reimbursement',
@@ -139,6 +140,7 @@ class SubmissionMenuScreen extends StatelessWidget {
             Icons.logout_rounded,
             AppTheme.textLight,
           ),
+          */
           const SizedBox(height: 48),
         ],
       ),

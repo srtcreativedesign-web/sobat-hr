@@ -84,6 +84,8 @@ class RequestController extends Controller
             'brand' => 'nullable|string',
             'specification' => 'nullable|string',
             'is_urgent' => 'nullable|boolean',
+            // Resignation fields
+            'last_working_date' => 'nullable|date',
         ]);
 
         return DB::transaction(function () use ($validated, $request, $approvalService, $user) {
@@ -171,6 +173,15 @@ class RequestController extends Controller
                         'attachment' => $request->attachments ? json_decode($request->attachments, true) : null,
                     ]);
                     break;
+                
+                case 'resignation':
+                     \App\Models\ResignationDetail::create([
+                        'request_id' => $requestModel->id,
+                        'last_working_date' => $request->last_working_date,
+                         // Default to normal for now, can be expanded later
+                        'resign_type' => 'normal',
+                    ]);
+                    break;
             }
 
             // 3. Auto-Submit Logic
@@ -252,6 +263,8 @@ class RequestController extends Controller
             $pdf = Pdf::loadView('pdf.approval_proof_asset', ['request' => $requestModel]);
         } elseif ($requestModel->type == 'reimbursement') {
             $pdf = Pdf::loadView('pdf.approval_proof_reimbursement', ['request' => $requestModel]);
+        } elseif ($requestModel->type == 'resignation') {
+            $pdf = Pdf::loadView('pdf.approval_proof_resignation', ['request' => $requestModel]);
         } else {
             $pdf = Pdf::loadView('pdf.approval_proof', ['request' => $requestModel]);
         }
@@ -513,37 +526,55 @@ class RequestController extends Controller
         }
 
         // --- Logic Implementation ---
-        
-        // Level 1: SPV (for Crew, Staff, Team Leader)
-        if (in_array($jobLevel, ['crew', 'staff', 'team_leader'])) {
-            $spvId = $findApprover('spv', true);
-            if ($spvId) $steps[] = $spvId;
-        }
 
-        // Level 2: Manager / Deputy Manager / Manager Divisi
-        // If requester is SPV, they start here. If Crew/Staff/Team Leader, this is next.
-        if (in_array($jobLevel, ['crew', 'staff', 'spv', 'team_leader'])) {
-            $managerId = null;
-            
+        // 1. If Requester is SPV
+        if ($jobLevel === 'spv') {
+            // Step 1: Manager (Direct)
             if ($isOperational) {
                 // Operational: Manager Divisi
                 $managerId = $findApprover('manager_divisi', true);
+                 // Fallback if no manager_divisi, try 'manager'
+                if (!$managerId) $managerId = $findApprover('manager', true);
             } else {
                 // Office: Manager or Deputy Manager
                 $managerId = $findApprover('manager', true);
                 if (!$managerId) $managerId = $findApprover('deputy_manager', true);
             }
-
             if ($managerId) $steps[] = $managerId;
+
+            // Step 2: HRD / Super Admin (Final)
+            if ($hrdId) $steps[] = $hrdId;
         }
 
-        // Level 3: HRD (Final)
-        if ($hrdId) $steps[] = $hrdId;
+        // 2. If Requester is Manager (or Manager Divisi, Deputy Manager)
+        else if (in_array($jobLevel, ['manager', 'manager_divisi', 'deputy_manager'])) {
+            // Step 1: HRD / Super Admin (Direct)
+            if ($hrdId) $steps[] = $hrdId;
+        }
 
-        // Special: If Manager requests, maybe Director?
-        if (str_contains($jobLevel, 'manager')) {
-             $directorId = \App\Models\Employee::where('job_level', 'director')->value('id');
-             if ($directorId) $steps[] = $directorId;
+        // 3. Current Default Logic (Crew, Staff, Team Leader, etc)
+        else if (in_array($jobLevel, ['crew', 'staff', 'team_leader'])) {
+            // Step 1: SPV
+             $spvId = $findApprover('spv', true);
+             if ($spvId) $steps[] = $spvId;
+
+             // Step 2: Manager
+             if ($isOperational) {
+                $managerId = $findApprover('manager_divisi', true);
+                if (!$managerId) $managerId = $findApprover('manager', true); // Fallback
+            } else {
+                $managerId = $findApprover('manager', true);
+                if (!$managerId) $managerId = $findApprover('deputy_manager', true);
+            }
+            if ($managerId) $steps[] = $managerId;
+
+            // Step 3: HRD (Final)
+             if ($hrdId) $steps[] = $hrdId;
+        }
+        
+        // 4. Fallback for others (Director, etc) - Direct to HRD
+        else {
+             if ($hrdId) $steps[] = $hrdId;
         }
 
         // Remove duplicates and self-approval

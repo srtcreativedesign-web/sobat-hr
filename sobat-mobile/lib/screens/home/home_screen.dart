@@ -1539,6 +1539,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _loadLeaveBalance(); // Refresh on return
               },
             ),
+            /*
             _buildActionItem(
               Icons.attach_money,
               'Klaim',
@@ -1551,6 +1552,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
+            */
             _buildActionItem(
               Icons.history_outlined,
               'Riwayat Kehadiran',

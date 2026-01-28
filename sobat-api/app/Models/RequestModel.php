@@ -78,6 +78,11 @@ class RequestModel extends Model
         return $this->hasOne(AssetDetail::class, 'request_id');
     }
 
+    public function resignationDetail()
+    {
+        return $this->hasOne(ResignationDetail::class, 'request_id');
+    }
+
     public function getDetailAttribute()
     {
         switch ($this->type) {
@@ -95,6 +100,8 @@ class RequestModel extends Model
                 return $this->reimbursementDetail;
             case 'asset':
                 return $this->assetDetail;
+            case 'resignation':
+                return $this->resignationDetail;
             case 'business_trip':
                 return $this->businessTripDetail;
             default:

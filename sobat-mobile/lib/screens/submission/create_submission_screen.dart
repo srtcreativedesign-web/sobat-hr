@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'dart:io';
 import 'dart:convert'; // Added for base64Encode
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:signature/signature.dart';
 import '../../services/request_service.dart';
 
@@ -26,7 +27,8 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
       TextEditingController(); // New: Judul Pengajuan (Reimbursement)
 
   bool _isUrgent = false; // New: Urgent/Tidak
-  File? _selectedImage;
+  File? _selectedFile; // Renamed from _selectedImage to allow PDF
+  String? _fileExtension;
   final ImagePicker _picker = ImagePicker();
 
   // Singleton Signature Controller
@@ -140,12 +142,19 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
           'desc': 'Pengajuan perjalanan bisnis luar kota.',
           'quota': null,
         };
-      case 'Pengajuan Aset':
         return {
           'icon': Icons.devices,
           'color': const Color(0xFF7C3AED),
           'bgColor': const Color(0xFFEDE9FE),
           'desc': 'Ajukan pengadaan barang atau aset kantor.',
+          'quota': null,
+        };
+      case 'Resign':
+        return {
+          'icon': Icons.logout,
+          'color': const Color(0xFFDC2626), // Red 600
+          'bgColor': const Color(0xFFFEF2F2), // Red 50
+          'desc': 'Pengajuan pengunduran diri.',
           'quota': null,
         };
       default:
@@ -333,6 +342,29 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
                         _buildUrgencySwitch(),
                         const SizedBox(height: 20),
                         _buildUploadButton(label: 'Foto Contoh Barang'),
+                      ] else if (widget.type == 'Resign') ...[
+                        _buildLabel('Tanggal Terakhir Bekerja'),
+                        _buildClickableInput(
+                          icon: Icons.calendar_month,
+                          value: _startDate != null
+                              ? DateFormat('dd MMM yyyy').format(_startDate!)
+                              : 'Pilih Tanggal',
+                          isPlaceholder: _startDate == null,
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now().add(
+                                const Duration(days: 30),
+                              ),
+                              firstDate: DateTime.now(),
+                              lastDate: DateTime(2030),
+                            );
+                            if (picked != null)
+                              setState(() => _startDate = picked);
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        _buildUploadButton(label: 'Surat Pengunduran Diri'),
                       ],
 
                       const SizedBox(height: 20),
@@ -607,25 +639,57 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
                     ? 'Foto Barang (Opsional)'
                     : label),
         ),
-        if (_selectedImage != null)
+        if (_selectedFile != null)
           Stack(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.file(
-                  _selectedImage!,
+              if (_fileExtension == 'pdf')
+                Container(
                   width: double.infinity,
-                  height: 200,
-                  fit: BoxFit.cover,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.red.shade100),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.picture_as_pdf,
+                        color: Colors.red,
+                        size: 40,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _selectedFile!.path.split('/').last,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                )
+              else
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.file(
+                    _selectedFile!,
+                    width: double.infinity,
+                    height: 200,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-              ),
               Positioned(
                 top: 8,
                 right: 8,
                 child: GestureDetector(
                   onTap: () {
                     setState(() {
-                      _selectedImage = null;
+                      _selectedFile = null;
+                      _fileExtension = null;
                     });
                   },
                   child: Container(
@@ -680,6 +744,12 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
                   label: 'Galeri',
                   onTap: () => _pickImage(ImageSource.gallery),
                 ),
+                if (widget.type == 'Resign')
+                  _buildSourceOption(
+                    icon: Icons.picture_as_pdf,
+                    label: 'Dokumen',
+                    onTap: () => _pickFile(),
+                  ),
               ],
             ),
             const SizedBox(height: 20),
@@ -729,13 +799,36 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
       );
       if (picked != null) {
         setState(() {
-          _selectedImage = File(picked.path);
+          _selectedFile = File(picked.path);
+          _fileExtension = 'jpg'; // Assume image from picker
         });
       }
     } catch (e) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Gagal mengambil gambar: $e')));
+    }
+  }
+
+  Future<void> _pickFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'png'],
+      );
+
+      if (result != null) {
+        File file = File(result.files.single.path!);
+        String ext = result.files.single.extension?.toLowerCase() ?? '';
+        setState(() {
+          _selectedFile = file;
+          _fileExtension = ext;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal mengambil file: $e')));
     }
   }
 
@@ -993,26 +1086,32 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
         if (apiType == 'asset') {
           data['brand'] = _brandCtrl.text;
           data['specification'] = _specCtrl.text;
+          data['specification'] = _specCtrl.text;
           data['is_urgent'] = _isUrgent;
         }
 
-        // Process Attachments (Image)
-        if (_selectedImage != null) {
-          final bytes = await _selectedImage!.readAsBytes();
-          final base64Image = base64Encode(bytes);
-          // JSON encoded string for 'attachments' field as backend expects
-          // Backend RequestController uses: $request->attachments ? json_decode(...) : null
-          // But wait, RequestController line 102: 'attachments' => $validated['attachments'] ?? null,
-          // And specific details logic (e.g. ReimbursementDetail) uses line 159: 'attachment' => ... json_decode
-          // It seems the Controller expects a JSON string or an array?
-          // Mobile apps usually send JSON body. So I can send a List or Map.
-          // However, if the backend does `json_decode`, it implies it receives a STRING.
-          // Let's assume standard Laravel validation, if it's 'array', we send array.
-          // BUT, looking at `RequestController` line 125: `json_decode($request->attachments, true)`.
-          // This strongly suggests the API expects `attachments` to be a JSON STRING.
-          // So I will encode it.
+        if (apiType == 'resignation') {
+          // Last Working Date is mapped to start_date in base object for now, or specific field
+          // Based on Plan, backend expects 'last_working_date'.
+          // Mobile maps _startDate to 'start_date'.
+          // RequestController stores 'start_date' in request table, BUT for resignation logic
+          // it uses: 'last_working_date' => $request->last_working_date
+          // So I need to send 'last_working_date'.
+          data['last_working_date'] = _startDate?.toIso8601String();
+        }
+
+        // Process Attachments (Image/PDF)
+        if (_selectedFile != null) {
+          final bytes = await _selectedFile!.readAsBytes();
+          final base64String = base64Encode(bytes);
+
+          String mimeType = 'image/jpeg';
+          if (_fileExtension == 'pdf') {
+            mimeType = 'application/pdf';
+          }
+
           List<String> attachmentsList = [
-            'data:image/jpeg;base64,$base64Image',
+            'data:$mimeType;base64,$base64String',
           ];
           data['attachments'] = jsonEncode(attachmentsList);
         }

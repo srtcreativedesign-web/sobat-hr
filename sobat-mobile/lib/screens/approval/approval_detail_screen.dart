@@ -294,6 +294,27 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
               ),
             ],
 
+            // Resignation Details
+            if (request['type'] == 'resignation' &&
+                request['detail'] != null) ...[
+              const SizedBox(height: 16),
+              _buildDetailRow(
+                'Tanggal Terakhir Bekerja',
+                (request['detail']['last_working_date'] != null)
+                    ? DateFormat('d MMM y', 'id_ID').format(
+                        DateTime.parse(request['detail']['last_working_date']),
+                      )
+                    : '-',
+              ),
+              const SizedBox(height: 16),
+              _buildDetailRow(
+                'Tipe Resign',
+                request['detail']['resign_type'] == '1_month_notice'
+                    ? 'One Month Notice'
+                    : 'Normal',
+              ),
+            ],
+
             // Attachments
             if (request['attachments'] != null) ...[
               const SizedBox(height: 24),

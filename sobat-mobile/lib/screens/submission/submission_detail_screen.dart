@@ -258,6 +258,24 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
               ),
             ],
 
+            // Resignation Details
+            if (widget.submission['type'] == 'resignation' &&
+                widget.submission['detail'] != null) ...[
+              const SizedBox(height: 16),
+              _buildDetailRow(
+                'Tanggal Terakhir Bekerja',
+                (widget.submission['detail']['last_working_date'] != null)
+                    ? DateFormat('d MMM y', 'id_ID').format(
+                        DateTime.parse(
+                          widget.submission['detail']['last_working_date'],
+                        ),
+                      )
+                    : '-',
+              ),
+              const SizedBox(height: 16),
+              _buildDetailRow('Tipe Resign', 'Normal One Month Notice'),
+            ],
+
             // Attachments
             if (attachments.isNotEmpty) ...[
               const SizedBox(height: 24),

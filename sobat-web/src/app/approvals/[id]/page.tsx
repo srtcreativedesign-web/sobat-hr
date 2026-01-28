@@ -229,29 +229,48 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                         {request.type === 'business_trip' && '✈️'}
                                         {request.type === 'overtime' && '⏰'}
                                         {request.type === 'asset' && '💻'}
+                                        {request.type === 'resignation' && '🚪'}
                                         {request.type.replace('_', ' ')}
                                     </div>
                                 </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">
-                                        {request.type === 'asset' ? 'Estimated Cost' : 'Duration / Amount'}
-                                    </label>
-                                    <div className="font-semibold text-lg text-gray-900">
-                                        {request.type === 'asset'
-                                            ? `IDR ${request.amount?.toLocaleString('id-ID')}`
-                                            : (request.amount || (request.start_date && request.end_date ? differenceInDays(new Date(request.end_date), new Date(request.start_date)) + 1 : 1))
-                                        }
-                                        <span className="text-sm text-gray-500 ml-1 font-normal">
-                                            {
-                                                ['leave', 'business_trip', 'sick_leave'].includes(request.type) ? 'Days' :
-                                                    request.type === 'overtime' ? 'Hours' :
-                                                        request.type === 'reimbursement' || request.type === 'asset' ? '' : 'Units'
-                                            }
-                                        </span>
-                                    </div>
-                                </div>
 
-                                {request.type === 'asset' && request.detail ? (
+                                {request.type !== 'resignation' && (
+                                    <div className="space-y-1">
+                                        <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">
+                                            {request.type === 'asset' ? 'Estimated Cost' : 'Duration / Amount'}
+                                        </label>
+                                        <div className="font-semibold text-lg text-gray-900">
+                                            {request.type === 'asset'
+                                                ? `IDR ${request.amount?.toLocaleString('id-ID')}`
+                                                : (request.amount || (request.start_date && request.end_date ? differenceInDays(new Date(request.end_date), new Date(request.start_date)) + 1 : 1))
+                                            }
+                                            <span className="text-sm text-gray-500 ml-1 font-normal">
+                                                {
+                                                    ['leave', 'business_trip', 'sick_leave'].includes(request.type) ? 'Days' :
+                                                        request.type === 'overtime' ? 'Hours' :
+                                                            ['reimbursement', 'asset', 'resignation'].includes(request.type) ? '' : 'Units'
+                                                }
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {request.type === 'resignation' && request.detail ? (
+                                    <>
+                                        <div className="space-y-1">
+                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Last Working Date</label>
+                                            <div className="font-semibold text-lg text-gray-900">
+                                                {request.detail.last_working_date ? format(new Date(request.detail.last_working_date), 'dd MMM yyyy') : '-'}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Type</label>
+                                            <div className="font-semibold text-lg text-gray-900 capitalize">
+                                                {request.detail.resign_type === '1_month_notice' ? 'One Month Notice' : 'Normal'}
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : request.type === 'asset' && request.detail ? (
                                     <>
                                         <div className="space-y-1">
                                             <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Brand / Item</label>
@@ -281,59 +300,59 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                     </>
                                 )}
                             </div>
+                        </div>
 
-                            <div className="mt-10 pt-8 border-t border-gray-50">
-                                <label className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-3 block">Description / Reason</label>
-                                <div className="bg-gray-50 rounded-2xl p-6 text-gray-700 leading-relaxed text-sm md:text-base border border-gray-100">
-                                    {request.description}
-                                </div>
+                        <div className="mt-10 pt-8 border-t border-gray-50">
+                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-3 block">Description / Reason</label>
+                            <div className="bg-gray-50 rounded-2xl p-6 text-gray-700 leading-relaxed text-sm md:text-base border border-gray-100">
+                                {request.description}
                             </div>
                         </div>
+                    </div>
 
-                        {/* Attachments Card */}
-                        <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100/50 p-8">
-                            <h3 className="text-xl font-bold text-[#462e37] mb-6 flex items-center gap-2">
-                                <svg className="w-5 h-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                </svg>
-                                Attachments
-                            </h3>
-                            {request.attachments && Array.isArray(request.attachments) && request.attachments.length > 0 ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {request.attachments.map((att: string, idx: number) => (
-                                        <div key={idx} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
-                                            {typeof att === 'string' && att.startsWith('data:image') ? (
-                                                <img
-                                                    src={att}
-                                                    alt={`Attachment ${idx + 1}`}
-                                                    className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                                    onClick={() => {
-                                                        const w = window.open("");
-                                                        w?.document.write('<img src="' + att + '" style="max-width:100%"/>');
-                                                    }}
-                                                />
-                                            ) : (
-                                                <a href={att} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-4 hover:bg-gray-100 transition-colors">
-                                                    <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
-                                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                        </svg>
-                                                    </div>
-                                                    <div className="overflow-hidden">
-                                                        <p className="text-sm font-semibold text-gray-900 truncate">Attachment {idx + 1}</p>
-                                                        <p className="text-xs text-gray-500">Click to view</p>
-                                                    </div>
-                                                </a>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-8 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
-                                    <p className="text-gray-400 text-sm">No attachments provided</p>
-                                </div>
-                            )}
-                        </div>
+                    {/* Attachments Card */}
+                    <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100/50 p-8">
+                        <h3 className="text-xl font-bold text-[#462e37] mb-6 flex items-center gap-2">
+                            <svg className="w-5 h-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
+                            Attachments
+                        </h3>
+                        {request.attachments && Array.isArray(request.attachments) && request.attachments.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {request.attachments.map((att: string, idx: number) => (
+                                    <div key={idx} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+                                        {typeof att === 'string' && att.startsWith('data:image') ? (
+                                            <img
+                                                src={att}
+                                                alt={`Attachment ${idx + 1}`}
+                                                className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                                onClick={() => {
+                                                    const w = window.open("");
+                                                    w?.document.write('<img src="' + att + '" style="max-width:100%"/>');
+                                                }}
+                                            />
+                                        ) : (
+                                            <a href={att} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-4 hover:bg-gray-100 transition-colors">
+                                                <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
+                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
+                                                </div>
+                                                <div className="overflow-hidden">
+                                                    <p className="text-sm font-semibold text-gray-900 truncate">Attachment {idx + 1}</p>
+                                                    <p className="text-xs text-gray-500">Click to view</p>
+                                                </div>
+                                            </a>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-8 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                                <p className="text-gray-400 text-sm">No attachments provided</p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Right Column: Timeline & Actions */}
