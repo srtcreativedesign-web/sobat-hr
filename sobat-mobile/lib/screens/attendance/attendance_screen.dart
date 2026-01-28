@@ -31,7 +31,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   final MapController _mapController = MapController();
   Position? _currentPosition;
   bool _isLoading = true;
-  String? _statusMessage;
+
   String? _currentAddress;
   bool _isWithinRange = false;
   Map<String, dynamic>? _todayAttendance;
@@ -154,7 +154,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     if (_officeLocation == null) {
       if (mounted) {
         setState(() {
-          _statusMessage = 'Lokasi kantor tidak ditemukan.';
           _isWithinRange = false;
         });
       }

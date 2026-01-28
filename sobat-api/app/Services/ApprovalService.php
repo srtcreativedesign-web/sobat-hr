@@ -31,6 +31,18 @@ class ApprovalService
             
             // Set initial step
             $request->update(['step_now' => 1]);
+
+            // Notification to Level 1 Approver
+            if (isset($approverIds[0])) {
+                $approver = Employee::find($approverIds[0]);
+                if ($approver && $approver->user) {
+                    try {
+                        $approver->user->notify(new \App\Notifications\RequestNotification($request, 'pending'));
+                    } catch (\Exception $e) {
+                         Log::error("Failed to notify approver: " . $e->getMessage());
+                    }
+                }
+            }
         });
     }
 
@@ -83,6 +95,14 @@ class ApprovalService
                 $request->increment('step_now');
                 // Trigger Notification for Next Approver here
                 Log::info("Approval moved to Level {$nextStep->level} (Approver ID: {$nextStep->approver_id})");
+                
+                if ($nextStep->approver && $nextStep->approver->user) {
+                    try {
+                        $nextStep->approver->user->notify(new \App\Notifications\RequestNotification($request, 'pending'));
+                    } catch (\Exception $e) {
+                        Log::error("Failed to notify next approver: " . $e->getMessage());
+                    }
+                }
             } else {
                 // Finish Line
                 $request->update(['status' => 'approved']);

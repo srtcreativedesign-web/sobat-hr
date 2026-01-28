@@ -105,6 +105,7 @@ export default function ApprovalsPage() {
                         { id: 'all', label: 'All' },
                         { id: 'business_trip', label: 'Business Trip' },
                         { id: 'reimbursement', label: 'Reimbursement' },
+                        { id: 'asset', label: 'Asset' },
                         { id: 'leave', label: 'Leave' },
                         { id: 'overtime', label: 'Overtime' },
                         { id: 'sick_leave', label: 'Sick' },
@@ -177,7 +178,9 @@ export default function ApprovalsPage() {
                                                 <td className="px-6 py-4">
                                                     <div className="text-sm font-medium text-[#462e37] line-clamp-1">{req.title || req.description}</div>
                                                     <div className="text-xs text-[#462e37]/60 mt-0.5">
-                                                        {req.amount || (req.start_date && req.end_date ? differenceInDays(new Date(req.end_date), new Date(req.start_date)) + 1 : 1)} {['leave', 'business_trip', 'sick_leave'].includes(req.type) ? 'Days' : req.type === 'overtime' ? 'Hours' : 'Units'} • {req.start_date ? format(new Date(req.start_date), 'dd MMM yyyy') : '-'}
+                                                        {['asset', 'reimbursement'].includes(req.type)
+                                                            ? `IDR ${Number(req.amount).toLocaleString('id-ID')}`
+                                                            : `${req.amount || (req.start_date && req.end_date ? differenceInDays(new Date(req.end_date), new Date(req.start_date)) + 1 : 1)} ${['leave', 'business_trip', 'sick_leave'].includes(req.type) ? 'Days' : req.type === 'overtime' ? 'Hours' : 'Units'} • ${req.start_date ? format(new Date(req.start_date), 'dd MMM yyyy') : '-'}`}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-[#462e37]/50">

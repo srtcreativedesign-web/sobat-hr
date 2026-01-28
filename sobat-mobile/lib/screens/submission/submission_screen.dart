@@ -121,7 +121,11 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
       widgets.add(
         SubmissionCard(
           title: _mapTypeToTitle(item['type']),
-          date: _formatDateRange(item['start_date'], item['end_date']),
+          date: _formatDateRange(
+            item['start_date'],
+            item['end_date'],
+            item['created_at'],
+          ),
           status: _mapStatusToLabel(item['status']),
           icon: _mapTypeToIcon(item['type']),
           iconColor: _mapStatusToColor(item['status']),
@@ -173,9 +177,15 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
     return const Color(0xFFF59E0B); // Orange/Pending
   }
 
-  String _formatDateRange(String? start, String? end) {
+  String _formatDateRange(String? start, String? end, String? createdAt) {
     try {
-      if (start == null) return '-';
+      if (start == null) {
+        if (createdAt != null) {
+          final created = DateTime.parse(createdAt);
+          return DateFormat('d MMM y', 'id_ID').format(created);
+        }
+        return '-';
+      }
       final startDate = DateTime.parse(start);
       final startStr = DateFormat('d MMM y', 'id_ID').format(startDate);
 

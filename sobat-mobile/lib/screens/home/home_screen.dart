@@ -185,11 +185,22 @@ class _HomeScreenState extends State<HomeScreen> {
           String title =
               '$type ${status == 'approved' ? 'Disetujui' : (status == 'rejected' ? 'Ditolak' : 'Diajukan')}';
 
+          String formattedDate = '-';
+          try {
+            if (item['start_date'] != null) {
+              final dateObj = DateTime.parse(item['start_date']);
+              formattedDate = DateFormat('d MMM y', 'id_ID').format(dateObj);
+            } else if (item['created_at'] != null) {
+              final dateObj = DateTime.parse(item['created_at']);
+              formattedDate = DateFormat('d MMM y', 'id_ID').format(dateObj);
+            }
+          } catch (_) {}
+
           activities.add({
             'type': 'request',
             'date': date,
             'title': title,
-            'desc': 'Pengajuan $type tanggal ${item['start_date']}',
+            'desc': 'Pengajuan $type tanggal $formattedDate',
             'status': status == 'approved'
                 ? 'success'
                 : (status == 'rejected' ? 'error' : 'warning'),
@@ -230,8 +241,8 @@ class _HomeScreenState extends State<HomeScreen> {
       // Sort by Date Descending
       activities.sort((a, b) => b['date'].compareTo(a['date']));
 
-      // Take Top 5
-      final recent = activities.take(5).toList();
+      // Take Top 3
+      final recent = activities.take(3).toList();
 
       if (mounted) {
         setState(() {

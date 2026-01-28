@@ -38,7 +38,12 @@ class RequestController extends Controller
         }
 
         if ($request->has('status')) {
-            $query->where('status', $request->status);
+            $status = $request->status;
+            if (str_contains($status, ',')) {
+                $query->whereIn('status', explode(',', $status));
+            } else {
+                $query->where('status', $status);
+            }
         }
 
         $requests = $query->orderBy('created_at', 'desc')->paginate(20);
@@ -243,7 +248,13 @@ class RequestController extends Controller
     {
         $requestModel = RequestModel::with(['employee', 'approvals.approver', 'businessTripDetail', 'leaveDetail', 'reimbursementDetail', 'assetDetail', 'overtimeDetail'])->findOrFail($id);
         
-        $pdf = Pdf::loadView('pdf.approval_proof', ['request' => $requestModel]);
+        if ($requestModel->type == 'asset') {
+            $pdf = Pdf::loadView('pdf.approval_proof_asset', ['request' => $requestModel]);
+        } elseif ($requestModel->type == 'reimbursement') {
+            $pdf = Pdf::loadView('pdf.approval_proof_reimbursement', ['request' => $requestModel]);
+        } else {
+            $pdf = Pdf::loadView('pdf.approval_proof', ['request' => $requestModel]);
+        }
         return $pdf->download("Proof-REQ-{$id}.pdf");
     }
 

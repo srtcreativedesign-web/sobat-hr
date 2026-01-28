@@ -198,7 +198,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
         locale: 'id_ID',
         symbol: 'Rp ',
         decimalDigits: 0,
-      ).format(request['amount']);
+      ).format(double.tryParse(request['amount'].toString()) ?? 0);
     }
 
     return Scaffold(
@@ -222,7 +222,9 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: AppTheme.colorEggplant.withOpacity(0.1),
+                  backgroundColor: AppTheme.colorEggplant.withValues(
+                    alpha: 0.1,
+                  ),
                   child: Text(
                     (employee['full_name'] ?? 'U')[0].toUpperCase(),
                     style: const TextStyle(
@@ -269,6 +271,90 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
             ],
             const SizedBox(height: 16),
             _buildDetailRow('Keterangan', request['description'] ?? '-'),
+
+            // Asset Details
+            if (request['type'] == 'asset' && request['detail'] != null) ...[
+              const SizedBox(height: 16),
+              _buildDetailRow(
+                'Barang / Merek',
+                request['detail']['brand'] ?? '-',
+              ),
+              const SizedBox(height: 16),
+              _buildDetailRow(
+                'Spesifikasi',
+                request['detail']['specification'] ?? '-',
+              ),
+              const SizedBox(height: 16),
+              _buildDetailRow(
+                'Urgensi',
+                (request['detail']['is_urgent'] == true ||
+                        request['detail']['is_urgent'] == 1)
+                    ? 'Mendesak (Urgent)'
+                    : 'Normal',
+              ),
+            ],
+
+            // Attachments
+            if (request['attachments'] != null) ...[
+              const SizedBox(height: 24),
+              const Text(
+                'Lampiran',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 200,
+                child: Builder(
+                  builder: (context) {
+                    List<dynamic> attachments = [];
+                    var raw = request['attachments'];
+                    if (raw is List) {
+                      attachments = raw;
+                    } else if (raw is String) {
+                      try {
+                        var decoded = jsonDecode(raw);
+                        if (decoded is List) attachments = decoded;
+                      } catch (_) {}
+                    }
+
+                    if (attachments.isEmpty) return const SizedBox.shrink();
+
+                    return ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: attachments.length,
+                      itemBuilder: (context, index) {
+                        final att = attachments[index];
+                        if (att is String && att.startsWith('data:image')) {
+                          final base64String = att.split(',').last;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.memory(
+                                base64Decode(base64String),
+                                height: 200,
+                                width: 200,
+                                fit: BoxFit.cover,
+                                errorBuilder: (ctx, _, __) {
+                                  return Container(
+                                    width: 200,
+                                    color: Colors.grey.shade200,
+                                    child: const Center(
+                                      child: Icon(Icons.broken_image),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
 
             const SizedBox(height: 32),
             const Text(

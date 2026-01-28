@@ -640,8 +640,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: isEnrolled
-                              ? Colors.green.withOpacity(0.1)
-                              : Colors.orange.withOpacity(0.1),
+                              ? Colors.green.withValues(alpha: 0.1)
+                              : Colors.orange.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                             color: isEnrolled ? Colors.green : Colors.orange,

@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import '../../config/theme.dart';
 import 'package:intl/intl.dart';
 import 'dart:io';
+import 'dart:convert'; // Added for base64Encode
 import 'package:image_picker/image_picker.dart';
 import 'package:signature/signature.dart';
-import '../../services/request_service.dart'; // Added
+import '../../services/request_service.dart';
 
 class CreateSubmissionScreen extends StatefulWidget {
   final String type; // 'Cuti', 'Sakit', 'Lembur', 'Reimbursement', etc.
@@ -21,6 +22,8 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
   final _amountCtrl = TextEditingController(); // Reuse for "Estimasi Harga"
   final _brandCtrl = TextEditingController(); // New: Merek
   final _specCtrl = TextEditingController(); // New: Spesifikasi
+  final _titleCtrl =
+      TextEditingController(); // New: Judul Pengajuan (Reimbursement)
 
   bool _isUrgent = false; // New: Urgent/Tidak
   File? _selectedImage;
@@ -162,6 +165,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
     _amountCtrl.dispose();
     _brandCtrl.dispose();
     _specCtrl.dispose();
+    _titleCtrl.dispose();
     _signatureController.dispose();
     super.dispose();
   }
@@ -299,6 +303,12 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
                         const SizedBox(height: 20),
                         _buildTimeRangePicker(),
                       ] else if (widget.type == 'Reimbursement') ...[
+                        _buildTextInput(
+                          _titleCtrl,
+                          'Judul Pengajuan',
+                          'Contoh: Kacamata, Makan Siang Client, dll',
+                        ),
+                        const SizedBox(height: 20),
                         _buildDatePicker(),
                         const SizedBox(height: 20),
                         _buildAmountField(),
@@ -713,6 +723,8 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
     try {
       final XFile? picked = await _picker.pickImage(
         source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
         imageQuality: 50, // Optimize image size
       );
       if (picked != null) {
@@ -913,86 +925,105 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
 
       setState(() => _isLoading = true);
 
-      // Prepare Data
-      // Map widget.type to API type field
-      String apiType = 'leave';
-      if (widget.type == 'Sakit')
-        apiType = 'leave'; // Sick is also leave type usually, or separate?
-      // User requested "Cuti", logic applies to "Cuti".
-      // Let's assume 'Cuti' -> 'leave', 'Sakit' -> 'leave' (with attachment?), 'Lembur' -> 'overtime', 'Reimbursement' -> 'reimbursement', 'Pengajuan Aset' -> 'reimbursement' (asset?)
-      // For now let's map simply:
-      switch (widget.type) {
-        case 'Cuti':
-          apiType = 'leave';
-          break;
-        case 'Sakit':
-          apiType = 'sick_leave';
-          break;
-        case 'Lembur':
-          apiType = 'overtime';
-          break;
-        case 'Reimbursement':
-          apiType = 'reimbursement';
-          break;
-        case 'Pengajuan Aset':
-          apiType = 'asset';
-          break;
-        case 'Perjalanan Dinas':
-          apiType = 'business_trip';
-          break;
-        case 'Resign':
-          apiType = 'resignation';
-          break;
-        default:
-          apiType = 'reimbursement';
-          break;
-      }
-
-      final Map<String, dynamic> data = {
-        'type': apiType,
-        'title': widget.type,
-        'description': _reasonCtrl.text,
-        'start_date': _startDate?.toIso8601String(),
-        'end_date': _endDate?.toIso8601String(),
-        // For Reimbursement/Asset use amount
-        'amount': _amountCtrl.text.isNotEmpty
-            ? double.tryParse(
-                _amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''),
-              )
-            : null,
-      };
-
-      // Add Specific Fields
-      if (apiType == 'overtime' && _startTime != null && _endTime != null) {
-        data['start_time'] =
-            '${_startTime!.hour.toString().padLeft(2, '0')}:${_startTime!.minute.toString().padLeft(2, '0')}';
-        data['end_time'] =
-            '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}';
-        // Calculate duration in minutes
-        final start = DateTime(
-          2024,
-          1,
-          1,
-          _startTime!.hour,
-          _startTime!.minute,
-        );
-        var end = DateTime(2024, 1, 1, _endTime!.hour, _endTime!.minute);
-        if (end.isBefore(start)) {
-          end = end.add(const Duration(days: 1)); // Cross midnight
-        }
-        data['duration'] = end.difference(start).inMinutes;
-      }
-
-      if (apiType == 'asset') {
-        data['brand'] = _brandCtrl.text;
-        data['specification'] = _specCtrl.text;
-        data['is_urgent'] = _isUrgent;
-      }
-
       try {
-        // Upload image if exists? Implementation complexity.
-        // Current RequestService createRequest only accepts Map.
-        // For strict MVP, we might skip file upload or add it later.
+        // Map widget.type to API type field
+        String apiType = 'leave';
+        switch (widget.type) {
+          case 'Cuti':
+            apiType = 'leave';
+            break;
+          case 'Sakit':
+            apiType = 'sick_leave';
+            break;
+          case 'Lembur':
+            apiType = 'overtime';
+            break;
+          case 'Reimbursement':
+            apiType = 'reimbursement';
+            break;
+          case 'Pengajuan Aset':
+            apiType = 'asset';
+            break;
+          case 'Perjalanan Dinas':
+            apiType = 'business_trip';
+            break;
+          case 'Resign':
+            apiType = 'resignation';
+            break;
+
+          default:
+        }
+
+        final Map<String, dynamic> data = {
+          'type': apiType,
+          'title': (widget.type == 'Reimbursement')
+              ? _titleCtrl.text
+              : widget.type,
+          'description': _reasonCtrl.text,
+          'start_date': _startDate?.toIso8601String(),
+          'end_date': _endDate?.toIso8601String(),
+          'amount': _amountCtrl.text.isNotEmpty
+              ? double.tryParse(
+                  _amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''),
+                )
+              : null,
+        };
+
+        // Add Specific Fields
+        if (apiType == 'overtime' && _startTime != null && _endTime != null) {
+          data['start_time'] =
+              '${_startTime!.hour.toString().padLeft(2, "0")}:${_startTime!.minute.toString().padLeft(2, "0")}';
+          data['end_time'] =
+              '${_endTime!.hour.toString().padLeft(2, "0")}:${_endTime!.minute.toString().padLeft(2, "0")}';
+
+          final start = DateTime(
+            2024,
+            1,
+            1,
+            _startTime!.hour,
+            _startTime!.minute,
+          );
+          var end = DateTime(2024, 1, 1, _endTime!.hour, _endTime!.minute);
+          if (end.isBefore(start)) {
+            end = end.add(const Duration(days: 1));
+          }
+          data['duration'] = end.difference(start).inMinutes;
+        }
+
+        if (apiType == 'asset') {
+          data['brand'] = _brandCtrl.text;
+          data['specification'] = _specCtrl.text;
+          data['is_urgent'] = _isUrgent;
+        }
+
+        // Process Attachments (Image)
+        if (_selectedImage != null) {
+          final bytes = await _selectedImage!.readAsBytes();
+          final base64Image = base64Encode(bytes);
+          // JSON encoded string for 'attachments' field as backend expects
+          // Backend RequestController uses: $request->attachments ? json_decode(...) : null
+          // But wait, RequestController line 102: 'attachments' => $validated['attachments'] ?? null,
+          // And specific details logic (e.g. ReimbursementDetail) uses line 159: 'attachment' => ... json_decode
+          // It seems the Controller expects a JSON string or an array?
+          // Mobile apps usually send JSON body. So I can send a List or Map.
+          // However, if the backend does `json_decode`, it implies it receives a STRING.
+          // Let's assume standard Laravel validation, if it's 'array', we send array.
+          // BUT, looking at `RequestController` line 125: `json_decode($request->attachments, true)`.
+          // This strongly suggests the API expects `attachments` to be a JSON STRING.
+          // So I will encode it.
+          List<String> attachmentsList = [
+            'data:image/jpeg;base64,$base64Image',
+          ];
+          data['attachments'] = jsonEncode(attachmentsList);
+        }
+
+        // Process Signature
+        final signatureBytes = await _signatureController.toPngBytes();
+        if (signatureBytes != null) {
+          final base64Signature = base64Encode(signatureBytes);
+          data['signature'] = 'data:image/png;base64,$base64Signature';
+          // Note: Verify if backend accepts 'signature'. If not, it will just be ignored.
+        }
 
         await RequestService().createRequest(data);
 

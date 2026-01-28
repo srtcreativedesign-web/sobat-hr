@@ -25,6 +25,8 @@ class RequestModel extends Model
         'attachments',
     ];
 
+    protected $appends = ['detail'];
+
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',

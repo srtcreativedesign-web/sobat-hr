@@ -102,7 +102,7 @@ export interface Shift {
 export interface Request {
   id: number;
   employee_id: number;
-  type: 'leave' | 'overtime' | 'reimbursement' | 'resignation' | 'business_trip' | 'sick_leave';
+  type: 'leave' | 'overtime' | 'reimbursement' | 'resignation' | 'business_trip' | 'sick_leave' | 'asset';
   title: string;
   description: string;
   start_date?: string;
@@ -112,6 +112,7 @@ export interface Request {
   step_now?: number;
   submitted_at?: string;
   attachments?: string[] | string; // Flexible for JSON string or array
+  detail?: any; // Flexible for dynamic details (like asset brand, spec)
   employee?: Employee;
   approvals?: Approval[];
   created_at?: string;

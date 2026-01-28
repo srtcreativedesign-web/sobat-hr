@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert'; // Added for base64Decode
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -62,6 +63,18 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
     }
   }
 
+  List<dynamic> _parseList(dynamic data) {
+    if (data == null) return [];
+    if (data is List) return data;
+    if (data is String) {
+      try {
+        final decoded = jsonDecode(data);
+        if (decoded is List) return decoded;
+      } catch (_) {}
+    }
+    return [];
+  }
+
   @override
   Widget build(BuildContext context) {
     // Extract data
@@ -75,6 +88,10 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
         widget.submission['status']?.toString().toLowerCase() ?? 'pending';
     final reason =
         widget.submission['reason'] ?? widget.submission['description'] ?? '-';
+
+    // Parse Lists safely
+    final attachments = _parseList(widget.submission['attachments']);
+    final approvals = _parseList(widget.submission['approvals']);
 
     // Dates
     String duration = '';
@@ -108,7 +125,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
         locale: 'id_ID',
         symbol: 'Rp ',
         decimalDigits: 0,
-      ).format(widget.submission['amount']);
+      ).format(double.tryParse(widget.submission['amount'].toString()) ?? 0);
     }
 
     // Status Color
@@ -146,9 +163,9 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
+                color: statusColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: statusColor.withOpacity(0.3)),
+                border: Border.all(color: statusColor.withValues(alpha: 0.3)),
               ),
               child: Column(
                 children: [
@@ -218,15 +235,82 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
             const SizedBox(height: 16),
             _buildDetailRow('Keterangan', reason),
 
+            // Asset Details
+            if (widget.submission['type'] == 'asset' &&
+                widget.submission['detail'] != null) ...[
+              const SizedBox(height: 16),
+              _buildDetailRow(
+                'Barang / Merek',
+                widget.submission['detail']['brand'] ?? '-',
+              ),
+              const SizedBox(height: 16),
+              _buildDetailRow(
+                'Spesifikasi',
+                widget.submission['detail']['specification'] ?? '-',
+              ),
+              const SizedBox(height: 16),
+              _buildDetailRow(
+                'Urgensi',
+                (widget.submission['detail']['is_urgent'] == true ||
+                        widget.submission['detail']['is_urgent'] == 1)
+                    ? 'Mendesak (Urgent)'
+                    : 'Normal',
+              ),
+            ],
+
+            // Attachments
+            if (attachments.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              const Text(
+                'Lampiran',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 200,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: attachments.length,
+                  itemBuilder: (context, index) {
+                    final att = attachments[index];
+                    if (att is String && att.startsWith('data:image')) {
+                      final base64String = att.split(',').last;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.memory(
+                            base64Decode(base64String),
+                            height: 200,
+                            width: 200,
+                            fit: BoxFit.cover,
+                            errorBuilder: (ctx, _, __) {
+                              return Container(
+                                width: 200,
+                                color: Colors.grey.shade200,
+                                child: const Center(
+                                  child: Icon(Icons.broken_image),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ),
+            ],
+
             const SizedBox(height: 32),
-            if (widget.submission['approvals'] != null &&
-                (widget.submission['approvals'] as List).isNotEmpty) ...[
+            if (approvals.isNotEmpty) ...[
               const Text(
                 'Riwayat Persetujuan',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 12),
-              ...((widget.submission['approvals'] as List).map((approval) {
+              ...((approvals).map((approval) {
                 final approver = approval['approver'] != null
                     ? (approval['approver']['full_name'] ?? 'Approver')
                     : 'System';

@@ -166,7 +166,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen> {
                                 CircleAvatar(
                                   radius: 20,
                                   backgroundColor: AppTheme.colorEggplant
-                                      .withOpacity(0.1),
+                                      .withValues(alpha: 0.1),
                                   child: Text(
                                     (employee['full_name'] ?? 'U')[0]
                                         .toUpperCase(),
@@ -215,7 +215,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen> {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.orange.withOpacity(0.1),
+                                    color: Colors.orange.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
@@ -245,12 +245,38 @@ class _ApprovalListScreenState extends State<ApprovalListScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      type.toString().toUpperCase(),
+                                      request['type'] == 'reimbursement' &&
+                                              request['title'] != null
+                                          ? request['title']
+                                                .toString()
+                                                .toUpperCase()
+                                          : type.toString().toUpperCase(),
                                       style: TextStyle(
                                         fontWeight: FontWeight.w600,
                                         color: AppTheme.textDark,
                                       ),
                                     ),
+                                    if (request['type'] == 'reimbursement' &&
+                                        request['amount'] != null) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        NumberFormat.currency(
+                                          locale: 'id_ID',
+                                          symbol: 'Rp ',
+                                          decimalDigits: 0,
+                                        ).format(
+                                          double.tryParse(
+                                                request['amount'].toString(),
+                                              ) ??
+                                              0,
+                                        ),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: AppTheme.colorCyan,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
                                 Column(
