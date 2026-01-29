@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../../config/api_config.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/locale_provider.dart';
 import '../../widgets/custom_navbar.dart';
+import '../../l10n/app_localizations.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -31,6 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
+    final localeProvider = Provider.of<LocaleProvider>(context);
     final user = auth.user;
 
     return Scaffold(
@@ -50,7 +53,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       scrolledUnderElevation: 0,
                       toolbarHeight: 70,
                       title: Text(
-                        'Profil Saya',
+                        AppLocalizations.of(context)!.myProfile,
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -93,15 +96,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             const SizedBox(height: 24),
 
                             // Account Section
-                            _buildSectionTitle('Akun'),
+                            _buildSectionTitle(
+                              AppLocalizations.of(context)!.account,
+                            ),
                             const SizedBox(height: 12),
                             _buildStandardCard(
                               child: Column(
                                 children: [
                                   _buildMenuItem(
                                     icon: Icons.person_outline,
-                                    title: 'Edit Profil',
-                                    subtitle: 'Ubah informasi pribadi Anda',
+                                    title: AppLocalizations.of(
+                                      context,
+                                    )!.editProfile,
+                                    subtitle: AppLocalizations.of(
+                                      context,
+                                    )!.editProfileDesc,
                                     onTap: () async {
                                       final res = await Navigator.of(
                                         context,
@@ -112,8 +121,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   _buildDivider(),
                                   _buildMenuItem(
                                     icon: Icons.lock_outline,
-                                    title: 'Ubah Password',
-                                    subtitle: 'Perbarui kata sandi Anda',
+                                    title: AppLocalizations.of(
+                                      context,
+                                    )!.changePassword,
+                                    subtitle: AppLocalizations.of(
+                                      context,
+                                    )!.changePasswordDesc,
                                     onTap: () {
                                       Navigator.of(
                                         context,
@@ -127,22 +140,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             const SizedBox(height: 24),
 
                             // App Section
-                            _buildSectionTitle('Aplikasi'),
+                            _buildSectionTitle(
+                              AppLocalizations.of(context)!.application,
+                            ),
                             const SizedBox(height: 12),
                             _buildStandardCard(
                               child: Column(
                                 children: [
                                   _buildMenuItem(
                                     icon: Icons.language,
-                                    title: 'Bahasa',
-                                    subtitle: 'Indonesia',
-                                    onTap: () => _showComingSoon(context),
+                                    title: AppLocalizations.of(
+                                      context,
+                                    )!.language,
+                                    subtitle:
+                                        localeProvider.locale?.languageCode ==
+                                            'en'
+                                        ? AppLocalizations.of(context)!.english
+                                        : AppLocalizations.of(
+                                            context,
+                                          )!.indonesian,
+                                    onTap: () => _showLanguageSelector(
+                                      context,
+                                      localeProvider,
+                                    ),
                                   ),
                                   _buildDivider(),
                                   _buildMenuItem(
                                     icon: Icons.dark_mode_outlined,
-                                    title: 'Tema',
-                                    subtitle: 'Light Mode',
+                                    title: AppLocalizations.of(context)!.theme,
+                                    subtitle: AppLocalizations.of(
+                                      context,
+                                    )!.lightMode,
                                     onTap: () => _showComingSoon(context),
                                   ),
                                 ],
@@ -152,36 +180,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             const SizedBox(height: 24),
 
                             // Support Section
-                            _buildSectionTitle('Bantuan & Dukungan'),
+                            _buildSectionTitle(
+                              AppLocalizations.of(context)!.helpSupport,
+                            ),
                             const SizedBox(height: 12),
                             _buildStandardCard(
                               child: Column(
                                 children: [
                                   _buildMenuItem(
                                     icon: Icons.help_outline,
-                                    title: 'Pusat Bantuan',
-                                    subtitle: 'FAQ dan panduan penggunaan',
+                                    title: AppLocalizations.of(
+                                      context,
+                                    )!.helpCenter,
+                                    subtitle: AppLocalizations.of(
+                                      context,
+                                    )!.helpCenterDesc,
                                     onTap: () => _showHelpCenter(context),
                                   ),
                                   _buildDivider(),
                                   _buildMenuItem(
                                     icon: Icons.feedback_outlined,
-                                    title: 'Kirim Feedback',
-                                    subtitle: 'Bantu kami untuk lebih baik',
+                                    title: AppLocalizations.of(
+                                      context,
+                                    )!.sendFeedback,
+                                    subtitle: AppLocalizations.of(
+                                      context,
+                                    )!.sendFeedbackDesc,
                                     onTap: () => _showComingSoon(context),
                                   ),
                                   _buildDivider(),
                                   _buildMenuItem(
                                     icon: Icons.privacy_tip_outlined,
-                                    title: 'Kebijakan Privasi',
-                                    subtitle: 'Perlindungan data Anda',
+                                    title: AppLocalizations.of(
+                                      context,
+                                    )!.privacyPolicy,
+                                    subtitle: AppLocalizations.of(
+                                      context,
+                                    )!.privacyPolicyDesc,
                                     onTap: () => _showPrivacyPolicy(context),
                                   ),
                                   _buildDivider(),
                                   _buildMenuItem(
                                     icon: Icons.description_outlined,
-                                    title: 'Syarat & Ketentuan',
-                                    subtitle: 'Ketentuan penggunaan aplikasi',
+                                    title: AppLocalizations.of(
+                                      context,
+                                    )!.termsConditions,
+                                    subtitle: AppLocalizations.of(
+                                      context,
+                                    )!.termsConditionsDesc,
                                     onTap: () => _showTermsConditions(context),
                                   ),
                                 ],
@@ -209,7 +255,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
-                                        'Keluar',
+                                        AppLocalizations.of(context)!.logout,
                                         style: TextStyle(
                                           color: AppTheme.error,
                                           fontWeight: FontWeight.bold,
@@ -225,7 +271,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             const SizedBox(height: 32),
                             Center(
                               child: Text(
-                                '© 2026 SOBAT HR v1.0.0\nMade with ❤️ in Indonesia',
+                                '© 2026 SOBAT HR v1.0.0\n${AppLocalizations.of(context)!.madeWithLove}',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: AppTheme.textLight,
@@ -504,6 +550,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _showLanguageSelector(BuildContext context, LocaleProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                AppLocalizations.of(context)!.selectLanguage,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Text('🇮🇩', style: TextStyle(fontSize: 24)),
+                title: Text(AppLocalizations.of(context)!.indonesian),
+                trailing: provider.locale?.languageCode == 'id'
+                    ? Icon(Icons.check, color: AppTheme.colorCyan)
+                    : null,
+                onTap: () {
+                  provider.setLocale(const Locale('id'));
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Text('🇺🇸', style: TextStyle(fontSize: 24)),
+                title: Text(AppLocalizations.of(context)!.english),
+                trailing: provider.locale?.languageCode == 'en'
+                    ? Icon(Icons.check, color: AppTheme.colorCyan)
+                    : null,
+                onTap: () {
+                  provider.setLocale(const Locale('en'));
+                  Navigator.pop(context);
+                },
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _showComingSoon(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -518,11 +614,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Keluar'),
-        content: const Text('Apakah Anda yakin ingin keluar dari aplikasi?'),
+        content: Text(AppLocalizations.of(context)!.logoutConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Batal'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -535,7 +631,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error),
-            child: const Text('Keluar'),
+            child: Text(AppLocalizations.of(context)!.logout),
           ),
         ],
       ),

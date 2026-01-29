@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'config/theme.dart';
 import 'providers/auth_provider.dart';
+import 'providers/locale_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/home_screen.dart';
 
@@ -22,43 +26,63 @@ import 'screens/profile/enroll_face_screen.dart'; // Added
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
-  runApp(const MyApp());
+  final prefs = await SharedPreferences.getInstance();
+  runApp(MyApp(prefs: prefs));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final SharedPreferences prefs;
+
+  const MyApp({super.key, required this.prefs});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
-      child: MaterialApp(
-        title: 'SOBAT HR',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        initialRoute: '/',
-        routes: {
-          '/': (context) => const AuthWrapper(),
-          '/login': (context) => const LoginScreen(),
-          '/home': (context) => const HomeScreen(),
-
-          '/profile': (context) => const ProfileScreen(),
-          '/profile/edit': (context) => const EditProfileScreen(),
-          '/profile/change-password': (context) => const ChangePasswordScreen(),
-          '/payroll': (context) => const PayrollScreen(),
-          '/submission/menu': (context) => const SubmissionMenuScreen(),
-          '/submission/list': (context) => const Scaffold(
-            backgroundColor: Color(0xFFF9FAFB),
-            body: SubmissionScreen(),
-          ),
-          '/submission/create': (context) {
-            final args = ModalRoute.of(context)!.settings.arguments as String;
-            return CreateSubmissionScreen(type: args);
-          },
-          '/announcements': (context) => const AnnouncementListScreen(),
-          '/notifications': (context) => const NotificationScreen(),
-          '/attendance': (context) => const AttendanceScreen(),
-          '/attendance/history': (context) => const AttendanceHistoryScreen(),
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => LocaleProvider(prefs)),
+      ],
+      child: Consumer<LocaleProvider>(
+        builder: (context, localeProvider, child) {
+          return MaterialApp(
+            title: 'SOBAT HR',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            locale: localeProvider.locale,
+            localizationsDelegates: [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [Locale('en'), Locale('id')],
+            initialRoute: '/',
+            routes: {
+              '/': (context) => const AuthWrapper(),
+              '/login': (context) => const LoginScreen(),
+              '/home': (context) => const HomeScreen(),
+              '/profile': (context) => const ProfileScreen(),
+              '/profile/edit': (context) => const EditProfileScreen(),
+              '/profile/change-password': (context) =>
+                  const ChangePasswordScreen(),
+              '/payroll': (context) => const PayrollScreen(),
+              '/submission/menu': (context) => const SubmissionMenuScreen(),
+              '/submission/list': (context) => const Scaffold(
+                backgroundColor: Color(0xFFF9FAFB),
+                body: SubmissionScreen(),
+              ),
+              '/submission/create': (context) {
+                final args =
+                    ModalRoute.of(context)!.settings.arguments as String;
+                return CreateSubmissionScreen(type: args);
+              },
+              '/announcements': (context) => const AnnouncementListScreen(),
+              '/notifications': (context) => const NotificationScreen(),
+              '/attendance': (context) => const AttendanceScreen(),
+              '/attendance/history': (context) =>
+                  const AttendanceHistoryScreen(),
+            },
+          );
         },
       ),
     );
