@@ -229,7 +229,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     // 1. Photo Confirmation (Selfie)
     final String? photoPath = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const SelfieScreen()),
+      MaterialPageRoute(
+        builder: (context) => SelfieScreen(address: _currentAddress),
+      ),
     );
 
     if (photoPath == null) return; // User cancelled

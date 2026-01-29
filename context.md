@@ -123,3 +123,5 @@ flutter run -d C6F066BB-39CC-4E0E-A581-B08203675EB0
 
 6,13755° S, 106,62293° E
 6,13778° S, 106,62295° E
+
+open ios/Runner.xcworkspace

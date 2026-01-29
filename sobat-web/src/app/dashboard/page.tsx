@@ -45,7 +45,7 @@ interface ContractExpiringEmployee {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isAuthenticated, checkAuth } = useAuthStore();
+  const { user, isAuthenticated, checkAuth, logout } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [contractExpiring, setContractExpiring] = useState<ContractExpiringEmployee[]>([]);
   const [latenessData, setLatenessData] = useState([]);
@@ -71,8 +71,12 @@ export default function DashboardPage() {
         setContractExpiring(contractsRes.data.data.employees || []);
         setLatenessData(trendRes.data.data || []);
 
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to fetch dashboard data:', error);
+        if (error.response?.status === 401) {
+          await logout();
+          router.push('/login');
+        }
       } finally {
         setLoading(false);
       }
@@ -85,7 +89,8 @@ export default function DashboardPage() {
       return;
     }
     fetchData();
-  }, [user, router]); // Removed isAuthenticated dependency since it is guaranteed by layout
+  }, [user, router, logout]);
+
 
   // Calculators
   const presentCount = stats?.attendance['present'] || 0;

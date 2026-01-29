@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,8 @@ import 'package:intl/intl.dart';
 import 'dart:ui';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import '../../config/theme.dart';
+
+import 'package:device_info_plus/device_info_plus.dart'; // [NEW]
 
 class SelfieScreen extends StatefulWidget {
   final String? address;
@@ -21,6 +24,7 @@ class _SelfieScreenState extends State<SelfieScreen>
   CameraController? _controller;
   Future<void>? _initializeControllerFuture;
   bool _isCameraInitialized = false;
+  bool _isSimulator = false; // [NEW]
 
   // Face Detection
   late FaceDetector _faceDetector;
@@ -29,55 +33,58 @@ class _SelfieScreenState extends State<SelfieScreen>
   Timer? _captureDebounce;
   bool _isAutoCapturing = false;
 
+  // Progress Logic
+  double _progressValue = 0.0;
+  Timer? _progressTimer;
+
   // Animations
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
-  late AnimationController _scanController;
-  late Animation<double> _scanAnimation;
+
+  // Animations
 
   // Status Text
-  String _statusText = 'INITIALIZING...'; // Start with init
-  Color _statusColor = AppTheme.colorEggplant;
-  Color _scannerColor = AppTheme.colorCyan;
+  String _statusText = 'INITIALIZING...';
+  Color _statusColor = AppTheme.colorCyan;
 
   // Time
   late Timer _timer;
   String _currentTime = '';
+  String _amPm = '';
 
   @override
   void initState() {
     super.initState();
-    _initCamera();
+    _checkDeviceAndInit();
+  }
+
+  Future<void> _checkDeviceAndInit() async {
+    bool isSimulator = false;
+    if (Platform.isIOS) {
+      final deviceInfo = DeviceInfoPlugin();
+      final iosInfo = await deviceInfo.iosInfo;
+      isSimulator = !iosInfo.isPhysicalDevice;
+    }
+
+    if (mounted) {
+      setState(() {
+        _isSimulator = isSimulator;
+      });
+    }
+
+    if (isSimulator) {
+      setState(() => _statusText = 'SIMULATOR MODE');
+      _mockSimulatorSequence();
+    } else {
+      _initCamera();
+      _faceDetector = FaceDetector(
+        options: FaceDetectorOptions(
+          performanceMode: FaceDetectorMode.fast,
+          enableContours: false,
+          enableClassification: true,
+          enableLandmarks: false,
+        ),
+      );
+    }
     _startClock();
-
-    // Config: Performance = Fast, Contours = None (faster), Landmark = None
-    // We only need bounds and classification (eyes/smiling) + tracking
-    _faceDetector = FaceDetector(
-      options: FaceDetectorOptions(
-        performanceMode: FaceDetectorMode.fast,
-        enableContours: false, // Turn off heavy features
-        enableClassification: true,
-        enableLandmarks: false,
-      ),
-    );
-
-    // Pulse Animation (Rings)
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
-    // Scan Animation (Line/Beam)
-    _scanController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat(reverse: true);
-    _scanAnimation = Tween<double>(begin: -1.2, end: 1.2).animate(
-      CurvedAnimation(parent: _scanController, curve: Curves.easeInOut),
-    );
   }
 
   void _startClock() {
@@ -89,8 +96,10 @@ class _SelfieScreenState extends State<SelfieScreen>
 
   void _updateTime() {
     if (mounted) {
+      final now = DateTime.now();
       setState(() {
-        _currentTime = DateFormat('HH:mm').format(DateTime.now());
+        _currentTime = DateFormat('hh:mm').format(now);
+        _amPm = DateFormat('a').format(now);
       });
     }
   }
@@ -105,8 +114,7 @@ class _SelfieScreenState extends State<SelfieScreen>
 
       _controller = CameraController(
         frontCamera,
-        ResolutionPreset
-            .medium, // Lower res for faster processing? High is ok too.
+        ResolutionPreset.high,
         enableAudio: false,
         imageFormatGroup: Platform.isAndroid
             ? ImageFormatGroup.nv21
@@ -153,13 +161,12 @@ class _SelfieScreenState extends State<SelfieScreen>
       final camera = _controller!.description;
       final imageRotation =
           InputImageRotationValue.fromRawValue(camera.sensorOrientation) ??
-          InputImageRotation.rotation0deg; // Fixed enum
+          InputImageRotation.rotation0deg;
 
       final inputImageFormat =
           InputImageFormatValue.fromRawValue(image.format.raw) ??
           InputImageFormat.nv21;
 
-      // Metadata construction
       final inputImageMetadata = InputImageMetadata(
         size: imageSize,
         rotation: imageRotation,
@@ -175,9 +182,8 @@ class _SelfieScreenState extends State<SelfieScreen>
       final faces = await _faceDetector.processImage(inputImage);
 
       if (faces.isNotEmpty) {
-        // Just take the largest face/first face
         final face = faces.first;
-        _checkFaceValidation(face);
+        _checkFaceValidation(face, imageSize);
       } else {
         _resetValidation('NO FACE DETECTED');
       }
@@ -188,36 +194,56 @@ class _SelfieScreenState extends State<SelfieScreen>
     }
   }
 
-  void _checkFaceValidation(Face face) {
+  void _checkFaceValidation(Face face, Size imageSize) {
     if (_isAutoCapturing) return;
 
-    double rotY = face.headEulerAngleY ?? 0; // Head turn (Left/Right)
-    double rotZ = face.headEulerAngleZ ?? 0; // Head tilt (Shoulder to Shoulder)
+    double rotY = face.headEulerAngleY ?? 0;
+    double rotZ = face.headEulerAngleZ ?? 0;
 
-    // Relaxed Validation
-    bool isFacingForward = rotY.abs() < 20; // Increased to 20 deg
-    bool isStraight = rotZ.abs() < 20; // Increased to 20 deg
+    bool isFacingForward = rotY.abs() < 15;
+    bool isStraight = rotZ.abs() < 15;
 
-    // Removed Strict Eyes Check (It fails often in bad light)
+    final Rect box = face.boundingBox;
+    final double centerX = imageSize.width / 2;
+    final double centerY = imageSize.height / 2;
+    // NOTE: ML Kit coordinates might be relative to the image sensor buffer.
+    // For front camera, X might be mirrored.
 
-    if (isFacingForward && isStraight) {
+    double faceCenterX = box.center.dx;
+    double faceCenterY = box.center.dy;
+
+    double offsetX = (faceCenterX - centerX).abs() / imageSize.width;
+    double offsetY = (faceCenterY - centerY).abs() / imageSize.height;
+
+    double faceWidthPercent = box.width / imageSize.width;
+    // double faceHeightPercent = box.height / imageSize.height;
+
+    // Thresholds
+    bool isCentered = offsetX < 0.25 && offsetY < 0.25;
+    bool isCloseEnough = faceWidthPercent > 0.15;
+
+    if (isFacingForward && isStraight && isCentered && isCloseEnough) {
       if (!_isFaceGood) {
+        _startProgressTimer();
         setState(() {
           _isFaceGood = true;
-          _statusText = 'HOLD STILL...';
-          _statusColor = Colors.white;
-          _scannerColor = AppTheme.success;
+          _statusText = 'VERIFYING';
+          _statusColor = AppTheme.colorCyan; // Cyan for good
         });
 
-        // 1 Second hold trigger
         _captureDebounce ??= Timer(
-          const Duration(milliseconds: 1000),
+          const Duration(seconds: 2),
           _triggerAutoCapture,
         );
       }
     } else {
-      String reason = 'ADJUST FACE';
-      if (!isFacingForward) {
+      String reason = 'ADJUST';
+
+      if (!isCloseEnough) {
+        reason = 'MOVE CLOSER';
+      } else if (!isCentered) {
+        reason = 'CENTER FACE';
+      } else if (!isFacingForward) {
         reason = rotY > 0 ? 'TURN RIGHT' : 'TURN LEFT';
       } else if (!isStraight) {
         reason = 'STRAIGHTEN HEAD';
@@ -227,44 +253,59 @@ class _SelfieScreenState extends State<SelfieScreen>
     }
   }
 
+  void _startProgressTimer() {
+    _progressTimer?.cancel();
+    _progressValue = 0.0;
+    // Animate progress to 100% over 2 seconds
+    _progressTimer = Timer.periodic(const Duration(milliseconds: 20), (timer) {
+      setState(() {
+        _progressValue += 0.01;
+        if (_progressValue >= 1.0) {
+          _progressValue = 1.0;
+          timer.cancel();
+        }
+      });
+    });
+  }
+
   void _resetValidation(String message) {
     if (_isFaceGood) {
       _captureDebounce?.cancel();
       _captureDebounce = null;
+      _progressTimer?.cancel();
       setState(() {
         _isFaceGood = false;
+        _progressValue = 0.0;
         _statusText = message;
-        _statusColor = AppTheme.colorEggplant;
-        _scannerColor = AppTheme.colorCyan;
+        _statusColor = Colors.orangeAccent;
       });
     } else if (_statusText != message) {
       setState(() {
         _statusText = message;
+        _statusColor = Colors.orangeAccent;
       });
     }
   }
 
   Future<void> _triggerAutoCapture() async {
     if (_isAutoCapturing || !mounted) return;
-
     _captureDebounce?.cancel();
+    _progressTimer?.cancel();
 
     setState(() {
       _isAutoCapturing = true;
-      _statusText = 'CAPTURING...';
-      _scannerColor = AppTheme.success;
+      _statusText = 'COMPLETED';
+      _progressValue = 1.0;
+      _statusColor = AppTheme.success;
     });
 
     try {
       await _controller?.stopImageStream();
-      // await Future.delayed(const Duration(milliseconds: 100));
 
       XFile image;
       try {
         image = await _controller!.takePicture();
       } catch (e) {
-        // If takePicture fails (e.g. stream busy), wait and retry once
-        debugPrint("Capture failed, retrying: $e");
         await Future.delayed(const Duration(milliseconds: 500));
         image = await _controller!.takePicture();
       }
@@ -276,385 +317,425 @@ class _SelfieScreenState extends State<SelfieScreen>
       setState(() {
         _isAutoCapturing = false;
         _statusText = 'RETRYING...';
-        _initCamera(); // Re-init if stream broke
+        _initCamera();
       });
     }
+  }
+
+  void _mockSimulatorSequence() {
+    // Simulates the face detection process flow for testing layout
+    Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _statusText = 'FACE DETECTED');
+
+      Timer(const Duration(seconds: 1), () {
+        if (!mounted) return;
+        _startProgressTimer();
+        setState(() {
+          _isFaceGood = true;
+          _statusText = 'VERIFYING (SIM)';
+          _statusColor = AppTheme.colorCyan;
+        });
+
+        Timer(const Duration(seconds: 2), () {
+          if (mounted) _triggerAutoCapture();
+        });
+      });
+    });
   }
 
   @override
   void dispose() {
     _faceDetector.close();
     _controller?.dispose();
-    _pulseController.dispose();
-    _scanController.dispose();
     _timer.cancel();
     _captureDebounce?.cancel();
+    _progressTimer?.cancel();
     super.dispose();
   }
 
-  Future<void> _takePicture() async {
-    // Manual override
-    if (_isAutoCapturing) return;
-    _captureDebounce?.cancel(); // Cancel auto timer if manual press
-    _triggerAutoCapture();
+  void _showHelpDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Tips Selfie',
+          style: TextStyle(
+            color: AppTheme.colorCyan,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _HelpItem('1. Posisikan wajah di dalam lingkaran.'),
+            SizedBox(height: 8),
+            _HelpItem('2. Pastikan cahaya cukup.'),
+            SizedBox(height: 8),
+            _HelpItem('3. Tunggu hingga progress bar penuh.'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = AppTheme.colorCyan;
-    const bgColor = Color(0xFF10221c);
-
-    if (!_isCameraInitialized || _controller == null) {
+    if ((!_isCameraInitialized || _controller == null) && !_isSimulator) {
       return const Scaffold(
-        backgroundColor: bgColor,
-        body: Center(child: CircularProgressIndicator(color: primaryColor)),
+        backgroundColor: Colors.black,
+        body: Center(
+          child: CircularProgressIndicator(color: AppTheme.colorCyan),
+        ),
       );
     }
 
-    final mediaSize = MediaQuery.of(context).size;
-    final scale = 1 / (_controller!.value.aspectRatio * mediaSize.aspectRatio);
+    final size = MediaQuery.of(context).size;
+
+    // Calculate hole size (Circle)
+    final double holeSize = size.width * 0.75;
+    final double holeRadius = holeSize / 2;
+    // Move up by 15% of the half-height (approx -0.15 alignment)
+    // Alignment(0, -0.2) -> pixel offset = -0.2 * (height/2)
+    const double alignY = -0.25;
+    final double verticalOffset = alignY * (size.height / 2);
 
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Transform.scale(
-            scale: scale < 1 ? 1 / scale : scale,
-            child: Center(child: CameraPreview(_controller!)),
-          ),
-
-          // Background Overlay
-          AnimatedBuilder(
-            animation: _pulseAnimation,
-            builder: (context, child) {
-              return Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      bgColor.withValues(alpha: 0.6),
-                      Colors.transparent,
-                      bgColor.withValues(alpha: 0.8),
-                    ],
-                    stops: const [0.0, 0.3, 1.0],
-                  ),
-                ),
-              );
-            },
-          ),
-
-          SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildGlassIconButton(
-                        Icons.chevron_left,
-                        onTap: () => Navigator.pop(context),
-                      ),
-                      const Text(
-                        'Attendance Check',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      _buildGlassIconButton(Icons.settings, onTap: () {}),
-                    ],
-                  ),
-                ),
-
-                const Spacer(),
-
-                Center(
-                  child: SizedBox(
-                    width: 300,
-                    height: 380,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        _buildTechBrackets(_scannerColor),
-
-                        AnimatedBuilder(
-                          animation: _scanAnimation,
-                          builder: (context, child) {
-                            return Positioned(
-                              top: 190 + (190 * _scanAnimation.value),
-                              child: Container(
-                                width: 320,
-                                height: 60,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.transparent,
-                                      _scannerColor.withValues(alpha: 0.1),
-                                      _scannerColor.withValues(alpha: 0.5),
-                                      _scannerColor.withValues(alpha: 0.1),
-                                      Colors.transparent,
-                                    ],
-                                    stops: const [0.0, 0.45, 0.5, 0.55, 1.0],
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: _scannerColor.withValues(
-                                        alpha: 0.2,
-                                      ),
-                                      blurRadius: 20,
-                                      spreadRadius: 5,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-
-                        Positioned(
-                          bottom: -20,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _scannerColor,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 10,
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                if (_isFaceGood)
-                                  SizedBox(
-                                    width: 10,
-                                    height: 10,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        _statusColor,
-                                      ),
-                                    ),
-                                  )
-                                else
-                                  Icon(
-                                    Icons.face_retouching_natural,
-                                    size: 12,
-                                    color: _statusColor,
-                                  ),
-
-                                const SizedBox(width: 8),
-                                Text(
-                                  _statusText,
-                                  style: TextStyle(
-                                    color: _statusColor,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+          // 1. Camera Preview (Full Screen Cover) OR Simulator Placeholder
+          SizedBox(
+            width: size.width,
+            height: size.height,
+            child: _isSimulator
+                ? Container(
+                    color: Colors.grey[900],
+                    child: const Center(
+                      child: Icon(Icons.face, size: 80, color: Colors.white24),
+                    ),
+                  )
+                : FittedBox(
+                    fit: BoxFit.cover,
+                    child: SizedBox(
+                      width: _controller!.value.previewSize!.height,
+                      height: _controller!.value.previewSize!.width,
+                      child: CameraPreview(_controller!),
                     ),
                   ),
-                ),
+          ),
 
-                const SizedBox(height: 30),
-                Text(
-                  'Fit face within brackets\nfor automatic scanning',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    fontSize: 12,
-                    height: 1.5,
+          // 2. Dark Overlay with Hole
+          CustomPaint(
+            size: size,
+            painter: HoleOverlayPainter(
+              holeRadius: holeRadius,
+              overlayColor: Colors.black.withValues(alpha: 0.85),
+              verticalOffset: verticalOffset, // Pass offset
+            ),
+          ),
+
+          // 3. Ring Overlay (Moved OUT of SafeArea)
+          // 3. Ring Overlay (Moved OUT of SafeArea)
+          Positioned(
+            top: (size.height / 2) + verticalOffset - (holeSize / 2),
+            left: (size.width - holeSize) / 2,
+            child: SizedBox(
+              width: holeSize,
+              height: holeSize,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CustomPaint(
+                    size: Size(holeSize, holeSize),
+                    painter: ScannerRingPainter(color: _statusColor),
                   ),
-                ),
-
-                const Spacer(),
-
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(30),
-                  ),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0f172a).withValues(alpha: 0.6),
-                        border: Border(
-                          top: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.1),
+                  Positioned(
+                    bottom: 0,
+                    child: Transform.translate(
+                      // Push down to avoid overlap with ring border
+                      offset: const Offset(0, 30),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _statusColor,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _statusColor.withValues(alpha: 0.4),
+                              blurRadius: 10,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          _statusText,
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            letterSpacing: 1,
                           ),
                         ),
                       ),
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // 4. UI Layer
+          SafeArea(
+            child: Stack(
+              children: [
+                // Top & Bottom Content
+                Column(
+                  children: [
+                    // Header
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
+                          _buildCircleBtn(
+                            Icons.arrow_back,
+                            onTap: () => Navigator.pop(context),
+                          ),
+                          const Text(
+                            'Attendance Check',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          _buildCircleBtn(Icons.settings, onTap: () {}),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Recognition Badge
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.colorEggplant.withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(color: Colors.white10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(
+                              Icons.face,
+                              size: 16,
+                              color: AppTheme.colorCyan,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Face Recognition',
+                              style: TextStyle(
+                                color: AppTheme.colorCyan,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const Spacer(),
+
+                    // Instruction Text
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        bottom: 40,
+                      ), // Increased spacing
+                      child: Text(
+                        'Align your face within the circle\nfor automatic scanning',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontSize: 14,
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+
+                    // Bottom Card
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: AppTheme.colorEggplant, // Updated to Brand Color
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Time and Location Row
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'TIME',
+                                    'CURRENT TIME',
                                     style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.5,
-                                      ),
+                                      color: Colors.white54,
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
-                                      letterSpacing: 1,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(
-                                    _currentTime,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(left: 32),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.baseline,
+                                    textBaseline: TextBaseline.alphabetic,
                                     children: [
                                       Text(
-                                        'LOCATION',
-                                        style: TextStyle(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.5,
-                                          ),
-                                          fontSize: 10,
+                                        _currentTime,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 32,
                                           fontWeight: FontWeight.bold,
-                                          letterSpacing: 1,
                                         ),
                                       ),
-                                      const SizedBox(height: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: primaryColor.withValues(
-                                            alpha: 0.15,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                          border: Border.all(
-                                            color: primaryColor.withValues(
-                                              alpha: 0.3,
-                                            ),
-                                          ),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.end,
-                                          children: [
-                                            const Icon(
-                                              Icons.location_on,
-                                              color: primaryColor,
-                                              size: 14,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Flexible(
-                                              child: Text(
-                                                widget.address ??
-                                                    'Unknown Location',
-                                                style: const TextStyle(
-                                                  color: primaryColor,
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _amPm,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
                                         ),
                                       ),
                                     ],
                                   ),
+                                ],
+                              ),
+
+                              // Location Tag
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1E293B),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: AppTheme.colorCyan.withValues(
+                                      alpha: 0.3,
+                                    ),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.location_on,
+                                      color: AppTheme.colorCyan,
+                                      size: 14,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        maxWidth: 100,
+                                      ),
+                                      child: Text(
+                                        widget.address ?? 'Unknown',
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: AppTheme.colorCyan,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
 
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 20),
 
+                          // Processing Biometrics
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Processing biometrics...',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              Text(
+                                '${(_progressValue * 100).toInt()}%',
+                                style: const TextStyle(
+                                  color: AppTheme.colorCyan,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: _progressValue,
+                              minHeight: 6,
+                              backgroundColor: Colors.white10,
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                AppTheme.colorCyan,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Footer Buttons
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              _buildFooterButton(
-                                Icons.cameraswitch,
-                                'Flip',
-                                onTap: () {},
-                              ),
-                              const SizedBox(width: 40),
-                              GestureDetector(
-                                onTap: _isAutoCapturing ? null : _takePicture,
-                                child: Container(
-                                  width: 72,
-                                  height: 72,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: _scannerColor,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: _scannerColor.withValues(
-                                          alpha: 0.5,
-                                        ),
-                                        blurRadius: 20,
-                                        spreadRadius: 2,
-                                      ),
-                                    ],
-                                  ),
-                                  child: Icon(
-                                    Icons.camera_alt,
-                                    color: _statusColor,
-                                    size: 32,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 40),
-                              _buildFooterButton(
+                              // Help Button
+                              _buildFooterBtn(
                                 Icons.help_outline,
-                                'Help',
-                                onTap: () {},
+                                'HELP',
+                                onTap: _showHelpDialog,
                               ),
                             ],
                           ),
                         ],
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),
@@ -664,12 +745,11 @@ class _SelfieScreenState extends State<SelfieScreen>
     );
   }
 
-  Widget _buildGlassIconButton(IconData icon, {VoidCallback? onTap}) {
+  Widget _buildCircleBtn(IconData icon, {VoidCallback? onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 40,
-        height: 40,
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.1),
           shape: BoxShape.circle,
@@ -679,119 +759,125 @@ class _SelfieScreenState extends State<SelfieScreen>
     );
   }
 
-  Widget _buildFooterButton(
-    IconData icon,
-    String label, {
-    VoidCallback? onTap,
-  }) {
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: onTap,
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-            ),
-            child: Icon(icon, color: Colors.white.withValues(alpha: 0.7)),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label.toUpperCase(),
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.5),
-            fontSize: 10,
-            letterSpacing: 1,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTechBrackets(Color color) {
-    const double size = 30;
-    const double thickness = 3;
-    const double radius = 10;
-
-    return SizedBox(
-      width: 300,
-      height: 380,
-      child: Stack(
+  Widget _buildFooterBtn(IconData icon, String label, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
         children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            child: Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: color, width: thickness),
-                  left: BorderSide(color: color, width: thickness),
-                ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(radius),
-                ),
-              ),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
             ),
+            child: Icon(icon, color: Colors.white, size: 20),
           ),
-          Positioned(
-            top: 0,
-            right: 0,
-            child: Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: color, width: thickness),
-                  right: BorderSide(color: color, width: thickness),
-                ),
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(radius),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            child: Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: color, width: thickness),
-                  left: BorderSide(color: color, width: thickness),
-                ),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(radius),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: color, width: thickness),
-                  right: BorderSide(color: color, width: thickness),
-                ),
-                borderRadius: const BorderRadius.only(
-                  bottomRight: Radius.circular(radius),
-                ),
-              ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white54,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class _HelpItem extends StatelessWidget {
+  final String text;
+  const _HelpItem(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: TextStyle(
+        color: Colors.white.withValues(alpha: 0.8),
+        fontSize: 13,
+      ),
+    );
+  }
+}
+
+class ScannerRingPainter extends CustomPainter {
+  final Color color;
+
+  ScannerRingPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double radius = size.width / 2;
+    final Rect rect = Rect.fromCircle(
+      center: Offset(radius, radius),
+      radius: radius,
+    );
+
+    final Paint paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..shader = SweepGradient(
+        colors: [
+          color.withValues(alpha: 0.0),
+          color.withValues(alpha: 0.5),
+          color,
+          color.withValues(alpha: 0.5),
+          color.withValues(alpha: 0.0),
+        ],
+        stops: const [0.0, 0.2, 0.5, 0.8, 1.0],
+      ).createShader(rect);
+
+    canvas.drawArc(rect, 0, math.pi * 2, false, paint);
+
+    // Draw thin solid border inside
+    final Paint borderPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = color.withValues(alpha: 0.3);
+
+    canvas.drawCircle(Offset(radius, radius), radius - 4, borderPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant ScannerRingPainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
+class HoleOverlayPainter extends CustomPainter {
+  final double holeRadius;
+  final Color overlayColor;
+  final double verticalOffset; // Added offset
+
+  HoleOverlayPainter({
+    required this.holeRadius,
+    required this.overlayColor,
+    this.verticalOffset = 0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path.combine(
+      PathOperation.difference,
+      Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height)),
+      Path()
+        ..addOval(
+          Rect.fromCircle(
+            center: Offset(
+              size.width / 2,
+              (size.height / 2) + verticalOffset,
+            ), // Apply offset
+            radius: holeRadius,
+          ),
+        )
+        ..close(),
+    );
+
+    canvas.drawPath(path, Paint()..color = overlayColor);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
