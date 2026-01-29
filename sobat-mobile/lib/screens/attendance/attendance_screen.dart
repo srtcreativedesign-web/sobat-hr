@@ -183,7 +183,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     // Navigate to SelfieScreen
     final String? photoPath = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const SelfieScreen()),
+      MaterialPageRoute(
+        builder: (context) => SelfieScreen(address: _currentAddress),
+      ),
     );
 
     if (photoPath != null) {
