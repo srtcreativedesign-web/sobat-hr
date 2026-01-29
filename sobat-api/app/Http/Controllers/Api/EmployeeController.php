@@ -36,6 +36,35 @@ class EmployeeController extends Controller
 
         $employees = $query->paginate(20);
 
+        // Calculate Leave Balance for each employee
+        foreach ($employees as $employee) {
+            $employee->leave_balance = '-';
+
+            if ($employee->join_date) {
+                $yearsOfService = $employee->join_date->diffInYears(now());
+
+                if ($yearsOfService >= 1) {
+                    $quota = 12;
+
+                    // Calculate used leave
+                    $used = \App\Models\RequestModel::where('employee_id', $employee->id)
+                        ->where('type', 'leave')
+                        ->whereIn('status', ['pending', 'approved'])
+                        ->whereYear('start_date', now()->year)
+                        ->get()
+                        ->sum(function ($req) {
+                            if ($req->amount > 0) return $req->amount;
+                            if ($req->start_date && $req->end_date) {
+                                return $req->start_date->diffInDays($req->end_date) + 1;
+                            }
+                            return 0; // fallback
+                        });
+
+                    $employee->leave_balance = max(0, $quota - $used) . ' / ' . $quota;
+                }
+            }
+        }
+
         return response()->json($employees);
     }
 
