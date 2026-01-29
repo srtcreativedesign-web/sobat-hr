@@ -837,7 +837,10 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildLabel(
-          label ?? (widget.type == 'Reimbursement' ? 'Keterangan' : 'Alasan'),
+          label ??
+              (widget.type == 'Reimbursement' || widget.type == 'Sakit'
+                  ? 'Keterangan'
+                  : 'Alasan'),
         ),
         TextFormField(
           controller: _reasonCtrl,
@@ -994,6 +997,16 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
 
   void _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
+      if (widget.type == 'Sakit' && _selectedFile == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Harap upload surat dokter.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       if (_signatureController.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

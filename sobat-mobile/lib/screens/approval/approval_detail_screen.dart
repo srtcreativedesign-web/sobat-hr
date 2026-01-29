@@ -315,7 +315,6 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
               ),
             ],
 
-            // Attachments
             if (request['attachments'] != null) ...[
               const SizedBox(height: 24),
               const Text(
@@ -349,22 +348,55 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                           final base64String = att.split(',').last;
                           return Padding(
                             padding: const EdgeInsets.only(right: 12),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.memory(
-                                base64Decode(base64String),
-                                height: 200,
-                                width: 200,
-                                fit: BoxFit.cover,
-                                errorBuilder: (ctx, _, __) {
-                                  return Container(
-                                    width: 200,
-                                    color: Colors.grey.shade200,
-                                    child: const Center(
-                                      child: Icon(Icons.broken_image),
+                            child: GestureDetector(
+                              onTap: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (ctx) => Dialog(
+                                    backgroundColor: Colors.transparent,
+                                    insetPadding: EdgeInsets.zero,
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        InteractiveViewer(
+                                          child: Image.memory(
+                                            base64Decode(base64String),
+                                          ),
+                                        ),
+                                        Positioned(
+                                          top: 20,
+                                          right: 20,
+                                          child: IconButton(
+                                            icon: const Icon(
+                                              Icons.close,
+                                              color: Colors.white,
+                                              size: 30,
+                                            ),
+                                            onPressed: () => Navigator.pop(ctx),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  );
-                                },
+                                  ),
+                                );
+                              },
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.memory(
+                                  base64Decode(base64String),
+                                  height: 200,
+                                  width: 200,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (ctx, _, __) {
+                                    return Container(
+                                      width: 200,
+                                      color: Colors.grey.shade200,
+                                      child: const Center(
+                                        child: Icon(Icons.broken_image),
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
                             ),
                           );

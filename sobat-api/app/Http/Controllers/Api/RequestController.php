@@ -161,6 +161,11 @@ class RequestController extends Controller
                     break;
                 
                 case 'sick_leave':
+                    if (!$request->attachments) {
+                         throw new \Illuminate\Validation\ValidationException(\Illuminate\Support\Facades\Validator::make([], [
+                            'attachments' => 'Surat dokter wajib diupload untuk pengajuan sakit.',
+                        ]));
+                    }
                     \App\Models\SickLeaveDetail::create([
                         'request_id' => $requestModel->id,
                         'start_date' => $request->start_date,
