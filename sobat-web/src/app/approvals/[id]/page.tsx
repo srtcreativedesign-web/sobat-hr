@@ -242,7 +242,10 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                         <div className="font-semibold text-lg text-gray-900">
                                             {request.type === 'asset'
                                                 ? `IDR ${request.amount?.toLocaleString('id-ID')}`
-                                                : (request.amount || (request.start_date && request.end_date ? differenceInDays(new Date(request.end_date), new Date(request.start_date)) + 1 : 1))
+                                                : (() => {
+                                                    const val = request.amount || (request.start_date && request.end_date ? differenceInDays(new Date(request.end_date), new Date(request.start_date)) + 1 : 1);
+                                                    return Number(val).toLocaleString('id-ID', { maximumFractionDigits: 0 });
+                                                })()
                                             }
                                             <span className="text-sm text-gray-500 ml-1 font-normal">
                                                 {
@@ -300,25 +303,24 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                     </>
                                 )}
                             </div>
-                        </div>
-
-                        <div className="mt-10 pt-8 border-t border-gray-50">
-                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-3 block">Description / Reason</label>
-                            <div className="bg-gray-50 rounded-2xl p-6 text-gray-700 leading-relaxed text-sm md:text-base border border-gray-100">
-                                {request.description}
+                            <div className="mt-8 pt-8 border-t border-gray-100">
+                                <label className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-3 block">Description / Reason</label>
+                                <div className="bg-gray-50 rounded-2xl p-6 text-gray-700 leading-relaxed text-sm md:text-base border border-gray-100">
+                                    {request.description}
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Attachments Card */}
-                    <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100/50 p-8">
-                        <h3 className="text-xl font-bold text-[#462e37] mb-6 flex items-center gap-2">
-                            <svg className="w-5 h-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                            </svg>
-                            Attachments
-                        </h3>
-                        {request.attachments && Array.isArray(request.attachments) && request.attachments.length > 0 ? (
+                    {/* Attachments Card (Only show if present) */}
+                    {request.attachments && Array.isArray(request.attachments) && request.attachments.length > 0 && (
+                        <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100/50 p-8">
+                            <h3 className="text-xl font-bold text-[#462e37] mb-6 flex items-center gap-2">
+                                <svg className="w-5 h-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                </svg>
+                                Attachments
+                            </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {request.attachments.map((att: string, idx: number) => (
                                     <div key={idx} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
@@ -348,12 +350,8 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                     </div>
                                 ))}
                             </div>
-                        ) : (
-                            <div className="text-center py-8 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
-                                <p className="text-gray-400 text-sm">No attachments provided</p>
-                            </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
 
                     {/* Right Column: Timeline & Actions */}
                     <div className="space-y-6">

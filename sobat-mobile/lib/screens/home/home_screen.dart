@@ -20,6 +20,8 @@ import '../../screens/announcement/announcement_detail_screen.dart'; // Added
 import 'package:intl/intl.dart';
 import '../profile/enroll_face_screen.dart'; // Added
 import '../approval/approval_list_screen.dart'; // Added
+import '../../services/approval_service.dart'; // Added for badge
+import '../../services/notification_service.dart'; // Added for notif badge
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -44,6 +46,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isEligibleLeave = true;
   bool _isLoadingLeave = true;
 
+  int _pendingApprovalsCount = 0; // Added for badge
+  int _notificationCount = 0; // Added for notif badge
+
   List<Map<String, dynamic>> _recentActivities = [];
   bool _isLoadingRecentActivities = true;
 
@@ -54,10 +59,42 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadTodayAttendance();
     _loadLeaveBalance();
     _loadLastPayroll();
-    _loadLastPayroll();
     _loadAnnouncements();
     _loadRecentActivities();
     _checkFaceEnrollment();
+    _checkFaceEnrollment();
+    _loadPendingApprovals(); // Added
+    _loadNotifications(); // Added
+  }
+
+  // Added method to fetch notifications count
+  Future<void> _loadNotifications() async {
+    try {
+      final notifs = await NotificationService().getNotifications();
+
+      if (mounted) {
+        setState(() {
+          // Only count unread notifications
+          _notificationCount = notifs.where((n) => n['read_at'] == null).length;
+        });
+      }
+    } catch (e) {
+      print('Error loading notifications: $e');
+    }
+  }
+
+  // Added method to fetch pending approvals
+  Future<void> _loadPendingApprovals() async {
+    try {
+      final approvals = await ApprovalService().getPendingApprovals();
+      if (mounted) {
+        setState(() {
+          _pendingApprovalsCount = approvals.length;
+        });
+      }
+    } catch (e) {
+      print('Error loading pending approvals: $e');
+    }
   }
 
   Future<void> _loadLeaveBalance() async {
@@ -417,6 +454,9 @@ class _HomeScreenState extends State<HomeScreen> {
       _loadLastPayroll(),
       _loadAnnouncements(),
       _loadRecentActivities(),
+      _loadRecentActivities(),
+      _loadPendingApprovals(),
+      _loadNotifications(),
     ]);
   }
 
@@ -597,8 +637,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // Notification Bell
                   GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(context, '/notifications');
+                    onTap: () async {
+                      await Navigator.pushNamed(context, '/notifications');
+                      _loadNotifications(); // Refresh on return
                     },
                     child: Container(
                       padding: const EdgeInsets.all(8),
@@ -606,10 +647,42 @@ class _HomeScreenState extends State<HomeScreen> {
                         shape: BoxShape.circle,
                         color: Colors.grey.shade100,
                       ),
-                      child: Icon(
-                        Icons.notifications_outlined,
-                        color: AppTheme.textDark,
-                        size: 24,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Icon(
+                            Icons.notifications_outlined,
+                            color: AppTheme.textDark,
+                            size: 24,
+                          ),
+                          if (_notificationCount > 0)
+                            Positioned(
+                              top: -2,
+                              right: -2,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 16,
+                                  minHeight: 16,
+                                ),
+                                child: Text(
+                                  _notificationCount > 99
+                                      ? '99+'
+                                      : _notificationCount.toString(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ),
@@ -1594,13 +1667,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     Icons.approval,
                     'Persetujuan',
                     AppTheme.colorEggplant,
-                    onTap: () {
-                      Navigator.push(
+                    badgeCount: _pendingApprovalsCount, // Pass count
+                    onTap: () async {
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => const ApprovalListScreen(),
                         ),
                       );
+                      _loadPendingApprovals(); // Refresh on return
                     },
                   ),
                 ],
@@ -1617,6 +1692,7 @@ class _HomeScreenState extends State<HomeScreen> {
     String label,
     Color color, {
     VoidCallback? onTap,
+    int badgeCount = 0, // Added optional badge count
   }) {
     return Column(
       children: [
@@ -1639,7 +1715,38 @@ class _HomeScreenState extends State<HomeScreen> {
             child: InkWell(
               onTap: onTap ?? () {},
               borderRadius: BorderRadius.circular(16),
-              child: Center(child: Icon(icon, color: color, size: 28)),
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  Icon(icon, color: color, size: 28),
+                  if (badgeCount > 0)
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          badgeCount > 99 ? '99+' : badgeCount.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),

@@ -59,7 +59,7 @@
         @if($request->amount)
         <tr>
             <th>Amount / Duration</th>
-            <td>{{ $request->amount }}</td>
+            <td>{{ number_format($request->amount, 0, ',', '.') }}</td>
         </tr>
         @endif
     </table>

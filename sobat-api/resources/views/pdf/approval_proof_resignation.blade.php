@@ -36,7 +36,7 @@
         <br><br>
         Kepada Yth,<br>
         <strong>HRD Manager</strong><br>
-        PT SOBAT HR<br>
+        SRT CORP<br>
         di Tempat
     </div>
 
@@ -69,8 +69,8 @@
 
         <p class="paragraph">
             Melalui surat ini, saya bermaksud untuk mengajukan pengunduran diri dari jabatan saya sebagai 
-            <strong>{{ ucwords(str_replace('_', ' ', $request->employee->position ?? 'Staff')) }}</strong> 
-            di PT SOBAT HR.
+            <strong>{{ ucwords(str_replace('_', ' ', $request->employee->position ?? 'Staff')) }} {{ $request->employee->department ? ucwords($request->employee->department) : ($request->employee->organization ? ucwords($request->employee->organization->name) : '') }}</strong> 
+            di SRT CORP.
         </p>
 
         <p class="paragraph">
@@ -79,7 +79,8 @@
         </p>
 
         <p class="paragraph">
-            {{ $request->description }}
+            Adapun alasan saya mengajukan pengunduran diri adalah sebagai berikut:
+            <strong>{{ $request->description }}</strong>
         </p>
 
         <p class="paragraph">
@@ -87,7 +88,7 @@
         </p>
 
         <p class="paragraph">
-            Saya berharap PT SOBAT HR semakin sukses dan berkembang di masa depan.
+            Saya berharap SRT CORP semakin sukses dan berkembang di masa depan.
         </p>
     </div>
 

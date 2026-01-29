@@ -109,11 +109,53 @@ class RequestController extends Controller
             // 2. Create Detail based on Type
             switch ($validated['type']) {
                 case 'leave':
+                    // 1. Check Eligibility (1 Year Service)
+                    if (!$user->employee->join_date || $user->employee->join_date->diffInYears(now()) < 1) {
+                        throw new \Illuminate\Validation\ValidationException(\Illuminate\Support\Facades\Validator::make([], [
+                            'type' => 'Anda belum bekerja selama 1 tahun, belum berhak mengajukan cuti tahunan.',
+                        ]));
+                    }
+
+                    // 2. Calculate Duration
+                    $startDate = \Carbon\Carbon::parse($request->start_date);
+                    $endDate = \Carbon\Carbon::parse($request->end_date);
+                    $duration = $startDate->diffInDays($endDate) + 1; // Inclusive
+
+                    // 3. Check Quota
+                    $quota = 12;
+                    $used = RequestModel::where('employee_id', $user->employee->id)
+                        ->where('type', 'leave')
+                        ->where('status', 'approved')
+                        ->whereYear('start_date', now()->year)
+                        ->get()
+                        ->sum(function ($req) {
+                            if ($req->amount > 0) return $req->amount;
+                            if ($req->start_date && $req->end_date) {
+                                return $req->start_date->diffInDays($req->end_date) + 1;
+                            }
+                            return 0;
+                        });
+
+                    if (($used + $duration) > $quota) {
+                        return response()->json([
+                            'message' => 'Sisa cuti tidak mencukupi.',
+                            'details' => [
+                                'quota' => $quota,
+                                'used' => $used,
+                                'requested' => $duration,
+                                'remaining' => max(0, $quota - $used)
+                            ]
+                        ], 422);
+                    }
+
+                    // Update Master Data Amount (Days)
+                    $requestModel->update(['amount' => $duration]);
+
                     \App\Models\LeaveDetail::create([
                         'request_id' => $requestModel->id,
                         'start_date' => $request->start_date,
                         'end_date' => $request->end_date,
-                        'amount' => $request->amount, // days
+                        'amount' => $duration, // days
                         'reason' => $request->description,
                     ]);
                     break;
@@ -451,7 +493,7 @@ class RequestController extends Controller
         // Assuming 'amount' is days, or fallback to date diff
         $used = RequestModel::where('employee_id', $employee->id)
             ->where('type', 'leave')
-            ->whereIn('status', ['pending', 'approved'])
+            ->where('status', 'approved')
             ->whereYear('start_date', now()->year)
             ->get()
             ->sum(function ($req) {

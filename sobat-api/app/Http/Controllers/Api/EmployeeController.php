@@ -49,7 +49,7 @@ class EmployeeController extends Controller
                     // Calculate used leave
                     $used = \App\Models\RequestModel::where('employee_id', $employee->id)
                         ->where('type', 'leave')
-                        ->whereIn('status', ['pending', 'approved'])
+                        ->where('status', 'approved')
                         ->whereYear('start_date', now()->year)
                         ->get()
                         ->sum(function ($req) {

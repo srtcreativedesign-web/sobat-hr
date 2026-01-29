@@ -40,25 +40,37 @@ class ApprovalController extends Controller
      */
     public function pending(Request $request)
     {
-        $user = $request->user();
-        $query = Approval::with(['approvable.employee']);
-
-        // Check Role
-        $user->load('role');
-        $roleName = $user->role ? $user->role->name : '';
-        $isAdmin = in_array($roleName, ['super_admin', 'admin_cabang', 'hrd']);
-
-        if (!$isAdmin) {
-             if (!$user->employee) {
-                return response()->json(['message' => 'User is not associated with an employee'], 403);
+        try {
+            $user = $request->user();
+            if (!$user) {
+                return response()->json(['message' => 'Unauthenticated'], 401);
             }
-            $query->where('approver_id', $user->employee->id);
+            
+            $query = Approval::with(['approvable.employee']);
+
+            // Check Role
+            $user->load('role');
+            $roleName = $user->role ? $user->role->name : '';
+            $isAdmin = in_array($roleName, ['super_admin', 'admin_cabang', 'hrd']);
+
+            if (!$isAdmin) {
+                 if (!$user->employee) {
+                    return response()->json(['message' => 'User is not associated with an employee'], 403);
+                }
+                $query->where('approver_id', $user->employee->id);
+            }
+
+            $approvals = $query->where('status', 'pending')
+                ->orderBy('created_at', 'desc')
+                ->paginate(20);
+
+            return response()->json($approvals);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error fetching pending approvals',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
         }
-
-        $approvals = $query->where('status', 'pending')
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
-
-        return response()->json($approvals);
     }
 }
