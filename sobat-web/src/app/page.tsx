@@ -7,7 +7,7 @@ export default function Home() {
     <div className="min-h-screen relative overflow-hidden flex flex-col items-center justify-center p-8">
       {/* Dynamic Background */}
       {/* Dynamic Background */}
-      <div className="absolute inset-0 z-0 bg-white">
+      <div className="absolute inset-0 z-0 bg-gray-900">
         {/* Using opacity to brighten the overall look since the base is black/dark */}
         <div className="w-full h-full opacity-60">
           <DarkVeil

@@ -20,10 +20,10 @@ export default function PolicyForm({ isOpen, onClose, onSuccess, initialData }: 
 
     useEffect(() => {
         if (initialData) {
-            setTitle(initialData.title);
-            setContent(initialData.content);
+            setTitle(initialData.title || '');
+            setContent(initialData.content || '');
             setCategory(initialData.category || 'news');
-            setIsPublished(initialData.is_published);
+            setIsPublished(initialData.is_published || false);
             setFile(null);
         } else {
             setTitle('');
@@ -118,7 +118,7 @@ export default function PolicyForm({ isOpen, onClose, onSuccess, initialData }: 
                             required
                             className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none"
                             placeholder="e.g. Libur Lebaran 2026"
-                            value={title}
+                            value={title || ''}
                             onChange={(e) => setTitle(e.target.value)}
                         />
                     </div>
@@ -130,7 +130,7 @@ export default function PolicyForm({ isOpen, onClose, onSuccess, initialData }: 
                             rows={6}
                             className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none"
                             placeholder="Tulis detail informasi di sini..."
-                            value={content}
+                            value={content || ''}
                             onChange={(e) => setContent(e.target.value)}
                         ></textarea>
                     </div>

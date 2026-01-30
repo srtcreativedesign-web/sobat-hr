@@ -45,7 +45,7 @@ interface ContractExpiringEmployee {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isAuthenticated, checkAuth, logout } = useAuthStore();
+  const { user, isAuthenticated, isInitialized, checkAuth, logout } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [contractExpiring, setContractExpiring] = useState<ContractExpiringEmployee[]>([]);
   const [latenessData, setLatenessData] = useState([]);
@@ -83,13 +83,15 @@ export default function DashboardPage() {
     };
 
     // Role Check
-    const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name;
-    if (roleName === 'staff') {
-      router.push('/attendance');
-      return;
+    if (isInitialized && isAuthenticated) {
+      const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name;
+      if (roleName === 'staff') {
+        router.push('/attendance');
+      } else {
+        fetchData();
+      }
     }
-    fetchData();
-  }, [user, router, logout]);
+  }, [user, router, logout, isInitialized, isAuthenticated]);
 
 
   // Calculators

@@ -36,8 +36,8 @@ export default function ContractTemplatePage() {
         try {
             setLoading(true);
             const response = await apiClient.get('/contract-templates');
-            setContent(response.data.content);
-            setVariables(response.data.variables);
+            setContent(response.data.content || '');
+            setVariables(response.data.variables || {});
         } catch (error) {
             console.error('Failed to fetch template:', error);
             alert('Failed to load template');

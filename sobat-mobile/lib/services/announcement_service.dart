@@ -23,8 +23,11 @@ class AnnouncementService {
     );
 
     if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      return data.cast<Map<String, dynamic>>();
+      final jsonResponse = json.decode(response.body);
+      if (jsonResponse is Map && jsonResponse.containsKey('data')) {
+        return List<Map<String, dynamic>>.from(jsonResponse['data']);
+      }
+      return List<Map<String, dynamic>>.from(jsonResponse);
     } else {
       throw Exception('Failed to load announcements: ${response.statusCode}');
     }
@@ -44,5 +47,30 @@ class AnnouncementService {
     } else {
       throw Exception('Failed to load announcement details');
     }
+  }
+
+  Future<Map<String, dynamic>?> fetchActiveAnnouncement() async {
+    final token = await _authService.getToken();
+    if (token == null) return null;
+
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/announcements/active'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
+          return jsonResponse['data'];
+        }
+      }
+    } catch (e) {
+      print('Error fetching active announcement: $e');
+    }
+    return null;
   }
 }

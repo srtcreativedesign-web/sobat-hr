@@ -14,7 +14,10 @@ class AnnouncementDetailScreen extends StatelessWidget {
     if (!url.startsWith('http')) {
       final baseUrlObj = Uri.parse(ApiConfig.baseUrl);
       final rootUrl = '${baseUrlObj.scheme}://${baseUrlObj.authority}';
-      downloadUrl = '$rootUrl$url';
+
+      // Ensure url starts with / if not present
+      final safePath = url.startsWith('/') ? url : '/$url';
+      downloadUrl = '$rootUrl$safePath';
     }
 
     final uri = Uri.parse(downloadUrl);
@@ -185,7 +188,7 @@ class AnnouncementDetailScreen extends StatelessWidget {
                   children: [
                     // Content Body
                     Text(
-                      item['content'] ?? '',
+                      item['content'] ?? item['description'] ?? '',
                       style: const TextStyle(
                         fontSize: 15,
                         height: 1.8,
@@ -196,70 +199,77 @@ class AnnouncementDetailScreen extends StatelessWidget {
                     const SizedBox(height: 32),
 
                     // Attachment Section
-                    if (item['attachment_url'] != null)
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
+                    Container(
+                      clipBehavior:
+                          Clip.hardEdge, // Ensure ripple respects radius
+                      decoration: BoxDecoration(
+                        color: isNews
+                            ? Colors.blue.shade50
+                            : Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
                           color: isNews
-                              ? Colors.blue.shade50
-                              : Colors.orange.shade50,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isNews
-                                ? Colors.blue.shade100
-                                : Colors.orange.shade100,
-                          ),
+                              ? Colors.blue.shade100
+                              : Colors.orange.shade100,
                         ),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
                         child: InkWell(
                           onTap: () =>
                               _downloadAttachment(item['attachment_url']),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    Icons.file_present_rounded,
+                                    color: isNews ? Colors.blue : Colors.orange,
+                                    size: 24,
+                                  ),
                                 ),
-                                child: Icon(
-                                  Icons.file_present_rounded,
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Dokumen Lampiran',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.textDark,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Ketuk untuk melihat atau mengunduh',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.arrow_circle_down_rounded,
                                   color: isNews ? Colors.blue : Colors.orange,
-                                  size: 24,
+                                  size: 28,
                                 ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Dokumen Lampiran',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppTheme.textDark,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'Ketuk untuk melihat atau mengunduh',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Icon(
-                                Icons.arrow_circle_down_rounded,
-                                color: isNews ? Colors.blue : Colors.orange,
-                                size: 28,
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
+                    ),
 
                     const SizedBox(height: 40), // Bottom padding
                   ],

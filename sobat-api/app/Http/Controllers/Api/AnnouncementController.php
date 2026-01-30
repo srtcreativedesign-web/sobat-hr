@@ -3,114 +3,172 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Announcement;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class AnnouncementController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
-        $query = Announcement::query();
+        $query = Announcement::latest();
 
-        // Filter by category if provided
         if ($request->has('category')) {
             $query->where('category', $request->category);
         }
 
-        // Filter by published status (default to published only for non-admin, but here we just list all)
-        // Usually, mobile app should only fetch published ones.
-        if ($request->has('published')) {
-            $query->where('is_published', filter_var($request->published, FILTER_VALIDATE_BOOLEAN));
-        }
-
-        // Sort by newest
-        $query->orderBy('created_at', 'desc');
-
-        return response()->json($query->get());
+        $announcements = $query->get();
+        return response()->json([
+            'success' => true,
+            'data' => $announcements
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'category' => 'required|in:news,policy',
-            'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240', // Max 10MB
-            'is_published' => 'boolean',
+            'image' => 'nullable|image|max:5120', // Made nullable if just creating text announcement? Plan said image_path still for banner image. 
+            // Let's keep image required IF it's a banner? Or just nullable in general? Plan said specific banner image.
+            // Let's make image nullable for standard announcements, but maybe required for banner? 
+            // For now, let's make it nullable to be flexible as per "modify existing" which implies general announcements might not need it.
+            // User requirement: "popup everytime login" -> likely needs image.
+            // But let's stick to nullable to be safe for "News" without image.
+            'category' => 'in:news,policy',
+            'description' => 'nullable|string',
+            'attachment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB
+            'is_active' => 'boolean',
+            'is_banner' => 'boolean',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
         ]);
 
-        $announcement = new Announcement();
-        $announcement->title = $validated['title'];
-        $announcement->content = $validated['content'];
-        $announcement->category = $validated['category'];
-        $announcement->is_published = $request->input('is_published', false);
-
-        if ($request->hasFile('attachment')) {
-            $path = $request->file('attachment')->store('announcements', 'public');
-            $announcement->attachment_url = Storage::url($path);
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation Error',
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-        $announcement->save();
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('announcements', 'public');
+        }
 
-        return response()->json($announcement, 201);
+        $attachmentUrl = null;
+        if ($request->hasFile('attachment')) {
+            $attachmentUrl = $request->file('attachment')->store('attachments', 'public');
+        }
+
+        $announcement = Announcement::create([
+            'title' => $request->title,
+            'description' => $request->description,
+            'image_path' => $imagePath,
+            'category' => $request->category ?? 'news',
+            'attachment_url' => $attachmentUrl,
+            'is_active' => $request->boolean('is_active', true),
+            'is_banner' => $request->boolean('is_banner', false),
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Announcement created successfully',
+            'data' => $announcement
+        ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function update(Request $request, $id)
     {
-        $announcement = Announcement::findOrFail($id);
-        return response()->json($announcement);
-    }
+        $announcement = Announcement::find($id);
+        if (!$announcement) {
+            return response()->json(['success' => false, 'message' => 'Not found'], 404);
+        }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        $announcement = Announcement::findOrFail($id);
-
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'title' => 'sometimes|string|max:255',
-            'content' => 'sometimes|string',
+            'image' => 'nullable|image|max:5120',
+            'description' => 'nullable|string',
             'category' => 'sometimes|in:news,policy',
-            'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'is_published' => 'boolean',
+            'attachment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
+            'is_active' => 'sometimes|boolean',
+            'is_banner' => 'sometimes|boolean',
         ]);
 
-        if (isset($validated['title'])) $announcement->title = $validated['title'];
-        if (isset($validated['content'])) $announcement->content = $validated['content'];
-        if (isset($validated['category'])) $announcement->category = $validated['category'];
-        if ($request->has('is_published')) $announcement->is_published = $request->input('is_published');
-
-        if ($request->hasFile('attachment')) {
-            // Delete old file if needed? For now, just overwrite ref
-            $path = $request->file('attachment')->store('announcements', 'public');
-            $announcement->attachment_url = Storage::url($path);
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-        $announcement->save();
+        if ($request->hasFile('image')) {
+            // Delete old image
+            if ($announcement->image_path) {
+                Storage::disk('public')->delete($announcement->image_path);
+            }
+            $announcement->image_path = $request->file('image')->store('announcements', 'public');
+        }
 
-        return response()->json($announcement);
+        if ($request->hasFile('attachment')) {
+            // Delete old attachment
+            if ($announcement->attachment_url) {
+                Storage::disk('public')->delete($announcement->attachment_url);
+            }
+            $announcement->attachment_url = $request->file('attachment')->store('attachments', 'public');
+        }
+
+        $announcement->update($request->except(['image', 'attachment']));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Announcement updated',
+            'data' => $announcement
+        ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    public function destroy($id)
     {
-        $announcement = Announcement::findOrFail($id);
-        // Optionally delete file from storage
+        $announcement = Announcement::find($id);
+        if (!$announcement) {
+            return response()->json(['success' => false, 'message' => 'Not found'], 404);
+        }
+
+        if ($announcement->image_path) {
+            Storage::disk('public')->delete($announcement->image_path);
+        }
+
         $announcement->delete();
 
-        return response()->json(['message' => 'Announcement deleted successfully']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Announcement deleted'
+        ]);
+    }
+
+    public function getActive()
+    {
+        $now = now()->toDateString();
+        // Only fetch items where is_banner is true
+        $announcement = Announcement::where('is_active', true)
+            ->where('is_banner', true)
+            ->where(function ($query) use ($now) {
+                $query->whereNull('start_date')
+                      ->orWhere('start_date', '<=', $now);
+            })
+            ->where(function ($query) use ($now) {
+                $query->whereNull('end_date')
+                      ->orWhere('end_date', '>=', $now);
+            })
+            ->latest()
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => $announcement
+        ]);
     }
 }

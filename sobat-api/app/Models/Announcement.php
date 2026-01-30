@@ -11,13 +11,19 @@ class Announcement extends Model
 
     protected $fillable = [
         'title',
-        'content',
+        'description',
+        'image_path',
         'category',
         'attachment_url',
-        'is_published',
+        'is_banner',
+        'is_active',
+        'start_date',
+        'end_date',
     ];
 
     protected $casts = [
-        'is_published' => 'boolean',
+        'is_active' => 'boolean',
+        'start_date' => 'date',
+        'end_date' => 'date',
     ];
 }

@@ -9,7 +9,7 @@ class ApiConfig {
   // Cara cek di Terminal: ifconfig | grep "inet " | grep -v 127.0.0.1
   // ---------------------------------------------------------------------------
   static const String _hostIp =
-      '192.168.1.7'; // Updated IP per 27 Jan (New Network)
+      '172.23.47.134'; // Updated IP per 30 Jan (Hotspot)
   static const String _port = '8000';
 
   // Base URL Logic
