@@ -31,6 +31,8 @@ class AttendanceService {
     required String status, // 'present', 'late', etc.
     String? address, // Added address
     String? notes,
+    String? attendanceType,
+    String? fieldNotes,
   }) async {
     await _addAuthHeader();
 
@@ -48,6 +50,8 @@ class AttendanceService {
         'longitude': longitude,
         'location_address': address ?? '', // Send address
         'notes': notes,
+        'attendance_type': attendanceType,
+        'field_notes': fieldNotes,
         'photo': await MultipartFile.fromFile(
           photo.path,
           filename: fileName,

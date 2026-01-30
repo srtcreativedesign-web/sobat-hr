@@ -330,6 +330,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final user = auth.user;
 
+    // Skip face enrollment for operational staff (no attendance feature)
+    if (user != null && user.track == 'operational') {
+      return;
+    }
+
     if (user != null && user.facePhotoPath == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         showDialog(

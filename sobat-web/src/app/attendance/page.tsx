@@ -23,6 +23,8 @@ interface Attendance {
     checkout_photo_path: string | null;
     work_hours: number | null;
     location_address: string | null;
+    attendance_type?: 'office' | 'field';
+    field_notes?: string | null;
 }
 
 export default function AttendancePage() {
@@ -256,6 +258,7 @@ export default function AttendancePage() {
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Masuk</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Keluar</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lokasi</th>
                                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
@@ -276,6 +279,11 @@ export default function AttendancePage() {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
                                                 {att.check_out ? att.check_out.substring(0, 5) : '-'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${att.attendance_type === 'field' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
+                                                    {att.attendance_type === 'field' ? 'DINAS LUAR' : 'KANTOR'}
+                                                </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(att.status)}`}>
@@ -402,6 +410,12 @@ export default function AttendancePage() {
                                                         {selectedAttendance.status.toUpperCase()}
                                                     </span>
                                                 </div>
+                                                <div>
+                                                    <p className="font-medium text-gray-500">Tipe Absensi</p>
+                                                    <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full mt-1 ${selectedAttendance.attendance_type === 'field' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
+                                                        {selectedAttendance.attendance_type === 'field' ? 'DINAS LUAR' : 'KANTOR'}
+                                                    </span>
+                                                </div>
                                             </div>
 
                                             {/* Full Width Items */}
@@ -409,6 +423,13 @@ export default function AttendancePage() {
                                                 <p className="font-medium text-gray-500 text-sm">Lokasi</p>
                                                 <p className="text-gray-900 text-sm">{selectedAttendance.location_address || '-'}</p>
                                             </div>
+
+                                            {selectedAttendance.field_notes && (
+                                                <div>
+                                                    <p className="font-medium text-gray-500 text-sm">Catatan Dinas (Wajib)</p>
+                                                    <p className="text-gray-900 text-sm bg-blue-50 p-2 rounded mt-1 border border-blue-100">{selectedAttendance.field_notes}</p>
+                                                </div>
+                                            )}
 
                                             {selectedAttendance.notes && (
                                                 <div>

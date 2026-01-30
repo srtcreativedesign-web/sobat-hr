@@ -614,12 +614,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Face Enrollment Status
+              // Face Enrollment Status (hidden for operational staff)
               Center(
                 child: FutureBuilder<Map<String, dynamic>?>(
                   future: _authService.getCurrentUser(),
                   builder: (context, snapshot) {
                     final user = snapshot.data;
+
+                    // Hide for operational track (no attendance feature)
+                    final userTrack = user?['employee']?['track'];
+                    if (userTrack == 'operational') {
+                      return const SizedBox.shrink();
+                    }
+
                     final isEnrolled =
                         user != null &&
                         user['employee'] != null &&

@@ -36,6 +36,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   bool _isWithinRange = false;
   Map<String, dynamic>? _todayAttendance;
 
+  // Field Attendance
+  String _attendanceType = 'office'; // 'office' or 'field'
+  final TextEditingController _fieldNotesController = TextEditingController();
+
   // Animation
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -79,6 +83,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
   @override
   void dispose() {
+    _fieldNotesController.dispose();
     _pulseController.dispose();
     super.dispose();
   }
@@ -175,8 +180,15 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   // ... (Keep existing methods until build)
 
   Future<void> _handleCheckIn() async {
-    if (!_isWithinRange) {
+    // 1. Validation
+    if (_attendanceType == 'office' && !_isWithinRange) {
       _showErrorSnackBar('Anda harus berada di area kantor untuk absen!');
+      return;
+    }
+
+    if (_attendanceType == 'field' &&
+        _fieldNotesController.text.trim().isEmpty) {
+      _showErrorSnackBar('Wajib mengisi keterangan untuk Absen Luar!');
       return;
     }
 
@@ -205,13 +217,22 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           photo: File(photoPath),
           status: 'present',
           address: _currentAddress,
+          attendanceType: _attendanceType,
+          fieldNotes: _attendanceType == 'field'
+              ? _fieldNotesController.text
+              : null,
         );
 
         await _fetchTodayAttendance(); // Refresh status
 
         if (!mounted) return;
         Navigator.pop(context); // Pop loading
-        _showSuccessSnackBar('Check In Berhasil!');
+
+        if (_attendanceType == 'field') {
+          _showSuccessSnackBar('Check In Berhasil! Menunggu approval admin.');
+        } else {
+          _showSuccessSnackBar('Check In Berhasil!');
+        }
       } catch (e) {
         if (!mounted) return;
         Navigator.pop(context); // Pop loading
@@ -221,7 +242,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   }
 
   Future<void> _handleCheckOut() async {
-    if (!_isWithinRange) {
+    // Check if original check-in was field type
+    bool isFieldAttendance = _todayAttendance?['attendance_type'] == 'field';
+
+    // Skip range check if field attendance
+    if (!isFieldAttendance && !_isWithinRange) {
       _showErrorSnackBar('Anda harus berada di area kantor untuk absen!');
       return;
     }
@@ -515,6 +540,178 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // Toggle Attendance Type (Only if not checked in)
+                      if (canCheckIn) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 20),
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => setState(
+                                    () => _attendanceType = 'office',
+                                  ),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _attendanceType == 'office'
+                                          ? Colors.white
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(25),
+                                      boxShadow: _attendanceType == 'office'
+                                          ? [
+                                              BoxShadow(
+                                                color: Colors.black12,
+                                                blurRadius: 4,
+                                                spreadRadius: 1,
+                                              ),
+                                            ]
+                                          : [],
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      'Absen Kantor',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: _attendanceType == 'office'
+                                            ? AppTheme.colorEggplant
+                                            : Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _attendanceType = 'field'),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _attendanceType == 'field'
+                                          ? AppTheme.colorCyan
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(25),
+                                      boxShadow: _attendanceType == 'field'
+                                          ? [
+                                              BoxShadow(
+                                                color: AppTheme.colorCyan
+                                                    .withValues(alpha: 0.4),
+                                                blurRadius: 4,
+                                                spreadRadius: 1,
+                                              ),
+                                            ]
+                                          : [],
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      'Absen Luar',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: _attendanceType == 'field'
+                                            ? Colors.white
+                                            : Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Field Notes Input
+                        if (_attendanceType == 'field') ...[
+                          TextField(
+                            controller: _fieldNotesController,
+                            decoration: InputDecoration(
+                              labelText: 'Keterangan (Wajib)',
+                              hintText: 'Contoh: Meeting dengan Client A',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                            ),
+                            maxLines: 2,
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      ],
+
+                      // Show Active Type if Checked In
+                      if (!canCheckIn) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 8,
+                            horizontal: 12,
+                          ),
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color:
+                                (_todayAttendance?['attendance_type'] ==
+                                    'field')
+                                ? AppTheme.colorCyan.withValues(alpha: 0.1)
+                                : Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color:
+                                  (_todayAttendance?['attendance_type'] ==
+                                      'field')
+                                  ? AppTheme.colorCyan
+                                  : Colors.grey.shade300,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                (_todayAttendance?['attendance_type'] ==
+                                        'field')
+                                    ? Icons.commute
+                                    : Icons.store,
+                                size: 16,
+                                color:
+                                    (_todayAttendance?['attendance_type'] ==
+                                        'field')
+                                    ? AppTheme.colorCyan
+                                    : Colors.grey,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                (_todayAttendance?['attendance_type'] ==
+                                        'field')
+                                    ? 'Mode: Absen Luar (Dinas)'
+                                    : 'Mode: Absen Kantor',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      (_todayAttendance?['attendance_type'] ==
+                                          'field')
+                                      ? AppTheme.colorCyan
+                                      : Colors.black54,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
                       // Location Info
                       Row(
                         children: [
@@ -571,7 +768,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                           Expanded(
                             child: ElevatedButton.icon(
                               onPressed:
-                                  (canCheckIn && _isWithinRange && !_isLoading)
+                                  (canCheckIn &&
+                                      !_isLoading &&
+                                      (_attendanceType == 'field' ||
+                                          _isWithinRange))
                                   ? _handleCheckIn
                                   : null,
                               icon: const Icon(Icons.login),

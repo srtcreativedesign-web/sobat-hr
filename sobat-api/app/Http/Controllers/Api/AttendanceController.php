@@ -62,12 +62,17 @@ class AttendanceController extends Controller
             'longitude' => 'nullable|numeric',
             'photo' => 'nullable|image|max:5120', // Max 5MB
             'location_address' => 'nullable|string',
+            'attendance_type' => 'nullable|in:office,field', // New: attendance type
+            'field_notes' => 'nullable|string|required_if:attendance_type,field', // Mandatory for field
         ]);
 
         $employee = Employee::with('organization')->find($validated['employee_id']);
+        
+        // Set default attendance type to 'office' if not specified
+        $attendanceType = $validated['attendance_type'] ?? 'office';
 
-        // Geolocation Validation
-        if (isset($validated['latitude']) && isset($validated['longitude']) && $employee && $employee->organization && $employee->organization->latitude) {
+        // Geolocation Validation (Skip for field attendance)
+        if ($attendanceType === 'office' && isset($validated['latitude']) && isset($validated['longitude']) && $employee && $employee->organization && $employee->organization->latitude) {
             $orgLat = $employee->organization->latitude;
             $orgLng = $employee->organization->longitude;
             $radius = $employee->organization->radius_meters ?? 50;
@@ -86,6 +91,14 @@ class AttendanceController extends Controller
                     'radius' => $radius . ' meter'
                 ], 422); // Unprocessable Entity
             }
+        }
+        
+        // For field attendance: Auto-set status to pending (requires approval)
+        if ($attendanceType === 'field') {
+            $validated['status'] = 'pending';
+            $validated['attendance_type'] = 'field';
+        } else {
+            $validated['attendance_type'] = 'office';
         }
 
         // Handle Photo Upload
@@ -134,39 +147,41 @@ class AttendanceController extends Controller
             }
         }
 
-        // Check for Late (after 08:00)
-        $workStartTime = Carbon::parse($validated['date'] . ' 08:00:00');
-        $clockInTime = Carbon::parse($validated['date'] . ' ' . $validated['check_in']);
-        
-        \Illuminate\Support\Facades\Log::info('Attendance Logic:', [
-            'date' => $validated['date'],
-            'check_in_input' => $validated['check_in'],
-            'work_start' => $workStartTime->toDateTimeString(),
-            'clock_in_parsed' => $clockInTime->toDateTimeString(),
-            'is_gt' => $clockInTime->gt($workStartTime) ? 'YES' : 'NO'
-        ]);
-
-        // Late Logic
-        // Late Logic
-        if ($clockInTime->gt($workStartTime)) {
-            // Use abs() because diffInMinutes is returning negative values on this environment
-            $lateDuration = abs($clockInTime->diffInMinutes($workStartTime));
-            $validated['late_duration'] = $lateDuration;
+        // Check for Late (after 08:00) - Skip if already pending (field attendance)
+        if ($validated['status'] !== 'pending') {
+            $workStartTime = Carbon::parse($validated['date'] . ' 08:00:00');
+            $clockInTime = Carbon::parse($validated['date'] . ' ' . $validated['check_in']);
             
-            \Illuminate\Support\Facades\Log::info('Late Duration Check (Fixed):', ['duration' => $lateDuration]);
+            \Illuminate\Support\Facades\Log::info('Attendance Logic:', [
+                'date' => $validated['date'],
+                'check_in_input' => $validated['check_in'],
+                'work_start' => $workStartTime->toDateTimeString(),
+                'clock_in_parsed' => $clockInTime->toDateTimeString(),
+                'is_gt' => $clockInTime->gt($workStartTime) ? 'YES' : 'NO'
+            ]);
 
-            // If late more than 5 minutes (> 08:05), need approval
-            if ($lateDuration > 5) {
-                $validated['status'] = 'pending';
-                \Illuminate\Support\Facades\Log::info('Status set to pending');
+            // Late Logic
+            // Late Logic
+            if ($clockInTime->gt($workStartTime)) {
+                // Use abs() because diffInMinutes is returning negative values on this environment
+                $lateDuration = abs($clockInTime->diffInMinutes($workStartTime));
+                $validated['late_duration'] = $lateDuration;
+                
+                \Illuminate\Support\Facades\Log::info('Late Duration Check (Fixed):', ['duration' => $lateDuration]);
+
+                // If late more than 5 minutes (> 08:05), need approval
+                if ($lateDuration > 5) {
+                    $validated['status'] = 'pending';
+                    \Illuminate\Support\Facades\Log::info('Status set to pending');
+                } else {
+                    $validated['status'] = 'late';
+                    \Illuminate\Support\Facades\Log::info('Status set to late');
+                }
             } else {
-                $validated['status'] = 'late';
-                \Illuminate\Support\Facades\Log::info('Status set to late');
+                 // On time
+                 $validated['status'] = 'present';
+                 \Illuminate\Support\Facades\Log::info('Status set to present');
             }
-        } else {
-             // On time
-             $validated['status'] = 'present';
-             \Illuminate\Support\Facades\Log::info('Status set to present');
         }
 
         // Calculate work hours if check_out exists (e.g., manual full day input)
