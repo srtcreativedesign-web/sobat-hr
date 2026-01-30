@@ -146,5 +146,17 @@
   "onboardingConnectedTitle": "Slip Gaji Anda, Kapan Saja",
   "onboardingConnectedDesc": "Akses dan unduh slip gaji bulanan secara instan, plus tetap update dengan pengumuman perusahaan",
   "skip": "Lewati",
-  "getStarted": "Mulai"
+  "getStarted": "Mulai",
+  "sendFeedback": "Kirim Masukan",
+  "feedbackSubject": "Judul",
+  "feedbackCategory": "Kategori",
+  "feedbackDescription": "Deskripsi",
+  "feedbackScreenshot": "Lampirkan Screenshot (Opsional)",
+  "feedbackSubmit": "Kirim Masukan",
+  "feedbackSuccess": "Masukan berhasil dikirim!",
+  "feedbackBug": "Laporan Bug",
+  "feedbackFeature": "Permintaan Fitur",
+  "feedbackComplaint": "Keluhan",
+  "feedbackQuestion": "Pertanyaan",
+  "feedbackOther": "Lainnya"
 }

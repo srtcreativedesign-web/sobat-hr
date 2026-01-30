@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../widgets/custom_navbar.dart';
 import '../../l10n/app_localizations.dart';
+import '../feedback/feedback_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -197,7 +198,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     subtitle: AppLocalizations.of(
                                       context,
                                     )!.sendFeedbackDesc,
-                                    onTap: () => _showComingSoon(context),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const FeedbackScreen(),
+                                        ),
+                                      );
+                                    },
                                   ),
                                   _buildDivider(),
                                   _buildMenuItem(

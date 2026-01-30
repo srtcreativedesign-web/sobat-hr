@@ -455,4 +455,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get getStarted => 'Get Started';
+
+  @override
+  String get feedbackSubject => 'Subject';
+
+  @override
+  String get feedbackCategory => 'Category';
+
+  @override
+  String get feedbackDescription => 'Description';
+
+  @override
+  String get feedbackScreenshot => 'Attach Screenshot (Optional)';
+
+  @override
+  String get feedbackSubmit => 'Submit Feedback';
+
+  @override
+  String get feedbackSuccess => 'Feedback submitted successfully!';
+
+  @override
+  String get feedbackBug => 'Bug Report';
+
+  @override
+  String get feedbackFeature => 'Feature Request';
+
+  @override
+  String get feedbackComplaint => 'Complaint';
+
+  @override
+  String get feedbackQuestion => 'Question';
+
+  @override
+  String get feedbackOther => 'Other';
 }

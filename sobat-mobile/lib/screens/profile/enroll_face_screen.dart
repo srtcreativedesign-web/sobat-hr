@@ -1,8 +1,13 @@
+import 'dart:async';
+import 'dart:io';
+import 'dart:math' as math;
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import '../../config/theme.dart';
 import '../../config/api_config.dart';
 import '../../services/auth_service.dart';
 
@@ -14,17 +19,64 @@ class EnrollFaceScreen extends StatefulWidget {
   State<EnrollFaceScreen> createState() => _EnrollFaceScreenState();
 }
 
-class _EnrollFaceScreenState extends State<EnrollFaceScreen> {
+class _EnrollFaceScreenState extends State<EnrollFaceScreen>
+    with TickerProviderStateMixin {
   CameraController? _controller;
   Future<void>? _initializeControllerFuture;
   bool _isCameraInitialized = false;
+  bool _isSimulator = false;
   bool _isUploading = false;
   final AuthService _authService = AuthService();
+
+  // Face Detection
+  FaceDetector? _faceDetector;
+  bool _isProcessing = false;
+  bool _isFaceGood = false;
+  Timer? _captureDebounce;
+  bool _isAutoCapturing = false;
+
+  // Progress Logic
+  double _progressValue = 0.0;
+  Timer? _progressTimer;
+
+  // Status Text
+  String _statusText = 'INITIALIZING...';
+  Color _statusColor = AppTheme.colorCyan;
 
   @override
   void initState() {
     super.initState();
-    _initCamera();
+    _checkDeviceAndInit();
+  }
+
+  Future<void> _checkDeviceAndInit() async {
+    bool isSimulator = false;
+    if (Platform.isIOS) {
+      final deviceInfo = DeviceInfoPlugin();
+      final iosInfo = await deviceInfo.iosInfo;
+      isSimulator = !iosInfo.isPhysicalDevice;
+    }
+
+    if (mounted) {
+      setState(() {
+        _isSimulator = isSimulator;
+      });
+    }
+
+    if (isSimulator) {
+      setState(() => _statusText = 'SIMULATOR MODE');
+      _mockSimulatorSequence();
+    } else {
+      _initCamera();
+      _faceDetector = FaceDetector(
+        options: FaceDetectorOptions(
+          performanceMode: FaceDetectorMode.fast,
+          enableContours: false,
+          enableClassification: true,
+          enableLandmarks: false,
+        ),
+      );
+    }
   }
 
   Future<void> _initCamera() async {
@@ -37,8 +89,11 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen> {
 
       _controller = CameraController(
         frontCamera,
-        ResolutionPreset.medium,
+        ResolutionPreset.high,
         enableAudio: false,
+        imageFormatGroup: Platform.isAndroid
+            ? ImageFormatGroup.nv21
+            : ImageFormatGroup.bgra8888,
       );
 
       _initializeControllerFuture = _controller!.initialize();
@@ -47,36 +102,205 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen> {
       if (mounted) {
         setState(() {
           _isCameraInitialized = true;
+          _statusText = 'FINDING FACE...';
         });
+        _startImageStream();
       }
     } catch (e) {
       debugPrint('Error initializing camera: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Gagal membuka kamera: $e')));
-      }
+      setState(() => _statusText = 'CAMERA ERROR');
     }
   }
 
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
+  void _startImageStream() {
+    _controller?.startImageStream((CameraImage image) {
+      if (_isProcessing || _isAutoCapturing) return;
+      _isProcessing = true;
+      _processImage(image);
+    });
   }
 
-  Future<void> _takePictureAndUpload() async {
-    if (_isUploading) return;
+  Future<void> _processImage(CameraImage image) async {
+    try {
+      final WriteBuffer allBytes = WriteBuffer();
+      for (final Plane plane in image.planes) {
+        allBytes.putUint8List(plane.bytes);
+      }
+      final bytes = allBytes.done().buffer.asUint8List();
+
+      final Size imageSize = Size(
+        image.width.toDouble(),
+        image.height.toDouble(),
+      );
+
+      final camera = _controller!.description;
+      final imageRotation =
+          InputImageRotationValue.fromRawValue(camera.sensorOrientation) ??
+          InputImageRotation.rotation0deg;
+
+      final inputImageFormat =
+          InputImageFormatValue.fromRawValue(image.format.raw) ??
+          InputImageFormat.nv21;
+
+      final inputImageMetadata = InputImageMetadata(
+        size: imageSize,
+        rotation: imageRotation,
+        format: inputImageFormat,
+        bytesPerRow: image.planes[0].bytesPerRow,
+      );
+
+      final inputImage = InputImage.fromBytes(
+        bytes: bytes,
+        metadata: inputImageMetadata,
+      );
+
+      final faces = await _faceDetector!.processImage(inputImage);
+
+      if (faces.isNotEmpty) {
+        final face = faces.first;
+        _checkFaceValidation(face, imageSize);
+      } else {
+        _resetValidation('NO FACE DETECTED');
+      }
+    } catch (e) {
+      debugPrint("Error processing face: $e");
+    } finally {
+      _isProcessing = false;
+    }
+  }
+
+  void _checkFaceValidation(Face face, Size imageSize) {
+    if (_isAutoCapturing) return;
+
+    double rotY = face.headEulerAngleY ?? 0;
+    double rotZ = face.headEulerAngleZ ?? 0;
+
+    bool isFacingForward = rotY.abs() < 15;
+    bool isStraight = rotZ.abs() < 15;
+
+    final Rect box = face.boundingBox;
+    final double centerX = imageSize.width / 2;
+    final double centerY = imageSize.height / 2;
+
+    double faceCenterX = box.center.dx;
+    double faceCenterY = box.center.dy;
+
+    double offsetX = (faceCenterX - centerX).abs() / imageSize.width;
+    double offsetY = (faceCenterY - centerY).abs() / imageSize.height;
+
+    double faceWidthPercent = box.width / imageSize.width;
+
+    bool isCentered = offsetX < 0.25 && offsetY < 0.25;
+    bool isCloseEnough = faceWidthPercent > 0.15;
+
+    if (isFacingForward && isStraight && isCentered && isCloseEnough) {
+      if (!_isFaceGood) {
+        _startProgressTimer();
+        setState(() {
+          _isFaceGood = true;
+          _statusText = 'VERIFYING';
+          _statusColor = AppTheme.colorCyan;
+        });
+
+        _captureDebounce ??= Timer(
+          const Duration(seconds: 2),
+          _triggerAutoCapture,
+        );
+      }
+    } else {
+      String reason = 'ADJUST';
+
+      if (!isCloseEnough) {
+        reason = 'MOVE CLOSER';
+      } else if (!isCentered) {
+        reason = 'CENTER FACE';
+      } else if (!isFacingForward) {
+        reason = rotY > 0 ? 'TURN RIGHT' : 'TURN LEFT';
+      } else if (!isStraight) {
+        reason = 'STRAIGHTEN HEAD';
+      }
+
+      _resetValidation(reason);
+    }
+  }
+
+  void _startProgressTimer() {
+    _progressTimer?.cancel();
+    _progressValue = 0.0;
+    _progressTimer = Timer.periodic(const Duration(milliseconds: 20), (timer) {
+      setState(() {
+        _progressValue += 0.01;
+        if (_progressValue >= 1.0) {
+          _progressValue = 1.0;
+          timer.cancel();
+        }
+      });
+    });
+  }
+
+  void _resetValidation(String message) {
+    if (_isFaceGood) {
+      _captureDebounce?.cancel();
+      _captureDebounce = null;
+      _progressTimer?.cancel();
+      setState(() {
+        _isFaceGood = false;
+        _progressValue = 0.0;
+        _statusText = message;
+        _statusColor = Colors.orangeAccent;
+      });
+    } else if (_statusText != message) {
+      setState(() {
+        _statusText = message;
+        _statusColor = Colors.orangeAccent;
+      });
+    }
+  }
+
+  Future<void> _triggerAutoCapture() async {
+    if (_isAutoCapturing || !mounted) return;
+    _captureDebounce?.cancel();
+    _progressTimer?.cancel();
+
+    setState(() {
+      _isAutoCapturing = true;
+      _statusText = 'CAPTURING...';
+      _progressValue = 1.0;
+      _statusColor = AppTheme.success;
+    });
 
     try {
-      await _initializeControllerFuture;
-      setState(() => _isUploading = true);
+      await _controller?.stopImageStream();
 
-      final image = await _controller!.takePicture();
+      XFile image;
+      try {
+        image = await _controller!.takePicture();
+      } catch (e) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        image = await _controller!.takePicture();
+      }
 
       if (!mounted) return;
 
-      // Upload Logic
+      // Upload face
+      await _uploadFace(image.path);
+    } catch (e) {
+      debugPrint("Error auto-capturing: $e");
+      setState(() {
+        _isAutoCapturing = false;
+        _statusText = 'RETRYING...';
+        _initCamera();
+      });
+    }
+  }
+
+  Future<void> _uploadFace(String imagePath) async {
+    try {
+      setState(() {
+        _isUploading = true;
+        _statusText = 'UPLOADING...';
+      });
+
       final token = await _authService.getToken();
 
       var request = http.MultipartRequest(
@@ -89,7 +313,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen> {
         'Accept': 'application/json',
       });
 
-      request.files.add(await http.MultipartFile.fromPath('photo', image.path));
+      request.files.add(await http.MultipartFile.fromPath('photo', imagePath));
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
@@ -97,23 +321,23 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen> {
       if (!mounted) return;
 
       if (response.statusCode == 200) {
+        setState(() => _statusText = 'SUCCESS!');
+        await Future.delayed(const Duration(milliseconds: 500));
         _showSuccessDialog();
       } else {
-        debugPrint('Enroll Face Error: ${response.body}'); // Debug Output
-
-        // Parse error message
-        try {
-          // import dart:convert needed? No, usually handled but let's see.
-          // Wait, import 'dart:convert' is missing in my list above. I should add it or use manual parsing if simple.
-          // Better add it.
-        } catch (_) {}
-
+        debugPrint('Enroll Face Error: ${response.body}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal: ${response.body}'),
             backgroundColor: Colors.red,
           ),
         );
+        setState(() {
+          _isUploading = false;
+          _isAutoCapturing = false;
+          _statusText = 'RETRYING...';
+          _initCamera();
+        });
       }
     } catch (e) {
       debugPrint('Error enrolling face: $e');
@@ -121,12 +345,37 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Terjadi kesalahan: $e')));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isUploading = false);
+        setState(() {
+          _isUploading = false;
+          _isAutoCapturing = false;
+          _statusText = 'RETRYING...';
+          _initCamera();
+        });
       }
     }
+  }
+
+  void _mockSimulatorSequence() {
+    Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _statusText = 'FACE DETECTED');
+
+      Timer(const Duration(seconds: 1), () {
+        if (!mounted) return;
+        _startProgressTimer();
+        setState(() {
+          _isFaceGood = true;
+          _statusText = 'VERIFYING (SIM)';
+          _statusColor = AppTheme.colorCyan;
+        });
+
+        Timer(const Duration(seconds: 2), () {
+          if (mounted) {
+            setState(() => _statusText = 'SUCCESS!');
+            _showSuccessDialog();
+          }
+        });
+      });
+    });
   }
 
   void _showSuccessDialog() {
@@ -134,24 +383,65 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text('Berhasil'),
+        backgroundColor: const Color(0xFF1A1A1A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Berhasil',
+          style: TextStyle(
+            color: AppTheme.colorCyan,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: const Text(
           'Wajah Anda berhasil didaftarkan. Sekarang Anda dapat melakukan absensi.',
+          style: TextStyle(color: Colors.white),
         ),
         actions: [
           TextButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop(); // Close dialog
-              if (widget.isFirstTime) {
-                // Trigger provider refresh to update UI state
-                // Import provider first!
-                // Wait, I need to add import provider at top if not exists
-                Navigator.of(context).pop(true);
-              } else {
-                Navigator.of(context).pop(true); // Close screen with success
-              }
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              Navigator.of(context).pop(true);
             },
-            child: const Text('OK'),
+            child: const Text(
+              'OK',
+              style: TextStyle(color: AppTheme.colorCyan),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showHelpDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Tips Pendaftaran Wajah',
+          style: TextStyle(
+            color: AppTheme.colorCyan,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            _HelpItem('1. Posisikan wajah di dalam lingkaran.'),
+            SizedBox(height: 8),
+            _HelpItem('2. Pastikan cahaya cukup.'),
+            SizedBox(height: 8),
+            _HelpItem('3. Lepas masker dan kacamata hitam.'),
+            SizedBox(height: 8),
+            _HelpItem('4. Tunggu hingga progress bar penuh.'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -159,118 +449,291 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen> {
   }
 
   @override
+  void dispose() {
+    _faceDetector?.close();
+    _controller?.dispose();
+    _captureDebounce?.cancel();
+    _progressTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (!_isCameraInitialized) {
+    if ((!_isCameraInitialized || _controller == null) && !_isSimulator) {
       return const Scaffold(
         backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: CircularProgressIndicator(color: AppTheme.colorCyan),
+        ),
       );
     }
+
+    final size = MediaQuery.of(context).size;
+
+    final double holeSize = size.width * 0.75;
+    final double holeRadius = holeSize / 2;
+    const double alignY = -0.25;
+    final double verticalOffset = alignY * (size.height / 2);
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          // 1. Camera Preview
+          // 1. Camera Preview OR Simulator Placeholder
           SizedBox(
-            width: double.infinity,
-            height: double.infinity,
-            child: FittedBox(
-              fit: BoxFit.cover,
-              child: SizedBox(
-                width: 100,
-                height: 100 * _controller!.value.aspectRatio,
-                child: CameraPreview(_controller!),
+            width: size.width,
+            height: size.height,
+            child: _isSimulator
+                ? Container(
+                    color: Colors.grey[900],
+                    child: const Center(
+                      child: Icon(Icons.face, size: 80, color: Colors.white24),
+                    ),
+                  )
+                : FittedBox(
+                    fit: BoxFit.cover,
+                    child: SizedBox(
+                      width: _controller!.value.previewSize!.height,
+                      height: _controller!.value.previewSize!.width,
+                      child: CameraPreview(_controller!),
+                    ),
+                  ),
+          ),
+
+          // 2. Dark Overlay with Hole
+          CustomPaint(
+            size: size,
+            painter: HoleOverlayPainter(
+              holeRadius: holeRadius,
+              overlayColor: Colors.black.withValues(alpha: 0.85),
+              verticalOffset: verticalOffset,
+            ),
+          ),
+
+          // 3. Ring Overlay
+          Positioned(
+            top: (size.height / 2) + verticalOffset - (holeSize / 2),
+            left: (size.width - holeSize) / 2,
+            child: SizedBox(
+              width: holeSize,
+              height: holeSize,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CustomPaint(
+                    size: Size(holeSize, holeSize),
+                    painter: ScannerRingPainter(color: _statusColor),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    child: Transform.translate(
+                      offset: const Offset(0, 30),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _statusColor,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _statusColor.withValues(alpha: 0.4),
+                              blurRadius: 10,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          _statusText,
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
 
-          // 2. Overlay
-          IgnorePointer(
+          // 4. UI Layer
+          SafeArea(
             child: Stack(
               children: [
-                ColorFiltered(
-                  colorFilter: ColorFilter.mode(
-                    Colors.black.withValues(alpha: 0.5),
-                    BlendMode.srcOut,
-                  ),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.black,
-                          backgroundBlendMode: BlendMode.dstOut,
-                        ),
+                Column(
+                  children: [
+                    // Header
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                      Center(
-                        child: Container(
-                          width: 280,
-                          height: 380,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(190),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildCircleBtn(
+                            Icons.arrow_back,
+                            onTap: () => Navigator.pop(context),
                           ),
-                        ),
+                          const Text(
+                            'Face Enrollment',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          _buildCircleBtn(
+                            Icons.help_outline,
+                            onTap: _showHelpDialog,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                Center(
-                  child: Container(
-                    width: 280,
-                    height: 380,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white, width: 2),
-                      borderRadius: BorderRadius.circular(190),
                     ),
-                  ),
-                ),
-                Positioned(
-                  top: 80,
-                  left: 0,
-                  right: 0,
-                  child: Column(
-                    children: const [
-                      Text(
-                        'DAFTARKAN WAJAH',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          shadows: [Shadow(blurRadius: 4, color: Colors.black)],
+
+                    const SizedBox(height: 20),
+
+                    // Recognition Badge
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.colorEggplant.withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(color: Colors.white10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(
+                              Icons.face,
+                              size: 16,
+                              color: AppTheme.colorCyan,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Face Registration',
+                              style: TextStyle(
+                                color: AppTheme.colorCyan,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Pastikan wajah terlihat jelas & cahaya cukup\nLepas masker atau kacamata hitam',
+                    ),
+
+                    const Spacer(),
+
+                    // Instruction Text
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 40),
+                      child: Text(
+                        'Align your face within the circle\nfor automatic registration',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 14,
-                          shadows: [Shadow(blurRadius: 4, color: Colors.black)],
+                          height: 1.5,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+
+                    // Bottom Card
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: AppTheme.colorEggplant,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'ENROLLMENT PROCESS',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Register your face for attendance',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Processing Biometrics
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Processing biometrics...',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              Text(
+                                '${(_progressValue * 100).toInt()}%',
+                                style: const TextStyle(
+                                  color: AppTheme.colorCyan,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: _progressValue,
+                              minHeight: 6,
+                              backgroundColor: Colors.white10,
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                AppTheme.colorCyan,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
 
-          // 3. Loading Overlay
+          // Loading Overlay
           if (_isUploading)
             Container(
-              color: Colors.black54,
+              color: Colors.black87,
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: const [
-                    CircularProgressIndicator(color: Colors.white),
+                    CircularProgressIndicator(color: AppTheme.colorCyan),
                     SizedBox(height: 16),
                     Text(
-                      'Memproses Wajah...',
+                      'Uploading face data...',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -280,53 +743,113 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen> {
                 ),
               ),
             ),
-
-          // 4. Controls
-          if (!_isUploading)
-            Positioned(
-              bottom: 40,
-              left: 0,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 30,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: _takePictureAndUpload,
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 5),
-                      ),
-                      child: Container(
-                        margin: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.camera_alt,
-                          color: Colors.black,
-                          size: 30,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 48), // Spacer
-                ],
-              ),
-            ),
         ],
       ),
     );
   }
+
+  Widget _buildCircleBtn(IconData icon, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: 20),
+      ),
+    );
+  }
+}
+
+class _HelpItem extends StatelessWidget {
+  final String text;
+  const _HelpItem(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: TextStyle(
+        color: Colors.white.withValues(alpha: 0.8),
+        fontSize: 13,
+      ),
+    );
+  }
+}
+
+class ScannerRingPainter extends CustomPainter {
+  final Color color;
+
+  ScannerRingPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double radius = size.width / 2;
+    final Rect rect = Rect.fromCircle(
+      center: Offset(radius, radius),
+      radius: radius,
+    );
+
+    final Paint paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..shader = SweepGradient(
+        colors: [
+          color.withValues(alpha: 0.0),
+          color.withValues(alpha: 0.5),
+          color,
+          color.withValues(alpha: 0.5),
+          color.withValues(alpha: 0.0),
+        ],
+        stops: const [0.0, 0.2, 0.5, 0.8, 1.0],
+      ).createShader(rect);
+
+    canvas.drawArc(rect, 0, math.pi * 2, false, paint);
+
+    final Paint borderPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = color.withValues(alpha: 0.3);
+
+    canvas.drawCircle(Offset(radius, radius), radius - 4, borderPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant ScannerRingPainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
+class HoleOverlayPainter extends CustomPainter {
+  final double holeRadius;
+  final Color overlayColor;
+  final double verticalOffset;
+
+  HoleOverlayPainter({
+    required this.holeRadius,
+    required this.overlayColor,
+    this.verticalOffset = 0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path.combine(
+      PathOperation.difference,
+      Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height)),
+      Path()
+        ..addOval(
+          Rect.fromCircle(
+            center: Offset(size.width / 2, (size.height / 2) + verticalOffset),
+            radius: holeRadius,
+          ),
+        )
+        ..close(),
+    );
+
+    canvas.drawPath(path, Paint()..color = overlayColor);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

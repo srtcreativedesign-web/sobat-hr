@@ -93,7 +93,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get helpCenterDesc => 'FAQ dan panduan penggunaan';
 
   @override
-  String get sendFeedback => 'Kirim Feedback';
+  String get sendFeedback => 'Kirim Masukan';
 
   @override
   String get sendFeedbackDesc => 'Bantu kami untuk lebih baik';
@@ -455,4 +455,37 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get getStarted => 'Mulai';
+
+  @override
+  String get feedbackSubject => 'Judul';
+
+  @override
+  String get feedbackCategory => 'Kategori';
+
+  @override
+  String get feedbackDescription => 'Deskripsi';
+
+  @override
+  String get feedbackScreenshot => 'Lampirkan Screenshot (Opsional)';
+
+  @override
+  String get feedbackSubmit => 'Kirim Masukan';
+
+  @override
+  String get feedbackSuccess => 'Masukan berhasil dikirim!';
+
+  @override
+  String get feedbackBug => 'Laporan Bug';
+
+  @override
+  String get feedbackFeature => 'Permintaan Fitur';
+
+  @override
+  String get feedbackComplaint => 'Keluhan';
+
+  @override
+  String get feedbackQuestion => 'Pertanyaan';
+
+  @override
+  String get feedbackOther => 'Lainnya';
 }

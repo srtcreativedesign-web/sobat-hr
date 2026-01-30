@@ -985,6 +985,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Get Started'**
   String get getStarted;
+
+  /// No description provided for @feedbackSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Subject'**
+  String get feedbackSubject;
+
+  /// No description provided for @feedbackCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get feedbackCategory;
+
+  /// No description provided for @feedbackDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get feedbackDescription;
+
+  /// No description provided for @feedbackScreenshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach Screenshot (Optional)'**
+  String get feedbackScreenshot;
+
+  /// No description provided for @feedbackSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Feedback'**
+  String get feedbackSubmit;
+
+  /// No description provided for @feedbackSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback submitted successfully!'**
+  String get feedbackSuccess;
+
+  /// No description provided for @feedbackBug.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug Report'**
+  String get feedbackBug;
+
+  /// No description provided for @feedbackFeature.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature Request'**
+  String get feedbackFeature;
+
+  /// No description provided for @feedbackComplaint.
+  ///
+  /// In en, this message translates to:
+  /// **'Complaint'**
+  String get feedbackComplaint;
+
+  /// No description provided for @feedbackQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Question'**
+  String get feedbackQuestion;
+
+  /// No description provided for @feedbackOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get feedbackOther;
 }
 
 class _AppLocalizationsDelegate

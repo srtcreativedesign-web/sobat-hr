@@ -146,5 +146,17 @@
   "onboardingConnectedTitle": "Your Payslip, Anytime",
   "onboardingConnectedDesc": "Access and download monthly payslips instantly, plus stay updated with company announcements",
   "skip": "Skip",
-  "getStarted": "Get Started"
+  "getStarted": "Get Started",
+  "sendFeedback": "Send Feedback",
+  "feedbackSubject": "Subject",
+  "feedbackCategory": "Category",
+  "feedbackDescription": "Description",
+  "feedbackScreenshot": "Attach Screenshot (Optional)",
+  "feedbackSubmit": "Submit Feedback",
+  "feedbackSuccess": "Feedback submitted successfully!",
+  "feedbackBug": "Bug Report",
+  "feedbackFeature": "Feature Request",
+  "feedbackComplaint": "Complaint",
+  "feedbackQuestion": "Question",
+  "feedbackOther": "Other"
 }

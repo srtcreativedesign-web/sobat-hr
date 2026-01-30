@@ -180,6 +180,18 @@ Route::middleware('auth:sanctum')->group(function () {
     // Notification routes
     Route::get('/notifications', [App\Http\Controllers\Api\NotificationController::class, 'index']);
     Route::post('/notifications/read', [App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
+
+    // Feedback routes (Mobile)
+    Route::post('/feedbacks', [App\Http\Controllers\FeedbackController::class, 'store']);
+    Route::get('/feedbacks', [App\Http\Controllers\FeedbackController::class, 'index']);
+
+    // Feedback Admin routes (Web)
+    Route::prefix('admin/feedbacks')->group(function () {
+        Route::get('/', [App\Http\Controllers\FeedbackController::class, 'adminIndex']);
+        Route::get('/{id}', [App\Http\Controllers\FeedbackController::class, 'show']);
+        Route::put('/{id}', [App\Http\Controllers\FeedbackController::class, 'update']);
+        Route::delete('/{id}', [App\Http\Controllers\FeedbackController::class, 'destroy']);
+    });
 });
 
 // Public invitation routes
