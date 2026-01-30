@@ -3,6 +3,8 @@ import '../models/user.dart';
 import '../services/auth_service.dart';
 import '../services/storage_service.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
 
@@ -10,14 +12,17 @@ class AuthProvider with ChangeNotifier {
   bool _isAuthenticated = false;
   bool _isLoading = false;
   String? _errorMessage;
+  bool _biometricEnabled = false;
 
   User? get user => _user;
   bool get isAuthenticated => _isAuthenticated;
   bool get isLoading => _isLoading;
+  bool get biometricEnabled => _biometricEnabled;
   String? get errorMessage => _errorMessage;
 
   AuthProvider() {
     _checkAuth();
+    loadBiometricPreference();
   }
 
   Future<void> _checkAuth() async {
@@ -131,4 +136,17 @@ class AuthProvider with ChangeNotifier {
 
   // Alias for refreshing user data
   Future<void> loadUser() async => await refreshProfile();
+
+  Future<void> loadBiometricPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    _biometricEnabled = prefs.getBool('biometric_enabled') ?? false;
+    notifyListeners();
+  }
+
+  Future<void> toggleBiometric(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('biometric_enabled', value);
+    _biometricEnabled = value;
+    notifyListeners();
+  }
 }

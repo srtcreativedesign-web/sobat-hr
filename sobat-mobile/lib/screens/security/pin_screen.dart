@@ -4,6 +4,7 @@ import '../../services/security_service.dart';
 // import '../../services/auth_service.dart'; // Removed unused
 import '../../providers/auth_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:local_auth/local_auth.dart';
 
 enum PinMode { setup, verify }
 
@@ -24,6 +25,8 @@ class _PinScreenState extends State<PinScreen> {
   bool _isConfirming = false;
   String _message = '';
   bool _isLoading = false;
+  final LocalAuthentication auth = LocalAuthentication();
+  bool _canCheckBiometrics = false;
 
   @override
   void initState() {
@@ -31,6 +34,50 @@ class _PinScreenState extends State<PinScreen> {
     _message = widget.mode == PinMode.setup
         ? 'Buat PIN Keamanan Baru'
         : 'Masukkan PIN Keamanan';
+
+    if (widget.mode == PinMode.verify) {
+      _checkBiometrics();
+    }
+  }
+
+  Future<void> _checkBiometrics() async {
+    // Check user preference first
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (!authProvider.biometricEnabled) return;
+
+    try {
+      final bool canCheckBiometrics = await auth.canCheckBiometrics;
+      final bool isDeviceSupported = await auth.isDeviceSupported();
+      setState(() {
+        _canCheckBiometrics = canCheckBiometrics && isDeviceSupported;
+      });
+
+      if (_canCheckBiometrics) {
+        _authenticate();
+      }
+    } catch (e) {
+      debugPrint('Biometric check failed: $e');
+    }
+  }
+
+  Future<void> _authenticate() async {
+    try {
+      final bool didAuthenticate = await auth.authenticate(
+        localizedReason:
+            'Silakan verifikasi identitas Anda untuk mengakses Payslip',
+        // options: const AuthenticationOptions(
+        //   stickyAuth: true,
+        //   biometricOnly: false,
+        // ),
+      );
+
+      if (didAuthenticate && mounted) {
+        widget.onSuccess();
+      }
+    } catch (e) {
+      debugPrint('Authentication failed: $e');
+      // Do nothing, let user input PIN
+    }
   }
 
   void _onKeyPress(String key) {
@@ -225,8 +272,16 @@ class _PinScreenState extends State<PinScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(width: 72), // Empty space
-            const SizedBox(width: 24),
+            // Biometric button (only if available and in verify mode)
+            if (_canCheckBiometrics &&
+                widget.mode == PinMode.verify &&
+                context.watch<AuthProvider>().biometricEnabled) ...[
+              _buildBiometricBtn(),
+              const SizedBox(width: 24),
+            ] else ...[
+              const SizedBox(width: 72), // Empty space placeholder
+              const SizedBox(width: 24),
+            ],
             _buildNumBtn('0'),
             const SizedBox(width: 24),
             _buildBackspaceBtn(),
@@ -265,11 +320,29 @@ class _PinScreenState extends State<PinScreen> {
     return InkWell(
       onTap: () => _onKeyPress('BACK'),
       borderRadius: BorderRadius.circular(36),
-      child: Container(
+      child: SizedBox(
         width: 72,
         height: 72,
         child: Center(
           child: Icon(Icons.backspace_outlined, color: AppTheme.textDark),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBiometricBtn() {
+    return InkWell(
+      onTap: _authenticate,
+      borderRadius: BorderRadius.circular(36),
+      child: SizedBox(
+        width: 72,
+        height: 72,
+        child: Center(
+          child: Icon(
+            Icons.fingerprint,
+            size: 32,
+            color: AppTheme.colorEggplant,
+          ),
         ),
       ),
     );

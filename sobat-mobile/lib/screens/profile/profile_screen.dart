@@ -8,6 +8,7 @@ import '../../providers/locale_provider.dart';
 import '../../widgets/custom_navbar.dart';
 import '../../l10n/app_localizations.dart';
 import '../feedback/feedback_screen.dart';
+import 'package:local_auth/local_auth.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,11 +19,26 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _loading = false;
+  final LocalAuthentication _localAuth = LocalAuthentication();
+  bool _canCheckBiometrics = false;
 
   @override
   void initState() {
     super.initState();
+    _checkBiometricSupport();
     _refresh();
+  }
+
+  Future<void> _checkBiometricSupport() async {
+    try {
+      final canCheck = await _localAuth.canCheckBiometrics;
+      final isSupported = await _localAuth.isDeviceSupported();
+      setState(() {
+        _canCheckBiometrics = canCheck && isSupported;
+      });
+    } catch (e) {
+      // ignore
+    }
   }
 
   Future<void> _refresh() async {
@@ -134,6 +150,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ).pushNamed('/profile/change-password');
                                     },
                                   ),
+                                  if (_canCheckBiometrics) ...[
+                                    _buildDivider(),
+                                    _buildMenuItem(
+                                      icon: Icons.fingerprint,
+                                      title: 'Biometric Authentication',
+                                      subtitle:
+                                          'Enable fingerprint/face unlock',
+                                      trailing: Switch(
+                                        value: auth.biometricEnabled,
+                                        activeColor: AppTheme.colorCyan,
+                                        onChanged: (val) =>
+                                            _handleBiometricToggle(
+                                              context,
+                                              auth,
+                                              val,
+                                            ),
+                                      ),
+                                      onTap: () => _handleBiometricToggle(
+                                        context,
+                                        auth,
+                                        !auth.biometricEnabled,
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
@@ -914,5 +954,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
+  }
+
+  void _handleBiometricToggle(
+    BuildContext context,
+    AuthProvider auth,
+    bool value,
+  ) async {
+    if (value) {
+      // Verify first before enabling
+      try {
+        final bool didAuthenticate = await _localAuth.authenticate(
+          localizedReason: 'Please authenticate to enable biometric',
+          // options: const AuthenticationOptions(
+          //   stickyAuth: true,
+          //   biometricOnly: false,
+          // ),
+        );
+        if (didAuthenticate) {
+          auth.toggleBiometric(true);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Biometric authentication enabled')),
+            );
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        }
+      }
+    } else {
+      // Disable directly
+      auth.toggleBiometric(false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Biometric authentication disabled')),
+      );
+    }
   }
 }
