@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../l10n/app_localizations.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -68,7 +69,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ubah Password'),
+        title: Text(AppLocalizations.of(context)!.changePassword),
         backgroundColor: Colors.white,
         foregroundColor: AppTheme.textDark,
         elevation: 0,
@@ -83,7 +84,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             children: [
               _buildPasswordField(
                 controller: _currentController,
-                label: 'Password Saat Ini',
+                label: AppLocalizations.of(context)!.currentPassword,
                 obscureGoogle: _obscureCurrent,
                 onToggle: () =>
                     setState(() => _obscureCurrent = !_obscureCurrent),
@@ -95,7 +96,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               const SizedBox(height: 20),
               _buildPasswordField(
                 controller: _newController,
-                label: 'Password Baru',
+                label: AppLocalizations.of(context)!.newPassword,
                 obscureGoogle: _obscureNew,
                 onToggle: () => setState(() => _obscureNew = !_obscureNew),
                 validator: (val) {
@@ -107,7 +108,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               const SizedBox(height: 20),
               _buildPasswordField(
                 controller: _confirmController,
-                label: 'Konfirmasi Password Baru',
+                label: AppLocalizations.of(context)!.confirmPassword,
                 obscureGoogle: _obscureConfirm,
                 onToggle: () =>
                     setState(() => _obscureConfirm = !_obscureConfirm),
@@ -136,9 +137,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text(
-                        'Simpan Password Baru',
-                        style: TextStyle(
+                    : Text(
+                        AppLocalizations.of(context)!.save,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,

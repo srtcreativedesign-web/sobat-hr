@@ -164,15 +164,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       localeProvider,
                                     ),
                                   ),
-                                  _buildDivider(),
-                                  _buildMenuItem(
-                                    icon: Icons.dark_mode_outlined,
-                                    title: AppLocalizations.of(context)!.theme,
-                                    subtitle: AppLocalizations.of(
-                                      context,
-                                    )!.lightMode,
-                                    onTap: () => _showComingSoon(context),
-                                  ),
                                 ],
                               ),
                             ),

@@ -20,8 +20,8 @@ import 'screens/submission/create_submission_screen.dart'; // Added
 import 'screens/announcement/announcement_list_screen.dart'; // Added
 import 'screens/notification/notification_screen.dart'; // Added
 import 'screens/attendance/attendance_screen.dart';
-import 'screens/attendance/attendance_history_screen.dart'; // Added
-import 'screens/profile/enroll_face_screen.dart'; // Added
+import 'screens/attendance/attendance_history_screen.dart';
+import 'screens/onboarding/onboarding_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -81,6 +81,7 @@ class MyApp extends StatelessWidget {
               '/attendance': (context) => const AttendanceScreen(),
               '/attendance/history': (context) =>
                   const AttendanceHistoryScreen(),
+              '/onboarding': (context) => const OnboardingScreen(),
             },
           );
         },
@@ -92,11 +93,18 @@ class MyApp extends StatelessWidget {
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
+  Future<bool> _checkFirstLaunch() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('hasSeenOnboarding') ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, child) {
-        if (authProvider.isLoading) {
+    return FutureBuilder<bool>(
+      future: _checkFirstLaunch(),
+      builder: (context, snapshot) {
+        // Show loading while checking
+        if (!snapshot.hasData) {
           return const Scaffold(
             body: Center(
               child: CircularProgressIndicator(
@@ -106,11 +114,35 @@ class AuthWrapper extends StatelessWidget {
           );
         }
 
-        if (authProvider.isAuthenticated) {
-          return const HomeScreen();
+        final hasSeenOnboarding = snapshot.data!;
+
+        // If first launch, show onboarding
+        if (!hasSeenOnboarding) {
+          return const OnboardingScreen();
         }
 
-        return const LoginScreen();
+        // Otherwise, check authentication
+        return Consumer<AuthProvider>(
+          builder: (context, authProvider, child) {
+            if (authProvider.isLoading) {
+              return const Scaffold(
+                body: Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppTheme.colorCyan,
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            if (authProvider.isAuthenticated) {
+              return const HomeScreen();
+            }
+
+            return const LoginScreen();
+          },
+        );
       },
     );
   }

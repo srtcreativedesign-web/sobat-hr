@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
+import '../../l10n/app_localizations.dart';
 
 class SubmissionMenuScreen extends StatelessWidget {
   const SubmissionMenuScreen({super.key});
@@ -13,9 +14,9 @@ class SubmissionMenuScreen extends StatelessWidget {
         elevation: 0,
         leading: BackButton(color: AppTheme.textDark),
         centerTitle: true,
-        title: const Text(
-          'Menu Pengajuan',
-          style: TextStyle(
+        title: Text(
+          AppLocalizations.of(context)!.submissions,
+          style: const TextStyle(
             color: AppTheme.textDark,
             fontWeight: FontWeight.bold,
             fontSize: 16,
@@ -60,7 +61,7 @@ class SubmissionMenuScreen extends StatelessWidget {
             children: [
               _buildModernCard(
                 context,
-                'Cuti',
+                AppLocalizations.of(context)!.leave,
                 Icons.calendar_month_rounded,
                 const LinearGradient(
                   colors: [Color(0xFFF97316), Color(0xFFEA580C)], // Orange
@@ -70,7 +71,7 @@ class SubmissionMenuScreen extends StatelessWidget {
               ),
               _buildModernCard(
                 context,
-                'Sakit',
+                AppLocalizations.of(context)!.sick,
                 Icons.medication_rounded,
                 const LinearGradient(
                   colors: [Color(0xFFF43F5E), Color(0xFFE11D48)], // Rose
@@ -80,7 +81,7 @@ class SubmissionMenuScreen extends StatelessWidget {
               ),
               _buildModernCard(
                 context,
-                'Lembur',
+                AppLocalizations.of(context)!.overtime,
                 Icons.timer_rounded,
                 const LinearGradient(
                   colors: [Color(0xFF3B82F6), Color(0xFF2563EB)], // Blue
@@ -90,7 +91,7 @@ class SubmissionMenuScreen extends StatelessWidget {
               ),
               _buildModernCard(
                 context,
-                'Riwayat',
+                AppLocalizations.of(context)!.history,
                 Icons.history_rounded,
                 const LinearGradient(
                   colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)], // Violet

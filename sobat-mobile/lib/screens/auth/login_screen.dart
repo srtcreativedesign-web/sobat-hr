@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../l10n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -94,13 +95,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Text(
-                              'Selamat Datang',
+                              AppLocalizations.of(context)!.loginTitle,
                               style: Theme.of(context).textTheme.headlineMedium,
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Masuk untuk melanjutkan',
+                              AppLocalizations.of(context)!.loginSubtitle,
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(color: AppTheme.textLight),
                               textAlign: TextAlign.center,
@@ -111,10 +112,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             TextFormField(
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
-                              decoration: const InputDecoration(
-                                labelText: 'Email',
+                              decoration: InputDecoration(
+                                labelText: AppLocalizations.of(
+                                  context,
+                                )!.emailLabel,
                                 hintText: 'nama@perusahaan.com',
-                                prefixIcon: Icon(Icons.email_outlined),
+                                prefixIcon: const Icon(Icons.email_outlined),
                               ),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
@@ -133,7 +136,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               controller: _passwordController,
                               obscureText: _obscurePassword,
                               decoration: InputDecoration(
-                                labelText: 'Password',
+                                labelText: AppLocalizations.of(
+                                  context,
+                                )!.passwordLabel,
                                 hintText: 'Masukkan password',
                                 prefixIcon: const Icon(Icons.lock_outline),
                                 suffixIcon: IconButton(
@@ -251,9 +256,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                                   ),
                                             ),
                                           )
-                                        : const Text(
-                                            'Masuk',
-                                            style: TextStyle(
+                                        : Text(
+                                            AppLocalizations.of(
+                                              context,
+                                            )!.loginButton,
+                                            style: const TextStyle(
                                               fontWeight: FontWeight.bold,
                                               fontSize: 16,
                                             ),

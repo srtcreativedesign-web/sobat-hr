@@ -10,6 +10,7 @@ import '../../config/theme.dart';
 import '../../config/theme.dart';
 import '../../services/auth_service.dart';
 import 'enroll_face_screen.dart';
+import '../../l10n/app_localizations.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -552,7 +553,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit Profil'), centerTitle: true),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.editProfile),
+        centerTitle: true,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -691,9 +695,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   children: [
                     TextFormField(
                       controller: _nameCtrl,
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.person),
-                        labelText: 'Nama Lengkap',
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.person),
+                        labelText: AppLocalizations.of(context)!.name,
                       ),
                       validator: (v) =>
                           (v == null || v.isEmpty) ? 'Nama wajib diisi' : null,
