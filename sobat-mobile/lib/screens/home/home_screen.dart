@@ -64,102 +64,172 @@ class _HomeScreenState extends State<HomeScreen> {
     _checkFaceEnrollment();
     _loadPendingApprovals();
     _loadNotifications();
-    _checkAnnouncement();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAnnouncement();
+    });
   }
 
   void _checkAnnouncement() async {
     try {
       final banner = await AnnouncementService().fetchActiveAnnouncement();
-      if (banner != null && mounted) {
-        showDialog(
-          context: context,
-          builder: (ctx) => Dialog(
-            backgroundColor: Colors.transparent,
-            insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.network(
-                        ApiConfig.baseUrl.replaceAll('/api', '') +
-                            '/storage/${banner['image_path']}',
-                        fit: BoxFit.cover,
-                        loadingBuilder: (ctx, child, progress) {
-                          if (progress == null) return child;
-                          return const SizedBox(
-                            height: 200,
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                color: AppTheme.colorEggplant,
+
+      // Check if widget is still mounted and banner exists
+      if (!mounted || banner == null) return;
+
+      showDialog(
+        context: context,
+        barrierDismissible: true, // Allow clicking outside to close
+        builder: (ctx) => Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                children: [
+                  // Image Container
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight:
+                          MediaQuery.of(context).size.height *
+                          0.7, // Limit total height relative to screen
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: Colors.white,
+                      ),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ClipRRect(
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(16),
+                              ),
+                              child: Image.network(
+                                ApiConfig.baseUrl.replaceAll('/api', '') +
+                                    '/storage/${banner['image_path']}',
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                errorBuilder: (ctx, err, stack) {
+                                  debugPrint(
+                                    'Error loading banner image: $err',
+                                  );
+                                  return Container(
+                                    height: 150,
+                                    color: Colors.grey[200],
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.broken_image,
+                                        size: 50,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                loadingBuilder: (ctx, child, progress) {
+                                  if (progress == null) return child;
+                                  return SizedBox(
+                                    height: 200,
+                                    width: double.infinity,
+                                    child: Center(
+                                      child: CircularProgressIndicator(
+                                        color: AppTheme.colorEggplant,
+                                        value:
+                                            progress.expectedTotalBytes != null
+                                            ? progress.cumulativeBytesLoaded /
+                                                  progress.expectedTotalBytes!
+                                            : null,
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
-                          );
-                        },
-                        errorBuilder: (ctx, err, stack) =>
-                            const SizedBox.shrink(),
+
+                            // Description / Title if exists
+                            if (banner['title'] != null ||
+                                (banner['description'] != null &&
+                                    banner['description']
+                                        .toString()
+                                        .isNotEmpty))
+                              Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (banner['title'] != null)
+                                      Text(
+                                        banner['title'],
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.textDark,
+                                        ),
+                                      ),
+                                    if (banner['description'] != null &&
+                                        banner['description']
+                                            .toString()
+                                            .isNotEmpty) ...[
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        banner['description'],
+                                        style: const TextStyle(
+                                          color: AppTheme.textLight,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: CircleAvatar(
-                        backgroundColor: Colors.black54,
-                        radius: 16,
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          icon: const Icon(
+                  ),
+
+                  // Close Button (Top Right)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Material(
+                      color: Colors.black.withOpacity(0.5),
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        onTap: () => Navigator.pop(ctx),
+                        customBorder: const CircleBorder(),
+                        child: const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Icon(
                             Icons.close,
                             color: Colors.white,
                             size: 20,
                           ),
-                          onPressed: () => Navigator.pop(ctx),
                         ),
                       ),
                     ),
-                  ],
-                ),
-                if (banner['title'] != null || banner['description'] != null)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(16),
-                        bottomRight: Radius.circular(16),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (banner['title'] != null)
-                          Text(
-                            banner['title'],
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.textDark,
-                            ),
-                          ),
-                        if (banner['description'] != null &&
-                            banner['description'].toString().isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            banner['description'],
-                            style: const TextStyle(color: AppTheme.textLight),
-                          ),
-                        ],
-                      ],
-                    ),
                   ),
-              ],
-            ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // Bottom Close Button (Optional, for better UX)
+              // ElevatedButton(
+              //   onPressed: () => Navigator.pop(ctx),
+              //   style: ElevatedButton.styleFrom(
+              //     backgroundColor: Colors.white,
+              //     foregroundColor: AppTheme.colorEggplant,
+              //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              //   ),
+              //   child: const Text('Tutup'),
+              // )
+            ],
           ),
-        );
-      }
+        ),
+      );
     } catch (e) {
       debugPrint('Error checking announcement: $e');
     }

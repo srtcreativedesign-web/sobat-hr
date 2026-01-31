@@ -7,9 +7,18 @@ export default function Home() {
     <div className="min-h-screen relative overflow-hidden flex flex-col items-center justify-center p-8">
       {/* Dynamic Background */}
       {/* Dynamic Background */}
-      <div className="absolute inset-0 z-0 bg-gray-900">
-        {/* Using opacity to brighten the overall look since the base is black/dark */}
-        <div className="w-full h-full opacity-60">
+      <div className="absolute inset-0 z-0 bg-black">
+        {/* Fallback Image */}
+        <div className="absolute inset-0 z-0 opacity-40">
+          <img
+            src="/assets/welcome-bg.png"
+            alt="Background"
+            className="w-full h-full object-cover"
+          />
+        </div>
+
+        {/* Dynamic Background Shader */}
+        <div className="absolute inset-0 z-10 opacity-70 mix-blend-screen">
           <DarkVeil
             hueShift={110}
             noiseIntensity={0.2}
@@ -19,8 +28,9 @@ export default function Home() {
             warpAmount={0.5}
           />
         </div>
-        {/* Subtle gradient instead of dark overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#462e37]/10 via-transparent to-transparent"></div>
+
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#462e37]/40 via-transparent to-transparent"></div>
       </div>
 
       <main className="relative z-10 text-center max-w-4xl mx-auto space-y-8 animate-fade-in-up">

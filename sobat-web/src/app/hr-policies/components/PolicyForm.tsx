@@ -14,7 +14,7 @@ export default function PolicyForm({ isOpen, onClose, onSuccess, initialData }: 
     const [loading, setLoading] = useState(false);
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
-    const [category, setCategory] = useState<'news' | 'policy'>('news');
+    const [category, setCategory] = useState<'news' | 'policy'>('policy');
     const [isPublished, setIsPublished] = useState(false);
     const [file, setFile] = useState<File | null>(null);
 
@@ -22,13 +22,13 @@ export default function PolicyForm({ isOpen, onClose, onSuccess, initialData }: 
         if (initialData) {
             setTitle(initialData.title || '');
             setContent(initialData.content || '');
-            setCategory(initialData.category || 'news');
+            setCategory(initialData.category || 'policy');
             setIsPublished(initialData.is_published || false);
             setFile(null);
         } else {
             setTitle('');
             setContent('');
-            setCategory('news');
+            setCategory('policy');
             setIsPublished(false);
             setFile(null);
         }
@@ -82,34 +82,8 @@ export default function PolicyForm({ isOpen, onClose, onSuccess, initialData }: 
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Category Selection */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
-                        <div className="flex gap-4">
-                            <label className={`flex-1 cursor-pointer border rounded-lg p-3 text-center transition-all ${category === 'news' ? 'bg-blue-50 border-blue-500 text-blue-700 font-bold' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-                                <input
-                                    type="radio"
-                                    name="category"
-                                    value="news"
-                                    checked={category === 'news'}
-                                    onChange={() => setCategory('news')}
-                                    className="hidden"
-                                />
-                                <span className="block text-sm">Pengumuman (News)</span>
-                            </label>
-                            <label className={`flex-1 cursor-pointer border rounded-lg p-3 text-center transition-all ${category === 'policy' ? 'bg-orange-50 border-orange-500 text-orange-700 font-bold' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-                                <input
-                                    type="radio"
-                                    name="category"
-                                    value="policy"
-                                    checked={category === 'policy'}
-                                    onChange={() => setCategory('policy')}
-                                    className="hidden"
-                                />
-                                <span className="block text-sm">Kebijakan HR (Policy)</span>
-                            </label>
-                        </div>
-                    </div>
+                    {/* Category Selection Removed - Always Policy */}
+                    <input type="hidden" name="category" value="policy" />
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Judul</label>

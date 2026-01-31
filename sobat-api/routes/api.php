@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Route;
 // Public routes
 Route::post('/auth/login', [App\Http\Controllers\Api\AuthController::class, 'login']);
 Route::post('/auth/register', [App\Http\Controllers\Api\AuthController::class, 'register']);
+Route::get('/announcements/active', [App\Http\Controllers\Api\AnnouncementController::class, 'getActive']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -176,8 +177,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Policy & Announcement routes
     Route::apiResource('policies', App\Http\Controllers\Api\PolicyController::class);
-    Route::apiResource('policies', App\Http\Controllers\Api\PolicyController::class);
-    Route::get('/announcements/active', [App\Http\Controllers\Api\AnnouncementController::class, 'getActive']);
+    // Route::get('/announcements/active', ...) moved to public
     Route::apiResource('announcements', App\Http\Controllers\Api\AnnouncementController::class);
     // Notification routes
     Route::get('/notifications', [App\Http\Controllers\Api\NotificationController::class, 'index']);

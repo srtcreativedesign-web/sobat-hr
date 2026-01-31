@@ -10,7 +10,7 @@ export default function HrPoliciesPage() {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [selectedItem, setSelectedItem] = useState<any>(null);
-    const [activeTab, setActiveTab] = useState<'all' | 'news' | 'policy'>('all');
+
 
     useEffect(() => {
         fetchItems();
@@ -19,11 +19,14 @@ export default function HrPoliciesPage() {
     const fetchItems = async () => {
         setLoading(true);
         try {
-            // Fetch ALL announcements (both news and policies)
+            // Fetch ALL announcements but verify if backend supports filtering or we filter frontend
             const response = await apiClient.get('/announcements');
-            setItems(response.data.data || response.data || []);
+            // Strict FILTER: Only show 'policy'
+            const allItems = response.data.data || response.data || [];
+            const policyItems = allItems.filter((item: any) => item.category === 'policy');
+            setItems(policyItems);
         } catch (error) {
-            console.error('Failed to fetch announcements', error);
+            console.error('Failed to fetch policies', error);
         } finally {
             setLoading(false);
         }
@@ -48,10 +51,7 @@ export default function HrPoliciesPage() {
         fetchItems();
     };
 
-    const filteredItems = items.filter(item => {
-        if (activeTab === 'all') return true;
-        return item.category === activeTab;
-    });
+    // Items are already filtered in fetchItems
 
     return (
         <DashboardLayout>
@@ -70,40 +70,20 @@ export default function HrPoliciesPage() {
                     </button>
                 </div>
 
-                {/* Tabs */}
-                <div className="flex gap-4 mb-6 border-b border-gray-200">
-                    <button
-                        onClick={() => setActiveTab('all')}
-                        className={`pb-3 px-4 text-sm font-medium transition-colors border-b-2 ${activeTab === 'all' ? 'border-[#462e37] text-[#462e37]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-                    >
-                        Semua
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('news')}
-                        className={`pb-3 px-4 text-sm font-medium transition-colors border-b-2 ${activeTab === 'news' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-                    >
-                        Pengumuman (News)
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('policy')}
-                        className={`pb-3 px-4 text-sm font-medium transition-colors border-b-2 ${activeTab === 'policy' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-                    >
-                        Kebijakan (Policy)
-                    </button>
-                </div>
+                {/* Header Section Only - No Tabs */}
 
                 <div className="grid grid-cols-1 gap-6">
                     {loading ? (
                         <div className="p-12 text-center">
                             <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#a9eae2] border-t-transparent"></div>
                         </div>
-                    ) : filteredItems.length === 0 ? (
+                    ) : items.length === 0 ? (
                         <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
                             <p className="text-gray-500 font-medium">Belum ada data.</p>
-                            <p className="text-sm text-gray-400 mt-1">Buat pengumuman atau kebijakan baru.</p>
+                            <p className="text-sm text-gray-400 mt-1">Buat kebijakan baru.</p>
                         </div>
                     ) : (
-                        filteredItems.map((item) => (
+                        items.map((item) => (
                             <div key={item.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow relative group">
                                 <div className="flex justify-between items-start">
                                     <div className="flex-1 pr-8">
