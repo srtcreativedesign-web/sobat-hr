@@ -195,7 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     top: 8,
                     right: 8,
                     child: Material(
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.black.withValues(alpha: 0.5),
                       shape: const CircleBorder(),
                       child: InkWell(
                         onTap: () => Navigator.pop(ctx),
