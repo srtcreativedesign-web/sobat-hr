@@ -228,7 +228,13 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
             _buildDetailRow('Jenis Pengajuan', type),
             const SizedBox(height: 16),
             _buildDetailRow('Tanggal', duration),
-            if (amount.isNotEmpty) ...[
+            if (amount.isNotEmpty &&
+                ![
+                  'LEAVE',
+                  'SICK LEAVE',
+                  'BUSINESS TRIP',
+                  'OVERTIME',
+                ].contains(type)) ...[
               const SizedBox(height: 16),
               _buildDetailRow('Nominal', amount),
             ],

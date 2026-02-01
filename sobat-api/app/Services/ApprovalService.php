@@ -65,10 +65,9 @@ class ApprovalService
                 ->where('level', $request->step_now)
                 ->where('status', 'pending');
 
-            if (!$isAdmin) {
-                // strict check
-                $query->where('approver_id', $actor->id);
-            }
+            // STRICT CHECK: Always enforce that the actor matches the assigned approver
+            // This prevents Super Admin from jumping the queue (e.g. approving Level 1 before Manager)
+            $query->where('approver_id', $actor->id);
             
             $currentStep = $query->first();
 

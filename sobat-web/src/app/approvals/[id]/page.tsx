@@ -360,36 +360,60 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                             <ApprovalTimeline approvals={request.approvals || []} />
                         </div>
 
-                        {/* Action Panel */}
-                        {request.status === 'pending' && (
-                            <div className="bg-white rounded-3xl shadow-[0_4px_30px_rgba(0,0,0,0.06)] border border-gray-100/50 p-6 md:p-8 sticky top-6">
-                                <h3 className="text-lg font-bold text-[#462e37] mb-4">Take Action</h3>
-                                <textarea
-                                    className="w-full bg-gray-50 border-0 ring-1 ring-gray-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-[#462e37]/20 focus:bg-white transition-all mb-6 resize-none"
-                                    rows={4}
-                                    placeholder="Add a reason or note (Required for rejection)..."
-                                    value={actionNote}
-                                    onChange={(e) => setActionNote(e.target.value)}
-                                ></textarea>
+                        {/* Action Panel - ONLY show if it's THIS user's turn */}
+                        {request.status === 'pending' && (() => {
+                            // Find the current pending step
+                            const pendingStep = request.approvals?.find(a => a.status === 'pending');
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <button
-                                        onClick={() => handleAction('reject')}
-                                        disabled={isProcessing}
-                                        className="w-full bg-white text-red-600 border border-red-100 hover:bg-red-50 hover:border-red-200 py-3.5 rounded-xl font-bold transition-all disabled:opacity-50 text-sm shadow-sm"
-                                    >
-                                        Reject
-                                    </button>
-                                    <button
-                                        onClick={() => handleAction('approve')}
-                                        disabled={isProcessing}
-                                        className="w-full bg-[#462e37] text-white hover:bg-[#2d1e24] py-3.5 rounded-xl font-bold shadow-lg shadow-[#462e37]/20 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 text-sm"
-                                    >
-                                        Approve
-                                    </button>
+                            // Check if current user is the approver
+                            // Note: user.employee_id is needed in auth store, assuming user.id maps or we use name/email as fallback
+                            // Ideally, the API response should include a 'can_approve' flag, but let's try client-side match first.
+                            // The backend modification prevented the action, so this is just UI.
+
+                            // Optimization: Check simply if the user is the assigned approver for the current step.
+                            const isMyTurn = pendingStep && pendingStep.approver?.id === user?.employee?.id;
+
+                            if (!isMyTurn) {
+                                return (
+                                    <div className="bg-gray-50 rounded-3xl border border-gray-100 p-6 md:p-8 sticky top-6 text-center">
+                                        <h3 className="text-lg font-bold text-gray-400 mb-2">Waiting for Approval</h3>
+                                        <p className="text-sm text-gray-500">
+                                            Current Approver: <span className="font-semibold">{pendingStep?.approver?.full_name || '...'}</span> (Level {pendingStep?.level})
+                                        </p>
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <div className="bg-white rounded-3xl shadow-[0_4px_30px_rgba(0,0,0,0.06)] border border-gray-100/50 p-6 md:p-8 sticky top-6">
+                                    <h3 className="text-lg font-bold text-[#462e37] mb-4">Take Action</h3>
+                                    <textarea
+                                        className="w-full bg-gray-50 border-0 ring-1 ring-gray-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-[#462e37]/20 focus:bg-white transition-all mb-6 resize-none"
+                                        rows={4}
+                                        placeholder="Add a reason or note (Required for rejection)..."
+                                        value={actionNote}
+                                        onChange={(e) => setActionNote(e.target.value)}
+                                    ></textarea>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <button
+                                            onClick={() => handleAction('reject')}
+                                            disabled={isProcessing}
+                                            className="w-full bg-white text-red-600 border border-red-100 hover:bg-red-50 hover:border-red-200 py-3.5 rounded-xl font-bold transition-all disabled:opacity-50 text-sm shadow-sm"
+                                        >
+                                            Reject
+                                        </button>
+                                        <button
+                                            onClick={() => handleAction('approve')}
+                                            disabled={isProcessing}
+                                            className="w-full bg-[#462e37] text-white hover:bg-[#2d1e24] py-3.5 rounded-xl font-bold shadow-lg shadow-[#462e37]/20 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 text-sm"
+                                        >
+                                            Approve
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            );
+                        })()}
                     </div>
                 </div>
             </div>
