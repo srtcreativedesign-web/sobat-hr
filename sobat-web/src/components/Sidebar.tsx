@@ -129,16 +129,7 @@ export default function Sidebar() {
       // Add logic to display badge in render loop, passing it here as a property if interface allows, 
       // OR handle it in the mapping below. since interface is strict, let's just use the state variable in the map function.
     },
-    {
-      name: 'Shifts',
-      href: '/shifts',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      roles: ['super_admin', 'admin_cabang'],
-    },
+
 
     {
       name: 'Payroll',
