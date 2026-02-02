@@ -161,7 +161,7 @@ class DashboardController extends Controller
         $now = Carbon::now();
 
         $employees = Employee::where('status', 'active')
-            ->where('employment_status', 'contract')
+            ->whereIn('employment_status', ['contract', 'probation'])
             ->whereNotNull('contract_end_date')
             ->whereDate('contract_end_date', '<=', $now->copy()->addDays($days))
             ->whereDate('contract_end_date', '>=', $now)
@@ -229,6 +229,62 @@ class DashboardController extends Controller
 
         return response()->json([
             'data' => $data
+        ]);
+    }
+    /**
+     * Get recent activity (Employees & Requests)
+     */
+    public function recentActivity()
+    {
+        // 1. Recent Employees
+        $recentEmployees = Employee::select('id', 'full_name', 'created_at')
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($employee) {
+                return [
+                    'id' => 'emp_' . $employee->id,
+                    'type' => 'employee_onboarding',
+                    'message' => "New employee {$employee->full_name} onboarded.",
+                    'timestamp' => $employee->created_at,
+                    'user' => $employee->full_name,
+                    'status' => 'active'
+                ];
+            });
+
+        // 2. Recent Requests
+        $recentRequests = RequestModel::with('employee')
+            ->select('id', 'employee_id', 'type', 'status', 'created_at', 'updated_at')
+            ->orderBy('updated_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($req) {
+                 // Format: "Leave request by John Doe pending"
+                 // Or "Leave request by John Doe approved"
+                 $typeStr = ucfirst($req->type); // Leave, Overtime
+                 $statusStr = $req->status; // pending, approved, rejected
+                 
+                 // User might be null if deleted, handle safely
+                 $userName = $req->employee->full_name ?? 'Unknown Employee';
+
+                return [
+                    'id' => 'req_' . $req->id,
+                    'type' => 'submission',
+                    'message' => "{$typeStr} request by {$userName} is {$statusStr}.",
+                    'timestamp' => $req->updated_at,
+                    'user' => $userName,
+                    'status' => $req->status
+                ];
+            });
+
+        // Merge and Sort
+        $activities = $recentEmployees->concat($recentRequests)
+            ->sortByDesc('timestamp')
+            ->take(5)
+            ->values();
+
+        return response()->json([
+            'data' => $activities
         ]);
     }
 }

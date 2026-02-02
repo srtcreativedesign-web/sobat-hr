@@ -13,6 +13,7 @@ import 'screens/home/home_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/profile/edit_profile_screen.dart';
 import 'screens/profile/change_password_screen.dart'; // Added
+import 'screens/settings/settings_screen.dart'; // Added
 import 'screens/payroll/payroll_screen.dart';
 import 'screens/submission/submission_menu_screen.dart'; // Added
 import 'screens/submission/submission_screen.dart'; // Added
@@ -65,6 +66,7 @@ class MyApp extends StatelessWidget {
               '/profile/edit': (context) => const EditProfileScreen(),
               '/profile/change-password': (context) =>
                   const ChangePasswordScreen(),
+              '/settings': (context) => const SettingsScreen(),
               '/payroll': (context) => const PayrollScreen(),
               '/submission/menu': (context) => const SubmissionMenuScreen(),
               '/submission/list': (context) => const Scaffold(

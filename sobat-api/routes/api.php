@@ -154,6 +154,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard/attendance-heatmap', [App\Http\Controllers\Api\DashboardController::class, 'attendanceHeatmap']);
         Route::get('/dashboard/attendance-trend', [App\Http\Controllers\Api\DashboardController::class, 'attendanceTrend']);
         Route::get('/dashboard/contract-expiring', [App\Http\Controllers\Api\DashboardController::class, 'contractExpiring']);
+        Route::get('/dashboard/recent-activity', [App\Http\Controllers\Api\DashboardController::class, 'recentActivity']);
         Route::post('/contracts/generate-pdf/{id}', [App\Http\Controllers\Api\ContractController::class, 'generatePdf']);
         
         // Contract Template
@@ -197,5 +198,11 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Public invitation routes
+Route::get('/debug/employee/{search}', function ($search) {
+    return App\Models\Employee::where('full_name', 'like', "%$search%")
+        ->orWhere('employee_code', $search)
+        ->get();
+});
+
 Route::get('/staff/invite/verify/{token}', [App\Http\Controllers\StaffInvitationController::class, 'verifyToken']);
 Route::post('/staff/invite/accept', [App\Http\Controllers\StaffInvitationController::class, 'accept']);

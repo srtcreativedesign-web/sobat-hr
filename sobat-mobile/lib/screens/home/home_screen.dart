@@ -247,7 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      print('Error loading notifications: $e');
+      debugPrint('Error loading recent activity: $e');
     }
   }
 
@@ -309,7 +309,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      print('Error loading announcements: $e');
+      debugPrint('Error loading announcements: $e');
       if (mounted) setState(() => _isLoadingAnnouncements = false);
     }
   }

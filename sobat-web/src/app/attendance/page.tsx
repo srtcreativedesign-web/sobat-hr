@@ -199,11 +199,15 @@ export default function AttendancePage() {
                                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#462e37] focus:border-transparent"
                             >
                                 <option value="">Semua Divisi</option>
-                                {organizations.map((org) => (
-                                    <option key={org.id} value={org.id}>
-                                        {org.name}
-                                    </option>
-                                ))}
+                                {organizations
+                                    .filter(org => !['CEO', 'Chief Executive Officer', 'COO', 'CFO', 'CMO', 'CTO'].includes(org.name))
+                                    .filter(org => !org.name.toLowerCase().startsWith('direktur'))
+                                    .filter(org => !org.name.toLowerCase().includes('holding'))
+                                    .map((org) => (
+                                        <option key={org.id} value={org.id}>
+                                            {org.name}
+                                        </option>
+                                    ))}
                             </select>
                         </div>
                         <div>

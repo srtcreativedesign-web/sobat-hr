@@ -41,6 +41,7 @@ interface Employee {
   supervisor_position?: string;
   basic_salary?: number;
   employment_status?: string;
+  contract_end_date?: string;
 }
 
 interface Organization {
@@ -230,6 +231,15 @@ export default function EmployeesPage() {
     return '-';
   };
 
+  const isExpiringSoon = (dateString: string | undefined) => {
+    if (!dateString) return false;
+    const end = new Date(dateString);
+    const now = new Date();
+    const diffTime = end.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= 30 && diffDays >= 0;
+  };
+
   return (
     <DashboardLayout>
       <div className="p-6">
@@ -343,6 +353,9 @@ export default function EmployeesPage() {
                       Divisi
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Kontrak Berakhir
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -366,6 +379,20 @@ export default function EmployeesPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {employee.organization?.name || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {employee.contract_end_date ? (
+                          <div>
+                            <p>{formatDate(employee.contract_end_date)}</p>
+                            {isExpiringSoon(employee.contract_end_date) && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 mt-1">
+                                Expiring Soon
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 italic">Permanent</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(employee.status)}`}>

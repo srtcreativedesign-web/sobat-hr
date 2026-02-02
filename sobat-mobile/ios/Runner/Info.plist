@@ -51,6 +51,8 @@
 	<string>Aplikasi membutuhkan akses kamera untuk mengambil foto bukti pengajuan atau selfie absensi.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Aplikasi membutuhkan akses lokasi untuk memverifikasi posisi Anda saat melakukan absensi.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Aplikasi membutuhkan akses Face ID untuk verifikasi identitas payslip dan keamanan akun.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

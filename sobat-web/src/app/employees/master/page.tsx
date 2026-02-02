@@ -69,6 +69,15 @@ export default function EmployeeMasterPage() {
         return styles[status as keyof typeof styles] || styles.inactive;
     };
 
+    const isExpiringSoon = (dateString: string) => {
+        if (!dateString) return false;
+        const end = new Date(dateString);
+        const now = new Date();
+        const diffTime = end.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays <= 30 && diffDays >= 0;
+    };
+
     return (
         <DashboardLayout>
             <div className="p-6">
@@ -150,7 +159,16 @@ export default function EmployeeMasterPage() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {emp.contract_end_date ? new Date(emp.contract_end_date).toLocaleDateString('id-ID') : '-'}
+                                                {emp.contract_end_date ? (
+                                                    <div>
+                                                        <p>{new Date(emp.contract_end_date).toLocaleDateString('id-ID')}</p>
+                                                        {isExpiringSoon(emp.contract_end_date) && (
+                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 mt-1">
+                                                                Expiring Soon
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <button

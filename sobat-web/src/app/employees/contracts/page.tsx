@@ -17,6 +17,7 @@ interface Employee {
     organization: {
         name: string;
     };
+    track?: string;
 }
 
 export default function ContractsPage() {
@@ -25,6 +26,8 @@ export default function ContractsPage() {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<'all' | 'active' | 'expiring' | 'expired'>('all');
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedDivision, setSelectedDivision] = useState<string>('all');
+    const [selectedTrack, setSelectedTrack] = useState<string>('all');
 
     // Modal States
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -47,26 +50,6 @@ export default function ContractsPage() {
         }
     };
 
-    const handleGenerateContract = async (id: number, name: string) => {
-        try {
-            if (!confirm(`Generate renewal contract for ${name}?`)) return;
-
-            const response = await apiClient.post(`/contracts/generate-pdf/${id}`, {}, {
-                responseType: 'blob'
-            });
-
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `Kontrak_${name.replace(/\s+/g, '_')}.pdf`);
-            document.body.appendChild(link);
-            link.click();
-            link.parentNode?.removeChild(link);
-        } catch (error) {
-            console.error('Failed to generate contract:', error);
-            alert('Failed to generate contract PDF');
-        }
-    };
 
     const handleEditContract = (employee: Employee) => {
         setSelectedEmployee(employee);
@@ -81,11 +64,23 @@ export default function ContractsPage() {
         return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     };
 
+    const uniqueDivisions = Array.from(new Set(employees.map(e => e.department).filter(Boolean)))
+        .filter(div => !['CEO', 'Chief Executive Officer', 'COO', 'CFO', 'CMO', 'CTO'].includes(div)) // Exclude C-Level
+        .filter(div => !div.toLowerCase().startsWith('direktur')) // Exclude Directors
+        .filter(div => !div.toLowerCase().includes('holding')); // Exclude Holding/Organization names
+    const uniqueTracks = Array.from(new Set(employees.map(e => e.track).filter(Boolean)));
+
     const filteredEmployees = employees.filter(emp => {
         const matchesSearch = emp.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             emp.employee_code.toLowerCase().includes(searchTerm.toLowerCase());
 
         if (!matchesSearch) return false;
+
+        // Filter by Division
+        if (selectedDivision !== 'all' && emp.department !== selectedDivision) return false;
+
+        // Filter by Track
+        if (selectedTrack !== 'all' && emp.track !== selectedTrack) return false;
 
         const daysRemaining = calculateDaysRemaining(emp.contract_end_date);
 
@@ -126,14 +121,31 @@ export default function ContractsPage() {
                         <h1 className="text-2xl font-bold text-[#462e37]">Digital Contracts</h1>
                         <p className="text-gray-500 mt-1">Manage employee contracts and renewals</p>
                     </div>
-                    <div className="flex gap-3">
-                        <button
-                            onClick={() => router.push('/employees/contracts/template')}
-                            className="px-4 py-2 bg-white border border-gray-200 text-[#462e37] rounded-xl font-bold flex items-center gap-2 hover:bg-gray-50 transition-colors shadow-sm"
+                    <div className="flex gap-3 flex-wrap items-center">
+                        {/* Division Filter */}
+                        <select
+                            value={selectedDivision}
+                            onChange={(e) => setSelectedDivision(e.target.value)}
+                            className="px-4 py-2 bg-white border border-gray-200 text-[#462e37] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#462e37]/20 text-sm"
                         >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                            <span className="hidden sm:inline">Template Settings</span>
-                        </button>
+                            <option value="all">All Divisions</option>
+                            {uniqueDivisions.map(div => (
+                                <option key={div} value={div}>{div}</option>
+                            ))}
+                        </select>
+
+                        {/* Track Filter */}
+                        <select
+                            value={selectedTrack}
+                            onChange={(e) => setSelectedTrack(e.target.value)}
+                            className="px-4 py-2 bg-white border border-gray-200 text-[#462e37] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#462e37]/20 text-sm"
+                        >
+                            <option value="all">All Tracks</option>
+                            {uniqueTracks.map(track => (
+                                <option key={track} value={track}>{track ? (track.charAt(0).toUpperCase() + track.slice(1)) : 'Unknown'}</option>
+                            ))}
+                        </select>
+
                         <div className="relative">
                             <input
                                 type="text"
@@ -220,6 +232,7 @@ export default function ContractsPage() {
                                     <tr>
                                         <th className="px-6 py-4 text-left text-xs font-semibold text-[#462e37] uppercase tracking-wider">Employee</th>
                                         <th className="px-6 py-4 text-left text-xs font-semibold text-[#462e37] uppercase tracking-wider">Organization</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-[#462e37] uppercase tracking-wider">Track</th>
                                         <th className="px-6 py-4 text-left text-xs font-semibold text-[#462e37] uppercase tracking-wider">Contract End</th>
                                         <th className="px-6 py-4 text-left text-xs font-semibold text-[#462e37] uppercase tracking-wider">Status</th>
                                         <th className="px-6 py-4 text-right text-xs font-semibold text-[#462e37] uppercase tracking-wider">Action</th>
@@ -244,6 +257,17 @@ export default function ContractsPage() {
                                                 <td className="px-6 py-4">
                                                     <p className="text-sm text-gray-700">{emp.position || '-'}</p>
                                                     <p className="text-xs text-gray-400">{emp.organization?.name || '-'}</p>
+                                                    <p className="text-xs text-gray-500 mt-1">{emp.department || '-'}</p>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${emp.track === 'operational'
+                                                        ? 'bg-blue-50 text-blue-700'
+                                                        : emp.track === 'office'
+                                                            ? 'bg-purple-50 text-purple-700'
+                                                            : 'bg-gray-50 text-gray-600'
+                                                        }`}>
+                                                        {emp.track ? (emp.track.charAt(0).toUpperCase() + emp.track.slice(1)) : '-'}
+                                                    </span>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     {emp.contract_end_date ? (
@@ -284,12 +308,7 @@ export default function ContractsPage() {
                                                         >
                                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                                         </button>
-                                                        <button
-                                                            onClick={() => handleGenerateContract(emp.id, emp.full_name)}
-                                                            className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-[#462e37] hover:text-white hover:border-[#462e37] transition-all shadow-sm"
-                                                        >
-                                                            Generate PDF
-                                                        </button>
+
                                                     </div>
                                                 </td>
                                             </tr>

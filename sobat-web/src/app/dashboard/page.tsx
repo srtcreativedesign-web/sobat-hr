@@ -43,12 +43,22 @@ interface ContractExpiringEmployee {
   days_remaining: number;
 }
 
+interface RecentActivity {
+  id: string;
+  type: string;
+  message: string;
+  timestamp: string;
+  user: string;
+  status: string;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated, isInitialized, checkAuth, logout } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [contractExpiring, setContractExpiring] = useState<ContractExpiringEmployee[]>([]);
   const [latenessData, setLatenessData] = useState([]);
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -61,15 +71,18 @@ export default function DashboardPage() {
         setLoading(true);
 
         // Parallel Fetch
-        const [analyticsRes, contractsRes, trendRes] = await Promise.all([
+        const [analyticsRes, contractsRes, trendRes, recentRes] = await Promise.all([
           apiClient.get('/dashboard/analytics'),
           apiClient.get('/dashboard/contract-expiring?days=30'),
-          apiClient.get('/dashboard/attendance-trend')
+          apiClient.get('/dashboard/attendance-trend'),
+          apiClient.get('/dashboard/recent-activity')
         ]);
 
         setStats(analyticsRes.data);
         setContractExpiring(contractsRes.data.data.employees || []);
         setLatenessData(trendRes.data.data || []);
+        setRecentActivity(recentRes.data.data || []);
+
 
       } catch (error: any) {
         console.error('Failed to fetch dashboard data:', error);
@@ -368,15 +381,26 @@ export default function DashboardPage() {
             <div className="glass-card p-6">
               <h2 className="text-lg font-bold text-gray-800 mb-4">Recent Activity</h2>
               <div className="space-y-4">
-                {[1, 2, 3].map((_, i) => (
-                  <div key={i} className="flex gap-3 pb-3 border-b border-gray-50 last:border-0 last:pb-0">
-                    <div className="w-2 h-2 rounded-full bg-[#a9eae2] mt-2 shadow-[0_0_8px_#a9eae2]"></div>
-                    <div>
-                      <p className="text-sm text-gray-800">New employee <strong>Sarah Connor</strong> onboarded.</p>
-                      <p className="text-xs text-gray-400 mt-1">2 hours ago</p>
+                {recentActivity.length === 0 ? (
+                  <p className="text-sm text-gray-500">No recent activity.</p>
+                ) : (
+                  recentActivity.map((activity) => (
+                    <div key={activity.id} className="flex gap-3 pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                      <div className={`w-2 h-2 rounded-full mt-2 shadow-[0_0_8px] ${activity.type === 'employee_onboarding' ? 'bg-[#729892] shadow-[#729892]' : 'bg-orange-400 shadow-orange-400'
+                        }`}></div>
+                      <div>
+                        <p className="text-sm text-gray-800" dangerouslySetInnerHTML={{
+                          // Bold the user name if present in message
+                          __html: activity.message.replace(activity.user, `<strong>${activity.user}</strong>`)
+                        }}></p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {new Date(activity.timestamp).toLocaleDateString()} {new Date(activity.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {/* We could use a TimeAgo library if available, but simple date/time is fine for now */}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>

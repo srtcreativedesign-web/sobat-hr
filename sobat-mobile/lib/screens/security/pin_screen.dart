@@ -65,10 +65,9 @@ class _PinScreenState extends State<PinScreen> {
       final bool didAuthenticate = await auth.authenticate(
         localizedReason:
             'Silakan verifikasi identitas Anda untuk mengakses Payslip',
-        // options: const AuthenticationOptions(
-        //   stickyAuth: true,
-        //   biometricOnly: false,
-        // ),
+        persistAcrossBackgrounding: true,
+        biometricOnly: true,
+        sensitiveTransaction: false,
       );
 
       if (didAuthenticate && mounted) {
