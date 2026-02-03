@@ -58,6 +58,20 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [contractExpiring, setContractExpiring] = useState<ContractExpiringEmployee[]>([]);
   const [latenessData, setLatenessData] = useState([]);
+  const [lastSeenCount, setLastSeenCount] = useState(0);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('notif_seen_count');
+    if (saved) setLastSeenCount(parseInt(saved));
+  }, []);
+
+  const handleNotifClick = () => {
+    if (stats) {
+      localStorage.setItem('notif_seen_count', stats.requests.pending.toString());
+      setLastSeenCount(stats.requests.pending);
+    }
+    router.push('/notifications');
+  };
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -180,8 +194,8 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <button onClick={() => router.push('/notifications')} className="p-2 text-gray-400 hover:text-[#462e37] transition-colors relative">
-              {stats && stats.requests.pending > 0 && (
+            <button onClick={handleNotifClick} className="p-2 text-gray-400 hover:text-[#462e37] transition-colors relative">
+              {stats && stats.requests.pending > lastSeenCount && (
                 <>
                   <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
                   <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>

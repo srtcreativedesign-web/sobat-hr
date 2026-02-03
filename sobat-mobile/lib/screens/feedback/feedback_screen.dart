@@ -140,7 +140,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
             // Category Dropdown
             DropdownButtonFormField<String>(
-              value: _selectedCategory,
+              initialValue: _selectedCategory,
               decoration: InputDecoration(
                 labelText: AppLocalizations.of(context)!.feedbackCategory,
                 filled: true,
