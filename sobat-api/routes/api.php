@@ -16,8 +16,10 @@ use Illuminate\Support\Facades\Route;
 
 
 // Public routes
-Route::post('/auth/login', [App\Http\Controllers\Api\AuthController::class, 'login']);
-Route::post('/auth/register', [App\Http\Controllers\Api\AuthController::class, 'register']);
+Route::middleware(['throttle:login'])->group(function () {
+    Route::post('/auth/login', [App\Http\Controllers\Api\AuthController::class, 'login']);
+    Route::post('/auth/register', [App\Http\Controllers\Api\AuthController::class, 'register']);
+});
 Route::get('/announcements/active', [App\Http\Controllers\Api\AnnouncementController::class, 'getActive']);
 
 // Protected routes
@@ -29,8 +31,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/auth/password', [App\Http\Controllers\Api\AuthController::class, 'changePassword']);
 
     // Security PIN
-    Route::post('/security/pin/setup', [App\Http\Controllers\Api\SecurityController::class, 'setupPin']);
-    Route::post('/security/pin/verify', [App\Http\Controllers\Api\SecurityController::class, 'verifyPin']);
+    Route::middleware(['throttle:pin'])->group(function () {
+        Route::post('/security/pin/setup', [App\Http\Controllers\Api\SecurityController::class, 'setupPin']);
+        Route::post('/security/pin/verify', [App\Http\Controllers\Api\SecurityController::class, 'verifyPin']);
+    });
 
     // Employee routes
     Route::post('/employees/import-master', [App\Http\Controllers\Api\EmployeeController::class, 'importMaster']);
@@ -195,13 +199,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{id}', [App\Http\Controllers\FeedbackController::class, 'update']);
         Route::delete('/{id}', [App\Http\Controllers\FeedbackController::class, 'destroy']);
     });
-});
-
-// Public invitation routes
-Route::get('/debug/employee/{search}', function ($search) {
-    return App\Models\Employee::where('full_name', 'like', "%$search%")
-        ->orWhere('employee_code', $search)
-        ->get();
 });
 
 Route::get('/staff/invite/verify/{token}', [App\Http\Controllers\StaffInvitationController::class, 'verifyToken']);

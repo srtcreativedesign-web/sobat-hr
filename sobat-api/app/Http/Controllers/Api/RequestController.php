@@ -168,8 +168,8 @@ class RequestController extends Controller
                     }
                     \App\Models\SickLeaveDetail::create([
                         'request_id' => $requestModel->id,
-                        'start_date' => $request->start_date,
-                        'end_date' => $request->end_date,
+                        'start_date' => \Carbon\Carbon::parse($request->start_date)->format('Y-m-d'),
+                        'end_date' => \Carbon\Carbon::parse($request->end_date)->format('Y-m-d'),
                         'reason' => $request->description,
                         'attachment' => $request->attachments ? json_decode($request->attachments, true) : null,
                     ]);
