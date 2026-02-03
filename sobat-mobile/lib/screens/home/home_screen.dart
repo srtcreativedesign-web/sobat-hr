@@ -869,22 +869,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildAttendanceCard(User? user) {
-    // Only show if user has office placement (and thus coordinates)
-    // Using hasOfficeLocation field we added to User model
-    // if (user == null || !user.hasOfficeLocation) {
-    //   return const SizedBox.shrink();
-    // }
-    if (user == null) return const SizedBox.shrink(); // Safety check only
+    if (user == null) return const SizedBox.shrink();
 
     // Format Date
     final now = DateTime.now();
-    // Using intl package
-    final formattedDate = DateFormat('EEEE, d MMM y', 'id_ID').format(now);
+    final formattedDate = DateFormat(
+      'EEEE, d MMMM y',
+      'id_ID',
+    ).format(now); // Full month name
 
     // Determine Status
     String status = 'Belum Hadir';
     Color statusColor = Colors.orange;
-    Color buttonColor = AppTheme.colorCyan;
     String buttonText = 'Clock In Sekarang';
     IconData buttonIcon = Icons.login;
     bool isButtonDisabled = false;
@@ -894,261 +890,333 @@ class _HomeScreenState extends State<HomeScreen> {
         (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday);
     if (isWeekend) {
       status = 'Libur Akhir Pekan';
-      statusColor = Colors.red;
-      // Disable button or allow Overtime? User asked for "Sabtu Minggu Libur".
-      // Let's disable for now to reflect "Libur".
+      statusColor = Colors.redAccent;
       isButtonDisabled = true;
-      buttonColor = Colors.grey;
       buttonText = 'Libur';
     }
 
     if (_isLoadingAttendance) {
-      return const Center(child: CircularProgressIndicator());
+      return Container(
+        height: 200,
+        margin: const EdgeInsets.symmetric(horizontal: 24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     if (_todayAttendance != null) {
       if (_todayAttendance!['check_out'] != null) {
         status = 'Sudah Selesai';
-        statusColor = Colors.green;
+        statusColor = Colors.lightGreenAccent;
         buttonText = 'Absen Selesai';
         isButtonDisabled = true;
-        buttonColor = Colors.grey;
         buttonIcon = Icons.check_circle;
       } else if (_todayAttendance!['check_in'] != null) {
-        // Check for specific statuses
         String statusStr =
             _todayAttendance!['status']?.toString().toLowerCase() ?? '';
 
         if (statusStr == 'pending') {
           status = 'Menunggu Approval';
-          statusColor = Colors.orange;
-          buttonText = 'Clock Out Sekarang'; // Still allow clock out? Yes.
-          buttonColor = AppTheme.colorEggplant;
+          statusColor = Colors.amberAccent;
+          buttonText = 'Clock Out Sekarang';
           buttonIcon = Icons.logout;
           isButtonDisabled = false;
         } else {
           status = 'Sedang Bekerja';
-          statusColor = Colors.blue;
+          statusColor = Colors.lightBlueAccent;
           buttonText = 'Clock Out Sekarang';
-          buttonColor = AppTheme.colorEggplant;
           buttonIcon = Icons.logout;
           isButtonDisabled = false;
         }
       }
-      // If check_in is null but record exists, we treat as default/error, or 'Belum Hadir'.
-      // With isWeekend check above, 'Libur' might be overwritten if record exists?
-      // If record exists (someone checked in on weekend), we should show status.
+    }
+
+    // Gradient Colors based on status (simplified)
+    List<Color> gradientColors = [
+      const Color(0xFF462E37),
+      const Color(0xFF6A4C59),
+    ]; // Default Dark
+    if (status == 'Sedang Bekerja') {
+      gradientColors = [const Color(0xFF2196F3), const Color(0xFF64B5F6)];
+    } else if (status == 'Sudah Selesai') {
+      gradientColors = [const Color(0xFF43A047), const Color(0xFF66BB6A)];
     }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: gradientColors,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: gradientColors[0].withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'KEHADIRAN HARI INI',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: AppTheme.textLight,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    formattedDate,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textDark,
-                    ),
-                  ),
-                ],
+          // Background Pattern (Optional subtle circles)
+          Positioned(
+            top: -20,
+            right: -20,
+            child: Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.05),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
+            ),
+          ),
+          Positioned(
+            bottom: -30,
+            left: -30,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.05),
+              ),
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header: Date & Status
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(Icons.circle, size: 8, color: statusColor),
-                    const SizedBox(width: 8),
-                    Text(
-                      status,
-                      style: TextStyle(
-                        color: statusColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          formattedDate,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        // Real-time Clock
+                        StreamBuilder(
+                          stream: Stream.periodic(
+                            const Duration(seconds: 1),
+                            (i) => i,
+                          ),
+                          builder: (context, snapshot) {
+                            return Text(
+                              DateFormat('HH:mm:ss').format(DateTime.now()),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                height: 1.2,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.circle, size: 8, color: statusColor),
+                          const SizedBox(width: 8),
+                          Text(
+                            status,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-          // Times
-          Row(
-            children: [
-              Expanded(
-                child: Container(
+                // Times Container (Glassmorphism)
+                Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(16),
+                    color: Colors.black.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.1),
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.login,
-                            size: 16,
-                            color: AppTheme.colorCyan,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'JAM MASUK',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: AppTheme.textLight,
-                              fontWeight: FontWeight.bold,
+                      // Check In
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.login_rounded,
+                                  color: Colors.white70,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'JAM MASUK',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.7),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 4),
+                            Text(
+                              (_todayAttendance != null &&
+                                      _todayAttendance!['check_in'] != null)
+                                  ? (_todayAttendance!['check_in']
+                                                .toString()
+                                                .length >=
+                                            5
+                                        ? _todayAttendance!['check_in']
+                                              .toString()
+                                              .substring(0, 5)
+                                        : _todayAttendance!['check_in']
+                                              .toString())
+                                  : '--:--',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        (_todayAttendance != null &&
-                                _todayAttendance!['check_in'] != null)
-                            ? (_todayAttendance!['check_in']
-                                          .toString()
-                                          .length >=
-                                      5
-                                  ? _todayAttendance!['check_in']
-                                        .toString()
-                                        .substring(0, 5)
-                                  : _todayAttendance!['check_in'].toString())
-                            : '--:--',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textDark,
+                      Container(
+                        width: 1,
+                        height: 40,
+                        color: Colors.white.withValues(alpha: 0.2),
+                      ),
+                      const SizedBox(width: 16),
+                      // Check Out
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.logout_rounded,
+                                  color: Colors.white70,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'JAM KELUAR',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.7),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              (_todayAttendance != null &&
+                                      _todayAttendance!['check_out'] != null)
+                                  ? (_todayAttendance!['check_out']
+                                                .toString()
+                                                .length >=
+                                            5
+                                        ? _todayAttendance!['check_out']
+                                              .toString()
+                                              .substring(0, 5)
+                                        : _todayAttendance!['check_out']
+                                              .toString())
+                                  : '--:--',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.logout,
-                            size: 16,
-                            color: AppTheme.textLight,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'JAM KELUAR',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: AppTheme.textLight,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        (_todayAttendance != null &&
-                                _todayAttendance!['check_out'] != null)
-                            ? (_todayAttendance!['check_out']
-                                          .toString()
-                                          .length >=
-                                      5
-                                  ? _todayAttendance!['check_out']
-                                        .toString()
-                                        .substring(0, 5)
-                                  : _todayAttendance!['check_out'].toString())
-                            : '--:--',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textLight,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
 
-          // Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: isButtonDisabled
-                  ? null
-                  : () {
-                      Navigator.pushNamed(
-                        context,
-                        '/attendance',
-                      ).then((_) => _loadTodayAttendance());
-                    },
-              icon: Icon(buttonIcon),
-              label: Text(buttonText),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: buttonColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                const SizedBox(height: 20),
+
+                // Action Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: isButtonDisabled
+                        ? null
+                        : () {
+                            Navigator.pushNamed(
+                              context,
+                              '/attendance',
+                            ).then((_) => _loadTodayAttendance());
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: gradientColors[0],
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(buttonIcon, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          buttonText,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                elevation: 0,
-                textStyle: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
+              ],
             ),
           ),
         ],

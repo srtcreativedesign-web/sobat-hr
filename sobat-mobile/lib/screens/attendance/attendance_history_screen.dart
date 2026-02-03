@@ -103,7 +103,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<int>(
-                    value: _selectedMonth,
+                    initialValue: _selectedMonth,
                     decoration: InputDecoration(
                       labelText: 'Bulan',
                       border: OutlineInputBorder(
@@ -136,7 +136,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: DropdownButtonFormField<int>(
-                    value: _selectedYear,
+                    initialValue: _selectedYear,
                     decoration: InputDecoration(
                       labelText: 'Tahun',
                       border: OutlineInputBorder(
