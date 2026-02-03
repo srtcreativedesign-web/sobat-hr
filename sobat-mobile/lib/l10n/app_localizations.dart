@@ -323,7 +323,7 @@ abstract class AppLocalizations {
   /// No description provided for @madeWithLove.
   ///
   /// In en, this message translates to:
-  /// **'Made with ❤️ in Indonesia'**
+  /// **'Developed by Tech Team of SRT'**
   String get madeWithLove;
 
   /// No description provided for @welcome.

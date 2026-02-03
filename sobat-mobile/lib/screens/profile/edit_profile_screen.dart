@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../config/api_config.dart';
 import '../../config/theme.dart';
-import '../../config/theme.dart';
+
 import '../../services/auth_service.dart';
 import 'enroll_face_screen.dart';
 import '../../l10n/app_localizations.dart';
@@ -149,7 +149,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _loadInitial() async {
+    // Determine fresh profile from API first to ensure we have latest data
+    await _authService.getProfile();
     final current = await _authService.getCurrentUser();
+
+    // DEBUG: Inspect raw data
+    debugPrint('EDIT PROFILE RAW USER: $current');
+
     if (current != null) {
       // top-level user fields
       _nameCtrl.text = current['name'] ?? '';
@@ -161,6 +167,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           current['employee'] ??
           current['employee_data'] ??
           current['employee_record'];
+
+      debugPrint('EDIT PROFILE EMP DATA: $emp');
+
       if (emp != null && emp is Map<String, dynamic>) {
         _employeeRecordId = emp['id'] as int?;
         _joinDateEditCount = emp['join_date_edit_count'] ?? 0;
@@ -177,9 +186,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         }
 
         _placeOfBirthCtrl.text = emp['place_of_birth'] ?? '';
-        if (emp['date_of_birth'] != null) {
+        // Check for both 'date_of_birth' and 'birth_date'
+        final dob = emp['date_of_birth'] ?? emp['birth_date'];
+        if (dob != null) {
           try {
-            _dateOfBirth = DateTime.parse(emp['date_of_birth']);
+            _dateOfBirth = DateTime.parse(dob);
           } catch (_) {}
         }
         if (emp['join_date'] != null) {
@@ -396,8 +407,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'phone': _phoneCtrl.text.trim(),
         'employee_code': _employeeIdCtrl.text.trim(),
         'place_of_birth': _placeOfBirthCtrl.text.trim(),
-        'date_of_birth': _dateOfBirth?.toIso8601String(),
-        'join_date': _joinDate?.toIso8601String(),
+        'date_of_birth': _dateOfBirth != null
+            ? DateFormat('yyyy-MM-dd').format(_dateOfBirth!)
+            : null,
+        'join_date': _joinDate != null
+            ? DateFormat('yyyy-MM-dd').format(_joinDate!)
+            : null,
         'ktp_address': _ktpAddressCtrl.text.trim(),
         'current_address': _currentAddressCtrl.text.trim(),
         'gender': _gender,
@@ -454,8 +469,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'phone': _phoneCtrl.text.trim(),
         'employee_code': _employeeIdCtrl.text.trim(),
         'place_of_birth': _placeOfBirthCtrl.text.trim(),
-        'date_of_birth': _dateOfBirth?.toIso8601String(),
-        'join_date': _joinDate?.toIso8601String(),
+        'date_of_birth': _dateOfBirth != null
+            ? DateFormat('yyyy-MM-dd').format(_dateOfBirth!)
+            : null,
+        'join_date': _joinDate != null
+            ? DateFormat('yyyy-MM-dd').format(_joinDate!)
+            : null,
         'ktp_address': _ktpAddressCtrl.text.trim(),
         'current_address': _currentAddressCtrl.text.trim(),
         'gender': _gender,

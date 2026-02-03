@@ -318,6 +318,17 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     bool canCheckIn = !hasCheckedIn;
     bool canCheckOut = hasCheckedIn && !hasCheckedOut;
 
+    // Gradient Colors based on status
+    List<Color> gradientColors = [
+      const Color(0xFF462E37),
+      const Color(0xFF6A4C59),
+    ]; // Default Dark
+    if (canCheckOut) {
+      gradientColors = [const Color(0xFF2196F3), const Color(0xFF64B5F6)];
+    } else if (hasCheckedOut) {
+      gradientColors = [const Color(0xFF43A047), const Color(0xFF66BB6A)];
+    }
+
     if (_officeLocation == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Presensi')),
@@ -516,306 +527,360 @@ class _AttendanceScreenState extends State<AttendanceScreen>
             bottom: 32,
             left: 20,
             right: 20,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.5),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: gradientColors,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: gradientColors[0].withValues(alpha: 0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Toggle Attendance Type (Only if not checked in)
-                      if (canCheckIn) ...[
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 20),
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(color: Colors.grey.shade300),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: () => setState(
-                                    () => _attendanceType = 'office',
-                                  ),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 200),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: _attendanceType == 'office'
-                                          ? Colors.white
-                                          : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(25),
-                                      boxShadow: _attendanceType == 'office'
-                                          ? [
-                                              BoxShadow(
-                                                color: Colors.black12,
-                                                blurRadius: 4,
-                                                spreadRadius: 1,
-                                              ),
-                                            ]
-                                          : [],
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      'Absen Kantor',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: _attendanceType == 'office'
-                                            ? AppTheme.colorEggplant
-                                            : Colors.grey,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: () =>
-                                      setState(() => _attendanceType = 'field'),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 200),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: _attendanceType == 'field'
-                                          ? AppTheme.colorCyan
-                                          : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(25),
-                                      boxShadow: _attendanceType == 'field'
-                                          ? [
-                                              BoxShadow(
-                                                color: AppTheme.colorCyan
-                                                    .withValues(alpha: 0.4),
-                                                blurRadius: 4,
-                                                spreadRadius: 1,
-                                              ),
-                                            ]
-                                          : [],
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      'Absen Luar',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: _attendanceType == 'field'
-                                            ? Colors.white
-                                            : Colors.grey,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  // Background Pattern
+                  Positioned(
+                    top: -20,
+                    right: -20,
+                    child: Container(
+                      width: 150,
+                      height: 150,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.05),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: -30,
+                    left: -30,
+                    child: Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.05),
+                      ),
+                    ),
+                  ),
 
-                        // Field Notes Input
-                        if (_attendanceType == 'field') ...[
-                          TextField(
-                            controller: _fieldNotesController,
-                            decoration: InputDecoration(
-                              labelText: 'Keterangan (Wajib)',
-                              hintText: 'Contoh: Meeting dengan Client A',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey.shade50,
-                            ),
-                            maxLines: 2,
-                          ),
-                          const SizedBox(height: 20),
-                        ],
-                      ],
-
-                      // Show Active Type if Checked In
-                      if (!canCheckIn) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 8,
-                            horizontal: 12,
-                          ),
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color:
-                                (_todayAttendance?['attendance_type'] ==
-                                    'field')
-                                ? AppTheme.colorCyan.withValues(alpha: 0.1)
-                                : Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color:
-                                  (_todayAttendance?['attendance_type'] ==
-                                      'field')
-                                  ? AppTheme.colorCyan
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                (_todayAttendance?['attendance_type'] ==
-                                        'field')
-                                    ? Icons.commute
-                                    : Icons.store,
-                                size: 16,
-                                color:
-                                    (_todayAttendance?['attendance_type'] ==
-                                        'field')
-                                    ? AppTheme.colorCyan
-                                    : Colors.grey,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                (_todayAttendance?['attendance_type'] ==
-                                        'field')
-                                    ? 'Mode: Absen Luar (Dinas)'
-                                    : 'Mode: Absen Kantor',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color:
-                                      (_todayAttendance?['attendance_type'] ==
-                                          'field')
-                                      ? AppTheme.colorCyan
-                                      : Colors.black54,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-
-                      // Location Info
-                      Row(
-                        children: [
+                  // Content
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Toggle Attendance Type (Only if not checked in)
+                        if (canCheckIn) ...[
                           Container(
-                            padding: const EdgeInsets.all(10),
+                            margin: const EdgeInsets.only(bottom: 20),
+                            padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: AppTheme.colorCyan.withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
+                              color: Colors.black.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(30),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.1),
+                              ),
                             ),
-                            child: const Icon(
-                              Icons.my_location,
-                              color: AppTheme.colorCyan,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            child: Row(
                               children: [
-                                Text(
-                                  'Lokasi Anda',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: AppTheme.textLight,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1,
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () => setState(
+                                      () => _attendanceType = 'office',
+                                    ),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _attendanceType == 'office'
+                                            ? Colors.white.withValues(
+                                                alpha: 0.2,
+                                              )
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(25),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        'Absen Kantor',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: _attendanceType == 'office'
+                                              ? Colors.white
+                                              : Colors.white70,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () => setState(
+                                      () => _attendanceType = 'field',
+                                    ),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _attendanceType == 'field'
+                                            ? Colors.white.withValues(
+                                                alpha: 0.2,
+                                              )
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(25),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        'Absen Luar',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: _attendanceType == 'field'
+                                              ? Colors.white
+                                              : Colors.white70,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Field Notes Input
+                          if (_attendanceType == 'field') ...[
+                            TextField(
+                              controller: _fieldNotesController,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                labelText: 'Keterangan (Wajib)',
+                                labelStyle: const TextStyle(
+                                  color: Colors.white70,
+                                ),
+                                hintText: 'Contoh: Meeting dengan Client A',
+                                hintStyle: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.white.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.white.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                filled: true,
+                                fillColor: Colors.black.withValues(alpha: 0.1),
+                              ),
+                              maxLines: 2,
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                        ],
+
+                        // Show Active Type if Checked In
+                        if (!canCheckIn) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 8,
+                              horizontal: 12,
+                            ),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  (_todayAttendance?['attendance_type'] ==
+                                          'field')
+                                      ? Icons.commute
+                                      : Icons.store,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 8),
                                 Text(
-                                  _currentAddress ?? 'Mencari lokasi...',
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppTheme.textDark,
+                                  (_todayAttendance?['attendance_type'] ==
+                                          'field')
+                                      ? 'Mode: Absen Luar (Dinas)'
+                                      : 'Mode: Absen Kantor',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
                                   ),
                                 ),
                               ],
                             ),
                           ),
                         ],
-                      ),
 
-                      const SizedBox(height: 24),
-                      Divider(height: 1, color: Colors.grey.shade200),
-                      const SizedBox(height: 24),
-
-                      // Action Buttons
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed:
-                                  (canCheckIn &&
-                                      !_isLoading &&
-                                      (_attendanceType == 'field' ||
-                                          _isWithinRange))
-                                  ? _handleCheckIn
-                                  : null,
-                              icon: const Icon(Icons.login),
-                              label: const Text('Masuk'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.colorCyan,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                disabledBackgroundColor: Colors.grey.shade300,
-                              ),
+                        // Location Info
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.1),
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed:
-                                  (canCheckOut && _isWithinRange && !_isLoading)
-                                  ? _handleCheckOut
-                                  : null,
-                              icon: const Icon(Icons.logout),
-                              label: const Text('Pulang'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.colorEggplant,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  shape: BoxShape.circle,
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                child: const Icon(
+                                  Icons.my_location,
+                                  color: Colors.white,
+                                  size: 20,
                                 ),
-                                disabledBackgroundColor: Colors.grey.shade300,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Lokasi Anda',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.white70,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 1,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      _currentAddress ?? 'Mencari lokasi...',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Action Buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed:
+                                    (canCheckIn &&
+                                        !_isLoading &&
+                                        (_attendanceType == 'field' ||
+                                            _isWithinRange))
+                                    ? _handleCheckIn
+                                    : null,
+                                icon: Icon(
+                                  Icons.login,
+                                  color: gradientColors[0],
+                                ),
+                                label: Text('Masuk'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: gradientColors[0],
+                                  disabledBackgroundColor: Colors.white,
+                                  disabledForegroundColor: Colors.grey,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 0,
+                                  textStyle: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed:
+                                    (canCheckOut &&
+                                        _isWithinRange &&
+                                        !_isLoading)
+                                    ? _handleCheckOut
+                                    : null,
+                                icon: Icon(
+                                  Icons.logout,
+                                  color: canCheckOut
+                                      ? gradientColors[0]
+                                      : Colors.grey,
+                                ),
+                                label: Text('Pulang'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: gradientColors[0],
+                                  disabledBackgroundColor: Colors.white,
+                                  disabledForegroundColor: Colors.grey,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 0,
+                                  textStyle: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ),

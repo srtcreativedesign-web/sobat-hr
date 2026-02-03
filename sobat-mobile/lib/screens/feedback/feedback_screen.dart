@@ -1,7 +1,8 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
+// http removed
 import 'dart:convert';
 import '../../config/theme.dart';
 import '../../config/api_config.dart';
@@ -51,29 +52,33 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     try {
       final token = await StorageService.getToken();
 
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('${ApiConfig.baseUrl}/feedbacks'),
-      );
+      final dio = Dio();
+      dio.options.headers['Authorization'] = 'Bearer $token';
+      dio.options.headers['Accept'] = 'application/json';
 
-      request.headers['Authorization'] = 'Bearer $token';
-      request.headers['Accept'] = 'application/json';
-
-      request.fields['subject'] = _subjectController.text;
-      request.fields['category'] = _selectedCategory;
-      request.fields['description'] = _descriptionController.text;
+      final formData = FormData.fromMap({
+        'subject': _subjectController.text,
+        'category': _selectedCategory,
+        'description': _descriptionController.text,
+      });
 
       if (_screenshot != null) {
-        request.files.add(
-          await http.MultipartFile.fromPath('screenshot', _screenshot!.path),
+        formData.files.add(
+          MapEntry(
+            'screenshot',
+            await MultipartFile.fromFile(_screenshot!.path),
+          ),
         );
       }
 
-      final response = await request.send();
-      final responseData = await response.stream.bytesToString();
-      final jsonData = json.decode(responseData);
+      final response = await dio.post(
+        '${ApiConfig.baseUrl}/feedbacks',
+        data: formData,
+      );
 
-      if (response.statusCode == 201 && jsonData['success'] == true) {
+      // Dio throws DioException on error status codes by default depending on config,
+      // assuming standard usage or 2xx success check:
+      if (response.statusCode == 201 && response.data['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -84,7 +89,19 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
           Navigator.pop(context);
         }
       } else {
-        throw Exception(jsonData['message'] ?? 'Failed to submit feedback');
+        throw Exception(
+          response.data['message'] ?? 'Failed to submit feedback',
+        );
+      }
+    } on DioException catch (e) {
+      if (mounted) {
+        final message = e.response?.data['message'] ?? e.message ?? 'Error';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $message'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {

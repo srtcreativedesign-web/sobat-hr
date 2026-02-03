@@ -120,7 +120,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get cancel => 'Batal';
 
   @override
-  String get madeWithLove => 'Dibuat dengan ❤️ di Indonesia';
+  String get madeWithLove => 'Developed by Tech Team of SRT';
 
   @override
   String get welcome => 'Selamat Datang';
