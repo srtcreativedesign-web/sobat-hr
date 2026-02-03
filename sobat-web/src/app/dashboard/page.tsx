@@ -150,27 +150,7 @@ export default function DashboardPage() {
     return 'Good Evening';
   };
 
-  const handleGenerateContract = async (id: number, name: string) => {
-    try {
-      if (!confirm(`Generate renewal contract for ${name}?`)) return;
 
-      const response = await apiClient.post(`/contracts/generate-pdf/${id}`, {}, {
-        responseType: 'blob'
-      });
-
-      // Create blob link to download
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Kontrak_${name.replace(/\s+/g, '_')}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode?.removeChild(link);
-    } catch (error) {
-      console.error('Failed to generate contract:', error);
-      alert('Failed to generate contract PDF');
-    }
-  };
 
 
 
@@ -200,7 +180,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <button className="p-2 text-gray-400 hover:text-[#462e37] transition-colors relative">
+            <button onClick={() => router.push('/notifications')} className="p-2 text-gray-400 hover:text-[#462e37] transition-colors relative">
               {stats && stats.requests.pending > 0 && (
                 <>
                   <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
@@ -286,7 +266,7 @@ export default function DashboardPage() {
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Role</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Expiry</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Action</th>
+
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -311,7 +291,7 @@ export default function DashboardPage() {
                           <p className="text-sm font-medium text-gray-900">
                             {new Date(emp.contract_end_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </p>
-                          <p className="text-xs text-red-500 font-medium">{emp.days_remaining} days left</p>
+                          <p className="text-xs text-red-500 font-medium">{Math.round(emp.days_remaining)} days left</p>
                         </td>
                         <td className="px-4 py-3">
                           <span className={`px-2 py-1 rounded-full text-xs font-bold ${emp.days_remaining <= 7 ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-600'
@@ -319,18 +299,7 @@ export default function DashboardPage() {
                             {emp.days_remaining <= 7 ? 'CRITICAL' : 'WARNING'}
                           </span>
                         </td>
-                        <td className="px-4 py-3">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleGenerateContract(emp.id, emp.user.name);
-                            }}
-                            className="px-3 py-1.5 bg-[#462e37] text-white text-xs font-medium rounded-lg hover:bg-[#2d1e24] transition-colors flex items-center gap-1 shadow-sm"
-                          >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                            Generate PDF
-                          </button>
-                        </td>
+
                       </tr>
                     ))}
                   </tbody>

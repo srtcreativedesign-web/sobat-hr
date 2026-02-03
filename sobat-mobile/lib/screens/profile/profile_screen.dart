@@ -156,7 +156,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       } else if (index == 1) {
                         Navigator.pushNamed(context, '/submission/list');
                       } else if (index == 3) {
-                        Navigator.pushNamed(context, '/payroll');
+                        // Wallet Button Disabled
+                        // Navigator.pushNamed(context, '/payroll');
                       }
                     },
                   ),
