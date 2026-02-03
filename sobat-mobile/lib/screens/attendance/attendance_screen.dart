@@ -319,14 +319,25 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     bool canCheckOut = hasCheckedIn && !hasCheckedOut;
 
     // Gradient Colors based on status
-    List<Color> gradientColors = [
-      const Color(0xFF462E37),
-      const Color(0xFF6A4C59),
-    ]; // Default Dark
+    // Gradient & Text Colors
+    List<Color> gradientColors = AppTheme.gradientDefault;
+    Color textColor = AppTheme.colorEggplant;
+    Color subTextColor = AppTheme.colorEggplant.withValues(alpha: 0.7);
+    Color glassBorderColor = AppTheme.colorEggplant.withValues(alpha: 0.1);
+    Color buttonTextColor = AppTheme.colorEggplant;
+
     if (canCheckOut) {
-      gradientColors = [const Color(0xFF2196F3), const Color(0xFF64B5F6)];
+      gradientColors = AppTheme.gradientWorking;
+      textColor = Colors.white;
+      subTextColor = Colors.white.withValues(alpha: 0.7);
+      glassBorderColor = Colors.white.withValues(alpha: 0.1);
+      buttonTextColor = gradientColors[0];
     } else if (hasCheckedOut) {
-      gradientColors = [const Color(0xFF43A047), const Color(0xFF66BB6A)];
+      gradientColors = AppTheme.gradientFinished;
+      textColor = Colors.white;
+      subTextColor = Colors.white.withValues(alpha: 0.7);
+      glassBorderColor = Colors.white.withValues(alpha: 0.1);
+      buttonTextColor = gradientColors[0];
     }
 
     if (_officeLocation == null) {
@@ -606,9 +617,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                       ),
                                       decoration: BoxDecoration(
                                         color: _attendanceType == 'office'
-                                            ? Colors.white.withValues(
-                                                alpha: 0.2,
-                                              )
+                                            ? textColor.withValues(alpha: 0.2)
                                             : Colors.transparent,
                                         borderRadius: BorderRadius.circular(25),
                                       ),
@@ -618,8 +627,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: _attendanceType == 'office'
-                                              ? Colors.white
-                                              : Colors.white70,
+                                              ? textColor
+                                              : subTextColor,
                                         ),
                                       ),
                                     ),
@@ -639,9 +648,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                       ),
                                       decoration: BoxDecoration(
                                         color: _attendanceType == 'field'
-                                            ? Colors.white.withValues(
-                                                alpha: 0.2,
-                                              )
+                                            ? textColor.withValues(alpha: 0.2)
                                             : Colors.transparent,
                                         borderRadius: BorderRadius.circular(25),
                                       ),
@@ -651,8 +658,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: _attendanceType == 'field'
-                                              ? Colors.white
-                                              : Colors.white70,
+                                              ? textColor
+                                              : subTextColor,
                                         ),
                                       ),
                                     ),
@@ -666,15 +673,13 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                           if (_attendanceType == 'field') ...[
                             TextField(
                               controller: _fieldNotesController,
-                              style: const TextStyle(color: Colors.white),
+                              style: TextStyle(color: textColor),
                               decoration: InputDecoration(
                                 labelText: 'Keterangan (Wajib)',
-                                labelStyle: const TextStyle(
-                                  color: Colors.white70,
-                                ),
+                                labelStyle: TextStyle(color: subTextColor),
                                 hintText: 'Contoh: Meeting dengan Client A',
                                 hintStyle: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.5),
+                                  color: textColor.withValues(alpha: 0.5),
                                 ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -716,10 +721,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                             ),
                             margin: const EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
+                              color: textColor.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.3),
+                                color: textColor.withValues(alpha: 0.3),
                               ),
                             ),
                             child: Row(
@@ -730,7 +735,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                       ? Icons.commute
                                       : Icons.store,
                                   size: 16,
-                                  color: Colors.white,
+                                  color: textColor,
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
@@ -738,9 +743,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                           'field')
                                       ? 'Mode: Absen Luar (Dinas)'
                                       : 'Mode: Absen Kantor',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                    color: textColor,
                                   ),
                                 ),
                               ],
@@ -752,11 +757,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.1),
+                            color: Colors.black.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.1),
-                            ),
+                            border: Border.all(color: glassBorderColor),
                           ),
                           child: Row(
                             children: [
@@ -818,14 +821,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                             _isWithinRange))
                                     ? _handleCheckIn
                                     : null,
-                                icon: Icon(
-                                  Icons.login,
-                                  color: gradientColors[0],
-                                ),
+                                icon: Icon(Icons.login, color: buttonTextColor),
                                 label: Text('Masuk'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
-                                  foregroundColor: gradientColors[0],
+                                  foregroundColor: buttonTextColor,
                                   disabledBackgroundColor: Colors.white,
                                   disabledForegroundColor: Colors.grey,
                                   padding: const EdgeInsets.symmetric(
@@ -853,13 +853,13 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 icon: Icon(
                                   Icons.logout,
                                   color: canCheckOut
-                                      ? gradientColors[0]
+                                      ? buttonTextColor
                                       : Colors.grey,
                                 ),
                                 label: Text('Pulang'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
-                                  foregroundColor: gradientColors[0],
+                                  foregroundColor: buttonTextColor,
                                   disabledBackgroundColor: Colors.white,
                                   disabledForegroundColor: Colors.grey,
                                   padding: const EdgeInsets.symmetric(

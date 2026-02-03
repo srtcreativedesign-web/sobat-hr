@@ -46,7 +46,6 @@ Aplikasi tidak boleh terlihat kaku seperti dashboard admin konvensional. Harus t
 -   **Headings:** Bold, often with gradients (`bg-clip-text`).
 -   **Readability:** High contrast, ample whitespace, strict hierarchy.
 
----
 
 ## 2. SYSTEM ARCHITECTURE & ACCESS LEVEL
 

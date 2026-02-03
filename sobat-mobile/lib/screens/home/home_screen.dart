@@ -1,4 +1,5 @@
 import 'package:sobat_hr/config/api_config.dart';
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -39,6 +40,11 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingPayroll = true;
   List<Map<String, dynamic>> _announcements = [];
   bool _isLoadingAnnouncements = true;
+
+  // Carousel State
+  late PageController _pageController;
+  Timer? _carouselTimer;
+  int _currentAnnouncementIndex = 0;
   Map<String, dynamic>? _todayAttendance;
   bool _isLoadingAttendance = true;
   int _leaveBalance = 0;
@@ -53,8 +59,16 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingRecentActivities = true;
 
   @override
+  void dispose() {
+    _carouselTimer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
+    _pageController = PageController(viewportFraction: 0.92);
     // Data is loaded by AuthProvider in main.dart
     _loadTodayAttendance();
     _loadLeaveBalance();
@@ -297,6 +311,25 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _startAutoScroll() {
+    _carouselTimer?.cancel();
+    if (_announcements.length > 1) {
+      _carouselTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+        if (_pageController.hasClients) {
+          int nextPage = _currentAnnouncementIndex + 1;
+          if (nextPage >= _announcements.length) {
+            nextPage = 0;
+          }
+          _pageController.animateToPage(
+            nextPage,
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.fastOutSlowIn,
+          );
+        }
+      });
+    }
+  }
+
   Future<void> _loadAnnouncements() async {
     try {
       final data = await AnnouncementService().getAnnouncements(
@@ -307,6 +340,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _announcements = data;
           _isLoadingAnnouncements = false;
         });
+        _startAutoScroll();
       }
     } catch (e) {
       debugPrint('Error loading announcements: $e');
@@ -935,14 +969,25 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // Gradient Colors based on status (simplified)
-    List<Color> gradientColors = [
-      const Color(0xFF462E37),
-      const Color(0xFF6A4C59),
-    ]; // Default Dark
+    // Gradient & Text Colors
+    List<Color> gradientColors = AppTheme.gradientDefault;
+    Color textColor = AppTheme.colorEggplant;
+    Color subTextColor = AppTheme.colorEggplant.withValues(alpha: 0.7);
+    Color glassBorderColor = AppTheme.colorEggplant.withValues(alpha: 0.1);
+    Color buttonTextColor = AppTheme.colorEggplant;
+
     if (status == 'Sedang Bekerja') {
-      gradientColors = [const Color(0xFF2196F3), const Color(0xFF64B5F6)];
+      gradientColors = AppTheme.gradientWorking;
+      textColor = Colors.white;
+      subTextColor = Colors.white.withValues(alpha: 0.7);
+      glassBorderColor = Colors.white.withValues(alpha: 0.1);
+      buttonTextColor = gradientColors[0];
     } else if (status == 'Sudah Selesai') {
-      gradientColors = [const Color(0xFF43A047), const Color(0xFF66BB6A)];
+      gradientColors = AppTheme.gradientFinished;
+      textColor = Colors.white;
+      subTextColor = Colors.white.withValues(alpha: 0.7);
+      glassBorderColor = Colors.white.withValues(alpha: 0.1);
+      buttonTextColor = gradientColors[0];
     }
 
     return Container(
@@ -1004,8 +1049,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text(
                           formattedDate,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: textColor,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -1019,8 +1064,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           builder: (context, snapshot) {
                             return Text(
                               DateFormat('HH:mm:ss').format(DateTime.now()),
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: textColor,
                                 fontSize: 28,
                                 fontWeight: FontWeight.bold,
                                 height: 1.2,
@@ -1036,10 +1081,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: textColor.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.3),
+                          color: textColor.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
@@ -1048,8 +1093,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(width: 8),
                           Text(
                             status,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: textColor,
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
                             ),
@@ -1065,11 +1110,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.15),
+                    color: Colors.black.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.1),
-                    ),
+                    border: Border.all(color: glassBorderColor),
                   ),
                   child: Row(
                     children: [
@@ -1080,16 +1123,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.login_rounded,
-                                  color: Colors.white70,
+                                  color: subTextColor,
                                   size: 16,
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
                                   'JAM MASUK',
                                   style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.7),
+                                    color: subTextColor,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                     letterSpacing: 0.5,
@@ -1120,11 +1163,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
-                      Container(
-                        width: 1,
-                        height: 40,
-                        color: Colors.white.withValues(alpha: 0.2),
-                      ),
+                      Container(width: 1, height: 40, color: glassBorderColor),
                       const SizedBox(width: 16),
                       // Check Out
                       Expanded(
@@ -1133,16 +1172,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.logout_rounded,
-                                  color: Colors.white70,
+                                  color: subTextColor,
                                   size: 16,
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
                                   'JAM KELUAR',
                                   style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.7),
+                                    color: subTextColor,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                     letterSpacing: 0.5,
@@ -1164,8 +1203,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                         : _todayAttendance!['check_out']
                                               .toString())
                                   : '--:--',
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: textColor,
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -1193,7 +1232,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
-                      foregroundColor: gradientColors[0],
+                      foregroundColor: buttonTextColor,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -1650,150 +1689,221 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           )
         else
-          SizedBox(
-            height: 160,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              itemCount: _announcements.length,
-              itemBuilder: (context, index) {
-                final item = _announcements[index];
-                final isNews = item['category'] == 'news';
+          Column(
+            children: [
+              SizedBox(
+                height: 180,
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: _announcements.length,
+                  physics: const BouncingScrollPhysics(),
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentAnnouncementIndex = index;
+                    });
+                  },
+                  itemBuilder: (context, index) {
+                    final item = _announcements[index];
+                    final isNews = item['category'] == 'news';
+                    final imagePath = item['image_path'];
+                    final imageUrl = imagePath != null
+                        ? ApiConfig.baseUrl.replaceAll('/api', '') +
+                              '/storage/$imagePath'
+                        : null;
 
-                return Container(
-                  width: 300,
-                  margin: const EdgeInsets.only(right: 16),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    gradient: LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                      colors: isNews
-                          ? [
-                              AppTheme.colorEggplant.withValues(alpha: 0.9),
-                              AppTheme.colorEggplant.withValues(alpha: 0.7),
-                            ]
-                          : [Colors.orange.shade800, Colors.orange.shade600],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Stack(
-                    children: [
-                      // Decorative Circles
-                      Positioned(
-                        right: -10,
-                        top: -10,
-                        child: Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: 0.1),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: -30,
-                        right: -10,
-                        child: Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: 0.05),
-                          ),
-                        ),
-                      ),
-
-                      // Main Content
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    AnnouncementDetailScreen(item: item),
-                              ),
-                            );
-                          },
-                          borderRadius: BorderRadius.circular(20),
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    isNews ? 'PENGUMUMAN' : 'KEBIJAKAN',
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Expanded(
-                                  child: Text(
-                                    item['title'] ?? 'No Title',
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                      height: 1.2,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Baca selengkapnya',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.white.withValues(
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        gradient: imageUrl == null
+                            ? LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: isNews
+                                    ? [
+                                        AppTheme.colorEggplant.withValues(
                                           alpha: 0.9,
+                                        ),
+                                        AppTheme.colorEggplant.withValues(
+                                          alpha: 0.7,
+                                        ),
+                                      ]
+                                    : [
+                                        Colors.orange.shade800,
+                                        Colors.orange.shade600,
+                                      ],
+                              )
+                            : null,
+                        image: imageUrl != null
+                            ? DecorationImage(
+                                image: NetworkImage(imageUrl),
+                                fit: BoxFit.cover,
+                                colorFilter: ColorFilter.mode(
+                                  Colors.black.withValues(alpha: 0.3),
+                                  BlendMode.darken,
+                                ),
+                              )
+                            : null,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Stack(
+                        children: [
+                          // Gradient Overlay for Image
+                          if (imageUrl != null)
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    AppTheme.colorEggplant.withValues(
+                                      alpha: 0.9,
+                                    ),
+                                  ],
+                                  stops: const [0.3, 1.0],
+                                ),
+                              ),
+                            ),
+
+                          // Decorative Circles (Only if no image)
+                          if (imageUrl == null) ...[
+                            Positioned(
+                              right: -10,
+                              top: -10,
+                              child: Container(
+                                width: 100,
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: -30,
+                              right: -10,
+                              child: Container(
+                                width: 100,
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withValues(alpha: 0.05),
+                                ),
+                              ),
+                            ),
+                          ],
+
+                          // Main Content
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        AnnouncementDetailScreen(item: item),
+                                  ),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(20),
+                              child: Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.2,
+                                        ),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        isNews ? 'Berita' : 'Penting',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 4),
-                                    const Icon(
-                                      Icons.arrow_forward,
-                                      size: 12,
-                                      color: Colors.white,
+                                    const Spacer(),
+                                    Text(
+                                      item['title'] ?? 'Pengumuman',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          'Baca selengkapnya',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.white.withValues(
+                                              alpha: 0.9,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        const Icon(
+                                          Icons.arrow_forward,
+                                          size: 12,
+                                          color: Colors.white,
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ],
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Dots Indicator
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(_announcements.length, (index) {
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: _currentAnnouncementIndex == index ? 20 : 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: _currentAnnouncementIndex == index
+                          ? AppTheme.colorEggplant
+                          : Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  );
+                }),
+              ),
+            ],
           ),
       ],
     );

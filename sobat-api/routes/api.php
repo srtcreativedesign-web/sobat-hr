@@ -21,6 +21,13 @@ Route::middleware(['throttle:login'])->group(function () {
     Route::post('/auth/register', [App\Http\Controllers\Api\AuthController::class, 'register']);
 });
 Route::get('/announcements/active', [App\Http\Controllers\Api\AnnouncementController::class, 'getActive']);
+Route::post('/auth/forgot-password', [App\Http\Controllers\Api\PasswordResetController::class, 'request']); // Public Forgot Password
+
+Route::middleware(['auth:sanctum', 'role:super_admin,admin_cabang'])->group(function () {
+    Route::get('/admin/password-requests', [App\Http\Controllers\Api\PasswordResetController::class, 'index']);
+    Route::post('/admin/password-requests/{id}/approve', [App\Http\Controllers\Api\PasswordResetController::class, 'approve']);
+    Route::post('/admin/password-requests/{id}/reject', [App\Http\Controllers\Api\PasswordResetController::class, 'reject']);
+});
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {

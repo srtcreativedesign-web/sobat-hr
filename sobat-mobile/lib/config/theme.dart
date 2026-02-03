@@ -22,6 +22,25 @@ class AppTheme {
   static const Color error = Color(0xFFEF4444);
   static const Color info = Color(0xFF3B82F6);
 
+  // -- Attendance Gradients (Softer/Pastel) --
+  // 1. Default / Belum Hadir (Cyan like Navbar)
+  static const List<Color> gradientDefault = [
+    Color(0xFFA9EAE2), // Cyan Primary
+    Color(0xFF86D6CC), // Slightly darker cyan for gradient
+  ];
+
+  // 2. Working / Sedang Bekerja (Soft Blue)
+  static const List<Color> gradientWorking = [
+    Color(0xFF60A5FA), // Blue 400
+    Color(0xFF93C5FD), // Blue 300
+  ];
+
+  // 3. Finished / Sudah Selesai (Soft Sage/Emerald)
+  static const List<Color> gradientFinished = [
+    Color(0xFF34D399), // Emerald 400
+    Color(0xFF6EE7B7), // Emerald 300
+  ];
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,

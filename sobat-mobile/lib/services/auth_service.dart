@@ -265,4 +265,19 @@ class AuthService {
   Future<String?> getToken() async {
     return await StorageService.getToken();
   }
+
+  Future<void> forgotPassword(String phone) async {
+    try {
+      final response = await _dio.post(
+        '/auth/forgot-password',
+        data: {'phone': phone},
+      );
+      if (response.statusCode == 200) {
+        return;
+      }
+      throw Exception(response.data['message'] ?? 'Gagal mengirim permintaan');
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? e.message);
+    }
+  }
 }
