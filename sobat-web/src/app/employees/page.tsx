@@ -240,6 +240,38 @@ export default function EmployeesPage() {
     return diffDays <= 30 && diffDays >= 0;
   };
 
+  const handleExport = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (filterOrg) params.append('organization_id', filterOrg);
+      if (filterStatus) params.append('status', filterStatus);
+
+      const response = await apiClient.get(`/employees/export?${params.toString()}`, {
+        responseType: 'blob'
+      });
+
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      // Get filename from header if possible, or generate default
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'Data_Karyawan.xlsx';
+      if (contentDisposition) {
+        const matches = /filename="?([^"]+)"?/.exec(contentDisposition);
+        if (matches && matches[1]) filename = matches[1];
+      }
+
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Gagal mengexport data karyawan.');
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="p-6">
@@ -249,15 +281,26 @@ export default function EmployeesPage() {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Data Karyawan</h1>
             <p className="text-gray-600">Kelola data karyawan dan informasi kepegawaian</p>
           </div>
-          <button
-            onClick={() => setShowImportModal(true)}
-            className="px-4 py-2 bg-[#462e37] text-[#a9eae2] rounded-lg hover:bg-[#2d1e24] transition-colors font-medium flex items-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
-            Import Master Data
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleExport}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Export Excel
+            </button>
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="px-4 py-2 bg-[#462e37] text-[#a9eae2] rounded-lg hover:bg-[#2d1e24] transition-colors font-medium flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              Import Master Data
+            </button>
+          </div>
         </div>
 
         {/* Filters */}

@@ -39,6 +39,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Employee routes
     Route::post('/employees/import-master', [App\Http\Controllers\Api\EmployeeController::class, 'importMaster']);
     Route::get('/employees/supervisor-candidate', [App\Http\Controllers\Api\EmployeeController::class, 'getSupervisorCandidate']);
+    Route::get('/employees/export', [App\Http\Controllers\Api\EmployeeController::class, 'export']);
     Route::apiResource('employees', App\Http\Controllers\Api\EmployeeController::class);
     Route::get('/employees/{id}/attendances', [App\Http\Controllers\Api\EmployeeController::class, 'attendances']);
     Route::get('/employees/{id}/payrolls', [App\Http\Controllers\Api\EmployeeController::class, 'payrolls']);

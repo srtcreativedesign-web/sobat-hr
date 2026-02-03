@@ -594,4 +594,25 @@ class EmployeeController extends Controller
         ]);
     }
 
+    /**
+     * Export employees to Excel with division filter
+     */
+    public function export(Request $request)
+    {
+        $filename = 'Data_Karyawan_' . date('Y-m-d_His') . '.xlsx';
+        
+        // Add division name to filename if filtered
+        if ($request->has('organization_id') && $request->organization_id) {
+            $org = \App\Models\Organization::find($request->organization_id);
+            if ($org) {
+                $filename = 'Data_Karyawan_' . str_replace(' ', '_', $org->name) . '_' . date('Y-m-d_His') . '.xlsx';
+            }
+        }
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\EmployeesExport($request),
+            $filename
+        );
+    }
+
 }

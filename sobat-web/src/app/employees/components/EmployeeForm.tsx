@@ -159,7 +159,32 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Pendidikan Terakhir</label>
-                                    <input type="text" name="education" value={typeof formData.education === 'object' ? JSON.stringify(formData.education) : (formData.education || '')} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900" placeholder="Contoh: S1 Teknik Informatika" />
+                                    {typeof formData.education === 'object' && formData.education !== null ? (
+                                        <div className="w-full px-4 py-2 border rounded-lg bg-gray-50 text-gray-900">
+                                            <ul className="list-disc list-inside space-y-1 text-sm">
+                                                {formData.education.sd && <li><span className="font-medium">SD:</span> {formData.education.sd}</li>}
+                                                {formData.education.smp && <li><span className="font-medium">SMP:</span> {formData.education.smp}</li>}
+                                                {formData.education.sma && <li><span className="font-medium">SMA:</span> {formData.education.sma}</li>}
+                                                {formData.education.smk && <li><span className="font-medium">SMK:</span> {formData.education.smk}</li>}
+                                                {formData.education.d3 && <li><span className="font-medium">D3:</span> {formData.education.d3}</li>}
+                                                {formData.education.s1 && <li><span className="font-medium">S1:</span> {formData.education.s1}</li>}
+                                                {formData.education.s2 && <li><span className="font-medium">S2:</span> {formData.education.s2}</li>}
+                                                {formData.education.s3 && <li><span className="font-medium">S3:</span> {formData.education.s3}</li>}
+                                            </ul>
+                                        </div>
+                                    ) : (
+                                        <select name="education" value={formData.education || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none text-gray-900">
+                                            <option value="">Pilih...</option>
+                                            <option value="SD">SD</option>
+                                            <option value="SMP">SMP</option>
+                                            <option value="SMA">SMA</option>
+                                            <option value="SMK">SMK</option>
+                                            <option value="D3">D3</option>
+                                            <option value="S1">S1</option>
+                                            <option value="S2">S2</option>
+                                            <option value="S3">S3</option>
+                                        </select>
+                                    )}
                                 </div>
                             </div>
                         )}
