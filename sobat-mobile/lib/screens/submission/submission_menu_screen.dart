@@ -68,6 +68,11 @@ class SubmissionMenuScreen extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  '/submission/create',
+                  arguments: 'Cuti',
+                ),
               ),
               _buildModernCard(
                 context,
@@ -78,6 +83,11 @@ class SubmissionMenuScreen extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  '/submission/create',
+                  arguments: 'Sakit',
+                ),
               ),
               _buildModernCard(
                 context,
@@ -87,6 +97,11 @@ class SubmissionMenuScreen extends StatelessWidget {
                   colors: [Color(0xFF3B82F6), Color(0xFF2563EB)], // Blue
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
+                ),
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  '/submission/create',
+                  arguments: 'Lembur',
                 ),
               ),
               _buildModernCard(
