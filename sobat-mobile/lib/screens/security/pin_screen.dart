@@ -66,7 +66,7 @@ class _PinScreenState extends State<PinScreen> {
         localizedReason:
             'Silakan verifikasi identitas Anda untuk mengakses Payslip',
         persistAcrossBackgrounding: true,
-        biometricOnly: true,
+        biometricOnly: false,
         sensitiveTransaction: false,
       );
 

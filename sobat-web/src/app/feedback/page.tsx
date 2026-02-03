@@ -24,7 +24,7 @@ interface Feedback {
 
 export default function FeedbackPage() {
     const router = useRouter();
-    const { user, isAuthenticated } = useAuthStore();
+    const { user, isAuthenticated, isInitialized } = useAuthStore();
     const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
@@ -33,12 +33,14 @@ export default function FeedbackPage() {
     const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
+        if (!isInitialized) return;
+
         if (!isAuthenticated) {
             router.push('/login');
             return;
         }
         fetchFeedbacks();
-    }, [isAuthenticated, router, filterStatus, filterCategory, searchQuery]);
+    }, [isInitialized, isAuthenticated, router, filterStatus, filterCategory, searchQuery]);
 
     const fetchFeedbacks = async () => {
         try {

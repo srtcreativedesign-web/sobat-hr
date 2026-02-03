@@ -287,7 +287,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final didAuthenticate = await _localAuth.authenticate(
           localizedReason: 'Authenticate to enable biometrics',
           persistAcrossBackgrounding: true,
-          biometricOnly: true,
+          biometricOnly: false,
           sensitiveTransaction: false,
         );
         if (didAuthenticate) {
