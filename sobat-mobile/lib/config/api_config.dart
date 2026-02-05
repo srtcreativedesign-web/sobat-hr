@@ -8,7 +8,7 @@ class ApiConfig {
   // ⚠️ PENTING: Ganti IP ini sesuai dengan IP Laptop/Komputer Anda saat ini
   // Cara cek di Terminal: ifconfig | grep "inet " | grep -v 127.0.0.1
   // ---------------------------------------------------------------------------
-  static const String _hostIp = '192.168.0.127'; // Updated IP for new Wifi
+  static const String _hostIp = '192.168.1.19'; // Updated IP for new Wifi
   static const String _port = '8000';
 
   // Base URL Logic
@@ -74,6 +74,6 @@ class ApiConfig {
   static const String payroll = '/payrolls';
 
   // Timeout configuration
-  static const Duration connectTimeout = Duration(seconds: 30);
-  static const Duration receiveTimeout = Duration(seconds: 30);
+  static const Duration connectTimeout = Duration(seconds: 60);
+  static const Duration receiveTimeout = Duration(seconds: 60);
 }
