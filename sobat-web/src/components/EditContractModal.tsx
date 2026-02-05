@@ -49,7 +49,7 @@ export default function EditContractModal({ isOpen, onClose, employee, onSuccess
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
             <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-fade-in-up">
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                    <h2 className="text-xl font-bold text-[#462e37]">Edit Contract</h2>
+                    <h2 className="text-xl font-bold text-[#1C3ECA]">Edit Contract</h2>
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                         <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
@@ -59,7 +59,7 @@ export default function EditContractModal({ isOpen, onClose, employee, onSuccess
                     <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Employee</label>
                         <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
-                            <p className="font-bold text-[#462e37]">{employee?.full_name}</p>
+                            <p className="font-bold text-[#1C3ECA]">{employee?.full_name}</p>
                             <p className="text-xs text-gray-500">{employee?.employee_code}</p>
                         </div>
                     </div>
@@ -71,7 +71,7 @@ export default function EditContractModal({ isOpen, onClose, employee, onSuccess
                             required
                             value={formData.contract_end_date}
                             onChange={(e) => setFormData({ ...formData, contract_end_date: e.target.value })}
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#462e37]/20 focus:border-[#462e37] outline-none transition-all"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1C3ECA]/20 focus:border-[#1C3ECA] outline-none transition-all"
                         />
                     </div>
 
@@ -84,7 +84,7 @@ export default function EditContractModal({ isOpen, onClose, employee, onSuccess
                                     type="button"
                                     onClick={() => setFormData({ ...formData, status: s })}
                                     className={`flex-1 py-2 rounded-lg text-sm font-bold border transition-all ${formData.status === s
-                                            ? 'bg-[#462e37] text-white border-[#462e37]'
+                                            ? 'bg-[#1C3ECA] text-white border-[#1C3ECA]'
                                             : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
                                         }`}
                                 >
@@ -105,7 +105,7 @@ export default function EditContractModal({ isOpen, onClose, employee, onSuccess
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex-1 py-3 bg-[#462e37] text-white rounded-xl font-bold hover:bg-[#2d1e24] transition-colors shadow-lg shadow-[#462e37]/20"
+                            className="flex-1 py-3 bg-[#1C3ECA] text-white rounded-xl font-bold hover:bg-[#2d1e24] transition-colors shadow-lg shadow-[#1C3ECA]/20"
                         >
                             {loading ? 'Saving...' : 'Save Changes'}
                         </button>

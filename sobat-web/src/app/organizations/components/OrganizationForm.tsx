@@ -125,10 +125,10 @@ export default function OrganizationForm({ isOpen, onClose, onSuccess, initialDa
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-gray-100 animate-fade-in-up max-h-[90vh] overflow-y-auto">
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
-                    <h2 className="text-xl font-bold text-[#462e37]">
+                    <h2 className="text-xl font-bold text-[#1C3ECA]">
                         {initialData ? 'Edit Organization' : 'New Organization'}
                     </h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-[#462e37]">
+                    <button onClick={onClose} className="text-gray-400 hover:text-[#1C3ECA]">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                 </div>
@@ -142,22 +142,22 @@ export default function OrganizationForm({ isOpen, onClose, onSuccess, initialDa
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-semibold text-[#462e37] mb-1">Name</label>
+                            <label className="block text-sm font-semibold text-[#1C3ECA] mb-1">Name</label>
                             <input
                                 type="text"
                                 required
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] focus:border-[#462e37] outline-none transition-all"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] focus:border-[#1C3ECA] outline-none transition-all"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 placeholder="e.g. Finance Dept"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-[#462e37] mb-1">Code</label>
+                            <label className="block text-sm font-semibold text-[#1C3ECA] mb-1">Code</label>
                             <input
                                 type="text"
                                 required
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] focus:border-[#462e37] outline-none transition-all uppercase"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] focus:border-[#1C3ECA] outline-none transition-all uppercase"
                                 value={formData.code}
                                 onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                                 placeholder="e.g. FIN-01"
@@ -167,9 +167,9 @@ export default function OrganizationForm({ isOpen, onClose, onSuccess, initialDa
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-semibold text-[#462e37] mb-1">Type</label>
+                            <label className="block text-sm font-semibold text-[#1C3ECA] mb-1">Type</label>
                             <select
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] focus:border-[#462e37] outline-none transition-all"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] focus:border-[#1C3ECA] outline-none transition-all"
                                 value={formData.type}
                                 onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                             >
@@ -183,9 +183,9 @@ export default function OrganizationForm({ isOpen, onClose, onSuccess, initialDa
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-semibold text-[#462e37] mb-1">Parent</label>
+                            <label className="block text-sm font-semibold text-[#1C3ECA] mb-1">Parent</label>
                             <select
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] focus:border-[#462e37] outline-none transition-all"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] focus:border-[#1C3ECA] outline-none transition-all"
                                 value={formData.parent_id}
                                 onChange={(e) => setFormData({ ...formData, parent_id: e.target.value })}
                             >
@@ -198,9 +198,9 @@ export default function OrganizationForm({ isOpen, onClose, onSuccess, initialDa
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-[#462e37] mb-1">Connector Style</label>
+                            <label className="block text-sm font-semibold text-[#1C3ECA] mb-1">Connector Style</label>
                             <select
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] focus:border-[#462e37] outline-none transition-all"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] focus:border-[#1C3ECA] outline-none transition-all"
                                 value={formData.line_style}
                                 onChange={(e) => setFormData({ ...formData, line_style: e.target.value })}
                             >
@@ -213,9 +213,9 @@ export default function OrganizationForm({ isOpen, onClose, onSuccess, initialDa
 
                     {/* Job Description / Uraian Jabatan */}
                     <div>
-                        <label className="block text-sm font-semibold text-[#462e37] mb-1">Uraian Jabatan / Description</label>
+                        <label className="block text-sm font-semibold text-[#1C3ECA] mb-1">Uraian Jabatan / Description</label>
                         <textarea
-                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] focus:border-[#462e37] outline-none transition-all"
+                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] focus:border-[#1C3ECA] outline-none transition-all"
                             rows={4}
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -224,18 +224,18 @@ export default function OrganizationForm({ isOpen, onClose, onSuccess, initialDa
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold text-[#462e37] mb-1">Phone & Email</label>
+                        <label className="block text-sm font-semibold text-[#1C3ECA] mb-1">Phone & Email</label>
                         <div className="grid grid-cols-2 gap-4">
                             <input
                                 type="text"
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] focus:border-[#462e37] outline-none transition-all"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] focus:border-[#1C3ECA] outline-none transition-all"
                                 value={formData.phone}
                                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                 placeholder="Phone"
                             />
                             <input
                                 type="email"
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] focus:border-[#462e37] outline-none transition-all"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] focus:border-[#1C3ECA] outline-none transition-all"
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 placeholder="Email"
@@ -244,9 +244,9 @@ export default function OrganizationForm({ isOpen, onClose, onSuccess, initialDa
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold text-[#462e37] mb-1">Address</label>
+                        <label className="block text-sm font-semibold text-[#1C3ECA] mb-1">Address</label>
                         <textarea
-                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] focus:border-[#462e37] outline-none transition-all"
+                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] focus:border-[#1C3ECA] outline-none transition-all"
                             rows={3}
                             value={formData.address}
                             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
@@ -265,7 +265,7 @@ export default function OrganizationForm({ isOpen, onClose, onSuccess, initialDa
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex-1 px-4 py-2 bg-[#a9eae2] text-[#462e37] font-bold rounded-lg hover:shadow-lg hover:scale-[1.02] transform transition-all disabled:opacity-50"
+                            className="flex-1 px-4 py-2 bg-[#60A5FA] text-[#1C3ECA] font-bold rounded-lg hover:shadow-lg hover:scale-[1.02] transform transition-all disabled:opacity-50"
                         >
                             {loading ? 'Saving...' : 'Save Organization'}
                         </button>

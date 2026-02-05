@@ -129,14 +129,14 @@ export default function ResetRequestsPage() {
         <DashboardLayout>
             <div className="p-6 md:p-8">
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-[#462e37]">Password Reset Requests</h1>
-                    <p className="text-[#462e37]/70">Approve requests and send temporary passwords.</p>
+                    <h1 className="text-2xl font-bold text-[#1C3ECA]">Password Reset Requests</h1>
+                    <p className="text-[#1C3ECA]/70">Approve requests and send temporary passwords.</p>
                 </div>
 
                 <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden min-h-[400px]">
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center h-[400px] gap-3">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#462e37]"></div>
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1C3ECA]"></div>
                             <p className="text-gray-500 text-sm">Loading requests...</p>
                         </div>
                     ) : requests.length === 0 ? (
@@ -144,29 +144,29 @@ export default function ResetRequestsPage() {
                             <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(0,0,0,0.05)] mb-6">
                                 <span className="text-3xl">🔐</span>
                             </div>
-                            <h3 className="text-xl font-bold text-[#462e37] mb-2">No Pending Requests</h3>
-                            <p className="text-[#462e37]/60">There are no password reset requests at the moment.</p>
+                            <h3 className="text-xl font-bold text-[#1C3ECA] mb-2">No Pending Requests</h3>
+                            <p className="text-[#1C3ECA]/60">There are no password reset requests at the moment.</p>
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">
-                                <thead className="bg-[#462e37]/5 border-b border-[#462e37]/10">
+                                <thead className="bg-[#1C3ECA]/5 border-b border-[#1C3ECA]/10">
                                     <tr>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#462e37]/70 uppercase tracking-wider">User</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#462e37]/70 uppercase tracking-wider">Phone</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#462e37]/70 uppercase tracking-wider">Requested At</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#462e37]/70 uppercase tracking-wider">Action</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#1C3ECA]/70 uppercase tracking-wider">User</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#1C3ECA]/70 uppercase tracking-wider">Phone</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#1C3ECA]/70 uppercase tracking-wider">Requested At</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#1C3ECA]/70 uppercase tracking-wider">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-[#462e37]/5">
+                                <tbody className="divide-y divide-[#1C3ECA]/5">
                                     {requests.map((req) => (
-                                        <tr key={req.id} className="hover:bg-[#462e37]/[0.02] transition-colors">
+                                        <tr key={req.id} className="hover:bg-[#1C3ECA]/[0.02] transition-colors">
                                             <td className="px-6 py-4">
-                                                <div className="font-bold text-[#462e37]">{req.user?.employee?.full_name || req.user?.name}</div>
-                                                <div className="text-xs text-[#462e37]/60">{req.user?.employee?.position || 'User'}</div>
+                                                <div className="font-bold text-[#1C3ECA]">{req.user?.employee?.full_name || req.user?.name}</div>
+                                                <div className="text-xs text-[#1C3ECA]/60">{req.user?.employee?.position || 'User'}</div>
                                             </td>
-                                            <td className="px-6 py-4 text-sm font-medium text-[#462e37]">{req.phone}</td>
-                                            <td className="px-6 py-4 text-sm text-[#462e37]/60">
+                                            <td className="px-6 py-4 text-sm font-medium text-[#1C3ECA]">{req.phone}</td>
+                                            <td className="px-6 py-4 text-sm text-[#1C3ECA]/60">
                                                 {new Date(req.created_at).toLocaleString('id-ID')}
                                             </td>
                                             <td className="px-6 py-4">
@@ -204,13 +204,13 @@ export default function ResetRequestsPage() {
                             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <span className="text-2xl">✅</span>
                             </div>
-                            <h3 className="text-xl font-bold text-[#462e37]">Password Reset Successful</h3>
-                            <p className="text-[#462e37]/70 mt-2">Temporary password generated for {successDialog.name}</p>
+                            <h3 className="text-xl font-bold text-[#1C3ECA]">Password Reset Successful</h3>
+                            <p className="text-[#1C3ECA]/70 mt-2">Temporary password generated for {successDialog.name}</p>
                         </div>
 
                         <div className="bg-gray-50 p-4 rounded-xl text-center mb-6 border border-gray-100">
                             <p className="text-xs text-gray-500 mb-1">Temporary Password</p>
-                            <p className="text-2xl font-mono font-bold text-[#462e37] tracking-wider select-all">{successDialog.tempPass}</p>
+                            <p className="text-2xl font-mono font-bold text-[#1C3ECA] tracking-wider select-all">{successDialog.tempPass}</p>
                         </div>
 
                         <div className="flex flex-col gap-3">
@@ -222,7 +222,7 @@ export default function ResetRequestsPage() {
                             </button>
                             <button
                                 onClick={() => setSuccessDialog(null)}
-                                className="w-full py-3 text-[#462e37]/70 font-bold hover:text-[#462e37] transition-colors"
+                                className="w-full py-3 text-[#1C3ECA]/70 font-bold hover:text-[#1C3ECA] transition-colors"
                             >
                                 Close
                             </button>

@@ -83,12 +83,12 @@ export default function EmployeeMasterPage() {
             <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-[#462e37]">Master Data Karyawan</h1>
+                        <h1 className="text-2xl font-bold text-[#1C3ECA]">Master Data Karyawan</h1>
                         <p className="text-gray-500">Kelola data lengkap seluruh karyawan.</p>
                     </div>
                     <button
                         onClick={handleAddNew}
-                        className="px-4 py-2 bg-[#462e37] text-white rounded-lg hover:bg-[#2d1e24] font-medium flex items-center gap-2"
+                        className="px-4 py-2 bg-[#1C3ECA] text-white rounded-lg hover:bg-[#2d1e24] font-medium flex items-center gap-2"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                         Tambah Manual
@@ -101,11 +101,11 @@ export default function EmployeeMasterPage() {
                         <input
                             type="text"
                             placeholder="Cari nama atau NIK..."
-                            className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none"
+                            className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
-                        <button type="submit" className="px-6 py-2 bg-[#a9eae2] text-[#462e37] font-bold rounded-lg hover:bg-[#8fdad0]">
+                        <button type="submit" className="px-6 py-2 bg-[#60A5FA] text-[#1C3ECA] font-bold rounded-lg hover:bg-[#8fdad0]">
                             Cari
                         </button>
                     </form>
@@ -115,7 +115,7 @@ export default function EmployeeMasterPage() {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     {loading ? (
                         <div className="p-12 text-center">
-                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#a9eae2] border-t-transparent"></div>
+                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#60A5FA] border-t-transparent"></div>
                         </div>
                     ) : (
                         <div className="overflow-x-auto">

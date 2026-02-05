@@ -175,7 +175,7 @@ export default function DashboardPage() {
         <div className="px-8 py-6 flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-800">
-              {getGreeting()}, <span className="bg-gradient-to-r from-[#462e37] to-[#a9eae2] bg-clip-text text-transparent">{user?.name}</span> 👋
+              {getGreeting()}, <span className="bg-gradient-to-r from-[#1C3ECA] to-[#60A5FA] bg-clip-text text-transparent">{user?.name}</span> 👋
             </h1>
             <div className="mt-1">
               <TextType
@@ -194,7 +194,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <button onClick={handleNotifClick} className="p-2 text-gray-400 hover:text-[#462e37] transition-colors relative">
+            <button onClick={handleNotifClick} className="p-2 text-gray-400 hover:text-[#1C3ECA] transition-colors relative">
               {stats && stats.requests.pending > lastSeenCount && (
                 <>
                   <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
@@ -204,7 +204,7 @@ export default function DashboardPage() {
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
             </button>
             <div className="h-10 w-10 rounded-full bg-gray-200 border-2 border-white shadow-sm overflow-hidden">
-              <div className="w-full h-full bg-[#462e37] flex items-center justify-center text-white font-bold">
+              <div className="w-full h-full bg-[#1C3ECA] flex items-center justify-center text-white font-bold">
                 {user?.name?.charAt(0)}
               </div>
             </div>
@@ -221,14 +221,14 @@ export default function DashboardPage() {
             title="Total Employees"
             value={stats?.employees.total || 0}
             subtext={`${stats?.employees.active || 0} Active`}
-            colorClass="from-[#462e37] to-[#729892]"
+            colorClass="from-[#1C3ECA] to-[#93C5FD]"
             icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
           />
           <StatsCard
             title="Attendance"
             value={`${attendanceRate}%`}
             subtext={`${totalAttendance} Present Today`}
-            colorClass="from-[#a9eae2] to-[#729892]"
+            colorClass="from-[#60A5FA] to-[#93C5FD]"
             icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
           />
           <StatsCard
@@ -258,15 +258,15 @@ export default function DashboardPage() {
             <div className="glass-card p-6 bg-white/50">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                  <span className="w-2 h-8 bg-[#462e37] rounded-full"></span>
+                  <span className="w-2 h-8 bg-[#1C3ECA] rounded-full"></span>
                   Contract Expiring Soon
                 </h2>
-                <button onClick={() => router.push('/employees/contracts')} className="text-sm font-semibold text-[#462e37] hover:text-[#a9eae2] transition-colors">View All</button>
+                <button onClick={() => router.push('/employees/contracts')} className="text-sm font-semibold text-[#1C3ECA] hover:text-[#60A5FA] transition-colors">View All</button>
               </div>
 
               {loading ? (
                 <div className="h-40 flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#462e37]"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1C3ECA]"></div>
                 </div>
               ) : contractExpiring.length === 0 ? (
                 <div className="text-center py-8 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
@@ -288,11 +288,11 @@ export default function DashboardPage() {
                       <tr key={emp.id} className="hover:bg-green-50/30 transition-colors cursor-pointer group">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#462e37] to-[#729892] text-white flex items-center justify-center text-xs font-bold">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1C3ECA] to-[#93C5FD] text-white flex items-center justify-center text-xs font-bold">
                               {emp.user.name.charAt(0)}
                             </div>
                             <div>
-                              <p className="text-sm font-semibold text-gray-900 group-hover:text-[#462e37]">{emp.user.name}</p>
+                              <p className="text-sm font-semibold text-gray-900 group-hover:text-[#1C3ECA]">{emp.user.name}</p>
                               <p className="text-xs text-gray-500">{emp.employee_code}</p>
                             </div>
                           </div>
@@ -330,16 +330,16 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => router.push('/employees')}
-                  className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-[#a9eae2]/50 transition-all group text-left"
+                  className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-[#60A5FA]/50 transition-all group text-left"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-green-100 text-green-700 flex items-center justify-center mb-2 group-hover:bg-[#462e37] group-hover:text-[#a9eae2] transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-green-100 text-green-700 flex items-center justify-center mb-2 group-hover:bg-[#1C3ECA] group-hover:text-[#60A5FA] transition-colors">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
                   </div>
-                  <span className="text-sm font-semibold text-gray-700 group-hover:text-[#462e37]">Add Employee</span>
+                  <span className="text-sm font-semibold text-gray-700 group-hover:text-[#1C3ECA]">Add Employee</span>
                 </button>
                 <button
                   onClick={() => router.push('/payroll')}
-                  className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-[#a9eae2]/50 transition-all group text-left"
+                  className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-[#60A5FA]/50 transition-all group text-left"
                 >
                   <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center mb-2 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -348,13 +348,13 @@ export default function DashboardPage() {
                 </button>
                 <button
                   onClick={() => router.push('/admin/feedbacks')}
-                  className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-[#a9eae2]/50 transition-all group text-left">
+                  className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-[#60A5FA]/50 transition-all group text-left">
                   <div className="w-8 h-8 rounded-lg bg-yellow-100 text-yellow-700 flex items-center justify-center mb-2 group-hover:bg-yellow-600 group-hover:text-white transition-colors">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg>
                   </div>
                   <span className="text-sm font-semibold text-gray-700 group-hover:text-yellow-700">Feedback</span>
                 </button>
-                <button className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-[#a9eae2]/50 transition-all group text-left">
+                <button className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-[#60A5FA]/50 transition-all group text-left">
                   <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center mb-2 group-hover:bg-purple-600 group-hover:text-white transition-colors">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                   </div>
@@ -371,7 +371,7 @@ export default function DashboardPage() {
                 ) : (
                   recentActivity.map((activity) => (
                     <div key={activity.id} className="flex gap-3 pb-3 border-b border-gray-50 last:border-0 last:pb-0">
-                      <div className={`w-2 h-2 rounded-full mt-2 shadow-[0_0_8px] ${activity.type === 'employee_onboarding' ? 'bg-[#729892] shadow-[#729892]' : 'bg-orange-400 shadow-orange-400'
+                      <div className={`w-2 h-2 rounded-full mt-2 shadow-[0_0_8px] ${activity.type === 'employee_onboarding' ? 'bg-[#93C5FD] shadow-[#93C5FD]' : 'bg-orange-400 shadow-orange-400'
                         }`}></div>
                       <div>
                         <p className="text-sm text-gray-800" dangerouslySetInnerHTML={{

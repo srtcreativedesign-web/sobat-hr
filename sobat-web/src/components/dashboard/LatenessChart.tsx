@@ -29,7 +29,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         return (
             <div className="bg-white p-3 border border-gray-100 shadow-xl rounded-xl">
                 <p className="font-bold text-gray-800 mb-1">{`${label} ${data.year}`}</p>
-                <p className="text-sm text-[#462e37]">
+                <p className="text-sm text-[#1C3ECA]">
                     Late Rate: <span className="font-bold">{data.rate}%</span>
                 </p>
                 <div className="mt-2 pt-2 border-t border-gray-50 text-xs text-gray-500">
@@ -46,7 +46,7 @@ export default function LatenessChart({ data, loading }: LatenessChartProps) {
     if (loading) {
         return (
             <div className="h-[300px] w-full flex items-center justify-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#462e37]"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1C3ECA]"></div>
             </div>
         );
     }
@@ -64,7 +64,7 @@ export default function LatenessChart({ data, loading }: LatenessChartProps) {
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <span className="w-2 h-8 bg-[#462e37] rounded-full"></span>
+                        <span className="w-2 h-8 bg-[#1C3ECA] rounded-full"></span>
                         Lateness Trend
                     </h2>
                     <p className="text-sm text-gray-500 mt-1">Percentage of late arrivals per month</p>
@@ -82,8 +82,8 @@ export default function LatenessChart({ data, loading }: LatenessChartProps) {
                     >
                         <defs>
                             <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#462e37" stopOpacity={0.2} />
-                                <stop offset="95%" stopColor="#462e37" stopOpacity={0} />
+                                <stop offset="5%" stopColor="#1C3ECA" stopOpacity={0.2} />
+                                <stop offset="95%" stopColor="#1C3ECA" stopOpacity={0} />
                             </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
@@ -104,11 +104,11 @@ export default function LatenessChart({ data, loading }: LatenessChartProps) {
                         <Area
                             type="monotone"
                             dataKey="rate"
-                            stroke="#462e37"
+                            stroke="#1C3ECA"
                             strokeWidth={3}
                             fillOpacity={1}
                             fill="url(#colorRate)"
-                            activeDot={{ r: 6, strokeWidth: 0, fill: '#a9eae2' }}
+                            activeDot={{ r: 6, strokeWidth: 0, fill: '#60A5FA' }}
                         />
                     </AreaChart>
                 </ResponsiveContainer>

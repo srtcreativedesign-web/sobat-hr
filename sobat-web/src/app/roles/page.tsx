@@ -93,12 +93,12 @@ export default function RolesPage() {
             <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-[#462e37]">Roles Management</h1>
+                        <h1 className="text-2xl font-bold text-[#1C3ECA]">Roles Management</h1>
                         <p className="text-gray-500">Manage user roles and permissions.</p>
                     </div>
                     <button
                         onClick={() => handleOpenModal()}
-                        className="px-4 py-2 bg-[#462e37] text-white rounded-lg hover:bg-[#2d1e24] transition-colors flex items-center gap-2"
+                        className="px-4 py-2 bg-[#1C3ECA] text-white rounded-lg hover:bg-[#2d1e24] transition-colors flex items-center gap-2"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                         Add New Role
@@ -109,7 +109,7 @@ export default function RolesPage() {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     {loading ? (
                         <div className="p-12 text-center">
-                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#a9eae2] border-t-transparent"></div>
+                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#60A5FA] border-t-transparent"></div>
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
@@ -129,7 +129,7 @@ export default function RolesPage() {
                                                 <span className="font-medium text-gray-900">{role.display_name}</span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <code className="text-xs bg-gray-100 px-2 py-1 rounded text-[#462e37] font-mono">{role.name}</code>
+                                                <code className="text-xs bg-gray-100 px-2 py-1 rounded text-[#1C3ECA] font-mono">{role.name}</code>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="text-sm text-gray-500">{role.description || '-'}</div>
@@ -168,7 +168,7 @@ export default function RolesPage() {
                                 <input
                                     type="text"
                                     required
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none"
                                     placeholder="e.g. HR Manager"
                                     value={formData.display_name}
                                     onChange={(e) => {
@@ -187,7 +187,7 @@ export default function RolesPage() {
                                 <input
                                     type="text"
                                     required
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none bg-gray-50 font-mono text-sm"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none bg-gray-50 font-mono text-sm"
                                     placeholder="e.g. hr_manager"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -197,7 +197,7 @@ export default function RolesPage() {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                                 <textarea
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none"
                                     rows={3}
                                     value={formData.description}
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -213,7 +213,7 @@ export default function RolesPage() {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 bg-[#462e37] text-white rounded-lg hover:bg-[#2d1e24] transition-colors"
+                                    className="px-4 py-2 bg-[#1C3ECA] text-white rounded-lg hover:bg-[#2d1e24] transition-colors"
                                 >
                                     Save
                                 </button>

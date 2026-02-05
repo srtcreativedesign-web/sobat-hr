@@ -72,8 +72,8 @@ export default function ApprovalsPage() {
         <DashboardLayout>
             <div className="p-6 md:p-8">
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-[#462e37]">Approval Inbox</h1>
-                    <p className="text-[#462e37]/70">Manage requests awaiting your review.</p>
+                    <h1 className="text-2xl font-bold text-[#1C3ECA]">Approval Inbox</h1>
+                    <p className="text-[#1C3ECA]/70">Manage requests awaiting your review.</p>
                 </div>
 
                 <div className="mb-6">
@@ -81,7 +81,7 @@ export default function ApprovalsPage() {
                         <button
                             onClick={() => { setActiveTab('pending'); setCurrentPage(1); }}
                             className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'pending'
-                                ? 'bg-white text-[#462e37] shadow-sm'
+                                ? 'bg-white text-[#1C3ECA] shadow-sm'
                                 : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
@@ -90,7 +90,7 @@ export default function ApprovalsPage() {
                         <button
                             onClick={() => { setActiveTab('history'); setCurrentPage(1); }}
                             className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'history'
-                                ? 'bg-white text-[#462e37] shadow-sm'
+                                ? 'bg-white text-[#1C3ECA] shadow-sm'
                                 : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
@@ -116,7 +116,7 @@ export default function ApprovalsPage() {
                             onClick={() => { setActiveType(type.id); setCurrentPage(1); }}
                             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all
                             ${activeType === type.id
-                                    ? 'bg-[#462e37] text-white shadow-md'
+                                    ? 'bg-[#1C3ECA] text-white shadow-md'
                                     : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
                         >
                             {type.label}
@@ -127,7 +127,7 @@ export default function ApprovalsPage() {
                 <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden min-h-[400px]">
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center h-[400px] gap-3">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#462e37]"></div>
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1C3ECA]"></div>
                             <p className="text-gray-500 text-sm">Loading approvals...</p>
                         </div>
                     ) : approvals.length === 0 ? (
@@ -135,36 +135,36 @@ export default function ApprovalsPage() {
                             <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(0,0,0,0.05)] mb-6">
                                 <span className="text-3xl">📭</span>
                             </div>
-                            <h3 className="text-xl font-bold text-[#462e37] mb-2">No Approvals Pending</h3>
-                            <p className="text-[#462e37]/60">You're all caught up! There are no requests awaiting your review.</p>
+                            <h3 className="text-xl font-bold text-[#1C3ECA] mb-2">No Approvals Pending</h3>
+                            <p className="text-[#1C3ECA]/60">You're all caught up! There are no requests awaiting your review.</p>
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">
-                                <thead className="bg-[#462e37]/5 border-b border-[#462e37]/10">
+                                <thead className="bg-[#1C3ECA]/5 border-b border-[#1C3ECA]/10">
                                     <tr>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#462e37]/70 uppercase tracking-wider">Requester</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#462e37]/70 uppercase tracking-wider">Request Type</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#462e37]/70 uppercase tracking-wider">Details</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#462e37]/70 uppercase tracking-wider">Submitted</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#462e37]/70 uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#462e37]/70 uppercase tracking-wider">Action</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#1C3ECA]/70 uppercase tracking-wider">Requester</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#1C3ECA]/70 uppercase tracking-wider">Request Type</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#1C3ECA]/70 uppercase tracking-wider">Details</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#1C3ECA]/70 uppercase tracking-wider">Submitted</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#1C3ECA]/70 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#1C3ECA]/70 uppercase tracking-wider">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-[#462e37]/5">
+                                <tbody className="divide-y divide-[#1C3ECA]/5">
                                     {approvals.map((req: any) => {
                                         // The API returns RequestModel objects directly when using /requests endpoint
 
                                         return (
-                                            <tr key={req.id} className="hover:bg-[#462e37]/[0.02] transition-colors group">
+                                            <tr key={req.id} className="hover:bg-[#1C3ECA]/[0.02] transition-colors group">
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center">
-                                                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#462e37] to-[#2d1e24] flex items-center justify-center text-white text-xs font-bold mr-3 shadow-md">
+                                                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#1C3ECA] to-[#2d1e24] flex items-center justify-center text-white text-xs font-bold mr-3 shadow-md">
                                                             {req.employee?.full_name?.charAt(0) || '?'}
                                                         </div>
                                                         <div>
-                                                            <div className="text-sm font-bold text-[#462e37] group-hover:text-[#2d1e24] transition-colors">{req.employee?.full_name}</div>
-                                                            <div className="text-xs text-[#462e37]/60">{req.employee?.position || 'Staff'}</div>
+                                                            <div className="text-sm font-bold text-[#1C3ECA] group-hover:text-[#2d1e24] transition-colors">{req.employee?.full_name}</div>
+                                                            <div className="text-xs text-[#1C3ECA]/60">{req.employee?.position || 'Staff'}</div>
                                                         </div>
                                                     </div>
                                                 </td>
@@ -177,8 +177,8 @@ export default function ApprovalsPage() {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <div className="text-sm font-medium text-[#462e37] line-clamp-1">{req.title || req.description}</div>
-                                                    <div className="text-xs text-[#462e37]/60 mt-0.5">
+                                                    <div className="text-sm font-medium text-[#1C3ECA] line-clamp-1">{req.title || req.description}</div>
+                                                    <div className="text-xs text-[#1C3ECA]/60 mt-0.5">
                                                         {['asset', 'reimbursement'].includes(req.type)
                                                             ? `IDR ${Number(req.amount).toLocaleString('id-ID')}`
                                                             : req.type === 'resignation'
@@ -187,7 +187,7 @@ export default function ApprovalsPage() {
                                                         }
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-[#462e37]/50">
+                                                <td className="px-6 py-4 text-sm text-[#1C3ECA]/50">
                                                     {new Date(req.submitted_at || '').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
                                                 </td>
                                                 <td className="px-6 py-4">
@@ -202,7 +202,7 @@ export default function ApprovalsPage() {
                                                     {req.id && (
                                                         <button
                                                             onClick={() => router.push(`/approvals/${req.id}`)}
-                                                            className="inline-flex items-center px-4 py-1.5 border border-[#462e37]/20 text-sm font-bold rounded-lg text-[#462e37] bg-white hover:bg-[#462e37] hover:text-white hover:border-[#462e37] transition-all shadow-sm hover:shadow-md"
+                                                            className="inline-flex items-center px-4 py-1.5 border border-[#1C3ECA]/20 text-sm font-bold rounded-lg text-[#1C3ECA] bg-white hover:bg-[#1C3ECA] hover:text-white hover:border-[#1C3ECA] transition-all shadow-sm hover:shadow-md"
                                                         >
                                                             Review
                                                         </button>

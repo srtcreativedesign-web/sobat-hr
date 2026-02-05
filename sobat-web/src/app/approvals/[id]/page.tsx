@@ -169,7 +169,7 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                         <div className="flex items-center justify-between w-full">
                             <button
                                 onClick={() => router.back()}
-                                className="group flex items-center text-sm font-medium text-gray-500 hover:text-[#462e37] mb-4 transition-colors"
+                                className="group flex items-center text-sm font-medium text-gray-500 hover:text-[#1C3ECA] mb-4 transition-colors"
                             >
                                 <svg className="w-4 h-4 mr-1 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -186,7 +186,7 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                 Export Proof
                             </button>
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-extrabold text-[#462e37] tracking-tight mb-2">{request.title}</h1>
+                        <h1 className="text-3xl md:text-4xl font-extrabold text-[#1C3ECA] tracking-tight mb-2">{request.title}</h1>
                         <div className="flex items-center gap-3 text-gray-500 text-sm">
                             <span className="flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-md font-medium text-gray-700">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -213,8 +213,8 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                     <div className="lg:col-span-2 space-y-6">
                         {/* Main Detail Card */}
                         <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100/50 p-8 overflow-hidden relative">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#462e37] to-[#8a5d6e] opacity-20"></div>
-                            <h3 className="text-xl font-bold text-[#462e37] mb-8 flex items-center gap-2">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#1C3ECA] to-[#8a5d6e] opacity-20"></div>
+                            <h3 className="text-xl font-bold text-[#1C3ECA] mb-8 flex items-center gap-2">
                                 <svg className="w-5 h-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
@@ -315,7 +315,7 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                     {/* Attachments Card (Only show if present) */}
                     {request.attachments && Array.isArray(request.attachments) && request.attachments.length > 0 && (
                         <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100/50 p-8">
-                            <h3 className="text-xl font-bold text-[#462e37] mb-6 flex items-center gap-2">
+                            <h3 className="text-xl font-bold text-[#1C3ECA] mb-6 flex items-center gap-2">
                                 <svg className="w-5 h-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                                 </svg>
@@ -386,9 +386,9 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
 
                             return (
                                 <div className="bg-white rounded-3xl shadow-[0_4px_30px_rgba(0,0,0,0.06)] border border-gray-100/50 p-6 md:p-8 sticky top-6">
-                                    <h3 className="text-lg font-bold text-[#462e37] mb-4">Take Action</h3>
+                                    <h3 className="text-lg font-bold text-[#1C3ECA] mb-4">Take Action</h3>
                                     <textarea
-                                        className="w-full bg-gray-50 border-0 ring-1 ring-gray-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-[#462e37]/20 focus:bg-white transition-all mb-6 resize-none"
+                                        className="w-full bg-gray-50 border-0 ring-1 ring-gray-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-[#1C3ECA]/20 focus:bg-white transition-all mb-6 resize-none"
                                         rows={4}
                                         placeholder="Add a reason or note (Required for rejection)..."
                                         value={actionNote}
@@ -406,7 +406,7 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                         <button
                                             onClick={() => handleAction('approve')}
                                             disabled={isProcessing}
-                                            className="w-full bg-[#462e37] text-white hover:bg-[#2d1e24] py-3.5 rounded-xl font-bold shadow-lg shadow-[#462e37]/20 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 text-sm"
+                                            className="w-full bg-[#1C3ECA] text-white hover:bg-[#2d1e24] py-3.5 rounded-xl font-bold shadow-lg shadow-[#1C3ECA]/20 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 text-sm"
                                         >
                                             Approve
                                         </button>
@@ -424,7 +424,7 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                         <button onClick={() => setShowApproveModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
                             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
-                        <h3 className="text-xl font-bold text-[#462e37] mb-6">Confirm Approval</h3>
+                        <h3 className="text-xl font-bold text-[#1C3ECA] mb-6">Confirm Approval</h3>
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Signer Name</label>
@@ -432,7 +432,7 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                     type="text"
                                     value={signerName}
                                     onChange={(e) => setSignerName(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#462e37] focus:border-[#462e37]"
+                                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#1C3ECA] focus:border-[#1C3ECA]"
                                     placeholder="Enter your name"
                                 />
                             </div>
@@ -454,7 +454,7 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
 
                             <div className="pt-4 flex gap-3">
                                 <button onClick={() => setShowApproveModal(false)} className="flex-1 py-3 border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
-                                <button onClick={submitApproval} disabled={isProcessing} className="flex-1 py-3 bg-[#462e37] text-white rounded-xl font-bold hover:bg-[#2d1e24]">
+                                <button onClick={submitApproval} disabled={isProcessing} className="flex-1 py-3 bg-[#1C3ECA] text-white rounded-xl font-bold hover:bg-[#2d1e24]">
                                     {isProcessing ? 'Processing...' : 'Confirm Approve'}
                                 </button>
                             </div>

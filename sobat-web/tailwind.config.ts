@@ -12,9 +12,9 @@ export default {
         background: "var(--background)",
         foreground: "var(--foreground)",
         brand: {
-          dark: '#462e37',
-          sage: '#729892',
-          mint: '#a9eae2',
+          dark: '#1C3ECA', // Deep Blue (Primary)
+          sage: '#60A5FA', // Soft Blue (Secondary)
+          mint: '#93C5FD', // Light Blue (Tertiary)
           terracotta: '#a36c65',
         },
         primary: {

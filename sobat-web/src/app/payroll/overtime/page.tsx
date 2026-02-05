@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuthStore } from '@/store/auth-store';
 import React from 'react';
@@ -16,13 +17,11 @@ interface Request {
             name: string;
         }
     };
-    date: string; // The dedicated overtime record date
+    date: string;
     start_time: string;
     end_time: string;
-    duration: number; // minutes
+    duration: number;
     reason: string;
-    // OvertimeRecord doesn't have 'status' usually, but if it does, keep it. 
-    // Assuming we want to show it's 'approved' (since it exists here).
     status?: string;
     overtime_detail?: {
         start_time: string;
@@ -34,8 +33,6 @@ interface Organization {
     id: number;
     name: string;
 }
-
-import { useRouter } from 'next/navigation';
 
 export default function OvertimePage() {
     const { user } = useAuthStore();
@@ -154,7 +151,7 @@ export default function OvertimePage() {
         <DashboardLayout>
             <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold text-[#462e37]">Overtime Records</h1>
+                    <h1 className="text-2xl font-bold text-[#1C3ECA]">Overtime Records</h1>
                     <button
                         onClick={handleExport}
                         className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 text-sm font-medium shadow-md"
@@ -167,21 +164,21 @@ export default function OvertimePage() {
                 </div>
 
                 {/* Filters */}
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-[#462e37]/10 mb-6 flex gap-4 flex-wrap">
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-[#1C3ECA]/10 mb-6 flex gap-4 flex-wrap">
                     <div className="flex-1 min-w-[200px]">
-                        <label className="block text-sm font-medium text-[#462e37]/70 mb-1">Search Employee</label>
+                        <label className="block text-sm font-medium text-[#1C3ECA]/70 mb-1">Search Employee</label>
                         <input
                             type="text"
                             placeholder="Search by name..."
-                            className="w-full px-4 py-2 rounded-lg border border-[#462e37]/20 focus:outline-none focus:border-[#462e37]"
+                            className="w-full px-4 py-2 rounded-lg border border-[#1C3ECA]/20 focus:outline-none focus:border-[#1C3ECA]"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
                     <div className="flex-1 min-w-[200px]">
-                        <label className="block text-sm font-medium text-[#462e37]/70 mb-1">Division</label>
+                        <label className="block text-sm font-medium text-[#1C3ECA]/70 mb-1">Division</label>
                         <select
-                            className="w-full px-4 py-2 rounded-lg border border-[#462e37]/20 focus:outline-none focus:border-[#462e37]"
+                            className="w-full px-4 py-2 rounded-lg border border-[#1C3ECA]/20 focus:outline-none focus:border-[#1C3ECA]"
                             value={selectedOrg}
                             onChange={(e) => setSelectedOrg(e.target.value)}
                         >
@@ -194,59 +191,59 @@ export default function OvertimePage() {
                 </div>
 
                 {/* Table */}
-                <div className="bg-white rounded-xl shadow-sm border border-[#462e37]/10 overflow-hidden">
+                <div className="bg-white rounded-xl shadow-sm border border-[#1C3ECA]/10 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-[#462e37]/5 border-b border-[#462e37]/10">
+                            <thead className="bg-[#1C3ECA]/5 border-b border-[#1C3ECA]/10">
                                 <tr>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#462e37] uppercase tracking-wider">Employee</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#462e37] uppercase tracking-wider">Division</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#462e37] uppercase tracking-wider">Date</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#462e37] uppercase tracking-wider">Time</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#462e37] uppercase tracking-wider">Duration</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#462e37] uppercase tracking-wider">Reason</th>
-                                    <th className="px-6 py-4 text-center text-xs font-semibold text-[#462e37] uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#1C3ECA] uppercase tracking-wider">Employee</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#1C3ECA] uppercase tracking-wider">Division</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#1C3ECA] uppercase tracking-wider">Date</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#1C3ECA] uppercase tracking-wider">Time</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#1C3ECA] uppercase tracking-wider">Duration</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#1C3ECA] uppercase tracking-wider">Reason</th>
+                                    <th className="px-6 py-4 text-center text-xs font-semibold text-[#1C3ECA] uppercase tracking-wider">Status</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-[#462e37]/10">
+                            <tbody className="divide-y divide-[#1C3ECA]/10">
                                 {isLoading ? (
                                     <tr>
-                                        <td colSpan={7} className="px-6 py-8 text-center text-[#462e37]/50">
+                                        <td colSpan={7} className="px-6 py-8 text-center text-[#1C3ECA]/50">
                                             Loading records...
                                         </td>
                                     </tr>
                                 ) : requests.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="px-6 py-8 text-center text-[#462e37]/50">
+                                        <td colSpan={7} className="px-6 py-8 text-center text-[#1C3ECA]/50">
                                             No overtime records found
                                         </td>
                                     </tr>
                                 ) : (
                                     requests.map((req) => (
-                                        <tr key={req.id} className="hover:bg-[#462e37]/5 transition-colors">
-                                            <td className="px-6 py-4 text-sm font-medium text-[#462e37]">
+                                        <tr key={req.id} className="hover:bg-[#1C3ECA]/5 transition-colors">
+                                            <td className="px-6 py-4 text-sm font-medium text-[#1C3ECA]">
                                                 {req.employee?.full_name}
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-[#462e37]/70">
+                                            <td className="px-6 py-4 text-sm text-[#1C3ECA]/70">
                                                 {req.employee?.organization?.name || '-'}
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-[#462e37]/70">
+                                            <td className="px-6 py-4 text-sm text-[#1C3ECA]/70">
                                                 {new Date(req.date).toLocaleDateString('id-ID', {
                                                     day: 'numeric',
                                                     month: 'long',
                                                     year: 'numeric'
                                                 })}
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-[#462e37]/70">
+                                            <td className="px-6 py-4 text-sm text-[#1C3ECA]/70">
                                                 {/* Fallback to start_date time parsing if overtime_detail not eager loaded properly or implemented yet */}
                                                 {/* Assuming RequestController index doesn't load detail by default, we'll see */}
                                                 {/* For now, leaving blank if not available in top level for simplicity, assuming start_date contains time or plain date */}
                                                 {req.start_time && req.end_time ? `${req.start_time} - ${req.end_time}` : '-'}
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-[#462e37]/70">
+                                            <td className="px-6 py-4 text-sm text-[#1C3ECA]/70">
                                                 {req.duration ? `${req.duration} mins` : '-'}
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-[#462e37]/70 max-w-xs truncate">
+                                            <td className="px-6 py-4 text-sm text-[#1C3ECA]/70 max-w-xs truncate">
                                                 {req.reason}
                                             </td>
                                             <td className="px-6 py-4 text-center">

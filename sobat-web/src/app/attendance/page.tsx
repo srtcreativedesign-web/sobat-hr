@@ -178,7 +178,7 @@ export default function AttendancePage() {
                                     type="date"
                                     value={filterStartDate}
                                     onChange={(e) => setFilterStartDate(e.target.value)}
-                                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#462e37] focus:border-transparent"
+                                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:border-transparent"
                                 />
                             </div>
                             <div>
@@ -187,7 +187,7 @@ export default function AttendancePage() {
                                     type="date"
                                     value={filterEndDate}
                                     onChange={(e) => setFilterEndDate(e.target.value)}
-                                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#462e37] focus:border-transparent"
+                                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:border-transparent"
                                 />
                             </div>
                         </div>
@@ -196,7 +196,7 @@ export default function AttendancePage() {
                             <select
                                 value={filterDivision}
                                 onChange={(e) => setFilterDivision(e.target.value)}
-                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#462e37] focus:border-transparent"
+                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:border-transparent"
                             >
                                 <option value="">Semua Divisi</option>
                                 {organizations
@@ -215,7 +215,7 @@ export default function AttendancePage() {
                             <select
                                 value={filterStatus}
                                 onChange={(e) => setFilterStatus(e.target.value)}
-                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#462e37] focus:border-transparent"
+                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:border-transparent"
                             >
                                 <option value="">Semua Status</option>
                                 <option value="present">Hadir</option>
@@ -228,7 +228,7 @@ export default function AttendancePage() {
                         </div>
                         <button
                             type="submit"
-                            className="px-6 py-2 bg-[#a9eae2] text-[#462e37] rounded-lg hover:bg-[#729892] transition-colors font-medium"
+                            className="px-6 py-2 bg-[#60A5FA] text-[#1C3ECA] rounded-lg hover:bg-[#93C5FD] transition-colors font-medium"
                         >
                             Filter
                         </button>
@@ -246,7 +246,7 @@ export default function AttendancePage() {
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                     {loading ? (
                         <div className="p-12 text-center">
-                            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#a9eae2] border-t-transparent"></div>
+                            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#60A5FA] border-t-transparent"></div>
                             <p className="mt-4 text-gray-600">Memuat data...</p>
                         </div>
                     ) : attendances.length === 0 ? (

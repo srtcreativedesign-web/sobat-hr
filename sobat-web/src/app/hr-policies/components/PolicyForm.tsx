@@ -90,7 +90,7 @@ export default function PolicyForm({ isOpen, onClose, onSuccess, initialData }: 
                         <input
                             type="text"
                             required
-                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none"
+                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none"
                             placeholder="e.g. Libur Lebaran 2026"
                             value={title || ''}
                             onChange={(e) => setTitle(e.target.value)}
@@ -102,7 +102,7 @@ export default function PolicyForm({ isOpen, onClose, onSuccess, initialData }: 
                         <textarea
                             required
                             rows={6}
-                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] outline-none"
+                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none"
                             placeholder="Tulis detail informasi di sini..."
                             value={content || ''}
                             onChange={(e) => setContent(e.target.value)}
@@ -113,7 +113,7 @@ export default function PolicyForm({ isOpen, onClose, onSuccess, initialData }: 
                         <label className="block text-sm font-medium text-gray-700 mb-1">Lampiran (PDF/Doc/Image) - Optional</label>
                         <input
                             type="file"
-                            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#a9eae2]/20 file:text-[#462e37] hover:file:bg-[#a9eae2]/30"
+                            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#60A5FA]/20 file:text-[#1C3ECA] hover:file:bg-[#60A5FA]/30"
                             onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
                         />
                         {initialData?.attachment_url && !file && (
@@ -129,7 +129,7 @@ export default function PolicyForm({ isOpen, onClose, onSuccess, initialData }: 
                         <input
                             type="checkbox"
                             id="is_published"
-                            className="w-4 h-4 text-[#462e37] border-gray-300 rounded focus:ring-[#a9eae2]"
+                            className="w-4 h-4 text-[#1C3ECA] border-gray-300 rounded focus:ring-[#60A5FA]"
                             checked={isPublished}
                             onChange={(e) => setIsPublished(e.target.checked)}
                         />
@@ -150,7 +150,7 @@ export default function PolicyForm({ isOpen, onClose, onSuccess, initialData }: 
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-6 py-2 bg-[#462e37] text-white font-bold rounded-lg hover:bg-[#2d1e24] transition-colors disabled:opacity-50"
+                            className="px-6 py-2 bg-[#1C3ECA] text-white font-bold rounded-lg hover:bg-[#2d1e24] transition-colors disabled:opacity-50"
                         >
                             {loading ? 'Saving...' : 'Simpan'}
                         </button>

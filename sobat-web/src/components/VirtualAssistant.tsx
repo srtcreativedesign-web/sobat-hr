@@ -82,9 +82,9 @@ export default function VirtualAssistant() {
             {isOpen && (
                 <div className="mb-4 bg-white w-80 md:w-96 rounded-2xl shadow-2xl border border-gray-100 overflow-hidden pointer-events-auto animate-fade-in-up flex flex-col max-h-[500px]">
                     {/* Header */}
-                    <div className="bg-[#462e37] p-4 flex justify-between items-center text-white">
+                    <div className="bg-[#1C3ECA] p-4 flex justify-between items-center text-white">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-[#a9eae2] rounded-full flex items-center justify-center text-[#462e37] font-bold text-sm">
+                            <div className="w-8 h-8 bg-[#60A5FA] rounded-full flex items-center justify-center text-[#1C3ECA] font-bold text-sm">
                                 AI
                             </div>
                             <div>
@@ -105,7 +105,7 @@ export default function VirtualAssistant() {
                         {messages.map((msg, idx) => (
                             <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm shadow-sm ${msg.role === 'user'
-                                    ? 'bg-[#462e37] text-white rounded-br-none'
+                                    ? 'bg-[#1C3ECA] text-white rounded-br-none'
                                     : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'
                                     }`}>
                                     {msg.content}
@@ -134,12 +134,12 @@ export default function VirtualAssistant() {
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 placeholder="Ketik pesan..."
-                                className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#a9eae2] focus:border-[#462e37] outline-none transition-all text-sm"
+                                className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#60A5FA] focus:border-[#1C3ECA] outline-none transition-all text-sm"
                             />
                             <button
                                 type="submit"
                                 disabled={!input.trim() || isLoading}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-[#462e37] bg-[#a9eae2] rounded-lg hover:bg-[#8fdad2] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-[#1C3ECA] bg-[#60A5FA] rounded-lg hover:bg-[#8fdad2] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                             >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
                             </button>
@@ -151,7 +151,7 @@ export default function VirtualAssistant() {
             {/* Floating Toggle Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="pointer-events-auto bg-[#462e37] text-white p-4 rounded-full shadow-xl hover:shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 group"
+                className="pointer-events-auto bg-[#1C3ECA] text-white p-4 rounded-full shadow-xl hover:shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 group"
             >
                 {isOpen ? (
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -159,8 +159,8 @@ export default function VirtualAssistant() {
                     <div className="relative">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
                         <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#a9eae2] opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#a9eae2]"></span>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#60A5FA] opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#60A5FA]"></span>
                         </span>
                     </div>
                 )}

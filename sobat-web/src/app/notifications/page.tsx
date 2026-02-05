@@ -99,7 +99,7 @@ export default function NotificationsPage() {
                     {unreadCount > 0 && (
                         <button
                             onClick={() => handleMarkAsRead()}
-                            className="px-4 py-2 bg-[#462e37] text-white text-sm font-medium rounded-lg hover:bg-[#2d1e24] transition-colors"
+                            className="px-4 py-2 bg-[#1C3ECA] text-white text-sm font-medium rounded-lg hover:bg-[#2d1e24] transition-colors"
                         >
                             Mark All as Read
                         </button>
@@ -112,7 +112,7 @@ export default function NotificationsPage() {
                 <div className="glass-card p-6 bg-white/50">
                     {loading ? (
                         <div className="h-40 flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#462e37]"></div>
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1C3ECA]"></div>
                         </div>
                     ) : notifications.length === 0 ? (
                         <div className="text-center py-12">
@@ -133,7 +133,7 @@ export default function NotificationsPage() {
                                     onClick={() => !notification.read_at && handleMarkAsRead(notification.id)}
                                 >
                                     {/* Icon */}
-                                    <div className={`p-2 rounded-lg ${!notification.read_at ? 'bg-[#462e37] text-white' : 'bg-gray-100 text-gray-500'}`}>
+                                    <div className={`p-2 rounded-lg ${!notification.read_at ? 'bg-[#1C3ECA] text-white' : 'bg-gray-100 text-gray-500'}`}>
                                         {getNotificationIcon(notification.type)}
                                     </div>
 
@@ -158,7 +158,7 @@ export default function NotificationsPage() {
 
                                     {/* Unread Indicator */}
                                     {!notification.read_at && (
-                                        <div className="w-2 h-2 bg-[#462e37] rounded-full mt-2"></div>
+                                        <div className="w-2 h-2 bg-[#1C3ECA] rounded-full mt-2"></div>
                                     )}
                                 </div>
                             ))}

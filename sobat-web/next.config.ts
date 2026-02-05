@@ -27,6 +27,10 @@ const nextConfig: NextConfig = {
         protocol: 'http',
         hostname: '192.168.1.19',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
     ],
   },
 };

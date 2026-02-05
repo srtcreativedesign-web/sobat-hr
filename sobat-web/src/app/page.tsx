@@ -30,21 +30,21 @@ export default function Home() {
         </div>
 
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#462e37]/40 via-transparent to-transparent"></div>
+        <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#1C3ECA]/40 via-transparent to-transparent"></div>
       </div>
 
       <main className="relative z-10 text-center max-w-4xl mx-auto space-y-8 animate-fade-in-up">
         {/* Logo / Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#a9eae2]/90 backdrop-blur-md border border-[#729892]/20 shadow-lg">
-          <span className="w-2 h-2 rounded-full bg-[#462e37] animate-pulse"></span>
-          <span className="text-[#462e37] font-semibold tracking-wider text-sm uppercase">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#60A5FA]/90 backdrop-blur-md border border-[#93C5FD]/20 shadow-lg">
+          <span className="w-2 h-2 rounded-full bg-[#1C3ECA] animate-pulse"></span>
+          <span className="text-[#1C3ECA] font-semibold tracking-wider text-sm uppercase">
             Human Resource Information System
           </span>
         </div>
 
         {/* Hero Title */}
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-2 drop-shadow-lg">
-          SOBAT <span className="text-[#a9eae2]">HR</span>
+          SOBAT <span className="text-[#60A5FA]">HR</span>
         </h1>
 
         {/* Rotating Text Animation */}
@@ -52,7 +52,7 @@ export default function Home() {
           <span className="text-2xl md:text-3xl text-white mr-3 font-medium">Is</span>
           <RotatingText
             texts={['Modern', 'Efficient', 'Reliable', 'Simple']}
-            mainClassName="px-3 sm:px-3 md:px-4 bg-[#a9eae2] text-[#462e37] overflow-hidden py-1 sm:py-2 md:py-2 justify-center rounded-xl text-lg md:text-2xl font-bold"
+            mainClassName="px-3 sm:px-3 md:px-4 bg-[#60A5FA] text-[#1C3ECA] overflow-hidden py-1 sm:py-2 md:py-2 justify-center rounded-xl text-lg md:text-2xl font-bold"
             staggerFrom="last"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
@@ -73,7 +73,7 @@ export default function Home() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-12">
           <Link
             href="/login"
-            className="group relative px-8 py-4 bg-[#a9eae2] text-[#462e37] font-bold text-lg rounded-xl shadow-[0_0_20px_rgba(169,234,226,0.3)] hover:shadow-[0_0_30px_rgba(169,234,226,0.5)] hover:scale-105 transition-all duration-300"
+            className="group relative px-8 py-4 bg-[#60A5FA] text-[#1C3ECA] font-bold text-lg rounded-xl shadow-[0_0_20px_rgba(169,234,226,0.3)] hover:shadow-[0_0_30px_rgba(169,234,226,0.5)] hover:scale-105 transition-all duration-300"
           >
             Get Started
             <span className="absolute inset-0 rounded-xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></span>

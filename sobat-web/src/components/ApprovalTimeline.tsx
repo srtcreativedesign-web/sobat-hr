@@ -13,7 +13,7 @@ export default function ApprovalTimeline({ approvals }: ApprovalTimelineProps) {
 
     return (
         <div className="flow-root">
-            <h3 className="text-lg font-bold text-[#462e37] mb-4">Approval Timeline</h3>
+            <h3 className="text-lg font-bold text-[#1C3ECA] mb-4">Approval Timeline</h3>
             <ul role="list" className="-mb-8">
                 {sortedApprovals.map((approval, eventIdx) => {
                     const isLast = eventIdx === sortedApprovals.length - 1;

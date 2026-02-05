@@ -76,7 +76,7 @@ export default function SettingsPage() {
         <DashboardLayout>
             <div className="p-8">
                 <div className="mb-8">
-                    <h1 className="text-2xl font-bold text-[#462e37]">Settings</h1>
+                    <h1 className="text-2xl font-bold text-[#1C3ECA]">Settings</h1>
                     <p className="text-gray-500">Manage your account settings and preferences.</p>
                 </div>
 
@@ -87,7 +87,7 @@ export default function SettingsPage() {
                             <button
                                 onClick={() => setActiveTab('profile')}
                                 className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-colors ${activeTab === 'profile'
-                                        ? 'bg-[#a9eae2] text-[#462e37]'
+                                        ? 'bg-[#60A5FA] text-[#1C3ECA]'
                                         : 'text-gray-600 hover:bg-gray-100'
                                     }`}
                             >
@@ -97,7 +97,7 @@ export default function SettingsPage() {
                             <button
                                 onClick={() => setActiveTab('security')}
                                 className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-colors ${activeTab === 'security'
-                                        ? 'bg-[#a9eae2] text-[#462e37]'
+                                        ? 'bg-[#60A5FA] text-[#1C3ECA]'
                                         : 'text-gray-600 hover:bg-gray-100'
                                     }`}
                             >
@@ -117,24 +117,24 @@ export default function SettingsPage() {
 
                         {activeTab === 'profile' && (
                             <div className="max-w-md animate-fade-in-up">
-                                <h2 className="text-xl font-bold text-[#462e37] mb-6">General Profile</h2>
+                                <h2 className="text-xl font-bold text-[#1C3ECA] mb-6">General Profile</h2>
                                 <form onSubmit={handleProfileUpdate} className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-semibold text-[#462e37] mb-1">Full Name</label>
+                                        <label className="block text-sm font-semibold text-[#1C3ECA] mb-1">Full Name</label>
                                         <input
                                             type="text"
                                             required
-                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] focus:border-[#462e37] outline-none transition-all"
+                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] focus:border-[#1C3ECA] outline-none transition-all"
                                             value={profileData.name}
                                             onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-[#462e37] mb-1">Email Address</label>
+                                        <label className="block text-sm font-semibold text-[#1C3ECA] mb-1">Email Address</label>
                                         <input
                                             type="email"
                                             required
-                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] focus:border-[#462e37] outline-none transition-all"
+                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] focus:border-[#1C3ECA] outline-none transition-all"
                                             value={profileData.email}
                                             onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
                                         />
@@ -143,7 +143,7 @@ export default function SettingsPage() {
                                         <button
                                             type="submit"
                                             disabled={loading}
-                                            className="px-6 py-2 bg-[#462e37] text-white font-bold rounded-lg hover:bg-[#2d1e24] transition-colors disabled:opacity-50"
+                                            className="px-6 py-2 bg-[#1C3ECA] text-white font-bold rounded-lg hover:bg-[#2d1e24] transition-colors disabled:opacity-50"
                                         >
                                             {loading ? 'Saving...' : 'Save Changes'}
                                         </button>
@@ -154,37 +154,37 @@ export default function SettingsPage() {
 
                         {activeTab === 'security' && (
                             <div className="max-w-md animate-fade-in-up">
-                                <h2 className="text-xl font-bold text-[#462e37] mb-6">Change Password</h2>
+                                <h2 className="text-xl font-bold text-[#1C3ECA] mb-6">Change Password</h2>
                                 <form onSubmit={handlePasswordUpdate} className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-semibold text-[#462e37] mb-1">Current Password</label>
+                                        <label className="block text-sm font-semibold text-[#1C3ECA] mb-1">Current Password</label>
                                         <input
                                             type="password"
                                             required
-                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] focus:border-[#462e37] outline-none transition-all"
+                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] focus:border-[#1C3ECA] outline-none transition-all"
                                             value={passwordData.current_password}
                                             onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-[#462e37] mb-1">New Password</label>
+                                        <label className="block text-sm font-semibold text-[#1C3ECA] mb-1">New Password</label>
                                         <input
                                             type="password"
                                             required
                                             minLength={8}
-                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] focus:border-[#462e37] outline-none transition-all"
+                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] focus:border-[#1C3ECA] outline-none transition-all"
                                             value={passwordData.new_password}
                                             onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
                                         />
                                         <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-[#462e37] mb-1">Confirm New Password</label>
+                                        <label className="block text-sm font-semibold text-[#1C3ECA] mb-1">Confirm New Password</label>
                                         <input
                                             type="password"
                                             required
                                             minLength={8}
-                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#a9eae2] focus:border-[#462e37] outline-none transition-all"
+                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] focus:border-[#1C3ECA] outline-none transition-all"
                                             value={passwordData.new_password_confirmation}
                                             onChange={(e) => setPasswordData({ ...passwordData, new_password_confirmation: e.target.value })}
                                         />
@@ -193,7 +193,7 @@ export default function SettingsPage() {
                                         <button
                                             type="submit"
                                             disabled={loading}
-                                            className="px-6 py-2 bg-[#462e37] text-white font-bold rounded-lg hover:bg-[#2d1e24] transition-colors disabled:opacity-50"
+                                            className="px-6 py-2 bg-[#1C3ECA] text-white font-bold rounded-lg hover:bg-[#2d1e24] transition-colors disabled:opacity-50"
                                         >
                                             {loading ? 'Update Password' : 'Update Password'}
                                         </button>

@@ -418,7 +418,7 @@ export default function PayrollPage() {
         <div className="px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-[#462e37] to-[#729892] bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-[#1C3ECA] to-[#93C5FD] bg-clip-text text-transparent">
                 Payroll Management
               </h1>
               <p className="text-gray-600 mt-1">Kelola data payroll dan slip gaji karyawan</p>
@@ -441,7 +441,7 @@ export default function PayrollPage() {
                     alert('Gagal download template');
                   }
                 }}
-                className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-[#a9eae2] text-[#462e37] rounded-xl font-semibold hover:bg-[#a9eae2] hover:text-[#462e37] transition-all transform hover:scale-[1.02]"
+                className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-[#60A5FA] text-[#1C3ECA] rounded-xl font-semibold hover:bg-[#60A5FA] hover:text-[#1C3ECA] transition-all transform hover:scale-[1.02]"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -450,7 +450,7 @@ export default function PayrollPage() {
               </button>
               <button
                 onClick={() => setShowUploadModal(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#a9eae2] to-[#729892] text-[#462e37] rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-[1.02]"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#60A5FA] to-[#93C5FD] text-[#1C3ECA] rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-[1.02]"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -471,7 +471,7 @@ export default function PayrollPage() {
             <select
               value={selectedDivision}
               onChange={(e) => setSelectedDivision(e.target.value as any)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#462e37] text-sm font-medium"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#1C3ECA] text-sm font-medium"
             >
               <option value="all">Semua Divisi (Bulk Download)</option>
               <option value="office">Office (Pusat)</option>
@@ -489,7 +489,7 @@ export default function PayrollPage() {
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#462e37] text-sm"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#1C3ECA] text-sm"
             >
               <option value={0}>Semua Bulan</option>
               {months.map((m) => (
@@ -499,7 +499,7 @@ export default function PayrollPage() {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#462e37] text-sm"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#1C3ECA] text-sm"
             >
               <option value={0}>Semua Tahun</option>
               {[2024, 2025, 2026, 2027].map((y) => (
@@ -509,7 +509,7 @@ export default function PayrollPage() {
             {/* Bulk Download Button */}
             <button
               onClick={handleBulkDownload}
-              className="ml-2 flex items-center gap-2 px-4 py-2 bg-[#462e37] text-white rounded-lg hover:bg-[#2d1e24] transition-colors"
+              className="ml-2 flex items-center gap-2 px-4 py-2 bg-[#1C3ECA] text-white rounded-lg hover:bg-[#2d1e24] transition-colors"
               title="Download All Payslips as ZIP"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -587,7 +587,7 @@ export default function PayrollPage() {
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-4 border-[#a9eae2] border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-8 h-8 border-4 border-[#60A5FA] border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : payrolls.length === 0 ? (
             <div className="text-center py-12">
@@ -602,7 +602,7 @@ export default function PayrollPage() {
                     <th className="py-4 px-6 w-10">
                       <input
                         type="checkbox"
-                        className="rounded border-gray-300 text-[#462e37] focus:ring-[#462e37] cursor-pointer"
+                        className="rounded border-gray-300 text-[#1C3ECA] focus:ring-[#1C3ECA] cursor-pointer"
                         checked={
                           payrolls.length > 0 &&
                           payrolls.some(p => ['pending', 'draft'].includes(p.status)) &&
@@ -628,7 +628,7 @@ export default function PayrollPage() {
                     <th className="text-right py-4 px-6 text-sm font-semibold text-gray-600">Overtime</th>
                     <th className="text-right py-4 px-6 text-sm font-bold text-gray-700 bg-gray-100">Gross Salary</th>
                     <th className="text-right py-4 px-6 text-sm font-bold text-red-600 bg-red-50">Total Deductions</th>
-                    <th className="text-right py-4 px-6 text-sm font-bold text-[#462e37]">Net Salary</th>
+                    <th className="text-right py-4 px-6 text-sm font-bold text-[#1C3ECA]">Net Salary</th>
                     <th className="text-center py-4 px-6 text-sm font-semibold text-gray-600">Status</th>
                     <th className="text-center py-4 px-6 text-sm font-semibold text-gray-600">Actions</th>
                   </tr>
@@ -640,7 +640,7 @@ export default function PayrollPage() {
                         {['pending', 'draft'].includes(payroll.status) && (
                           <input
                             type="checkbox"
-                            className="rounded border-gray-300 text-[#462e37] focus:ring-[#462e37] cursor-pointer"
+                            className="rounded border-gray-300 text-[#1C3ECA] focus:ring-[#1C3ECA] cursor-pointer"
                             checked={selectedIds.includes(Number(payroll.id))}
                             onChange={(e) => {
                               const id = Number(payroll.id);
@@ -668,7 +668,7 @@ export default function PayrollPage() {
                       <td className="py-4 px-6 text-right text-sm text-green-600">{formatCurrency(calculateOvertimePay(payroll))}</td>
                       <td className="py-4 px-6 text-right text-sm font-bold text-gray-800 bg-gray-50">{formatCurrency(calculateGrossSalary(payroll))}</td>
                       <td className="py-4 px-6 text-right text-sm font-bold text-red-600 bg-red-50">-{formatCurrency(calculateTotalDeductions(payroll))}</td>
-                      <td className="py-4 px-6 text-right text-sm font-bold text-[#462e37]">{formatCurrency(payroll.net_salary)}</td>
+                      <td className="py-4 px-6 text-right text-sm font-bold text-[#1C3ECA]">{formatCurrency(payroll.net_salary)}</td>
                       <td className="py-4 px-6 text-center">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBadge(payroll.status)}`}>
                           {payroll.status.charAt(0).toUpperCase() + payroll.status.slice(1)}
@@ -850,7 +850,7 @@ export default function PayrollPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Earnings */}
                   <div>
-                    <h4 className="text-sm font-bold text-[#729892] uppercase tracking-wider mb-4 border-b border-[#a9eae2] pb-2">Pendapatan</h4>
+                    <h4 className="text-sm font-bold text-[#93C5FD] uppercase tracking-wider mb-4 border-b border-[#60A5FA] pb-2">Pendapatan</h4>
                     <div className="space-y-3">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Gaji Pokok</span>
@@ -1010,7 +1010,7 @@ export default function PayrollPage() {
                 </div>
 
                 {/* Net Salary Summary */}
-                <div className="mt-8 bg-[#462e37] text-white p-6 rounded-xl flex items-center justify-between shadow-lg">
+                <div className="mt-8 bg-[#1C3ECA] text-white p-6 rounded-xl flex items-center justify-between shadow-lg">
                   <div>
                     <p className="text-indigo-100 text-sm font-medium">TAKE HOME PAY (THP)</p>
                     <p className="text-3xl font-bold">{formatCurrency(selectedPayroll.net_salary)}</p>
@@ -1056,7 +1056,7 @@ export default function PayrollPage() {
                         alert('Gagal download slip gaji');
                       }
                     }}
-                    className="flex-1 bg-[#462e37] text-white px-4 py-3 rounded-xl font-semibold hover:bg-[#523640] transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 bg-[#1C3ECA] text-white px-4 py-3 rounded-xl font-semibold hover:bg-[#523640] transition-colors flex items-center justify-center gap-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -1119,7 +1119,7 @@ export default function PayrollPage() {
                   value={signerName}
                   onChange={(e) => setSignerName(e.target.value)}
                   placeholder="Masukkan nama lengkap (e.g. Budi Santoso, HRD)"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#729892]"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#93C5FD]"
                 />
               </div>
 
@@ -1143,7 +1143,7 @@ export default function PayrollPage() {
                 <button
                   onClick={handleConfirmApproval}
                   disabled={loading}
-                  className="flex-1 px-4 py-2 bg-[#462e37] text-white rounded-xl font-bold hover:bg-[#5e3d4a] transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-[#1C3ECA] text-white rounded-xl font-bold hover:bg-[#5e3d4a] transition-colors disabled:opacity-50"
                 >
                   {loading ? 'Processing...' : 'Approve & Sign'}
                 </button>
@@ -1180,7 +1180,7 @@ export default function PayrollPage() {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Pilih File Excel
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#a9eae2] transition-colors">
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#60A5FA] transition-colors">
                     <input
                       type="file"
                       accept=".xlsx,.xls,.csv"
@@ -1209,11 +1209,11 @@ export default function PayrollPage() {
                   <div>
                     <div className="flex justify-between text-sm mb-2">
                       <span className="text-gray-600">Uploading...</span>
-                      <span className="text-[#462e37] font-semibold">{uploadProgress}%</span>
+                      <span className="text-[#1C3ECA] font-semibold">{uploadProgress}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
-                        className="bg-gradient-to-r from-[#a9eae2] to-[#729892] h-2 rounded-full transition-all duration-300"
+                        className="bg-gradient-to-r from-[#60A5FA] to-[#93C5FD] h-2 rounded-full transition-all duration-300"
                         style={{ width: `${uploadProgress}%` }}
                       />
                     </div>
@@ -1235,7 +1235,7 @@ export default function PayrollPage() {
                   <button
                     onClick={handleUpload}
                     disabled={!selectedFile || uploadProgress > 0}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-[#a9eae2] to-[#729892] text-[#462e37] rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-[#60A5FA] to-[#93C5FD] text-[#1C3ECA] rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     Upload
                   </button>
@@ -1334,7 +1334,7 @@ export default function PayrollPage() {
                             }
                           }
                         }}
-                        className="px-4 py-2 bg-gradient-to-r from-[#a9eae2] to-[#729892] text-[#462e37] rounded-lg"
+                        className="px-4 py-2 bg-gradient-to-r from-[#60A5FA] to-[#93C5FD] text-[#1C3ECA] rounded-lg"
                       >
                         Save to DB
                       </button>

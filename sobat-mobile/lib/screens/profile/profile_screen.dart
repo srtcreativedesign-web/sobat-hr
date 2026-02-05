@@ -216,132 +216,203 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // PROFILE CARD WITH GRADIENT
   Widget _buildProfileCard(BuildContext context, user) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      width: double.infinity,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.colorEggplant,
-            AppTheme.colorEggplant.withValues(alpha: 0.9),
+            Color(0xFF1C3ECA), // Deep Blue
+            Color(0xFF60A5FA), // Soft Blue
           ],
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.colorEggplant.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: const Color(0xFF1C3ECA).withValues(alpha: 0.3),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
-      child: Column(
+      child: Stack(
         children: [
-          Stack(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    width: 4,
-                  ),
-                ),
-                child: CircleAvatar(
-                  radius: 40,
-                  backgroundColor: Colors.white.withValues(alpha: 0.1),
-                  backgroundImage: (user?.avatar != null)
-                      ? NetworkImage(
-                          user!.avatar!.startsWith('http')
-                              ? user.avatar!
-                              : '${(ApiConfig.baseUrl.replaceAll('/api', ''))}/storage/${user.avatar}',
-                        )
-                      : null,
-                  child: (user?.avatar == null)
-                      ? Text(
-                          (user?.name?.isNotEmpty == true)
-                              ? user!.name.substring(0, 1).toUpperCase()
-                              : 'U',
-                          style: const TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        )
-                      : null,
-                ),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppTheme.colorCyan,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppTheme.colorEggplant, width: 2),
-                  ),
-                  child: Icon(
-                    Icons.edit,
-                    size: 14,
-                    color: AppTheme.colorEggplant,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            user?.name ?? 'User',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            (user?.jobLevel != null && user!.jobLevel!.isNotEmpty)
-                ? (user!.jobLevel!.toUpperCase().replaceAll('_', ' '))
-                : (user?.position != null && user!.position!.isNotEmpty)
-                ? user!.position!.toUpperCase()
-                : (user?.role?.toUpperCase() ?? 'STAFF'),
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.white.withValues(alpha: 0.9),
-              letterSpacing: 1,
-            ),
-          ),
-          if (user?.organization != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              user!.organization!,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Colors.white.withValues(alpha: 0.7),
+          // Decorative Patterns
+          Positioned(
+            top: -50,
+            right: -50,
+            child: Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.1),
               ),
             ),
-          ],
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(16),
+          ),
+          Positioned(
+            bottom: -30,
+            left: -30,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+          ),
+
+          // Original Content
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
               children: [
-                Icon(Icons.badge_outlined, color: Colors.white70, size: 16),
-                const SizedBox(width: 8),
+                Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          width: 4,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        radius: 45,
+                        backgroundColor: Colors.white.withValues(alpha: 0.1),
+                        backgroundImage: (user?.avatar != null)
+                            ? NetworkImage(
+                                user!.avatar!.startsWith('http')
+                                    ? user.avatar!
+                                    : '${(ApiConfig.baseUrl.replaceAll('/api', ''))}/storage/${user.avatar}',
+                              )
+                            : null,
+                        child: (user?.avatar == null)
+                            ? Text(
+                                (user?.name?.isNotEmpty == true)
+                                    ? user!.name.substring(0, 1).toUpperCase()
+                                    : 'U',
+                                style: const TextStyle(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : null,
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.edit,
+                          size: 16,
+                          color: Color(0xFF1C3ECA),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
                 Text(
-                  user?.employeeId ?? 'ID: -',
+                  user?.name ?? 'User',
+                  textAlign: TextAlign.center,
                   style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
                     color: Colors.white,
-                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    (user?.jobLevel != null && user!.jobLevel!.isNotEmpty)
+                        ? (user!.jobLevel!.toUpperCase().replaceAll('_', ' '))
+                        : (user?.position != null && user!.position!.isNotEmpty)
+                        ? user!.position!.toUpperCase()
+                        : (user?.role?.toUpperCase() ?? 'STAFF'),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+                if (user?.organization != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    user!.organization!,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.badge_outlined,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        user?.employeeId ?? 'ID: -',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

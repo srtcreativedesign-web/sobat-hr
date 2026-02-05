@@ -293,7 +293,7 @@ export default function EmployeesPage() {
             </button>
             <button
               onClick={() => setShowImportModal(true)}
-              className="px-4 py-2 bg-[#462e37] text-[#a9eae2] rounded-lg hover:bg-[#2d1e24] transition-colors font-medium flex items-center gap-2"
+              className="px-4 py-2 bg-[#1C3ECA] text-[#60A5FA] rounded-lg hover:bg-[#2d1e24] transition-colors font-medium flex items-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -316,7 +316,7 @@ export default function EmployeesPage() {
                   placeholder="Nama atau NIK..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#462e37] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:border-transparent"
                 />
               </div>
 
@@ -327,7 +327,7 @@ export default function EmployeesPage() {
                 <select
                   value={filterOrg}
                   onChange={(e) => setFilterOrg(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#462e37] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:border-transparent"
                 >
                   <option value="">Semua Divisi</option>
                   {organizations.map(org => (
@@ -343,7 +343,7 @@ export default function EmployeesPage() {
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#462e37] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:border-transparent"
                 >
                   <option value="">Semua Status</option>
                   <option value="active">Aktif</option>
@@ -355,7 +355,7 @@ export default function EmployeesPage() {
               <div className="flex items-end">
                 <button
                   type="submit"
-                  className="w-full px-6 py-2 bg-[#a9eae2] text-[#462e37] rounded-lg hover:bg-[#729892] transition-colors"
+                  className="w-full px-6 py-2 bg-[#60A5FA] text-[#1C3ECA] rounded-lg hover:bg-[#93C5FD] transition-colors"
                 >
                   Cari
                 </button>
@@ -368,7 +368,7 @@ export default function EmployeesPage() {
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           {loading ? (
             <div className="p-12 text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#a9eae2] border-t-transparent"></div>
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#60A5FA] border-t-transparent"></div>
               <p className="mt-4 text-gray-600">Memuat data...</p>
             </div>
           ) : employees.length === 0 ? (
@@ -445,7 +445,7 @@ export default function EmployeesPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => handleViewDetails(employee)}
-                          className="text-[#462e37] hover:text-[#2d1e24] font-medium"
+                          className="text-[#1C3ECA] hover:text-[#2d1e24] font-medium"
                         >
                           Detail
                         </button>
@@ -520,14 +520,14 @@ export default function EmployeesPage() {
               {/* Modal Content */}
               <div className="p-6 space-y-6">
                 {/* Basic Info */}
-                <div className="bg-gradient-to-r from-[#a9eae2] to-[#729892] rounded-lg p-6 text-[#462e37]">
+                <div className="bg-gradient-to-r from-[#60A5FA] to-[#93C5FD] rounded-lg p-6 text-[#1C3ECA]">
                   <div className="flex items-center gap-4">
                     <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center text-3xl font-bold">
                       {selectedEmployee.full_name.charAt(0).toUpperCase()}
                     </div>
                     <div>
                       <h3 className="text-2xl font-bold">{selectedEmployee.full_name}</h3>
-                      <p className="text-[#462e37] font-semibold">{selectedEmployee.employee_code}</p>
+                      <p className="text-[#1C3ECA] font-semibold">{selectedEmployee.employee_code}</p>
                       <p className="text-sm mt-1">{selectedEmployee.position} • {selectedEmployee.organization?.name}</p>
                     </div>
                   </div>
@@ -723,11 +723,11 @@ export default function EmployeesPage() {
                   <button
                     type="submit"
                     disabled={!importFile || uploading}
-                    className="px-4 py-2 bg-[#462e37] text-[#a9eae2] rounded-lg hover:bg-[#2d1e24] disabled:opacity-50 flex items-center gap-2"
+                    className="px-4 py-2 bg-[#1C3ECA] text-[#60A5FA] rounded-lg hover:bg-[#2d1e24] disabled:opacity-50 flex items-center gap-2"
                   >
                     {uploading ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-[#a9eae2] border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-4 h-4 border-2 border-[#60A5FA] border-t-transparent rounded-full animate-spin"></div>
                         Memproses...
                       </>
                     ) : 'Upload & Import'}

@@ -3,18 +3,18 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Brand Colors
-  // Swapped: Primary is now Cyan, Secondary is now Dark Eggplant
-  static const Color colorCyan = Color(
-    0xFFA9EAE2,
-  ); // Was secondary, now Primary
-  static const Color colorEggplant = Color(
-    0xFF462E37,
-  ); // Was primary, now Secondary
-  static const Color tertiarySage = Color(0xFF729892); // Web Admin Gradient End
+  // New Blue Identity
+  static const Color colorPrimary = Color(0xFF1C3ECA); // Deep Blue (#1c3eca)
+  static const Color colorSecondary = Color(0xFF60A5FA); // Soft Blue (#60a5fa)
+  static const Color colorTertiary = Color(
+    0xFF93C5FD,
+  ); // Lighter Blue (#93c5fd)
 
-  static const Color backgroundLight = Color(0xFFF8F9FA);
-  static const Color textDark = Color(0xFF1F2937);
-  static const Color textLight = Color(0xFF4B5563); // Darkened from 0xFF6B7280
+  static const Color backgroundLight = Color(
+    0xFFFAFDFF,
+  ); // Pale Blueish White (#fafdff)
+  static const Color textDark = Color(0xFF1F2937); // Standard Dark Text
+  static const Color textLight = Color(0xFF64748B); // Slate 500
 
   // Status Colors
   static const Color success = Color(0xFF10B981);
@@ -22,48 +22,55 @@ class AppTheme {
   static const Color error = Color(0xFFEF4444);
   static const Color info = Color(0xFF3B82F6);
 
-  // -- Attendance Gradients (Softer/Pastel) --
-  // 1. Default / Belum Hadir (Cyan like Navbar)
+  // -- Attendance Gradients --
+  // 1. Default / Belum Hadir (Soft Blue Gradient)
   static const List<Color> gradientDefault = [
-    Color(0xFFA9EAE2), // Cyan Primary
-    Color(0xFF86D6CC), // Slightly darker cyan for gradient
+    Color(0xFF60A5FA), // Soft Blue
+    Color(0xFF93C5FD), // Light Blue
   ];
 
-  // 2. Working / Sedang Bekerja (Soft Blue)
+  // 2. Working / Sedang Bekerja (Deep Blue Gradient)
   static const List<Color> gradientWorking = [
-    Color(0xFF60A5FA), // Blue 400
-    Color(0xFF93C5FD), // Blue 300
+    Color(0xFF1C3ECA), // Deep Blue
+    Color(0xFF4F70E6), // Slightly Lighter Deep Blue
   ];
 
-  // 3. Finished / Sudah Selesai (Soft Sage/Emerald)
+  // 3. Finished / Sudah Selesai (Emerald/Green as before, or mixed?)
+  // Keep Green for differentiation
   static const List<Color> gradientFinished = [
-    Color(0xFF34D399), // Emerald 400
-    Color(0xFF6EE7B7), // Emerald 300
+    Color(0xFF34D399),
+    Color(0xFF6EE7B7),
   ];
+
+  // Helper alias to avoid breaking code that uses colorCyan/colorEggplant
+  // Mapping old names to new palette for compatibility
+  static const Color colorCyan = colorSecondary;
+  static const Color colorEggplant = colorPrimary;
 
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.light(
-        primary: colorCyan, // SWAPPED
-        secondary: colorEggplant, // SWAPPED
+        primary: colorPrimary,
+        secondary: colorSecondary,
         surface: Colors.white,
         error: error,
+        tertiary: colorTertiary,
       ),
       scaffoldBackgroundColor: backgroundLight,
 
       // AppBar Theme
       appBarTheme: AppBarTheme(
-        backgroundColor: colorCyan, // SWAPPED
-        foregroundColor: colorEggplant, // SWAPPED
+        backgroundColor: backgroundLight,
+        foregroundColor: colorPrimary,
         elevation: 0,
         centerTitle: true,
         titleTextStyle: GoogleFonts.inter(
           fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: colorEggplant, // SWAPPED
+          fontWeight: FontWeight.bold,
+          color: colorPrimary,
         ),
-        iconTheme: const IconThemeData(color: colorEggplant), // SWAPPED
+        iconTheme: const IconThemeData(color: colorPrimary),
       ),
 
       // Text Theme
@@ -118,12 +125,12 @@ class AppTheme {
       // Button Theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: colorCyan, // SWAPPED
-          foregroundColor: colorEggplant, // SWAPPED
+          backgroundColor: colorPrimary,
+          foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
           ),
           textStyle: GoogleFonts.inter(
             fontSize: 16,
@@ -141,36 +148,36 @@ class AppTheme {
           vertical: 16,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.grey.shade200),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.grey.shade200),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: colorCyan, width: 2), // SWAPPED
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: colorPrimary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: error),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: error, width: 2),
         ),
         labelStyle: GoogleFonts.inter(fontSize: 14, color: textLight),
         hintStyle: GoogleFonts.inter(fontSize: 14, color: textLight),
-        floatingLabelStyle: const TextStyle(color: colorCyan), // SWAPPED
+        floatingLabelStyle: const TextStyle(color: colorPrimary),
       ),
 
       // Card Theme
       cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.grey[200]!),
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: Colors.grey.shade100),
         ),
         color: Colors.white,
       ),

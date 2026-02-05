@@ -102,7 +102,7 @@ export default function ContractTemplatePage() {
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                         </button>
                         <div>
-                            <h1 className="text-2xl font-bold text-[#462e37]">Contract Template Editor</h1>
+                            <h1 className="text-2xl font-bold text-[#1C3ECA]">Contract Template Editor</h1>
                             <p className="text-sm text-gray-500">Customize the layout using the rich text editor below.</p>
                         </div>
                     </div>
@@ -117,7 +117,7 @@ export default function ContractTemplatePage() {
                         <button
                             onClick={handleSave}
                             disabled={loading}
-                            className="px-6 py-2 bg-[#462e37] hover:bg-[#2d1e24] text-white text-sm font-bold rounded-xl shadow-lg shadow-[#462e37]/20 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            className="px-6 py-2 bg-[#1C3ECA] hover:bg-[#2d1e24] text-white text-sm font-bold rounded-xl shadow-lg shadow-[#1C3ECA]/20 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
                             {loading ? 'Saving...' : 'Save Template'}
@@ -136,7 +136,7 @@ export default function ContractTemplatePage() {
                                 value={content}
                                 onChange={setContent}
                                 modules={modules}
-                                className="h-full flex flex-col [&_.ql-container]:flex-1 [&_.ql-container]:overflow-y-auto [&_.ql-editor]:h-full [&_.ql-editor]:text-base [&_.ql-editor]:font-serif [&_.ql-editor]:text-[#462e37]"
+                                className="h-full flex flex-col [&_.ql-container]:flex-1 [&_.ql-container]:overflow-y-auto [&_.ql-editor]:h-full [&_.ql-editor]:text-base [&_.ql-editor]:font-serif [&_.ql-editor]:text-[#1C3ECA]"
 
                             />
                         </div>
@@ -145,23 +145,23 @@ export default function ContractTemplatePage() {
                     {/* Sidebar: Variables */}
                     <div className="w-96 bg-white border-l border-gray-200 flex flex-col">
                         <div className="p-6 border-b border-gray-100">
-                            <h3 className="text-sm font-bold text-[#462e37] uppercase tracking-wider">Variables Reference</h3>
+                            <h3 className="text-sm font-bold text-[#1C3ECA] uppercase tracking-wider">Variables Reference</h3>
                             <p className="text-xs text-gray-500 mt-1">Click to copy placeholder to clipboard.</p>
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-6 space-y-3">
                             {Object.entries(variables).map(([key, desc]) => (
                                 <div key={key}
-                                    className="group p-3 rounded-xl border border-gray-100 hover:border-[#462e37]/30 hover:bg-gray-50 cursor-pointer transition-all"
+                                    className="group p-3 rounded-xl border border-gray-100 hover:border-[#1C3ECA]/30 hover:bg-gray-50 cursor-pointer transition-all"
                                     onClick={() => {
                                         navigator.clipboard.writeText(key);
                                     }}
                                 >
                                     <div className="flex items-center justify-between mb-1">
-                                        <code className="text-xs font-bold text-[#462e37] bg-gray-100 px-2 py-1 rounded-md group-hover:bg-[#462e37] group-hover:text-white transition-colors">
+                                        <code className="text-xs font-bold text-[#1C3ECA] bg-gray-100 px-2 py-1 rounded-md group-hover:bg-[#1C3ECA] group-hover:text-white transition-colors">
                                             {key}
                                         </code>
-                                        <svg className="w-4 h-4 text-gray-300 group-hover:text-[#462e37] opacity-0 group-hover:opacity-100 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                        <svg className="w-4 h-4 text-gray-300 group-hover:text-[#1C3ECA] opacity-0 group-hover:opacity-100 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                                     </div>
                                     <p className="text-xs text-gray-500 ml-1">{desc}</p>
                                 </div>

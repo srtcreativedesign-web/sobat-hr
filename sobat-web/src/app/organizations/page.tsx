@@ -132,7 +132,7 @@ export default function OrganizationPage() {
         <DashboardLayout>
             <div className="flex justify-between items-center p-8 pb-0 animate-fade-in-up">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#462e37]">Organization Structure</h1>
+                    <h1 className="text-2xl font-bold text-[#1C3ECA]">Organization Structure</h1>
                     <p className="text-gray-500 mt-1">Manage hierarchical company structure</p>
                 </div>
                 <div className="flex gap-3">
@@ -145,7 +145,7 @@ export default function OrganizationPage() {
                     </button>
                     <button
                         onClick={handleCreate}
-                        className="px-4 py-2 bg-[#462e37] text-white font-semibold rounded-xl hover:bg-[#2d1e24] shadow-lg shadow-[#462e37]/20 transition-all flex items-center gap-2"
+                        className="px-4 py-2 bg-[#1C3ECA] text-white font-semibold rounded-xl hover:bg-[#2d1e24] shadow-lg shadow-[#1C3ECA]/20 transition-all flex items-center gap-2"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                         New Organization
@@ -156,7 +156,7 @@ export default function OrganizationPage() {
             <div className="p-8">
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
-                        <div className="w-8 h-8 border-4 border-[#a9eae2] border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-8 h-8 border-4 border-[#60A5FA] border-t-transparent rounded-full animate-spin"></div>
                     </div>
                 ) : (
                     <>
@@ -175,8 +175,8 @@ export default function OrganizationPage() {
                         <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in-up" key={selectedOrg?.id || 'empty'}>
                             <div className="lg:col-span-3">
                                 <div className="glass-card p-6 rounded-xl border border-gray-100 bg-white shadow-sm">
-                                    <h3 className="text-xl font-bold text-[#462e37] mb-4 flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-[#729892]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                    <h3 className="text-xl font-bold text-[#1C3ECA] mb-4 flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-[#93C5FD]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                         Uraian Jabatan & Detail (Description)
                                     </h3>
 
@@ -188,7 +188,7 @@ export default function OrganizationPage() {
                                                     <p className="text-sm text-gray-500 font-mono mt-1">{selectedOrg.code}</p>
                                                     <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full mt-2 uppercase font-bold">{selectedOrg.type}</span>
                                                 </div>
-                                                <button onClick={() => handleEdit(selectedOrg)} className="text-[#a9eae2] hover:text-[#729892] text-sm font-semibold">
+                                                <button onClick={() => handleEdit(selectedOrg)} className="text-[#60A5FA] hover:text-[#93C5FD] text-sm font-semibold">
                                                     Edit Details
                                                 </button>
                                             </div>

@@ -56,6 +56,15 @@ export default function Sidebar() {
     return () => clearInterval(interval);
   }, [user]);
 
+  // Auto-expand menu based on active route
+  useEffect(() => {
+    menuItems.forEach(item => {
+      if (item.subItems?.some(sub => pathname.startsWith(sub.href))) {
+        setExpandedMenus(prev => prev.includes(item.name) ? prev : [...prev, item.name]);
+      }
+    });
+  }, [pathname]);
+
   const toggleMenu = (name: string) => {
     if (isCollapsed) setIsCollapsed(false);
     setExpandedMenus(prev =>
@@ -223,12 +232,12 @@ export default function Sidebar() {
   });
 
   return (
-    <div className={`${isCollapsed ? 'w-20' : 'w-72'} h-screen sticky top-0 bg-gradient-to-b from-[#a9eae2] to-[#729892] text-[#462e37] transition-all duration-300 flex flex-col border-r border-[#462e37]/10 shadow-[4px_0_24px_rgba(0,0,0,0.1)]`}>
+    <div className={`${isCollapsed ? 'w-20' : 'w-72'} h-screen sticky top-0 bg-[#60A5FA] text-white transition-all duration-300 flex flex-col border-r border-white/10 shadow-xl`}>
       {/* Header */}
-      <div className="p-6 flex items-center justify-between border-b border-[#462e37]/10 bg-white/10 backdrop-blur-sm">
+      <div className="p-6 flex items-center justify-between border-b border-white/10 bg-white/5 backdrop-blur-sm">
         {!isCollapsed && (
           <div className="flex items-center gap-3 animate-fade-in-up">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#462e37] to-[#2d1e24] flex items-center justify-center shadow-[0_0_15px_rgba(70,46,55,0.3)]">
+            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-lg">
               <div className="relative w-6 h-6">
                 <Image
                   src="/logo/logo.png"
@@ -239,14 +248,14 @@ export default function Sidebar() {
               </div>
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-[#462e37] drop-shadow-sm">SOBAT <span className="text-white">HR</span></h1>
-              <p className="text-[10px] uppercase tracking-widest text-[#462e37]/70 font-semibold">Admin Panel</p>
+              <h1 className="text-xl font-bold tracking-tight text-white drop-shadow-sm">SOBAT <span className="text-[#1C3ECA]">HR</span></h1>
+              <p className="text-[10px] uppercase tracking-widest text-white/90 font-semibold">Admin Panel</p>
             </div>
           </div>
         )}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-2 rounded-lg text-[#462e37]/60 hover:text-[#462e37] hover:bg-[#462e37]/10 transition-all"
+          className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all"
         >
           <svg className="w-5 h-5 transform transition-transform" style={{ transform: isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -255,18 +264,18 @@ export default function Sidebar() {
       </div>
 
       {/* User Info */}
-      <div className="p-4 mx-4 mt-6 mb-4 rounded-2xl bg-[#462e37]/5 border border-[#462e37]/10 backdrop-blur-sm">
+      <div className="p-4 mx-4 mt-6 mb-4 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-sm">
         <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
           <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-b from-[#462e37] to-[#2d1e24] border-2 border-[#462e37]/50 flex items-center justify-center font-bold text-white shadow-lg">
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold ring-2 ring-[#1C3ECA]">
               {user?.name?.charAt(0).toUpperCase() || 'A'}
             </div>
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#a9eae2] border-2 border-[#462e37] rounded-full"></div>
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-[#1C3ECA]"></div>
           </div>
           {!isCollapsed && (
-            <div className="flex-1 min-w-0 overflow-hidden">
-              <p className="font-bold text-sm truncate text-[#462e37]">{user?.name || 'Admin'}</p>
-              <p className="text-xs text-[#462e37]/70 truncate font-medium">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-white truncate">{user?.name || 'Admin'}</p>
+              <p className="text-xs text-[#93C5FD] truncate capitalize">
                 {typeof user?.role === 'string'
                   ? user.role
                   : (user?.role && typeof user.role === 'object' ? (user.role as Role).display_name : 'Administrator')}
@@ -290,13 +299,13 @@ export default function Sidebar() {
             <div key={item.name}>
               <button
                 onClick={() => hasSubItems ? toggleMenu(item.name) : router.push(item.href)}
-                className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 relative overflow-hidden ${isActive && !hasSubItems
-                  ? 'bg-[#462e37] text-[#a9eae2] shadow-[0_0_20px_rgba(70,46,55,0.3)] font-bold'
-                  : 'text-[#462e37]/70 hover:text-[#462e37] hover:bg-[#462e37]/10'
+                className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 relative overflow-hidden ${isActive
+                  ? 'bg-white text-[#1C3ECA] shadow-lg font-bold'
+                  : 'text-white/70 hover:text-white hover:bg-white/10'
                   } ${isCollapsed ? 'justify-center' : ''}`}
               >
-                {isActive && !hasSubItems && (
-                  <div className="absolute inset-0 bg-white/20 mix-blend-overlay"></div>
+                {isActive && (
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#1C3ECA]"></div>
                 )}
 
                 <span className={`transform transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
@@ -326,15 +335,11 @@ export default function Sidebar() {
                 {isCollapsed && showBadge && (
                   <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></div>
                 )}
-
-                {!isCollapsed && isActive && !hasSubItems && (
-                  <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-[#a9eae2]"></div>
-                )}
               </button>
 
               {/* Submenu */}
               {!isCollapsed && hasSubItems && isExpanded && (
-                <div className="ml-4 mt-1 space-y-1 border-l-2 border-[#462e37]/10 pl-2">
+                <div className="ml-4 mt-1 space-y-1 border-l-2 border-white/10 pl-2">
                   {item.subItems?.map((sub) => {
                     const isSubActive = pathname === sub.href;
                     return (
@@ -342,8 +347,8 @@ export default function Sidebar() {
                         key={sub.href}
                         onClick={() => router.push(sub.href)}
                         className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition-all ${isSubActive
-                          ? 'bg-[#462e37] text-[#a9eae2] shadow-md font-bold'
-                          : 'text-[#462e37]/60 hover:text-[#462e37] hover:bg-[#462e37]/5'
+                          ? 'bg-white/10 text-white shadow-sm font-bold border border-white/20'
+                          : 'text-white/60 hover:text-white hover:bg-white/5'
                           }`}
                       >
                         {sub.name}
@@ -358,10 +363,10 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer Actions */}
-      <div className="p-4 mx-4 mb-4 mt-2 space-y-2 border-t border-[#462e37]/10">
+      <div className="p-4 mx-4 mb-4 mt-2 space-y-2 border-t border-white/10">
         <button
           onClick={() => router.push('/settings')}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[#462e37]/70 hover:text-[#462e37] hover:bg-[#462e37]/10 transition-all text-sm font-medium ${isCollapsed ? 'justify-center' : ''}`}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-all text-sm font-medium ${isCollapsed ? 'justify-center' : ''}`}
         >
           <svg className="w-5 h-5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -371,7 +376,7 @@ export default function Sidebar() {
         </button>
         <button
           onClick={handleLogout}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all text-sm font-medium border border-red-500/10 hover:border-red-500/30 ${isCollapsed ? 'justify-center' : ''}`}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-red-400/10 hover:bg-red-500/20 text-red-200 hover:text-red-100 transition-all text-sm font-medium border border-red-400/10 hover:border-red-500/30 ${isCollapsed ? 'justify-center' : ''}`}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

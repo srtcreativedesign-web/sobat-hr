@@ -118,7 +118,7 @@ export default function ContractsPage() {
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-[#462e37]">Digital Contracts</h1>
+                        <h1 className="text-2xl font-bold text-[#1C3ECA]">Digital Contracts</h1>
                         <p className="text-gray-500 mt-1">Manage employee contracts and renewals</p>
                     </div>
                     <div className="flex gap-3 flex-wrap items-center">
@@ -126,7 +126,7 @@ export default function ContractsPage() {
                         <select
                             value={selectedDivision}
                             onChange={(e) => setSelectedDivision(e.target.value)}
-                            className="px-4 py-2 bg-white border border-gray-200 text-[#462e37] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#462e37]/20 text-sm"
+                            className="px-4 py-2 bg-white border border-gray-200 text-[#1C3ECA] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1C3ECA]/20 text-sm"
                         >
                             <option value="all">All Divisions</option>
                             {uniqueDivisions.map(div => (
@@ -138,7 +138,7 @@ export default function ContractsPage() {
                         <select
                             value={selectedTrack}
                             onChange={(e) => setSelectedTrack(e.target.value)}
-                            className="px-4 py-2 bg-white border border-gray-200 text-[#462e37] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#462e37]/20 text-sm"
+                            className="px-4 py-2 bg-white border border-gray-200 text-[#1C3ECA] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1C3ECA]/20 text-sm"
                         >
                             <option value="all">All Tracks</option>
                             {uniqueTracks.map(track => (
@@ -152,7 +152,7 @@ export default function ContractsPage() {
                                 placeholder="Search employee..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#462e37]/20 w-64"
+                                className="pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1C3ECA]/20 w-64"
                             />
                             <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                         </div>
@@ -202,12 +202,12 @@ export default function ContractsPage() {
                         <button
                             key={f}
                             onClick={() => setFilter(f as any)}
-                            className={`px-4 py-2 text-sm font-medium transition-colors relative ${filter === f ? 'text-[#462e37]' : 'text-gray-400 hover:text-gray-600'
+                            className={`px-4 py-2 text-sm font-medium transition-colors relative ${filter === f ? 'text-[#1C3ECA]' : 'text-gray-400 hover:text-gray-600'
                                 }`}
                         >
                             {f.charAt(0).toUpperCase() + f.slice(1)}
                             {filter === f && (
-                                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#462e37] rounded-t-full"></div>
+                                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#1C3ECA] rounded-t-full"></div>
                             )}
                         </button>
                     ))}
@@ -217,7 +217,7 @@ export default function ContractsPage() {
                 <div className="glass-card bg-white overflow-hidden">
                     {loading ? (
                         <div className="py-20 flex flex-col items-center justify-center text-gray-400">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#462e37] mb-4"></div>
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1C3ECA] mb-4"></div>
                             Loading contracts...
                         </div>
                     ) : filteredEmployees.length === 0 ? (
@@ -228,14 +228,14 @@ export default function ContractsPage() {
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">
-                                <thead className="bg-[#462e37]/5 border-b border-[#462e37]/10">
+                                <thead className="bg-[#1C3ECA]/5 border-b border-[#1C3ECA]/10">
                                     <tr>
-                                        <th className="px-6 py-4 text-left text-xs font-semibold text-[#462e37] uppercase tracking-wider">Employee</th>
-                                        <th className="px-6 py-4 text-left text-xs font-semibold text-[#462e37] uppercase tracking-wider">Organization</th>
-                                        <th className="px-6 py-4 text-left text-xs font-semibold text-[#462e37] uppercase tracking-wider">Track</th>
-                                        <th className="px-6 py-4 text-left text-xs font-semibold text-[#462e37] uppercase tracking-wider">Contract End</th>
-                                        <th className="px-6 py-4 text-left text-xs font-semibold text-[#462e37] uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-4 text-right text-xs font-semibold text-[#462e37] uppercase tracking-wider">Action</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-[#1C3ECA] uppercase tracking-wider">Employee</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-[#1C3ECA] uppercase tracking-wider">Organization</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-[#1C3ECA] uppercase tracking-wider">Track</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-[#1C3ECA] uppercase tracking-wider">Contract End</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-[#1C3ECA] uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-4 text-right text-xs font-semibold text-[#1C3ECA] uppercase tracking-wider">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
@@ -245,7 +245,7 @@ export default function ContractsPage() {
                                             <tr key={emp.id} className="hover:bg-gray-50/50 transition-colors group">
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#462e37] to-[#729892] text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#1C3ECA] to-[#93C5FD] text-white flex items-center justify-center font-bold text-sm shadow-sm">
                                                             {emp.full_name.charAt(0)}
                                                         </div>
                                                         <div>
