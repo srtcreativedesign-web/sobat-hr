@@ -160,6 +160,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       // top-level user fields
       _nameCtrl.text = current['name'] ?? '';
       _emailCtrl.text = current['email'] ?? '';
+      // Phone might be in user or employee object.
+      // User table has valid email/name, but phone is usually in Employee.
       _phoneCtrl.text = current['phone'] ?? '';
 
       // employee sub-object may exist
@@ -171,6 +173,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       debugPrint('EDIT PROFILE EMP DATA: $emp');
 
       if (emp != null && emp is Map<String, dynamic>) {
+        if (_nameCtrl.text.isEmpty) {
+          _nameCtrl.text = emp['full_name'] ?? emp['name'] ?? '';
+        }
+        if (_emailCtrl.text.isEmpty) {
+          _emailCtrl.text = emp['email'] ?? '';
+        }
+        if (_phoneCtrl.text.isEmpty) {
+          // Fallback to employee phone if user phone is empty
+          _phoneCtrl.text = emp['phone'] ?? emp['family_contact_number'] ?? '';
+        }
         _employeeRecordId = emp['id'] as int?;
         _joinDateEditCount = emp['join_date_edit_count'] ?? 0;
         _employeeIdCtrl.text = emp['employee_code'] ?? emp['employee_id'] ?? '';
