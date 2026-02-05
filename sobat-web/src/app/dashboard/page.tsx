@@ -346,11 +346,13 @@ export default function DashboardPage() {
                   </div>
                   <span className="text-sm font-semibold text-gray-700 group-hover:text-blue-700">Import Payroll</span>
                 </button>
-                <button className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-[#a9eae2]/50 transition-all group text-left">
+                <button
+                  onClick={() => router.push('/admin/feedbacks')}
+                  className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-[#a9eae2]/50 transition-all group text-left">
                   <div className="w-8 h-8 rounded-lg bg-yellow-100 text-yellow-700 flex items-center justify-center mb-2 group-hover:bg-yellow-600 group-hover:text-white transition-colors">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg>
                   </div>
-                  <span className="text-sm font-semibold text-gray-700 group-hover:text-yellow-700">Manage Shifts</span>
+                  <span className="text-sm font-semibold text-gray-700 group-hover:text-yellow-700">Feedback</span>
                 </button>
                 <button className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-[#a9eae2]/50 transition-all group text-left">
                   <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center mb-2 group-hover:bg-purple-600 group-hover:text-white transition-colors">

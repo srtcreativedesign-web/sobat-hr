@@ -2319,7 +2319,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Color textColor = Colors.orange.shade800;
     IconData icon = Icons.warning_amber_rounded;
     String message =
-        'Kontrak Anda akan berakhir dalam $difference hari (${DateFormat('d MMM y', 'id_ID').format(contractDate)}). Hubungi HRD.';
+        'Kontrak kerja Anda akan berakhir dalam $difference hari (${DateFormat('d MMM y', 'id_ID').format(contractDate)}). Silahkan hubungi HRD.';
 
     if (difference <= 7 && difference >= 0) {
       bgColor = Colors.red.shade50;
@@ -2333,9 +2333,9 @@ class _HomeScreenState extends State<HomeScreen> {
       textColor = Colors.red.shade800;
       icon = Icons.error_outline_rounded;
       message =
-          'Kontrak Anda telah berakhir pada ${DateFormat('d MMM y', 'id_ID').format(contractDate)}. Hubungi HRD.';
+          'Kontrak kerja Anda telah berakhir pada ${DateFormat('d MMM y', 'id_ID').format(contractDate)}. Silahkan hubungi HRD.';
     } else if (difference == 0) {
-      message = 'KONTRAK ANDA BERAKHIR HARI INI!';
+      message = 'KONTRAK KERJA ANDA BERAKHIR HARI INI!';
       bgColor = Colors.red.shade50;
       borderColor = Colors.red.shade200;
       textColor = Colors.red.shade800;
