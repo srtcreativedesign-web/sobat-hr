@@ -29,9 +29,8 @@ class DashboardController extends Controller
             'resigned' => Employee::where('status', 'resigned')->count(),
         ];
 
-        // Attendance stats for current month
-        $attendanceStats = Attendance::whereMonth('date', $currentMonth)
-            ->whereYear('date', $currentYear)
+        // Attendance stats for TODAY
+        $attendanceStats = Attendance::whereDate('date', $now)
             ->select('status', DB::raw('count(*) as count'))
             ->groupBy('status')
             ->pluck('count', 'status')

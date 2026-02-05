@@ -107,6 +107,22 @@ class ApprovalService
                 $request->update(['status' => 'approved']);
                 Log::info("Request ID {$request->id} Fully Approved!");
                 
+                // Hook for Overtime
+                if ($request->type === 'overtime' && $request->overtimeDetail) {
+                    \App\Models\OvertimeRecord::updateOrCreate(
+                        ['request_id' => $request->id],
+                        [
+                            'employee_id' => $request->employee_id,
+                            'date' => $request->start_date,
+                            'start_time' => $request->overtimeDetail->start_time,
+                            'end_time' => $request->overtimeDetail->end_time,
+                            'duration' => $request->overtimeDetail->duration,
+                            'reason' => $request->reason,
+                            'approved_at' => now(),
+                        ]
+                    );
+                }
+
                 // Hook for finalizing (e.g., deduct balance)
                 // This could be an Event listener
             }

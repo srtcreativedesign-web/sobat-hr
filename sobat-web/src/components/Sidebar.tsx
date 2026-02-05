@@ -140,6 +140,18 @@ export default function Sidebar() {
         </svg>
       ),
       roles: ['super_admin', 'admin_cabang'],
+      subItems: [
+        {
+          name: 'Payroll List',
+          href: '/payroll',
+          icon: null
+        },
+        {
+          name: 'Overtime',
+          href: '/payroll/overtime',
+          icon: null
+        }
+      ]
     },
     {
       name: 'Approvals',

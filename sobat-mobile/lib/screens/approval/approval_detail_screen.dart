@@ -194,11 +194,18 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
     // Amount (if any)
     String amount = '';
     if (request['amount'] != null) {
-      amount = NumberFormat.currency(
-        locale: 'id_ID',
-        symbol: 'Rp ',
-        decimalDigits: 0,
-      ).format(double.tryParse(request['amount'].toString()) ?? 0);
+      if (type.toString().toLowerCase() == 'overtime') {
+        amount = '${request['amount']} Jam';
+      } else if (type.toString().toLowerCase() == 'leave' ||
+          type.toString().toLowerCase() == 'sick_leave') {
+        amount = request['amount'].toString();
+      } else {
+        amount = NumberFormat.currency(
+          locale: 'id_ID',
+          symbol: 'Rp ',
+          decimalDigits: 0,
+        ).format(double.tryParse(request['amount'].toString()) ?? 0);
+      }
     }
 
     return Scaffold(
@@ -262,58 +269,94 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
             const Divider(height: 48),
 
             // Request Details
-            _buildDetailRow('Jenis Pengajuan', type.toString().toUpperCase()),
+            _buildDetailRow(
+              'Jenis Pengajuan',
+              type.toString().toUpperCase().replaceAll('_', ' '),
+            ),
             const SizedBox(height: 16),
-            _buildDetailRow('Tanggal/Durasi', duration),
-            if (amount.isNotEmpty) ...[
+
+            // Dynamic Fields based on Type
+            if (type == 'leave' || type == 'sick_leave') ...[
+              _buildDetailRow('Tanggal', duration),
               const SizedBox(height: 16),
-              _buildDetailRow('Nominal', amount),
+              if (amount.isNotEmpty) _buildDetailRow('Durasi', '$amount Hari'),
+            ] else if (type == 'overtime') ...[
+              _buildDetailRow('Tanggal', duration),
+              const SizedBox(height: 16),
+              if (amount.isNotEmpty)
+                _buildDetailRow(
+                  'Durasi',
+                  amount,
+                ), // Already formatted as 'X Jam' above
+            ] else if (type == 'business_trip') ...[
+              _buildDetailRow(
+                'Tujuan',
+                request['destination'] ?? request['title'] ?? '-',
+              ),
+              const SizedBox(height: 16),
+              _buildDetailRow('Tanggal', duration),
+              const SizedBox(height: 16),
+              if (amount.isNotEmpty) _buildDetailRow('Budget', amount),
+            ] else if (type == 'reimbursement') ...[
+              _buildDetailRow('Keperluan', request['title'] ?? '-'),
+              const SizedBox(height: 16),
+              _buildDetailRow('Tanggal', duration),
+              const SizedBox(height: 16),
+              if (amount.isNotEmpty) _buildDetailRow('Nominal', amount),
+            ] else if (type == 'asset') ...[
+              if (request['detail'] != null) ...[
+                _buildDetailRow(
+                  'Barang / Merek',
+                  request['detail']['brand'] ?? '-',
+                ),
+                const SizedBox(height: 16),
+                _buildDetailRow(
+                  'Spesifikasi',
+                  request['detail']['specification'] ?? '-',
+                ),
+                const SizedBox(height: 16),
+                _buildDetailRow(
+                  'Urgensi',
+                  (request['detail']['is_urgent'] == true ||
+                          request['detail']['is_urgent'] == 1)
+                      ? 'Mendesak (Urgent)'
+                      : 'Normal',
+                ),
+                const SizedBox(height: 16),
+                if (amount.isNotEmpty)
+                  _buildDetailRow('Estimasi Harga', amount),
+              ],
+            ] else if (type == 'resignation') ...[
+              if (request['detail'] != null) ...[
+                _buildDetailRow(
+                  'Tanggal Terakhir Bekerja',
+                  (request['detail']['last_working_date'] != null)
+                      ? DateFormat('d MMM y', 'id_ID').format(
+                          DateTime.parse(
+                            request['detail']['last_working_date'],
+                          ),
+                        )
+                      : '-',
+                ),
+                const SizedBox(height: 16),
+                _buildDetailRow(
+                  'Tipe Resign',
+                  request['detail']['resign_type'] == '1_month_notice'
+                      ? 'One Month Notice'
+                      : 'Normal',
+                ),
+              ],
+            ] else ...[
+              // Fallback for unknown types
+              _buildDetailRow('Tanggal', duration),
+              if (amount.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                _buildDetailRow('Nominal', amount),
+              ],
             ],
+
             const SizedBox(height: 16),
             _buildDetailRow('Keterangan', request['description'] ?? '-'),
-
-            // Asset Details
-            if (request['type'] == 'asset' && request['detail'] != null) ...[
-              const SizedBox(height: 16),
-              _buildDetailRow(
-                'Barang / Merek',
-                request['detail']['brand'] ?? '-',
-              ),
-              const SizedBox(height: 16),
-              _buildDetailRow(
-                'Spesifikasi',
-                request['detail']['specification'] ?? '-',
-              ),
-              const SizedBox(height: 16),
-              _buildDetailRow(
-                'Urgensi',
-                (request['detail']['is_urgent'] == true ||
-                        request['detail']['is_urgent'] == 1)
-                    ? 'Mendesak (Urgent)'
-                    : 'Normal',
-              ),
-            ],
-
-            // Resignation Details
-            if (request['type'] == 'resignation' &&
-                request['detail'] != null) ...[
-              const SizedBox(height: 16),
-              _buildDetailRow(
-                'Tanggal Terakhir Bekerja',
-                (request['detail']['last_working_date'] != null)
-                    ? DateFormat('d MMM y', 'id_ID').format(
-                        DateTime.parse(request['detail']['last_working_date']),
-                      )
-                    : '-',
-              ),
-              const SizedBox(height: 16),
-              _buildDetailRow(
-                'Tipe Resign',
-                request['detail']['resign_type'] == '1_month_notice'
-                    ? 'One Month Notice'
-                    : 'Normal',
-              ),
-            ],
 
             if (request['attachments'] != null) ...[
               const SizedBox(height: 24),

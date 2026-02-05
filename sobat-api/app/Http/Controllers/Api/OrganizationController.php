@@ -8,10 +8,21 @@ use App\Models\Organization;
 
 class OrganizationController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $organizations = Organization::with('parentOrganization')->get();
-        return response()->json($organizations);
+        $query = Organization::with('parentOrganization');
+        
+        // Filter by type if provided, or default to 'division' to exclude positions/holdings
+        if ($request->has('type')) {
+            $query->where('type', $request->type);
+        } else {
+             // Correct approach based on actual unique types found in DB:
+             // Types are diverse (e.g., "Minimarket", "HR", "IT", "CCTV"), so whitelisting is too risky.
+             // We will BLACKLIST the non-operational types as requested.
+             $query->whereNotIn('type', ['Board Of Directors', 'Holdings']);
+        }
+
+        return response()->json($query->get());
     }
 
     public function store(Request $request)

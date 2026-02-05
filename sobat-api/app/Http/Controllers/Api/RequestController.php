@@ -17,10 +17,14 @@ class RequestController extends Controller
     {
         $user = $request->user();
         $query = RequestModel::with(['employee.organization', 'approvals']);
+        
+        \Illuminate\Support\Facades\Log::info('Request Index Params:', $request->all());
 
         // Check Role
         $roleName = $user->role ? $user->role->name : '';
         $isAdmin = in_array($roleName, ['super_admin', 'admin_cabang', 'hrd']);
+        
+        \Illuminate\Support\Facades\Log::info('User Info:', ['id' => $user->id, 'role' => $roleName, 'isAdmin' => $isAdmin]);
 
         if (!$isAdmin) {
             if (!$user->employee) {
@@ -37,6 +41,21 @@ class RequestController extends Controller
             $query->where('type', $request->type);
         }
 
+        if ($request->has('organization_id')) {
+            $orgId = $request->organization_id;
+            $query->whereHas('employee', function($q) use ($orgId) {
+                $q->where('organization_id', $orgId);
+            });
+        }
+
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->whereHas('employee', function($q) use ($search) {
+                $q->where('full_name', 'like', "%{$search}%")
+                  ->orWhere('employee_code', 'like', "%{$search}%");
+            });
+        }
+
         if ($request->has('status')) {
             $status = $request->status;
             if (str_contains($status, ',')) {
@@ -45,6 +64,9 @@ class RequestController extends Controller
                 $query->where('status', $status);
             }
         }
+        
+        \Illuminate\Support\Facades\Log::info('SQL:', [$query->toSql(), $query->getBindings()]);
+        \Illuminate\Support\Facades\Log::info('Count:', [$query->count()]);
 
         $requests = $query->orderBy('created_at', 'desc')->paginate(20);
 
@@ -629,5 +651,10 @@ class RequestController extends Controller
         $steps = array_filter($steps, fn($id) => $id != $requester->id);
 
         return array_values($steps);
+    }
+
+    public function exportOvertime(Request $request)
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\OvertimeExport($request), 'overtime-report-' . now()->format('YmdHis') . '.xlsx');
     }
 }

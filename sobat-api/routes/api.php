@@ -82,6 +82,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/requests/{id}/reject', [App\Http\Controllers\Api\RequestController::class, 'reject']);
 
     // Approval routes
+    // Overtime Records
+    Route::get('/overtime-records', [App\Http\Controllers\Api\OvertimeRecordController::class, 'index']);
+    Route::post('/overtime-records/backfill', [App\Http\Controllers\Api\OvertimeRecordController::class, 'backfill']);
+
+    Route::get('/requests/export/overtime', [App\Http\Controllers\Api\RequestController::class, 'exportOvertime']);
     Route::get('/approvals', [App\Http\Controllers\Api\ApprovalController::class, 'index']);
     Route::get('/approvals/pending', [App\Http\Controllers\Api\ApprovalController::class, 'pending']);
 
