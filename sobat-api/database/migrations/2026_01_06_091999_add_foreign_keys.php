@@ -41,8 +41,6 @@ return new class extends Migration
             $table->foreign('employee_id')->references('id')->on('employees')->onDelete('cascade');
         });
         
-        Schema::table('approvals', function (Blueprint $table) {
-            $table->foreign('request_id')->references('id')->on('requests')->onDelete('cascade');
             $table->foreign('approver_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
@@ -53,7 +51,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('approvals', function (Blueprint $table) {
-            $table->dropForeign(['request_id']);
             $table->dropForeign(['approver_id']);
         });
         
