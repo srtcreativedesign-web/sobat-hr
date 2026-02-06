@@ -12,12 +12,25 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('requests', function (Blueprint $table) {
-            $table->string('title')->nullable()->after('type');
-            $table->text('description')->nullable()->after('title');
-            $table->date('start_date')->nullable()->after('description');
-            $table->date('end_date')->nullable()->after('start_date');
-            $table->decimal('amount', 8, 2)->nullable()->after('end_date');
-            $table->json('attachments')->nullable()->after('amount');
+            // Check if column exists before adding it to avoid "Duplicate column" error
+            if (!Schema::hasColumn('requests', 'title')) {
+                $table->string('title')->nullable()->after('type');
+            }
+            if (!Schema::hasColumn('requests', 'description')) {
+                $table->text('description')->nullable()->after('title');
+            }
+            if (!Schema::hasColumn('requests', 'start_date')) {
+                $table->date('start_date')->nullable()->after('description');
+            }
+            if (!Schema::hasColumn('requests', 'end_date')) {
+                $table->date('end_date')->nullable()->after('start_date');
+            }
+            if (!Schema::hasColumn('requests', 'amount')) {
+                $table->decimal('amount', 8, 2)->nullable()->after('end_date');
+            }
+            if (!Schema::hasColumn('requests', 'attachments')) {
+                $table->json('attachments')->nullable()->after('amount');
+            }
         });
     }
 
