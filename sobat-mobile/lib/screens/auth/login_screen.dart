@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
@@ -36,7 +37,9 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (success && mounted) {
-        // AuthWrapper will handle navigation
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/home', (route) => false);
       }
     }
   }
@@ -119,326 +122,231 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppTheme.colorCyan,
-              AppTheme.colorCyan.withValues(alpha: 0.8),
-            ],
+      resizeToAvoidBottomInset:
+          false, // Handle keyboard externally or use SingleChildScrollView logic
+      body: Stack(
+        children: [
+          // 1. Fullscreen Background Image
+          Positioned.fill(
+            child: Image.asset('assets/images/welcome.jpg', fit: BoxFit.cover),
           ),
-        ),
-        child: SafeArea(
-          child: Center(
+
+          // 2. Dark Overlay for better contrast
+          Positioned.fill(
+            child: Container(color: Colors.black.withOpacity(0.3)),
+          ),
+
+          // 3. Glassmorphism Card Content
+          Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Logo
-                  Image.asset(
-                    'assets/logo/logo.png',
-                    width: MediaQuery.of(context).size.width * 0.3,
-                    height: MediaQuery.of(context).size.width * 0.3,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(height: 24),
+                  Image.asset('assets/logo/logo.png', width: 100, height: 100),
+                  const SizedBox(height: 16),
+
+                  // Title
                   Text(
                     'SOBAT HR',
-                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                      color: AppTheme.colorEggplant,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  const SizedBox(height: 48),
-
-                  // Login Card
-                  Card(
-                    elevation: 8,
-                    shadowColor: Colors.black.withValues(alpha: 0.2),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Welcome Back!',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 16,
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              AppLocalizations.of(context)!.loginTitle,
-                              style: Theme.of(context).textTheme.headlineMedium,
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              AppLocalizations.of(context)!.loginSubtitle,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: AppTheme.textLight),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 32),
+                  ),
+                  const SizedBox(height: 32),
 
-                            // Email Field
-                            TextFormField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              decoration: InputDecoration(
-                                labelText: AppLocalizations.of(
-                                  context,
-                                )!.emailLabel,
-                                hintText: 'nama@perusahaan.com',
-                                prefixIcon: const Icon(Icons.email_outlined),
+                  // GLASS CARD
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: BackdropFilter(
+                      filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.2),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppLocalizations.of(context)!.loginTitle,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Email tidak boleh kosong';
-                                }
-                                if (!value.contains('@')) {
-                                  return 'Email tidak valid';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
+                              const SizedBox(height: 24),
 
-                            // Password Field
-                            TextFormField(
-                              controller: _passwordController,
-                              obscureText: _obscurePassword,
-                              decoration: InputDecoration(
-                                labelText: AppLocalizations.of(
+                              // Email Input
+                              _buildGlassTextField(
+                                controller: _emailController,
+                                label: AppLocalizations.of(context)!.emailLabel,
+                                icon: Icons.email_outlined,
+                                keyboardType: TextInputType.emailAddress,
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Password Input
+                              _buildGlassTextField(
+                                controller: _passwordController,
+                                label: AppLocalizations.of(
                                   context,
                                 )!.passwordLabel,
-                                hintText: 'Masukkan password',
-                                prefixIcon: const Icon(Icons.lock_outline),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility_outlined
-                                        : Icons.visibility_off_outlined,
+                                icon: Icons.lock_outline,
+                                isPassword: true,
+                                obscureText: _obscurePassword,
+                                onTogglePassword: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                              ),
+
+                              // Forgot Password
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: _showForgotPasswordDialog,
+                                  child: Text(
+                                    'Lupa Password?',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.9),
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+
+                              // Error Message
+                              Consumer<AuthProvider>(
+                                builder: (context, authProvider, child) {
+                                  if (authProvider.errorMessage != null) {
+                                    return Container(
+                                      padding: const EdgeInsets.all(12),
+                                      margin: const EdgeInsets.only(bottom: 16),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: Colors.red.withOpacity(0.5),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.error_outline,
+                                            color: Colors.white,
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              authProvider.errorMessage!,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }
+                                  return const SizedBox.shrink();
+                                },
+                              ),
+
+                              // Login Button
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
                                   onPressed: () {
-                                    setState(() {
-                                      _obscurePassword = !_obscurePassword;
-                                    });
+                                    final authProvider =
+                                        Provider.of<AuthProvider>(
+                                          context,
+                                          listen: false,
+                                        );
+                                    if (authProvider.isLoading) return;
+                                    _handleLogin();
                                   },
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Password tidak boleh kosong';
-                                }
-                                if (value.length < 6) {
-                                  return 'Password minimal 6 karakter';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 8),
-
-                            // Forgot Password Button
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: _showForgotPasswordDialog,
-                                style: TextButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  minimumSize: Size.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                                child: Text(
-                                  'Lupa Password?',
-                                  style: TextStyle(
-                                    color: AppTheme.colorCyan,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.colorCyan,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: Consumer<AuthProvider>(
+                                    builder: (context, authProvider, child) {
+                                      return authProvider.isLoading
+                                          ? const SizedBox(
+                                              height: 20,
+                                              width: 20,
+                                              child: CircularProgressIndicator(
+                                                color: Colors.white,
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : Text(
+                                              AppLocalizations.of(
+                                                context,
+                                              )!.loginButton,
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            );
+                                    },
                                   ),
                                 ),
                               ),
-                            ),
-
-                            const SizedBox(height: 24),
-
-                            // Error Message
-                            Consumer<AuthProvider>(
-                              builder: (context, authProvider, child) {
-                                if (authProvider.errorMessage != null) {
-                                  return Container(
-                                    padding: const EdgeInsets.all(12),
-                                    margin: const EdgeInsets.only(bottom: 16),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.error.withValues(
-                                        alpha: 0.1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: AppTheme.error.withValues(
-                                          alpha: 0.3,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.error_outline,
-                                          color: AppTheme.error,
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            authProvider.errorMessage!,
-                                            style: const TextStyle(
-                                              color: AppTheme.error,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }
-                                return const SizedBox.shrink();
-                              },
-                            ),
-
-                            // Login Button with gradient
-                            Consumer<AuthProvider>(
-                              builder: (context, authProvider, child) {
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        AppTheme.colorCyan,
-                                        AppTheme.colorCyan.withValues(
-                                          alpha: 0.8,
-                                        ),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppTheme.colorCyan.withValues(
-                                          alpha: 0.3,
-                                        ),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: ElevatedButton(
-                                    onPressed: authProvider.isLoading
-                                        ? null
-                                        : _handleLogin,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.transparent,
-                                      shadowColor: Colors.transparent,
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 16,
-                                      ),
-                                    ),
-                                    child: authProvider.isLoading
-                                        ? const SizedBox(
-                                            height: 20,
-                                            width: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              valueColor:
-                                                  AlwaysStoppedAnimation<Color>(
-                                                    Colors.white,
-                                                  ),
-                                            ),
-                                          )
-                                        : Text(
-                                            AppLocalizations.of(
-                                              context,
-                                            )!.loginButton,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Demo Credentials Info
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.info_outline,
-                              color: AppTheme.colorEggplant,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Demo Credentials',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: AppTheme.colorEggplant,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Email: maya.estianty@celeb.com\nPassword: Elianjhon100',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: AppTheme.colorEggplant.withValues(
-                                  alpha: 0.9,
-                                ),
-                              ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pushNamed('/signup');
-                    },
-                    child: RichText(
-                      text: TextSpan(
-                        text: 'Belum punya akun? ',
-                        style: const TextStyle(color: AppTheme.colorEggplant),
-                        children: [
-                          TextSpan(
-                            text: 'Daftar',
-                            style: TextStyle(
-                              color: AppTheme.colorEggplant,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Footer
+                  const SizedBox(height: 24),
+                  // Demo Info
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'Demo: maya.estianty@celeb.com / Elianjhon100',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 10,
                       ),
                     ),
                   ),
@@ -446,8 +354,81 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-        ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildGlassTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+    bool isPassword = false,
+    bool obscureText = false,
+    VoidCallback? onTogglePassword,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.8),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withOpacity(0.2)),
+          ),
+          child: TextFormField(
+            controller: controller,
+            obscureText: obscureText,
+            keyboardType: keyboardType,
+            style: const TextStyle(
+              color: Color(0xFF1A1A1A),
+            ), // AppTheme.textDark
+            decoration: InputDecoration(
+              prefixIcon: Icon(
+                icon,
+                color: const Color(0xFF1A1A1A).withOpacity(0.7),
+              ),
+              suffixIcon: isPassword
+                  ? IconButton(
+                      icon: Icon(
+                        obscureText
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        color: const Color(0xFF1A1A1A).withOpacity(0.7),
+                      ),
+                      onPressed: onTogglePassword,
+                    )
+                  : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              hintStyle: TextStyle(
+                color: const Color(0xFF1A1A1A).withOpacity(0.4),
+              ),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) return 'Wajib diisi';
+              if (!isPassword &&
+                  !value.contains('@') &&
+                  label.toLowerCase().contains('email'))
+                return 'Email tidak valid';
+              return null;
+            },
+          ),
+        ),
+      ],
     );
   }
 }

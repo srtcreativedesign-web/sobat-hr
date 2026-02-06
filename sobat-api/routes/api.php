@@ -22,6 +22,7 @@ Route::middleware(['throttle:login'])->group(function () {
 });
 Route::get('/announcements/active', [App\Http\Controllers\Api\AnnouncementController::class, 'getActive']);
 Route::post('/auth/forgot-password', [App\Http\Controllers\Api\PasswordResetController::class, 'request']); // Public Forgot Password
+Route::get('/organizations', [App\Http\Controllers\Api\OrganizationController::class, 'index']); // Public Organizations List
 
 Route::middleware(['auth:sanctum', 'role:super_admin,admin_cabang'])->group(function () {
     Route::get('/admin/password-requests', [App\Http\Controllers\Api\PasswordResetController::class, 'index']);
@@ -54,7 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Organization routes
     Route::delete('/organizations/reset', [App\Http\Controllers\Api\OrganizationController::class, 'reset']);
-    Route::apiResource('organizations', App\Http\Controllers\Api\OrganizationController::class);
+    Route::apiResource('organizations', App\Http\Controllers\Api\OrganizationController::class)->except(['index']);
     Route::get('/organizations/{id}/employees', [App\Http\Controllers\Api\OrganizationController::class, 'employees']);
 
     // Attendance routes

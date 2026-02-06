@@ -951,14 +951,46 @@ class _HomeScreenState extends State<HomeScreen> {
       } else if (_todayAttendance!['check_in'] != null) {
         String statusStr =
             _todayAttendance!['status']?.toString().toLowerCase() ?? '';
+        String checkInTimeStr = _todayAttendance!['check_in'].toString();
+
+        bool isLate = false;
+        try {
+          // Parse HH:mm:ss
+          final parts = checkInTimeStr.split(':');
+          if (parts.length >= 2) {
+            final hour = int.parse(parts[0]);
+            final minute = int.parse(parts[1]);
+            // Check if after 08:05
+            if (hour > 8 || (hour == 8 && minute > 5)) {
+              isLate = true;
+            }
+          }
+        } catch (e) {
+          debugPrint('Error parsing check_in time: $e');
+        }
 
         if (statusStr == 'pending') {
-          status = 'Menunggu Approval';
-          statusColor = Colors.amberAccent;
-          buttonText = 'Clock Out Sekarang';
-          buttonIcon = Icons.logout;
-          isButtonDisabled = false;
+          if (isLate) {
+            status = 'Telat - Menunggu Approval';
+            statusColor = Colors.orangeAccent;
+            buttonText = 'Menunggu Approval';
+            buttonIcon = Icons.timer;
+            isButtonDisabled = true;
+          } else {
+            status = 'Menunggu Approval';
+            statusColor = Colors.amberAccent;
+            buttonText = 'Clock Out Sekarang';
+            buttonIcon = Icons.logout;
+            isButtonDisabled = false;
+          }
+        } else if (statusStr == 'rejected') {
+          status = 'Absensi Ditolak';
+          statusColor = Colors.redAccent;
+          buttonText = 'Ditolak';
+          isButtonDisabled = true;
+          buttonIcon = Icons.cancel;
         } else {
+          // Present / Approved
           status = 'Sedang Bekerja';
           statusColor = Colors.lightBlueAccent;
           buttonText = 'Clock Out Sekarang';
@@ -1075,31 +1107,37 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ],
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: textColor.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: textColor.withValues(alpha: 0.3),
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
                         ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.circle, size: 8, color: statusColor),
-                          const SizedBox(width: 8),
-                          Text(
-                            status,
-                            style: TextStyle(
-                              color: textColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
+                        decoration: BoxDecoration(
+                          color: textColor.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: textColor.withValues(alpha: 0.3),
                           ),
-                        ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.circle, size: 8, color: statusColor),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                status,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -1244,11 +1282,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Icon(buttonIcon, size: 20),
                         const SizedBox(width: 8),
-                        Text(
-                          buttonText,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                        Flexible(
+                          child: Text(
+                            buttonText,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],

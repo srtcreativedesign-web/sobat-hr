@@ -318,6 +318,36 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     bool canCheckIn = !hasCheckedIn;
     bool canCheckOut = hasCheckedIn && !hasCheckedOut;
 
+    // Check Late Logic
+    bool isLateRestricted = false;
+    if (hasCheckedIn &&
+        !hasCheckedOut &&
+        _todayAttendance!['check_in'] != null) {
+      String statusStr =
+          _todayAttendance!['status']?.toString().toLowerCase() ?? '';
+      String checkInTimeStr = _todayAttendance!['check_in'].toString();
+
+      bool isLate = false;
+      try {
+        // Parse HH:mm:ss
+        final parts = checkInTimeStr.split(':');
+        if (parts.length >= 2) {
+          final hour = int.parse(parts[0]);
+          final minute = int.parse(parts[1]);
+          // Check if after 08:05
+          if (hour > 8 || (hour == 8 && minute > 5)) {
+            isLate = true;
+          }
+        }
+      } catch (_) {}
+
+      // If late and still pending, prevent checkout
+      if (isLate && statusStr == 'pending') {
+        isLateRestricted = true;
+        canCheckOut = false;
+      }
+    }
+
     // Gradient Colors based on status
     // Gradient & Text Colors
     List<Color> gradientColors = AppTheme.gradientDefault;
@@ -856,7 +886,14 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                       ? buttonTextColor
                                       : Colors.grey,
                                 ),
-                                label: Text('Pulang'),
+                                label: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    isLateRestricted
+                                        ? 'Menunggu Approval'
+                                        : 'Pulang',
+                                  ),
+                                ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
                                   foregroundColor: buttonTextColor,

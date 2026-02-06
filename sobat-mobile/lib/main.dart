@@ -8,18 +8,18 @@ import 'config/theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/locale_provider.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/auth/welcome_screen.dart';
 import 'screens/home/home_screen.dart';
-
 import 'screens/profile/profile_screen.dart';
 import 'screens/profile/edit_profile_screen.dart';
-import 'screens/profile/change_password_screen.dart'; // Added
-import 'screens/settings/settings_screen.dart'; // Added
+import 'screens/profile/change_password_screen.dart';
+import 'screens/settings/settings_screen.dart';
 import 'screens/payroll/payroll_screen.dart';
-import 'screens/submission/submission_menu_screen.dart'; // Added
-import 'screens/submission/submission_screen.dart'; // Added
-import 'screens/submission/create_submission_screen.dart'; // Added
-import 'screens/announcement/announcement_list_screen.dart'; // Added
-import 'screens/notification/notification_screen.dart'; // Added
+import 'screens/submission/submission_menu_screen.dart';
+import 'screens/submission/submission_screen.dart';
+import 'screens/submission/create_submission_screen.dart';
+import 'screens/announcement/announcement_list_screen.dart';
+import 'screens/notification/notification_screen.dart';
 import 'screens/attendance/attendance_screen.dart';
 import 'screens/attendance/attendance_history_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
@@ -142,7 +142,7 @@ class AuthWrapper extends StatelessWidget {
               return const HomeScreen();
             }
 
-            return const LoginScreen();
+            return const WelcomeScreen();
           },
         );
       },
