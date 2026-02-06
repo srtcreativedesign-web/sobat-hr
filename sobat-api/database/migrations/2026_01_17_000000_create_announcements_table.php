@@ -14,10 +14,14 @@ return new class extends Migration
         Schema::create('announcements', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->text('content'); // or longText if needed
+            $table->text('description')->nullable();
+            $table->string('image_path')->nullable();
             $table->enum('category', ['news', 'policy'])->default('news');
             $table->string('attachment_url')->nullable();
-            $table->boolean('is_published')->default(false);
+            $table->boolean('is_banner')->default(false);
+            $table->boolean('is_active')->default(true);
+            $table->date('start_date')->nullable();
+            $table->date('end_date')->nullable();
             $table->timestamps();
         });
     }
