@@ -41,6 +41,7 @@ return new class extends Migration
             $table->foreign('employee_id')->references('id')->on('employees')->onDelete('cascade');
         });
         
+        Schema::table('approvals', function (Blueprint $table) {
             $table->foreign('approver_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
