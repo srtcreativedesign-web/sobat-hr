@@ -559,8 +559,12 @@ class EmployeeController extends Controller
 
         // Call Python script to detect face
         $scriptPath = base_path('python_scripts/detect_face.py');
-        // Fix: Force Python to run in arm64 mode because XAMPP is x86_64 but pip libs are arm64
-        $command = "/usr/bin/arch -arm64 /usr/bin/python3 " . escapeshellarg($scriptPath) . " " . escapeshellarg($fullPath) . " 2>&1";
+        // Fix: Force Python to run in arm64 mode on macOS (Apple Silicon), otherwise use standard python3
+        if (PHP_OS_FAMILY === 'Darwin') {
+            $command = "/usr/bin/arch -arm64 /usr/bin/python3 " . escapeshellarg($scriptPath) . " " . escapeshellarg($fullPath) . " 2>&1";
+        } else {
+            $command = "python3 " . escapeshellarg($scriptPath) . " " . escapeshellarg($fullPath) . " 2>&1";
+        }
         $output = shell_exec($command);
         $result = json_decode($output, true);
 
