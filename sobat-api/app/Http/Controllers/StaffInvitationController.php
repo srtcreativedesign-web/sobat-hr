@@ -287,6 +287,7 @@ class StaffInvitationController extends Controller
             'job_level' => 'nullable|string',
             'track' => 'nullable|in:operational,office',
             'organization_id' => 'nullable|exists:organizations,id',
+            'division' => 'nullable|string',
             'role' => 'nullable|string',
         ]);
 
@@ -307,8 +308,17 @@ class StaffInvitationController extends Controller
                 $role = \App\Models\Role::where('name', 'staff')->first();
             }
 
-            // Organization fallback
+            // Organization fallback (Try to match division name to organization, or use ID 1)
             $orgId = $invitation->organization_id;
+            
+            // If user selected a division, try to find matching organization if possible
+            if ($request->has('division')) {
+                $org = Organization::where('name', $request->division)->first();
+                if ($org) {
+                    $orgId = $org->id;
+                }
+            }
+
             if (!$orgId) {
                 // Determine sensible default or fallback
                 $org = Organization::first();
@@ -321,6 +331,7 @@ class StaffInvitationController extends Controller
                 'email' => $invitation->email,
                 'password' => \Illuminate\Support\Facades\Hash::make($request->password),
                 'role_id' => $role ? $role->id : 1,
+                'division' => $request->division ?? null, // Save division name
             ]);
 
             // 3. Create Employee Profile
@@ -329,7 +340,7 @@ class StaffInvitationController extends Controller
             // Allow override from Request if provided, otherwise fallback to Payload, then Defaults
             $jobLevel = $request->has('job_level') ? $request->job_level : ($payload['job_level'] ?? null);
             $track = $request->has('track') ? $request->track : ($payload['track'] ?? null);
-            $finalOrgId = $request->has('organization_id') ? $request->organization_id : $orgId;
+            $finalOrgId = $request->has('organization_id') && $request->organization_id ? $request->organization_id : $orgId;
             $roleName = $request->has('role') ? $request->role : ($invitation->role ?: 'staff');
 
             // Re-fetch role if overridden
@@ -347,6 +358,7 @@ class StaffInvitationController extends Controller
                 'position' => ucfirst($role ? $role->name : 'Staff'),
                 'job_level' => $jobLevel,
                 'track' => $track,
+                'department' => $request->division ?? null, // Save division as department
                 'phone' => '-',
                 'address' => '-',
                 'join_date' => now(),

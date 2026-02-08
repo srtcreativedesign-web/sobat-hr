@@ -14,7 +14,7 @@ function RegisterForm() {
     const [userData, setUserData] = useState<{ name: string; email: string } | null>(null);
     const [error, setError] = useState('');
     const [isSuccess, setIsSuccess] = useState(false);
-    const [organizations, setOrganizations] = useState<any[]>([]);
+    const [divisions, setDivisions] = useState<any[]>([]);
     const [invitationData, setInvitationData] = useState<any>(null);
 
     const [formData, setFormData] = useState({
@@ -22,7 +22,7 @@ function RegisterForm() {
         password_confirmation: '',
         job_level: 'staff',
         track: 'office',
-        organization_id: '',
+        division: '',
         role: 'staff'
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,9 +35,9 @@ function RegisterForm() {
             return;
         }
 
-        // Fetch Organizations
-        apiClient.get('/organizations').then(res => {
-            setOrganizations(res.data.data || res.data || []);
+        // Fetch Divisions
+        apiClient.get('/divisions').then(res => {
+            setDivisions(res.data.data || res.data || []);
         }).catch(err => console.error(err));
 
         apiClient.get(`/staff/invite/verify/${token}`)
@@ -46,11 +46,13 @@ function RegisterForm() {
                 setUserData({ name: res.data.name, email: res.data.email });
                 setInvitationData(res.data);
 
-                // Pre-fill if available
-                if (res.data.organization_id) {
-                    setFormData(prev => ({ ...prev, organization_id: res.data.organization_id }));
+                // Pre-fill if available (assuming invite might have division info)
+                if (res.data.division) {
+                    setFormData(prev => ({ ...prev, division: res.data.division }));
+                } else if (res.data.organization) {
+                    // Fallback if old invite has organization name
+                    setFormData(prev => ({ ...prev, division: res.data.organization }));
                 }
-                // Determine track based on org? Or just default.
             })
             .catch((err) => {
                 setError(err.response?.data?.message || 'Invitation invalid or expired.');
@@ -75,7 +77,7 @@ function RegisterForm() {
                 password_confirmation: formData.password_confirmation,
                 job_level: formData.job_level,
                 track: formData.track,
-                organization_id: formData.organization_id,
+                division: formData.division, // Send selected division name
                 role: formData.role
             });
 
@@ -183,15 +185,14 @@ function RegisterForm() {
                                 <label className="block text-xs font-bold text-gray-800 uppercase tracking-wider mb-2">Divisi / Penempatan</label>
                                 <select
                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:border-[#1C3ECA] focus:ring-2 focus:ring-[#1C3ECA]/20 outline-none"
-                                    value={formData.organization_id}
-                                    onChange={e => setFormData({ ...formData, organization_id: e.target.value })}
+                                    value={formData.division}
+                                    onChange={e => setFormData({ ...formData, division: e.target.value })}
                                     required
                                 >
                                     <option value="" className="text-gray-500">Pilih Divisi...</option>
-                                    {organizations
-                                        .filter(org => !['Board Of Directors', 'Holdings'].includes(org.type))
-                                        .map(org => (
-                                            <option key={org.id} value={org.id}>{org.name}</option>
+                                    {divisions
+                                        .map(div => (
+                                            <option key={div.id} value={div.name}>{div.name}</option>
                                         ))}
                                 </select>
                             </div>
