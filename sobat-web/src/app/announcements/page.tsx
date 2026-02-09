@@ -3,7 +3,16 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
-import Image from 'next/image';
+import { API_URL } from '@/lib/config';
+
+// Helper to get image URL
+const getImageUrl = (path: string | null) => {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    const baseUrl = API_URL.replace(/\/api$/, '');
+    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    return `${baseUrl}/storage/${cleanPath}`;
+};
 
 interface Announcement {
     id: number;
@@ -148,11 +157,11 @@ export default function AnnouncementsPage() {
                             {/* Image Header or Placeholder */}
                             <div className="relative h-48 w-full bg-gray-100">
                                 {announcement.image_path ? (
-                                    <Image
-                                        src={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}/storage/${announcement.image_path}`}
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                        src={getImageUrl(announcement.image_path) || ''}
                                         alt={announcement.title}
-                                        fill
-                                        className="object-cover"
+                                        className="object-cover w-full h-full absolute inset-0"
                                     />
                                 ) : (
                                     <div className="flex items-center justify-center h-full text-gray-300">
