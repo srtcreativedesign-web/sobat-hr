@@ -148,7 +148,8 @@ export default function AttendancePage() {
 
         // Clean path if it starts with 'public/' (stored in db) or just appending to base
         // API_URL usually ends with /api. We need the base URL (without /api) for storage
-        const baseUrl = API_URL.replace('/api', '');
+        // Fix: Use regex to replace only the trailing /api to avoid replacing 'api' in subdomain
+        const baseUrl = API_URL.replace(/\/api$/, '');
 
         // Remove leading slash if exists to prevent double slash
         const cleanPath = path.startsWith('/') ? path.substring(1) : path;

@@ -113,37 +113,52 @@ class AttendanceController extends Controller
                 $referencePhotoPath = storage_path('app/public/' . $employee->face_photo_path);
                 $scriptPath = base_path('python_scripts/compare_faces.py');
 
-                // Call Python Script
-                // Fix: Force arm64 architecture
-                $command = "/usr/bin/arch -arm64 /usr/bin/python3 " . escapeshellarg($scriptPath) . " " . escapeshellarg($referencePhotoPath) . " " . escapeshellarg($checkInPhotoPath) . " 2>&1";
+                // Platform-aware Python command
+                if (PHP_OS_FAMILY === 'Darwin') {
+                    // macOS (Development) - Use arch for Apple Silicon compatibility
+                    $command = "/usr/bin/arch -arm64 /usr/bin/python3 " . escapeshellarg($scriptPath) . " " . escapeshellarg($referencePhotoPath) . " " . escapeshellarg($checkInPhotoPath) . " 2>&1";
+                } else {
+                    // Linux (Production) - Standard python3
+                    $command = "/usr/bin/python3 " . escapeshellarg($scriptPath) . " " . escapeshellarg($referencePhotoPath) . " " . escapeshellarg($checkInPhotoPath) . " 2>&1";
+                }
+                
                 $output = shell_exec($command);
                 $result = json_decode($output, true);
 
-                if ($result) {
-                    if ($result['status'] === 'error') {
-                         // Decide: Block or Warn? Client requested matching system.
-                         // Let's Log it and potentialy block if strictly required.
-                         // For now return error to client.
-                        //  \Illuminate\Support\Facades\Storage::disk('public')->delete($path); // Optional: delete invalid photo
-                        //  return response()->json(['message' => 'Error validasi wajah: ' . $result['message']], 500);
-                        // Let's assume script error might be env issue, log it but don't block UNLESS it is a match failure
-                         \Illuminate\Support\Facades\Log::error('Face Verification Script Error: ' . $result['message']);
-                    } elseif ($result['status'] === 'success') {
-                        if (!$result['match']) {
-                             \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
-                             return response()->json([
-                                 'message' => 'Verifikasi Wajah Gagal. Wajah tidak cocok dengan data pendaftaran.',
-                                 'distance' => $result['distance']
-                             ], 422);
-                        }
-                        $validated['face_verified'] = true; // Optional: if we want to store verification status
-                    }
-                } else {
-                     \Illuminate\Support\Facades\Log::error('Face Verification Script Output Empty');
+                // FAIL-SECURE: If verification fails for ANY reason, BLOCK attendance
+                if (!$result) {
+                    \Illuminate\Support\Facades\Log::error('Face Verification Script Output Empty or Invalid', ['output' => $output]);
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+                    return response()->json([
+                        'message' => 'Verifikasi wajah gagal: Script tidak merespons. Hubungi administrator.',
+                    ], 422);
                 }
+
+                if ($result['status'] === 'error') {
+                    \Illuminate\Support\Facades\Log::error('Face Verification Error: ' . $result['message']);
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+                    return response()->json([
+                        'message' => 'Verifikasi wajah gagal: ' . $result['message'],
+                    ], 422);
+                }
+
+                if ($result['status'] === 'success' && !$result['match']) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+                    return response()->json([
+                        'message' => 'Verifikasi Wajah Gagal. Wajah tidak cocok dengan data pendaftaran.',
+                        'distance' => $result['distance']
+                    ], 422);
+                }
+
+                // Success: Face matched
+                $validated['face_verified'] = true;
+                \Illuminate\Support\Facades\Log::info('Face Verified Successfully', ['distance' => $result['distance']]);
             } else {
-                // OPTIONAL: Require enrollment first?
-                // return response()->json(['message' => 'Anda belum mendaftarkan wajah. Silakan daftarkan wajah terlebih dahulu di menu Profil.'], 403);
+                // Employee has no registered face - BLOCK attendance
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+                return response()->json([
+                    'message' => 'Anda belum mendaftarkan wajah. Silakan daftarkan wajah terlebih dahulu di menu Profil.',
+                ], 403);
             }
         }
 

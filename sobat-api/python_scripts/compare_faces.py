@@ -3,22 +3,12 @@ import json
 import os
 import platform
 
-# Ensure user site-packages are visible (fix for PHP shell_exec environment)
-user_site_packages = '/Users/itsrtcorp/Library/Python/3.9/lib/python/site-packages'
-if user_site_packages not in sys.path:
-    sys.path.append(user_site_packages)
-
-
+# Cross-platform face_recognition import
 try:
     import face_recognition
 except ImportError:
-    # Fallback: try adding common paths if the specific one above failed or wasn't enough
-    sys.path.append('/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/site-packages')
-    try:
-        import face_recognition
-    except ImportError:
-         print(json.dumps({"status": "error", "message": "Library 'face_recognition' (dlib) not installed on server."}))
-         sys.exit(0)
+    print(json.dumps({"status": "error", "message": "Library 'face_recognition' (dlib) not installed on server."}))
+    sys.exit(0)
 
 def compare_faces(known_image_path, unknown_image_path):
     try:
