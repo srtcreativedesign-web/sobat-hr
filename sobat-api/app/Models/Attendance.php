@@ -22,6 +22,11 @@ class Attendance extends Model
         'photo_path',
         'checkout_photo_path',
         'location_address',
+        'attendance_type',   // office or field
+        'field_notes',       // Notes for field attendance
+        'late_duration',     // Minutes late
+        'overtime_duration', // Minutes overtime
+        'face_verified',     // Boolean: true if face matched
     ];
 
     protected $casts = [
