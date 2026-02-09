@@ -233,9 +233,22 @@ export default function InviteStaffPage() {
                 value={manualForm.role}
                 onChange={e => setManualForm({ ...manualForm, role: e.target.value })}
               >
-                <option value="staff">Staff (User)</option>
-                <option value="admin_cabang">Admin Cabang</option>
-                <option value="manager">Manager (App Access)</option>
+                <optgroup label="Track Operasional">
+                  <option value="crew">Crew</option>
+                  <option value="leader">Leader</option>
+                </optgroup>
+                <optgroup label="Track Office">
+                  <option value="staff">Staff</option>
+                </optgroup>
+                <optgroup label="Supervisor & Manager">
+                  <option value="spv">Supervisor (SPV)</option>
+                  <option value="manager_divisi">Manager Divisi</option>
+                </optgroup>
+                <optgroup label="Admin & HRD">
+                  <option value="hrd">Manager HRD</option>
+                  <option value="coo">COO / Direktur</option>
+                  <option value="super_admin">Super Admin</option>
+                </optgroup>
               </select>
             </div>
             <div>
