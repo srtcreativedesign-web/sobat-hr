@@ -142,10 +142,18 @@ export default function AttendancePage() {
 
     const getPhotoUrl = (path: string | null) => {
         if (!path) return null;
+
+        // If path is already a full URL, return it
+        if (path.startsWith('http')) return path;
+
         // Clean path if it starts with 'public/' (stored in db) or just appending to base
         // API_URL usually ends with /api. We need the base URL (without /api) for storage
         const baseUrl = API_URL.replace('/api', '');
-        return `${baseUrl}/storage/${path}`;
+
+        // Remove leading slash if exists to prevent double slash
+        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+
+        return `${baseUrl}/storage/${cleanPath}`;
     };
 
     const getStatusBadge = (status: string) => {
