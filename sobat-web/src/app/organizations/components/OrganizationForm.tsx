@@ -14,6 +14,9 @@ interface Organization {
     email?: string;
     line_style?: string;
     description?: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    radius?: number | null;
 }
 
 interface OrganizationFormProps {
@@ -36,6 +39,9 @@ export default function OrganizationForm({ isOpen, onClose, onSuccess, initialDa
         email: '',
         line_style: 'solid',
         description: '',
+        latitude: '',
+        longitude: '',
+        radius: '100',
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -52,6 +58,9 @@ export default function OrganizationForm({ isOpen, onClose, onSuccess, initialDa
                 email: initialData.email || '',
                 line_style: initialData.line_style || 'solid',
                 description: initialData.description || '',
+                latitude: initialData.latitude?.toString() || '',
+                longitude: initialData.longitude?.toString() || '',
+                radius: initialData.radius?.toString() || '100',
             });
         } else {
             setFormData({
@@ -64,6 +73,9 @@ export default function OrganizationForm({ isOpen, onClose, onSuccess, initialDa
                 email: '',
                 line_style: 'solid',
                 description: '',
+                latitude: '',
+                longitude: '',
+                radius: '100',
             });
         }
         setError('');
@@ -82,6 +94,9 @@ export default function OrganizationForm({ isOpen, onClose, onSuccess, initialDa
             phone: formData.phone || null,
             address: formData.address || null,
             description: formData.description || null,
+            latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+            longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+            radius_meters: formData.radius ? parseInt(formData.radius) : 100,
         };
 
         try {
@@ -250,8 +265,45 @@ export default function OrganizationForm({ isOpen, onClose, onSuccess, initialDa
                             rows={3}
                             value={formData.address}
                             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                            placeholder="Full address..."
                         />
+                    </div>
+
+                    {/* Geolocation Section */}
+                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <label className="block text-sm font-semibold text-[#1C3ECA] mb-2">📍 Lokasi Kantor (untuk Absensi)</label>
+                        <p className="text-xs text-gray-500 mb-3">Buka Google Maps, klik lokasi kantor, copy koordinat (contoh: -6.2088, 106.8456)</p>
+                        <div className="grid grid-cols-3 gap-3">
+                            <div>
+                                <label className="block text-xs text-gray-600 mb-1">Latitude</label>
+                                <input
+                                    type="text"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] focus:border-[#1C3ECA] outline-none transition-all text-sm"
+                                    value={formData.latitude}
+                                    onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                                    placeholder="-6.2088"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-gray-600 mb-1">Longitude</label>
+                                <input
+                                    type="text"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] focus:border-[#1C3ECA] outline-none transition-all text-sm"
+                                    value={formData.longitude}
+                                    onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                                    placeholder="106.8456"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-gray-600 mb-1">Radius (m)</label>
+                                <input
+                                    type="number"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] focus:border-[#1C3ECA] outline-none transition-all text-sm"
+                                    value={formData.radius}
+                                    onChange={(e) => setFormData({ ...formData, radius: e.target.value })}
+                                    placeholder="100"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     <div className="flex gap-3 pt-4 border-t border-gray-100">
