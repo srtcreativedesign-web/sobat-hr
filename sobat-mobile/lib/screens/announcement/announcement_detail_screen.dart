@@ -9,6 +9,27 @@ class AnnouncementDetailScreen extends StatelessWidget {
 
   const AnnouncementDetailScreen({super.key, required this.item});
 
+  /// Helper to construct storage URL safely
+  String? _getImageUrl(dynamic imagePath) {
+    if (imagePath == null || imagePath.toString().isEmpty) return null;
+
+    String path = imagePath.toString();
+
+    // If already a full URL, return as-is
+    if (path.startsWith('http')) return path;
+
+    // Get base URL without /api
+    final baseUrl = ApiConfig.baseUrl.replaceAll('/api', '');
+
+    // Remove leading slash if present
+    if (path.startsWith('/')) path = path.substring(1);
+
+    // Remove 'storage/' prefix if already present to avoid duplication
+    if (path.startsWith('storage/')) path = path.substring(8);
+
+    return '$baseUrl/storage/$path';
+  }
+
   Future<void> _downloadAttachment(String url) async {
     String downloadUrl = url;
     if (!url.startsWith('http')) {
@@ -193,7 +214,7 @@ class AnnouncementDetailScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // --- Image Logic Here ---
-                    if (item['image_path'] != null) ...[
+                    if (_getImageUrl(item['image_path']) != null) ...[
                       Container(
                         margin: const EdgeInsets.only(bottom: 24),
                         decoration: BoxDecoration(
@@ -209,8 +230,7 @@ class AnnouncementDetailScreen extends StatelessWidget {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
                           child: Image.network(
-                            ApiConfig.baseUrl.replaceAll('/api', '') +
-                                '/storage/${item['image_path']}',
+                            _getImageUrl(item['image_path'])!,
                             width: double.infinity,
                             fit: BoxFit.cover,
                             errorBuilder: (ctx, err, stack) =>
