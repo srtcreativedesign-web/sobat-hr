@@ -13,6 +13,7 @@ class Role extends Model
         'name',
         'display_name',
         'description',
+        'approval_level',
     ];
 
     /**

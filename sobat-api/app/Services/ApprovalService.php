@@ -169,4 +169,89 @@ class ApprovalService
             return $request->fresh();
         });
     }
+
+    /**
+     * Determine approvers based on requester's role level
+     * 
+     * @param Employee $requester The employee submitting the request
+     * @return array Array of employee IDs in approval order
+     */
+    public function determineApprovers(Employee $requester): array
+    {
+        // Get requester's approval level from their user's role
+        $userRoleLevel = $requester->user?->role?->approval_level ?? 0;
+        
+        // Get requester's organization for finding same-org approvers
+        $organizationId = $requester->organization_id;
+        
+        Log::info("Determining approvers for Employee ID: {$requester->id}, Role Level: {$userRoleLevel}, Org ID: {$organizationId}");
+        
+        $approvers = [];
+        
+        if ($userRoleLevel >= 2) {
+            // Manager Divisi level -> Only COO approves
+            $coo = $this->findApproverByRoleName('coo');
+            if ($coo) {
+                $approvers[] = $coo->id;
+            }
+        } elseif ($userRoleLevel == 1) {
+            // SPV level -> Manager Divisi + HRD
+            $managerDivisi = $this->findApproverByRoleName('manager_divisi', $organizationId);
+            $hrd = $this->findApproverByRoleName('hrd');
+            
+            if ($managerDivisi) $approvers[] = $managerDivisi->id;
+            if ($hrd) $approvers[] = $hrd->id;
+        } else {
+            // Staff/Crew/Leader level -> SPV + Manager Divisi + HRD
+            $spv = $this->findApproverByRoleName('spv', $organizationId);
+            $managerDivisi = $this->findApproverByRoleName('manager_divisi', $organizationId);
+            $hrd = $this->findApproverByRoleName('hrd');
+            
+            if ($spv) $approvers[] = $spv->id;
+            if ($managerDivisi) $approvers[] = $managerDivisi->id;
+            if ($hrd) $approvers[] = $hrd->id;
+        }
+        
+        Log::info("Determined approvers: " . json_encode($approvers));
+        
+        return $approvers;
+    }
+    
+    /**
+     * Find an approver by role name, optionally filtered by organization
+     */
+    private function findApproverByRoleName(string $roleName, ?int $organizationId = null): ?Employee
+    {
+        $query = Employee::whereHas('user.role', function ($q) use ($roleName) {
+            $q->where('name', $roleName);
+        });
+        
+        // For SPV and Manager Divisi, try to find someone in the same organization first
+        if ($organizationId && in_array($roleName, ['spv', 'manager_divisi'])) {
+            $sameOrgApprover = (clone $query)->where('organization_id', $organizationId)->first();
+            if ($sameOrgApprover) {
+                return $sameOrgApprover;
+            }
+        }
+        
+        // Fallback: get any employee with that role
+        return $query->first();
+    }
+    
+    /**
+     * Check if a request can be printed (for manager-level requests pending COO approval)
+     */
+    public function canPrintRequest(Model $request): bool
+    {
+        $requester = $request->employee;
+        if (!$requester || !$requester->user || !$requester->user->role) {
+            return false;
+        }
+        
+        $roleLevel = $requester->user->role->approval_level ?? 0;
+        
+        // Only manager-level (level 2) requests can be printed before final approval
+        return $roleLevel >= 2 && $request->status === 'pending';
+    }
 }
+

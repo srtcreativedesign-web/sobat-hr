@@ -253,8 +253,8 @@ class RequestController extends Controller
                     break;
             }
 
-            // 3. Auto-Submit Logic
-            $approverIds = $this->getApprovalSteps($user->employee);
+            // 3. Auto-Submit Logic - Use ApprovalService to determine approvers based on role
+            $approverIds = $approvalService->determineApprovers($user->employee);
 
             if (!empty($approverIds)) {
                 $approvalService->createApprovalSteps($requestModel, $approverIds);
@@ -353,47 +353,9 @@ class RequestController extends Controller
             ], 422);
         }
 
-        // Determine Approvers Logic
-        // TODO: Move this to a dedicated strategy class if complex
-        $approverIds = [];
+        // Determine Approvers Logic - Use ApprovalService for role-based approval chain
         $employee = $requestModel->employee;
-        
-        // Example Strategy: Organization Hierarchy
-        // Level 1: Organization Manager (if employee is not the manager)
-        // Level 2: Parent Organization Manager (if exists)
-        
-        // Note: For now, we will add a hardcoded logic or use a simpler Supervisor logic if available
-        // Let's assume we have a way to get supervisors. 
-        // fallback: If no hierarchy, assign to Super Admin or specific role?
-        // Let's check employee->organization->manager_id if exists (hypothetical)
-        
-        // Simulating Hierarchy for now:
-        // 1. Employee's direct supervisor (if column exists) or Org Manager
-        // 2. Head of Division/Dept
-        
-        // TEMP: Just auto-assign to Super Admins or check logic
-        // For production, we should look up:
-        // $approver1 = $employee->organization->manager_id;
-        // $approver2 = $employee->organization->parent->manager_id;
-        
-        // For MVP/Demo: Let's assume we pass approvers manually OR query checking user roles
-        // Ideally, we need a method $employee->getApprovers()
-        
-        // Let's stick to the Design Document: "Sistem mencari Siapa atasan dia"
-        // Since we don't have full Org Graph implemented with managers yet, 
-        // we will search for users with 'admin_cabang' or 'manager' role in the same organization
-        
-        // Find Organization Manager
-        // Check if organization has a contact_person or leader (if column exists)
-        // Or find User with Role 'manager' in this organization
-        
-        // Fallback: Assign to all Super Admins (Level 1) - Just distinct IDs
-        $superAdmins = \App\Models\User::whereHas('role', function($q){
-             $q->where('name', 'super_admin');
-        })->pluck('employee_id')->filter()->toArray();
-
-        // If simple one layer for now (since we lack full structure): 
-        $approverIds = array_unique($superAdmins);
+        $approverIds = $approvalService->determineApprovers($employee);
         
         if (empty($approverIds)) {
              return response()->json(['message' => 'System configuration error: No approvers found.'], 500);

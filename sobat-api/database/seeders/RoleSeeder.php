@@ -47,17 +47,34 @@ class RoleSeeder extends Seeder
                 'description' => 'Manager Divisi dengan akses approval level 2',
                 'approval_level' => 2,
             ],
-            // Approval Level 3 (Super Admin / Manager HRD)
+            // Approval Level 3 - HRD (Final Approver for Office Track)
+            [
+                'name' => 'hrd',
+                'display_name' => 'Manager HRD',
+                'description' => 'Manager HRD dengan akses approval level 3',
+                'approval_level' => 3,
+            ],
+            // Approval Level 3 - COO (Final Approver for Manager-level requests)
+            [
+                'name' => 'coo',
+                'display_name' => 'COO / Direktur Operasional',
+                'description' => 'COO dengan akses approval level 3 untuk pengajuan manager',
+                'approval_level' => 3,
+            ],
+            // Super Admin (Full Access)
             [
                 'name' => 'super_admin',
-                'display_name' => 'Super Admin / Manager HRD',
-                'description' => 'Super Admin dan Manager HRD dengan akses approval level 3 (full access)',
+                'display_name' => 'Super Admin',
+                'description' => 'Super Admin dengan full access ke semua fitur',
                 'approval_level' => 3,
             ],
         ];
 
         foreach ($roles as $role) {
-            Role::create($role);
+            Role::updateOrCreate(
+                ['name' => $role['name']],
+                $role
+            );
         }
     }
 }

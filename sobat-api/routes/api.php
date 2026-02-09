@@ -82,6 +82,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/requests/{id}/submit', [App\Http\Controllers\Api\RequestController::class, 'submit']);
     Route::post('/requests/{id}/approve', [App\Http\Controllers\Api\RequestController::class, 'approve']);
     Route::post('/requests/{id}/reject', [App\Http\Controllers\Api\RequestController::class, 'reject']);
+    
+    // Manager-level request print routes (for offline COO approval)
+    Route::get('/requests/{id}/print', [App\Http\Controllers\Api\RequestPrintController::class, 'printForApproval']);
+    Route::get('/requests/{id}/can-print', [App\Http\Controllers\Api\RequestPrintController::class, 'canPrint']);
 
     // Approval routes
     // Overtime Records
