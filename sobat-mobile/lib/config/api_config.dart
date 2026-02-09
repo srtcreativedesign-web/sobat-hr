@@ -1,5 +1,5 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
+// import 'dart:io';
+// import 'package:flutter/foundation.dart';
 
 class ApiConfig {
   // ==========================================================================
@@ -8,11 +8,16 @@ class ApiConfig {
   // ⚠️ PENTING: Ganti IP ini sesuai dengan IP Laptop/Komputer Anda saat ini
   // Cara cek di Terminal: ifconfig | grep "inet " | grep -v 127.0.0.1
   // ---------------------------------------------------------------------------
-  static const String _hostIp = '192.168.0.102'; // Updated IP for new Wifi
-  static const String _port = '8000';
+  // static const String _hostIp = '192.168.0.102'; // Updated IP for new Wifi
+  // static const String _port = '8000';
 
   // Base URL Logic
   static String get baseUrl {
+    // 🚀 PRODUCTION (VPS)
+    return 'https://api.sobat-hr.com/api';
+
+    // 🛠️ DEVELOPMENT (Local) - Uncomment to use
+    /*
     // 1. Web Support
     if (kIsWeb) {
       debugPrint('🌐 Environment: Web Browser');
@@ -22,26 +27,19 @@ class ApiConfig {
     // 2. Android Support
     if (Platform.isAndroid) {
       debugPrint('🤖 Environment: Android Device Detected');
-      // Note: Menggunakan Host IP agar jalan di Emulator MAUPUN Fisik
-      // Jika pakai 10.0.2.2 hanya jalan di Emulator
-      debugPrint(
-        '👉 Config: Using Host IP ($_hostIp) for Android compatibility',
-      );
+      debugPrint('👉 Config: Using Host IP ($_hostIp)');
       return 'http://$_hostIp:$_port/api';
     }
 
     // 3. iOS Support
     if (Platform.isIOS) {
       debugPrint('🍎 Environment: iOS Device Detected');
-      // Note: iOS Simulator bisa localhost, tapi Fisik butuh IP
-      // Kita gunakan IP Host agar universal
-      debugPrint('👉 Config: Using Host IP ($_hostIp) for iOS compatibility');
       return 'http://$_hostIp:$_port/api';
     }
 
-    // 4. Fallback (MacOS/Windows Desktop)
-    debugPrint('💻 Environment: Desktop/Other');
+    // 4. Fallback
     return 'http://127.0.0.1:$_port/api';
+    */
   }
 
   // ==========================================================================

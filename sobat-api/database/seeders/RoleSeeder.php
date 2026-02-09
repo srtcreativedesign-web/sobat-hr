@@ -13,25 +13,46 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         $roles = [
+            // Track Operasional - No Approval
             [
-                'name' => 'super_admin',
-                'display_name' => 'Super Admin',
-                'description' => 'Super Administrator with full access to all features',
+                'name' => 'crew',
+                'display_name' => 'Crew',
+                'description' => 'Crew operasional',
+                'approval_level' => null,
             ],
             [
-                'name' => 'admin_cabang',
-                'display_name' => 'Admin Cabang',
-                'description' => 'Branch Administrator with access to branch operations',
+                'name' => 'leader',
+                'display_name' => 'Leader',
+                'description' => 'Leader operasional',
+                'approval_level' => null,
             ],
-            [
-                'name' => 'manager',
-                'display_name' => 'Manager',
-                'description' => 'Manager with approval permissions',
-            ],
+            // Track Office - No Approval
             [
                 'name' => 'staff',
                 'display_name' => 'Staff',
-                'description' => 'Regular staff/employee with basic access',
+                'description' => 'Staff kantor',
+                'approval_level' => null,
+            ],
+            // Approval Level 1
+            [
+                'name' => 'spv',
+                'display_name' => 'Supervisor',
+                'description' => 'Supervisor dengan akses approval level 1',
+                'approval_level' => 1,
+            ],
+            // Approval Level 2
+            [
+                'name' => 'manager_divisi',
+                'display_name' => 'Manager Divisi',
+                'description' => 'Manager Divisi dengan akses approval level 2',
+                'approval_level' => 2,
+            ],
+            // Approval Level 3 (Super Admin / Manager HRD)
+            [
+                'name' => 'super_admin',
+                'display_name' => 'Super Admin / Manager HRD',
+                'description' => 'Super Admin dan Manager HRD dengan akses approval level 3 (full access)',
+                'approval_level' => 3,
             ],
         ];
 
