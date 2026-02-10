@@ -103,25 +103,7 @@ Route::get('/seed-users', function () {
         $hrdUser->update(['role_id' => $hrdRole->id]);
     }
 
-    // Create Employee record for HRD
-    \App\Models\Employee::firstOrCreate(
-        ['user_id' => $hrdUser->id],
-        [
-            'full_name' => 'Human Resources',
-             'employee_code' => 'HRD001',
-             'email' => 'hrd@sobat.com',
-             'organization_id' => $org->id,
-             'position' => 'HR Manager',
-             'department' => 'HR',
-             'basic_salary' => 0,
-             'join_date' => now(),
-             'status' => 'active',
-             'birth_date' => '1985-01-01',
-             'gender' => 'female',
-             'religion' => 'Islam',
-             'marital_status' => 'married'
-        ]
-    );
-
     return "Users Seeded: COO ID {$cooUser->id}, HRD ID {$hrdUser->id}";
 });
+
+

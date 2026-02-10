@@ -265,21 +265,38 @@ class RequestController extends Controller
                 // 3. Auto-Submit Logic - Use ApprovalService to determine approvers based on role
                 $approverIds = $approvalService->determineApprovers($user->employee, $requestModel);
 
-                if (!empty($approverIds)) {
-                    $approvalService->createApprovalSteps($requestModel, $approverIds);
-                } else {
-                     // Fallback to Super Admin logic if no tiered approvers found
+                if (empty($approverIds)) {
+                     // Fallback 1: Super Admin
                      $superAdmins = \App\Models\User::whereHas('role', function($q){
                          $q->where('name', 'super_admin');
                      })->with('employee')->get()->pluck('employee.id')->filter()->toArray();
                      
                      if (!empty($superAdmins)) {
-                         $approvalService->createApprovalSteps($requestModel, array_unique($superAdmins));
+                         $approverIds = array_unique($superAdmins);
                      }
                 }
 
-                $requestModel->status = 'pending';
-                $requestModel->submitted_at = now();
+                // Fallback 2: Force assign to HRD or COO if specific IDs known (from Seeder)
+                if (empty($approverIds)) {
+                    $hrdCode = \App\Models\Employee::where('employee_code', 'HRD001')->value('id');
+                    if ($hrdCode) $approverIds[] = $hrdCode;
+                    else {
+                        $cooCode = \App\Models\Employee::where('employee_code', 'COO001')->value('id');
+                        if ($cooCode) $approverIds[] = $cooCode;
+                    }
+                }
+
+                if (!empty($approverIds)) {
+                    $approvalService->createApprovalSteps($requestModel, $approverIds);
+                    $requestModel->status = 'pending';
+                    $requestModel->submitted_at = now();
+                } else {
+                    // Critical Failure: No approvers could be determined.
+                    // Revert to DRAFT so user knows it failed to submit.
+                    // Or throw error? Throwing error rolls back transaction, which is better.
+                    throw new \Exception("Gagal mengirim pengajuan: Tidak dapat menentukan approver (Penyetuju). Silakan hubungi HRD.");
+                }
+
                 $requestModel->save();
 
                 return response()->json($requestModel->load('approvals'), 201);
