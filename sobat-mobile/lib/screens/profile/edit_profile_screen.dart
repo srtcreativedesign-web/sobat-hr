@@ -86,6 +86,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   // UI helpers
   String? _department;
   String? _position;
+  String? _track;
 
   List<String> _departmentOptions = [
     'Wrapping',
@@ -104,24 +105,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     'Yang lain',
   ];
 
-  List<String> _positionOptions = [
-    'Direktur Utama',
-    'Direktur Operasional',
-    'Direktur Keuangan',
-    'Holding',
-    'Manager Operational',
-    'Manager Keuangan',
-    'Assistant Manager',
+  // Position options based on track
+  static const List<String> _operationalPositions = [
+    'Crew',
+    'Crew Leader',
     'Supervisor',
-    'Team Leader',
-    'Staff Office/Admin',
-    'Crew/Staff Operational',
-    'Cleaning Service',
-    'Teknisi',
-    'Security',
-    'Driver',
-    'Yang lain',
+    'Manager',
   ];
+
+  static const List<String> _officePositions = [
+    'Staff',
+    'Team Leader',
+    'Supervisor',
+    'Deputy Manager',
+    'Manager',
+    'Holding 1',
+    'Holding 2',
+    'Holding 3',
+    'Holding 4',
+    'Direktur',
+  ];
+
+  List<String> _positionOptions = [];
 
   final List<String> _ptkpOptions = [
     'TK0',
@@ -188,13 +193,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _employeeIdCtrl.text = emp['employee_code'] ?? emp['employee_id'] ?? '';
 
         if (emp['photo_path'] != null) {
-          final path = emp['photo_path'] as String;
-          if (!path.startsWith('http')) {
-            final base = ApiConfig.baseUrl.replaceAll('/api', '');
-            _photoUrl = '$base/storage/$path';
-          } else {
-            _photoUrl = path;
-          }
+          _photoUrl = ApiConfig.getStorageUrl(emp['photo_path']);
         }
 
         _placeOfBirthCtrl.text = emp['place_of_birth'] ?? '';
@@ -258,6 +257,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         // Prioritize data from Employee object (from registration)
         final userJobLevel = emp['job_level'];
         final userTrack = emp['track'];
+
+        // Set track and position options based on track
+        _track = userTrack?.toString();
+        _positionOptions = List<String>.from(
+          _track == 'operational' ? _operationalPositions : _officePositions,
+        );
 
         String? userOrgName;
         int? userOrgId;
@@ -441,6 +446,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'family_contact_number': _familyContactCtrl.text.trim(),
         'department': _departmentCtrl.text.trim(),
         'position': _positionCtrl.text.trim(),
+        'job_level': _positionCtrl.text.trim().toLowerCase().replaceAll(
+          ' ',
+          '_',
+        ),
         'supervisor_name': _supervisorNameCtrl.text.trim(),
         'supervisor_position': _supervisorPositionCtrl.text.trim(),
       };
@@ -511,6 +520,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         },
         'department': _departmentCtrl.text.trim(),
         'position': _positionCtrl.text.trim(),
+        'job_level': _positionCtrl.text.trim().toLowerCase().replaceAll(
+          ' ',
+          '_',
+        ),
         'supervisor_name': _supervisorNameCtrl.text.trim(),
         'supervisor_position': _supervisorPositionCtrl.text.trim(),
       };

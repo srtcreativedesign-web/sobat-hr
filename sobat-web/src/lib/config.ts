@@ -1,8 +1,7 @@
 // API Configuration
-//export const API_URL = 'http://192.168.1.19:8000/api';
-// Hardcode production URL to ensure it works
-export const API_URL = 'https://api.sobat-hr.com/api';
-// export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.sobat-hr.com/api';
+// Development: uses NEXT_PUBLIC_API_URL from .env.local
+// Production:  uses NEXT_PUBLIC_API_URL from .env.production (set at build time)
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'SOBAT HR';
 
 // API Endpoints

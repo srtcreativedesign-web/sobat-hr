@@ -290,9 +290,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         backgroundColor: Colors.white.withValues(alpha: 0.1),
                         backgroundImage: (user?.avatar != null)
                             ? NetworkImage(
-                                user!.avatar!.startsWith('http')
-                                    ? user.avatar!
-                                    : '${(ApiConfig.baseUrl.replaceAll('/api', ''))}/storage/${user.avatar}',
+                                ApiConfig.getStorageUrl(user!.avatar) ?? '',
                               )
                             : null,
                         child: (user?.avatar == null)

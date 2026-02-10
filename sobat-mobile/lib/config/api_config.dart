@@ -1,46 +1,59 @@
-// import 'dart:io';
-// import 'package:flutter/foundation.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 class ApiConfig {
   // ==========================================================================
-  // 🔧 CONFIGURATION (AUTO-DETECTED)
+  // 🔧 ENVIRONMENT CONFIGURATION
   // ---------------------------------------------------------------------------
-  // ⚠️ PENTING: Ganti IP ini sesuai dengan IP Laptop/Komputer Anda saat ini
-  // Cara cek di Terminal: ifconfig | grep "inet " | grep -v 127.0.0.1
-  // ---------------------------------------------------------------------------
-  // static const String _hostIp = '192.168.0.102'; // Updated IP for new Wifi
-  // static const String _port = '8000';
+  // Cara pakai:
+  //   Development : flutter run
+  //   Production  : flutter run --dart-define=ENV=prod
+  //
+  // ⚠️ Untuk Development, ganti _hostIp sesuai IP WiFi Anda:
+  //   Terminal: ifconfig | grep "inet " | grep -v 127.0.0.1
+  // ==========================================================================
+
+  static const String _env = String.fromEnvironment('ENV', defaultValue: 'dev');
+  static const String _hostIp = '192.168.1.12';
+  static const String _port = '8000';
+
+  // Production URL
+  static const String _prodUrl = 'https://api.sobat-hr.com/api';
 
   // Base URL Logic
   static String get baseUrl {
-    // 🚀 PRODUCTION (VPS)
-    return 'https://api.sobat-hr.com/api';
+    if (_env == 'prod') {
+      debugPrint('🚀 Environment: PRODUCTION');
+      return _prodUrl;
+    }
 
-    // 🛠️ DEVELOPMENT (Local) - Uncomment to use
-    /*
-    // 1. Web Support
+    // DEVELOPMENT
+    debugPrint('🛠️ Environment: DEVELOPMENT');
+
+    // Web
     if (kIsWeb) {
-      debugPrint('🌐 Environment: Web Browser');
+      debugPrint('🌐 Platform: Web Browser');
       return 'http://127.0.0.1:$_port/api';
     }
 
-    // 2. Android Support
+    // Android
     if (Platform.isAndroid) {
-      debugPrint('🤖 Environment: Android Device Detected');
-      debugPrint('👉 Config: Using Host IP ($_hostIp)');
+      debugPrint('🤖 Platform: Android → IP: $_hostIp');
       return 'http://$_hostIp:$_port/api';
     }
 
-    // 3. iOS Support
+    // iOS
     if (Platform.isIOS) {
-      debugPrint('🍎 Environment: iOS Device Detected');
+      debugPrint('🍎 Platform: iOS → IP: $_hostIp');
       return 'http://$_hostIp:$_port/api';
     }
 
-    // 4. Fallback
+    // Fallback
     return 'http://127.0.0.1:$_port/api';
-    */
   }
+
+  /// Check if running in production
+  static bool get isProduction => _env == 'prod';
 
   // ==========================================================================
   // 🔌 ENDPOINTS
@@ -74,4 +87,26 @@ class ApiConfig {
   // Timeout configuration
   static const Duration connectTimeout = Duration(seconds: 60);
   static const Duration receiveTimeout = Duration(seconds: 60);
+
+  /// Helper to construct storage URL safely
+  /// Handles null, full URLs, path normalization
+  static String? getStorageUrl(dynamic path) {
+    if (path == null || path.toString().isEmpty) return null;
+
+    String p = path.toString();
+
+    // Already a full URL
+    if (p.startsWith('http')) return p;
+
+    // Get base URL without trailing /api (use regex to avoid stripping /api from subdomain)
+    final base = baseUrl.replaceFirst(RegExp(r'/api$'), '');
+
+    // Remove leading slash
+    if (p.startsWith('/')) p = p.substring(1);
+
+    // Remove 'storage/' prefix if already present
+    if (p.startsWith('storage/')) p = p.substring(8);
+
+    return '$base/storage/$p';
+  }
 }

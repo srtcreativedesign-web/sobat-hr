@@ -122,8 +122,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 top: Radius.circular(16),
                               ),
                               child: Image.network(
-                                ApiConfig.baseUrl.replaceAll('/api', '') +
-                                    '/storage/${banner['image_path']}',
+                                ApiConfig.getStorageUrl(banner['image_path']) ??
+                                    '',
                                 fit: BoxFit.cover,
                                 width: double.infinity,
                                 errorBuilder: (ctx, err, stack) {
@@ -793,8 +793,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         backgroundImage:
                             (user?.avatar != null && user!.avatar!.isNotEmpty)
                             ? NetworkImage(
-                                ApiConfig.baseUrl.replaceAll('/api', '') +
-                                    '/storage/${user.avatar}',
+                                ApiConfig.getStorageUrl(user!.avatar) ?? '',
                               )
                             : null,
                         child: (user?.avatar == null || user!.avatar!.isEmpty)
@@ -1747,10 +1746,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     final item = _announcements[index];
                     final isNews = item['category'] == 'news';
                     final imagePath = item['image_path'];
-                    final imageUrl = imagePath != null
-                        ? ApiConfig.baseUrl.replaceAll('/api', '') +
-                              '/storage/$imagePath'
-                        : null;
+                    final imageUrl = ApiConfig.getStorageUrl(imagePath);
 
                     return Container(
                       margin: const EdgeInsets.symmetric(horizontal: 8),

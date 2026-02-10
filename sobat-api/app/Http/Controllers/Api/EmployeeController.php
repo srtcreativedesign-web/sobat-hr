@@ -232,11 +232,14 @@ class EmployeeController extends Controller
         if ($existingEmployee) {
             // Update existing employee
             $existingEmployee->update($data);
-            return response()->json($existingEmployee, 200);
+            $existingEmployee->refresh();
+            $existingEmployee->load(['organization', 'role']);
+            return response()->json(new \App\Http\Resources\EmployeeResource($existingEmployee), 200);
         } else {
             // Create new employee
             $employee = Employee::create($data);
-            return response()->json($employee, 201);
+            $employee->load(['organization', 'role']);
+            return response()->json(new \App\Http\Resources\EmployeeResource($employee), 201);
         }
     }
 
@@ -418,7 +421,11 @@ class EmployeeController extends Controller
 
         $employee->update($data);
 
-        return response()->json($employee);
+        // Reload fresh data with relations
+        $employee->refresh();
+        $employee->load(['organization', 'role']);
+
+        return response()->json(new \App\Http\Resources\EmployeeResource($employee));
     }
 
     /**
