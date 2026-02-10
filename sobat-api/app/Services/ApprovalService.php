@@ -187,6 +187,12 @@ class ApprovalService
      * @param Employee $requester The employee submitting the request
      * @return array Array of employee IDs in approval order
      */
+    /**
+     * Determine approvers based on requester's role level
+     * 
+     * @param Employee $requester The employee submitting the request
+     * @return array Array of employee IDs in approval order
+     */
     public function determineApprovers(Employee $requester, ?Model $request = null): array
     {
         // Get requester's approval level from their user's role
@@ -195,7 +201,7 @@ class ApprovalService
         // Get requester's organization for finding same-org approvers
         $organizationId = $requester->organization_id;
         
-        Log::info("Determining approvers for Employee ID: {$requester->id}, Role Level: {$userRoleLevel}, Org ID: {$organizationId}");
+        Log::info("Determining approvers for Employee ID: {$requester->id} ({$requester->full_name}), Role Level: {$userRoleLevel}, Org ID: {$organizationId}, Request Type: " . ($request ? $request->type : 'null'));
         
         $approvers = [];
 
@@ -205,38 +211,73 @@ class ApprovalService
             Log::info("Special Workflow: Sick Leave for Manager");
             $coo = $this->findApproverByRoleName('coo');
             $hrd = $this->findApproverByRoleName('hrd');
+            
+            if ($coo) {
+                $approvers[] = $coo->id;
+                Log::info("Found COO: {$coo->id} - {$coo->full_name}");
+            } else {
+                Log::warning("COO not found for Special Workflow");
+            }
 
-            if ($coo) $approvers[] = $coo->id;
-            if ($hrd) $approvers[] = $hrd->id;
+            if ($hrd) {
+                $approvers[] = $hrd->id;
+                Log::info("Found HRD: {$hrd->id} - {$hrd->full_name}");
+            } else {
+                 Log::warning("HRD not found for Special Workflow");
+            }
 
             return $approvers;
         }
         
         if ($userRoleLevel >= 2) {
             // Manager Divisi level -> Only COO approves
+            Log::info("Manager Level Request -> COO Only");
+            
             $coo = $this->findApproverByRoleName('coo');
             if ($coo) {
                 $approvers[] = $coo->id;
+            } else {
+                Log::warning("COO not found for Manager Request");
             }
         } elseif ($userRoleLevel == 1) {
             // SPV level -> Manager Divisi + HRD
+            Log::info("SPV Level Request -> Manager Divisi + HRD");
+
             $managerDivisi = $this->findApproverByRoleName('manager_divisi', $organizationId);
             $hrd = $this->findApproverByRoleName('hrd');
             
-            if ($managerDivisi) $approvers[] = $managerDivisi->id;
+            if ($managerDivisi) {
+                $approvers[] = $managerDivisi->id;
+            } else {
+                 // Fallback to generic manager if manager_divisi not found?
+                 Log::warning("Manager Divisi not found in Org {$organizationId}, trying generic 'manager'");
+                 $manager = $this->findApproverByRoleName('manager', $organizationId);
+                 if ($manager) $approvers[] = $manager->id;
+            }
+
             if ($hrd) $approvers[] = $hrd->id;
         } else {
             // Staff/Crew/Leader level -> SPV + Manager Divisi + HRD
+            Log::info("Staff Level Request -> SPV + Manager + HRD");
+
             $spv = $this->findApproverByRoleName('spv', $organizationId);
             $managerDivisi = $this->findApproverByRoleName('manager_divisi', $organizationId);
             $hrd = $this->findApproverByRoleName('hrd');
             
             if ($spv) $approvers[] = $spv->id;
-            if ($managerDivisi) $approvers[] = $managerDivisi->id;
+            
+            if ($managerDivisi) {
+                $approvers[] = $managerDivisi->id;
+            } else {
+                // Fallback
+                 $manager = $this->findApproverByRoleName('manager', $organizationId);
+                 if ($manager) $approvers[] = $manager->id;
+            }
+
             if ($hrd) $approvers[] = $hrd->id;
         }
         
-        Log::info("Determined approvers: " . json_encode($approvers));
+        Log::info("Final Approvers List: " . json_encode($approvers));
         
         return $approvers;
     }
@@ -246,20 +287,41 @@ class ApprovalService
      */
     private function findApproverByRoleName(string $roleName, ?int $organizationId = null): ?Employee
     {
+        Log::info("Searching for approver with role: {$roleName}" . ($organizationId ? " in Org {$organizationId}" : ""));
+
+        // Match exact role name in DB (usually lowercase 'coo', 'hrd', etc based on seeder)
+        // If DB has 'COO', we might need to be careful. Laravel seeder usually predictable.
+        // Let's assume role names are lowercase in DB or we use ILIKE if postgres, or just let it consist.
         $query = Employee::whereHas('user.role', function ($q) use ($roleName) {
             $q->where('name', $roleName);
         });
         
+        $count = (clone $query)->count();
+        Log::info("Found {$count} employees with role {$roleName} (globally)");
+
         // For SPV and Manager Divisi, try to find someone in the same organization first
-        if ($organizationId && in_array($roleName, ['spv', 'manager_divisi'])) {
+        if ($organizationId && in_array($roleName, ['spv', 'manager_divisi', 'manager'])) {
             $sameOrgApprover = (clone $query)->where('organization_id', $organizationId)->first();
             if ($sameOrgApprover) {
+                Log::info("Found same-org approver: {$sameOrgApprover->id} - {$sameOrgApprover->full_name}");
                 return $sameOrgApprover;
             }
+            Log::info("No same-org approver found for {$roleName} in Org {$organizationId}");
         }
         
-        // Fallback: get any employee with that role
-        return $query->first();
+        // Fallback: get any employee with that role?
+        // Maybe for SPV we don't want cross-dept approval? 
+        // For now, keep original logic (fallback to first found) or restrict.
+        // Original code: return $query->first(); -> This implies cross-dept is allowed as fallback.
+        
+        $fallback = $query->first();
+        if ($fallback) {
+             Log::info("Using fallback approver: {$fallback->id} - {$fallback->full_name}");
+        } else {
+             Log::warning("No approver found at all for role {$roleName}");
+        }
+
+        return $fallback;
     }
     
     /**
