@@ -41,23 +41,29 @@ class AttendanceService {
 
       String fileName = photo.path.split('/').last;
 
-      FormData formData = FormData.fromMap({
+      final map = <String, dynamic>{
         'employee_id': employeeId,
         'date': DateFormat('yyyy-MM-dd').format(DateTime.now()),
         'check_in': DateFormat('HH:mm:ss').format(DateTime.now()),
         'status': status,
         'latitude': latitude,
         'longitude': longitude,
-        'location_address': address ?? '', // Send address
-        'notes': notes,
-        'attendance_type': attendanceType,
-        'field_notes': fieldNotes,
+        'location_address': address ?? '',
         'photo': await MultipartFile.fromFile(
           photo.path,
           filename: fileName,
           contentType: MediaType('image', 'jpeg'),
         ),
-      });
+      };
+
+      // Only add optional fields if they have values (avoid sending "null" string)
+      if (notes != null && notes.isNotEmpty) map['notes'] = notes;
+      if (attendanceType != null) map['attendance_type'] = attendanceType;
+      if (fieldNotes != null && fieldNotes.isNotEmpty) {
+        map['field_notes'] = fieldNotes;
+      }
+
+      FormData formData = FormData.fromMap(map);
 
       final response = await _dio.post(
         '/attendances', // ApiConfig.attendance might be different, let's use direct path or update Config

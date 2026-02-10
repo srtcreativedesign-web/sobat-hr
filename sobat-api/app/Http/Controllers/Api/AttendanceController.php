@@ -66,10 +66,22 @@ class AttendanceController extends Controller
             'field_notes' => 'nullable|string|required_if:attendance_type,field', // Mandatory for field
         ]);
 
+        // DEBUG: Log raw incoming request data
+        \Illuminate\Support\Facades\Log::info('ATTENDANCE RAW REQUEST:', [
+            'attendance_type_raw' => $request->input('attendance_type'),
+            'field_notes_raw' => $request->input('field_notes'),
+            'all_inputs' => $request->except(['photo']),
+        ]);
+
         $employee = Employee::with('organization')->find($validated['employee_id']);
         
         // Set default attendance type to 'office' if not specified
         $attendanceType = $validated['attendance_type'] ?? 'office';
+
+        \Illuminate\Support\Facades\Log::info('ATTENDANCE TYPE RESOLVED:', [
+            'validated_attendance_type' => $validated['attendance_type'] ?? 'NOT SET',
+            'final_attendanceType' => $attendanceType,
+        ]);
 
         // Geolocation Validation (Skip for field attendance)
         if ($attendanceType === 'office' && isset($validated['latitude']) && isset($validated['longitude']) && $employee && $employee->organization && $employee->organization->latitude) {
