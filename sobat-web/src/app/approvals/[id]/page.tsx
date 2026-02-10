@@ -378,8 +378,13 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                     <div className="bg-gray-50 rounded-3xl border border-gray-100 p-6 md:p-8 sticky top-6 text-center">
                                         <h3 className="text-lg font-bold text-gray-400 mb-2">Waiting for Approval</h3>
                                         <p className="text-sm text-gray-500">
-                                            Current Approver: <span className="font-semibold">{pendingStep?.approver?.full_name || '...'}</span> (Level {pendingStep?.level})
+                                            Current Approver: <span className="font-semibold">{pendingStep?.approver?.full_name || 'System / Unassigned'}</span> (Level {pendingStep?.level || '-'})
                                         </p>
+                                        {!pendingStep && (
+                                            <p className="text-xs text-red-400 mt-2">
+                                                No pending approval step found. Please contact HR.
+                                            </p>
+                                        )}
                                     </div>
                                 );
                             }

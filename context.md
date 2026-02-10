@@ -124,3 +124,35 @@ flutter run -d C6F066BB-39CC-4E0E-A581-B08203675EB0
 6,13778° S, 106,62295° E
 
 open ios/Runner.xcworkspace
+
+
+
+
+# Di server production - sobat-web
+cd /var/www/sobat-hr/sobat-web
+
+# Rebuild Next.js
+npm run build
+
+# Restart PM2
+pm2 restart sobat-web
+
+
+
+# Fix permissions untuk cache dan storage
+sudo chown -R www-data:www-data /var/www/sobat-hr/sobat-api/storage
+sudo chown -R www-data:www-data /var/www/sobat-hr/sobat-api/bootstrap/cache
+sudo chmod -R 775 /var/www/sobat-hr/sobat-api/storage
+sudo chmod -R 775 /var/www/sobat-hr/sobat-api/bootstrap/cache
+
+# Pull changes terbaru
+cd /var/www/sobat-hr
+sudo git pull origin main
+
+# Jalankan seeder untuk roles
+cd sobat-api
+sudo -u www-data php artisan db:seed --class=RoleSeeder
+
+# Clear cache dengan user yang benar
+sudo -u www-data php artisan config:clear
+sudo -u www-data php artisan cache:clear
