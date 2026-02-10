@@ -115,7 +115,16 @@ class AttendanceController extends Controller
 
         // Handle Photo Upload
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('attendance_photos', 'public');
+            $photo = $request->file('photo');
+            
+            // Generate filename unique
+            $filename = uniqid() . '_' . time() . '.jpg';
+            $path = 'attendance_photos/' . $filename;
+            $fullPath = storage_path('app/public/' . $path);
+
+            // Compress and Resize Image
+            $this->resizeAndSaveImage($photo->getPathname(), $fullPath, 800, 80); // Width 800px, Quality 80
+            
             $validated['photo_path'] = $path;
 
             // Face Verification Logic
@@ -252,6 +261,61 @@ class AttendanceController extends Controller
             cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
         
         return $angle * $earthRadius;
+    }
+
+    /**
+     * Resize and save image using GD
+     */
+    private function resizeAndSaveImage($sourcePath, $destinationPath, $maxWidth, $quality)
+    {
+        list($width, $height, $type) = getimagesize($sourcePath);
+        
+        // Load image based on type
+        switch ($type) {
+            case IMAGETYPE_JPEG:
+                $sourceImage = imagecreatefromjpeg($sourcePath);
+                break;
+            case IMAGETYPE_PNG:
+                $sourceImage = imagecreatefrompng($sourcePath);
+                break;
+            default:
+                // If not JPG/PNG, just copy original
+                copy($sourcePath, $destinationPath);
+                return;
+        }
+
+        // Calculate new dimensions
+        if ($width > $maxWidth) {
+            $newWidth = $maxWidth;
+            $newHeight = ($height / $width) * $newWidth;
+        } else {
+            $newWidth = $width;
+            $newHeight = $height;
+        }
+
+        $newImage = imagecreatetruecolor($newWidth, $newHeight);
+
+        // Preserve transparency for PNG
+        if ($type == IMAGETYPE_PNG) {
+            imagealphablending($newImage, false);
+            imagesavealpha($newImage, true);
+        }
+
+        // Resize
+        imagecopyresampled($newImage, $sourceImage, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+        // Save as JPEG (convert everything to jpg for uniformity and compression)
+        // Ensure directory exists
+        $directory = dirname($destinationPath);
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        imagejpeg($newImage, $destinationPath, $quality);
+
+        // Free memory
+        imagedestroy($sourceImage);
+        imagedestroy($newImage);
     }
 
     public function show(string $id)
