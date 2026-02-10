@@ -110,171 +110,183 @@ class RequestController extends Controller
             'last_working_date' => 'nullable|date',
         ]);
 
-        return DB::transaction(function () use ($validated, $request, $approvalService, $user) {
-            // 1. Create Master Request
-            $masterData = [
-                'employee_id' => $validated['employee_id'],
-                'type' => $validated['type'],
-                'title' => $validated['title'],
-                'description' => $validated['description'],
-                'reason' => $validated['reason'] ?? $validated['description'],
-                'status' => 'draft',
-                // Populate summary fields for backward compatibility (List View)
-                'start_date' => $validated['start_date'] ?? $validated['date'] ?? null,
-                'end_date' => $validated['end_date'] ?? $validated['date'] ?? null,
-                'amount' => $validated['amount'] ?? $validated['budget'] ?? (($validated['duration'] ?? 0) ? ($validated['duration']/60) : null), 
-                'attachments' => $validated['attachments'] ?? null,
-            ];
+        // Prevent Double Submission using Atomic Lock
+        $lockKey = 'submit_request_' . $user->id;
+        $lock = \Illuminate\Support\Facades\Cache::lock($lockKey, 10); // Lock for 10 seconds
 
-            $requestModel = RequestModel::create($masterData);
+        if (!$lock->get()) {
+             return response()->json(['message' => 'Sedang memproses permintaan sebelumnya. Mohon tunggu.'], 429);
+        }
 
-            // 2. Create Detail based on Type
-            switch ($validated['type']) {
-                case 'leave':
-                    // 1. Check Eligibility (1 Year Service)
-                    if (!$user->employee->join_date || $user->employee->join_date->diffInYears(now()) < 1) {
-                        throw new \Illuminate\Validation\ValidationException(\Illuminate\Support\Facades\Validator::make([], [
-                            'type' => 'Anda belum bekerja selama 1 tahun, belum berhak mengajukan cuti tahunan.',
-                        ]));
-                    }
+        try {
+            return DB::transaction(function () use ($validated, $request, $approvalService, $user) {
+                // 1. Create Master Request
+                $masterData = [
+                    'employee_id' => $validated['employee_id'],
+                    'type' => $validated['type'],
+                    'title' => $validated['title'],
+                    'description' => $validated['description'],
+                    'reason' => $validated['reason'] ?? $validated['description'],
+                    'status' => 'draft',
+                    // Populate summary fields for backward compatibility (List View)
+                    'start_date' => $validated['start_date'] ?? $validated['date'] ?? null,
+                    'end_date' => $validated['end_date'] ?? $validated['date'] ?? null,
+                    'amount' => $validated['amount'] ?? $validated['budget'] ?? (($validated['duration'] ?? 0) ? ($validated['duration']/60) : null), 
+                    'attachments' => $validated['attachments'] ?? null,
+                ];
 
-                    // 2. Calculate Duration
-                    $startDate = \Carbon\Carbon::parse($request->start_date);
-                    $endDate = \Carbon\Carbon::parse($request->end_date);
-                    $duration = $startDate->diffInDays($endDate) + 1; // Inclusive
+                $requestModel = RequestModel::create($masterData);
 
-                    // 3. Check Quota
-                    $quota = 12;
-                    $used = RequestModel::where('employee_id', $user->employee->id)
-                        ->where('type', 'leave')
-                        ->where('status', 'approved')
-                        ->whereYear('start_date', now()->year)
-                        ->get()
-                        ->sum(function ($req) {
-                            if ($req->amount > 0) return $req->amount;
-                            if ($req->start_date && $req->end_date) {
-                                return $req->start_date->diffInDays($req->end_date) + 1;
-                            }
-                            return 0;
-                        });
+                // 2. Create Detail based on Type
+                switch ($validated['type']) {
+                    case 'leave':
+                        // 1. Check Eligibility (1 Year Service)
+                        if (!$user->employee->join_date || $user->employee->join_date->diffInYears(now()) < 1) {
+                            throw new \Illuminate\Validation\ValidationException(\Illuminate\Support\Facades\Validator::make([], [
+                                'type' => 'Anda belum bekerja selama 1 tahun, belum berhak mengajukan cuti tahunan.',
+                            ]));
+                        }
 
-                    if (($used + $duration) > $quota) {
-                        return response()->json([
-                            'message' => 'Sisa cuti tidak mencukupi.',
-                            'details' => [
-                                'quota' => $quota,
-                                'used' => $used,
-                                'requested' => $duration,
-                                'remaining' => max(0, $quota - $used)
-                            ]
-                        ], 422);
-                    }
+                        // 2. Calculate Duration
+                        $startDate = \Carbon\Carbon::parse($request->start_date);
+                        $endDate = \Carbon\Carbon::parse($request->end_date);
+                        $duration = $startDate->diffInDays($endDate) + 1; // Inclusive
 
-                    // Update Master Data Amount (Days)
-                    $requestModel->update(['amount' => $duration]);
+                        // 3. Check Quota
+                        $quota = 12;
+                        $used = RequestModel::where('employee_id', $user->employee->id)
+                            ->where('type', 'leave')
+                            ->where('status', 'approved')
+                            ->whereYear('start_date', now()->year)
+                            ->get()
+                            ->sum(function ($req) {
+                                if ($req->amount > 0) return $req->amount;
+                                if ($req->start_date && $req->end_date) {
+                                    return $req->start_date->diffInDays($req->end_date) + 1;
+                                }
+                                return 0;
+                            });
 
-                    \App\Models\LeaveDetail::create([
-                        'request_id' => $requestModel->id,
-                        'start_date' => $request->start_date,
-                        'end_date' => $request->end_date,
-                        'amount' => $duration, // days
-                        'reason' => $request->description,
-                    ]);
-                    break;
-                
-                case 'sick_leave':
-                    if (!$request->attachments) {
-                         throw new \Illuminate\Validation\ValidationException(\Illuminate\Support\Facades\Validator::make([], [
-                            'attachments' => 'Surat dokter wajib diupload untuk pengajuan sakit.',
-                        ]));
-                    }
-                    \App\Models\SickLeaveDetail::create([
-                        'request_id' => $requestModel->id,
-                        'start_date' => \Carbon\Carbon::parse($request->start_date)->format('Y-m-d'),
-                        'end_date' => \Carbon\Carbon::parse($request->end_date)->format('Y-m-d'),
-                        'reason' => $request->description,
-                        'attachment' => $request->attachments ? json_decode($request->attachments, true) : null,
-                    ]);
-                    break;
+                        if (($used + $duration) > $quota) {
+                            return response()->json([
+                                'message' => 'Sisa cuti tidak mencukupi.',
+                                'details' => [
+                                    'quota' => $quota,
+                                    'used' => $used,
+                                    'requested' => $duration,
+                                    'remaining' => max(0, $quota - $used)
+                                ]
+                            ], 422);
+                        }
 
-                case 'overtime':
-                    \App\Models\OvertimeDetail::create([
-                        'request_id' => $requestModel->id,
-                        'date' => $request->start_date ?? $request->date, // Mobile sends start_date usually
-                        'start_time' => $request->start_time,
-                        'end_time' => $request->end_time,
-                        'duration' => $request->duration,
-                        'reason' => $request->description,
-                    ]);
-                    break;
+                        // Update Master Data Amount (Days)
+                        $requestModel->update(['amount' => $duration]);
 
-                case 'business_trip':
-                    \App\Models\BusinessTripDetail::create([
-                        'request_id' => $requestModel->id,
-                        'destination' => $request->destination ?? $request->title,
-                        'start_date' => $request->start_date,
-                        'end_date' => $request->end_date,
-                        'purpose' => $request->description,
-                        'budget' => $request->amount, // Map amount to budget
-                    ]);
-                    break;
+                        \App\Models\LeaveDetail::create([
+                            'request_id' => $requestModel->id,
+                            'start_date' => $request->start_date,
+                            'end_date' => $request->end_date,
+                            'amount' => $duration, // days
+                            'reason' => $request->description,
+                        ]);
+                        break;
+                    
+                    case 'sick_leave':
+                        if (!$request->attachments) {
+                             throw new \Illuminate\Validation\ValidationException(\Illuminate\Support\Facades\Validator::make([], [
+                                'attachments' => 'Surat dokter wajib diupload untuk pengajuan sakit.',
+                            ]));
+                        }
+                        \App\Models\SickLeaveDetail::create([
+                            'request_id' => $requestModel->id,
+                            'start_date' => \Carbon\Carbon::parse($request->start_date)->format('Y-m-d'),
+                            'end_date' => \Carbon\Carbon::parse($request->end_date)->format('Y-m-d'),
+                            'reason' => $request->description,
+                            'attachment' => $request->attachments ? json_decode($request->attachments, true) : null,
+                        ]);
+                        break;
 
-                case 'reimbursement': // Reimburse Medis/Transport/Etc
-                     \App\Models\ReimbursementDetail::create([
-                        'request_id' => $requestModel->id,
-                        // 'type' removed from schema, rely on title for now or add subtype later if needed
-                        'date' => $request->date ?? $request->start_date,
-                        'title' => $request->title,
-                        'description' => $request->description,
-                        'amount' => $request->amount,
-                        'attachment' => $request->attachments ? json_decode($request->attachments, true) : null,
-                    ]);
-                    break;
+                    case 'overtime':
+                        \App\Models\OvertimeDetail::create([
+                            'request_id' => $requestModel->id,
+                            'date' => $request->start_date ?? $request->date, // Mobile sends start_date usually
+                            'start_time' => $request->start_time,
+                            'end_time' => $request->end_time,
+                            'duration' => $request->duration,
+                            'reason' => $request->description,
+                        ]);
+                        break;
 
-                case 'asset': // Pengajuan Aset
-                     \App\Models\AssetDetail::create([
-                        'request_id' => $requestModel->id,
-                        'brand' => $request->brand,
-                        'specification' => $request->specification,
-                        'amount' => $request->amount, // Estimasi Harga
-                        'is_urgent' => $request->boolean('is_urgent'),
-                        'reason' => $request->reason ?? $request->description,
-                        'attachment' => $request->attachments ? json_decode($request->attachments, true) : null,
-                    ]);
-                    break;
-                
-                case 'resignation':
-                     \App\Models\ResignationDetail::create([
-                        'request_id' => $requestModel->id,
-                        'last_working_date' => $request->last_working_date,
-                         // Default to normal for now, can be expanded later
-                        'resign_type' => 'normal',
-                    ]);
-                    break;
-            }
+                    case 'business_trip':
+                        \App\Models\BusinessTripDetail::create([
+                            'request_id' => $requestModel->id,
+                            'destination' => $request->destination ?? $request->title,
+                            'start_date' => $request->start_date,
+                            'end_date' => $request->end_date,
+                            'purpose' => $request->description,
+                            'budget' => $request->amount, // Map amount to budget
+                        ]);
+                        break;
 
-            // 3. Auto-Submit Logic - Use ApprovalService to determine approvers based on role
-            $approverIds = $approvalService->determineApprovers($user->employee, $requestModel);
+                    case 'reimbursement': // Reimburse Medis/Transport/Etc
+                         \App\Models\ReimbursementDetail::create([
+                            'request_id' => $requestModel->id,
+                            // 'type' removed from schema, rely on title for now or add subtype later if needed
+                            'date' => $request->date ?? $request->start_date,
+                            'title' => $request->title,
+                            'description' => $request->description,
+                            'amount' => $request->amount,
+                            'attachment' => $request->attachments ? json_decode($request->attachments, true) : null,
+                        ]);
+                        break;
 
-            if (!empty($approverIds)) {
-                $approvalService->createApprovalSteps($requestModel, $approverIds);
-            } else {
-                 // Fallback to Super Admin logic if no tiered approvers found
-                 $superAdmins = \App\Models\User::whereHas('role', function($q){
-                     $q->where('name', 'super_admin');
-                 })->with('employee')->get()->pluck('employee.id')->filter()->toArray();
-                 
-                 if (!empty($superAdmins)) {
-                     $approvalService->createApprovalSteps($requestModel, array_unique($superAdmins));
-                 }
-            }
+                    case 'asset': // Pengajuan Aset
+                         \App\Models\AssetDetail::create([
+                            'request_id' => $requestModel->id,
+                            'brand' => $request->brand,
+                            'specification' => $request->specification,
+                            'amount' => $request->amount, // Estimasi Harga
+                            'is_urgent' => $request->boolean('is_urgent'),
+                            'reason' => $request->reason ?? $request->description,
+                            'attachment' => $request->attachments ? json_decode($request->attachments, true) : null,
+                        ]);
+                        break;
+                    
+                    case 'resignation':
+                         \App\Models\ResignationDetail::create([
+                            'request_id' => $requestModel->id,
+                            'last_working_date' => $request->last_working_date,
+                             // Default to normal for now, can be expanded later
+                            'resign_type' => 'normal',
+                        ]);
+                        break;
+                }
 
-            $requestModel->status = 'pending';
-            $requestModel->submitted_at = now();
-            $requestModel->save();
+                // 3. Auto-Submit Logic - Use ApprovalService to determine approvers based on role
+                $approverIds = $approvalService->determineApprovers($user->employee, $requestModel);
 
-            return response()->json($requestModel->load('approvals'), 201);
-        });
+                if (!empty($approverIds)) {
+                    $approvalService->createApprovalSteps($requestModel, $approverIds);
+                } else {
+                     // Fallback to Super Admin logic if no tiered approvers found
+                     $superAdmins = \App\Models\User::whereHas('role', function($q){
+                         $q->where('name', 'super_admin');
+                     })->with('employee')->get()->pluck('employee.id')->filter()->toArray();
+                     
+                     if (!empty($superAdmins)) {
+                         $approvalService->createApprovalSteps($requestModel, array_unique($superAdmins));
+                     }
+                }
+
+                $requestModel->status = 'pending';
+                $requestModel->submitted_at = now();
+                $requestModel->save();
+
+                return response()->json($requestModel->load('approvals'), 201);
+            });
+        } finally {
+            $lock->release();
+        }
     }
 
     public function show(string $id)
