@@ -52,30 +52,29 @@ class ApprovalService
     public function approve(Model $request, Employee $actor, ?string $signature = null, ?string $note = null)
     {
         return DB::transaction(function () use ($request, $actor, $signature, $note) {
-            // 1. Validate Actor
-            // Check if actor has admin role
-            $isAdmin = false;
-            if ($actor->user && $actor->user->role) {
-                $roleName = $actor->user->role->name;
-                $isAdmin = in_array($roleName, ['super_admin', 'admin_cabang', 'hrd']);
-            }
-            
-            $query = Approval::where('approvable_type', get_class($request))
+            // 1. Find the pending approval step for this actor
+            $currentStep = Approval::where('approvable_type', get_class($request))
                 ->where('approvable_id', $request->id)
-                ->where('level', $request->step_now)
-                ->where('status', 'pending');
-
-            // STRICT CHECK: Always enforce that the actor matches the assigned approver
-            // This prevents Super Admin from jumping the queue (e.g. approving Level 1 before Manager)
-            $query->where('approver_id', $actor->id);
-            
-            $currentStep = $query->first();
+                ->where('approver_id', $actor->id)
+                ->where('status', 'pending')
+                ->first();
 
             if (!$currentStep) {
-                throw new \Exception("Unauthorized or Invalid Approval Step. (You might not be the current approver)");
+                // Check if already approved?
+                $alreadyApproved = Approval::where('approvable_type', get_class($request))
+                    ->where('approvable_id', $request->id)
+                    ->where('approver_id', $actor->id)
+                    ->where('status', 'approved')
+                    ->exists();
+                
+                if ($alreadyApproved) {
+                    throw new \Exception("Anda sudah menyetujui pengajuan ini.");
+                }
+
+                throw new \Exception("Unauthorized or Invalid Approval Step. (Anda tidak memiliki akses untuk menyetujui saat ini)");
             }
 
-            // 2. Mark Current Step as Approved
+            // 2. Mark This Step as Approved
             $currentStep->update([
                 'status' => 'approved',
                 'acted_at' => now(),
@@ -83,27 +82,42 @@ class ApprovalService
                 'signature' => $signature, 
             ]);
 
-            // 3. Check Next Step
-            $nextStep = Approval::where('approvable_type', get_class($request))
+            Log::info("Step Level {$currentStep->level} approved by {$actor->full_name}");
+
+            // 3. Determine Next State
+            // Check if there are any remaining pending approvals
+            $nextPendingStep = Approval::where('approvable_type', get_class($request))
                 ->where('approvable_id', $request->id)
-                ->where('level', $request->step_now + 1)
+                ->where('status', 'pending')
+                ->orderBy('level', 'asc') // Find the lowest level pending
                 ->first();
 
-            if ($nextStep) {
-                // Move ball forward
-                $request->increment('step_now');
-                // Trigger Notification for Next Approver here
-                Log::info("Approval moved to Level {$nextStep->level} (Approver ID: {$nextStep->approver_id})");
+            if ($nextPendingStep) {
+                // Still waiting for someone else.
+                // Update 'step_now' to point to the lowest pending step level
+                // This ensures that if Level 2 approves before Level 1, step_now stays at 1 until Level 1 approves.
+                // Once Level 1 approves, step_now moves to the next pending (which might be 3 if 2 is done).
                 
-                if ($nextStep->approver && $nextStep->approver->user) {
-                    try {
-                        $nextStep->approver->user->notify(new \App\Notifications\RequestNotification($request, 'pending'));
+                $request->update(['step_now' => $nextPendingStep->level]);
+                
+                Log::info("Request ID {$request->id} still pending. Step Now set to Level {$nextPendingStep->level}");
+                
+                // NOTIFY the next pending approver(s)? 
+                // In a strictly sequential flow, we notify next. 
+                // In parallel, they might have already been notified or we want to re-notify?
+                // For now, let's notify the person at 'step_now' if they haven't approved yet.
+                
+                if ($nextPendingStep->approver && $nextPendingStep->approver->user) {
+                     try {
+                        // Optional: Check if we just sent them a notification recently to avoid spam
+                        $nextPendingStep->approver->user->notify(new \App\Notifications\RequestNotification($request, 'pending'));
                     } catch (\Exception $e) {
-                        Log::error("Failed to notify next approver: " . $e->getMessage());
+                         Log::error("Failed to notify next approver: " . $e->getMessage());
                     }
                 }
+
             } else {
-                // Finish Line
+                // All steps approved!
                 $request->update(['status' => 'approved']);
                 Log::info("Request ID {$request->id} Fully Approved!");
                 
@@ -122,9 +136,6 @@ class ApprovalService
                         ]
                     );
                 }
-
-                // Hook for finalizing (e.g., deduct balance)
-                // This could be an Event listener
             }
 
             return $request->fresh();
@@ -176,7 +187,7 @@ class ApprovalService
      * @param Employee $requester The employee submitting the request
      * @return array Array of employee IDs in approval order
      */
-    public function determineApprovers(Employee $requester): array
+    public function determineApprovers(Employee $requester, ?Model $request = null): array
     {
         // Get requester's approval level from their user's role
         $userRoleLevel = $requester->user?->role?->approval_level ?? 0;
@@ -187,6 +198,19 @@ class ApprovalService
         Log::info("Determining approvers for Employee ID: {$requester->id}, Role Level: {$userRoleLevel}, Org ID: {$organizationId}");
         
         $approvers = [];
+
+        // SPECIAL CASE: Sick Leave for Manager Level (Level >= 2)
+        // Workflow: COO -> HRD
+        if ($userRoleLevel >= 2 && $request && $request->type === 'sick_leave') {
+            Log::info("Special Workflow: Sick Leave for Manager");
+            $coo = $this->findApproverByRoleName('coo');
+            $hrd = $this->findApproverByRoleName('hrd');
+
+            if ($coo) $approvers[] = $coo->id;
+            if ($hrd) $approvers[] = $hrd->id;
+
+            return $approvers;
+        }
         
         if ($userRoleLevel >= 2) {
             // Manager Divisi level -> Only COO approves

@@ -254,7 +254,7 @@ class RequestController extends Controller
             }
 
             // 3. Auto-Submit Logic - Use ApprovalService to determine approvers based on role
-            $approverIds = $approvalService->determineApprovers($user->employee);
+            $approverIds = $approvalService->determineApprovers($user->employee, $requestModel);
 
             if (!empty($approverIds)) {
                 $approvalService->createApprovalSteps($requestModel, $approverIds);
@@ -355,7 +355,7 @@ class RequestController extends Controller
 
         // Determine Approvers Logic - Use ApprovalService for role-based approval chain
         $employee = $requestModel->employee;
-        $approverIds = $approvalService->determineApprovers($employee);
+        $approverIds = $approvalService->determineApprovers($employee, $requestModel);
         
         if (empty($approverIds)) {
              return response()->json(['message' => 'System configuration error: No approvers found.'], 500);
