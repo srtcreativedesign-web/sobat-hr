@@ -362,53 +362,66 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
-          ),
-          child: TextFormField(
-            controller: controller,
-            obscureText: obscureText,
-            keyboardType: keyboardType,
-            style: const TextStyle(
-              color: Color(0xFF1A1A1A),
-            ), // AppTheme.textDark
-            decoration: InputDecoration(
-              prefixIcon: Icon(
-                icon,
-                color: const Color(0xFF1A1A1A).withOpacity(0.7),
-              ),
-              suffixIcon: isPassword
-                  ? IconButton(
-                      icon: Icon(
-                        obscureText
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                        color: const Color(0xFF1A1A1A).withOpacity(0.7),
-                      ),
-                      onPressed: onTogglePassword,
-                    )
-                  : null,
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
-              hintStyle: TextStyle(
-                color: const Color(0xFF1A1A1A).withOpacity(0.4),
-              ),
+        TextFormField(
+          controller: controller,
+          obscureText: obscureText,
+          keyboardType: keyboardType,
+          style: const TextStyle(color: Color(0xFF1A1A1A)), // AppTheme.textDark
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            prefixIcon: Icon(
+              icon,
+              color: const Color(0xFF1A1A1A).withOpacity(0.7),
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) return 'Wajib diisi';
-              if (!isPassword &&
-                  !value.contains('@') &&
-                  label.toLowerCase().contains('email'))
-                return 'Email tidak valid';
-              return null;
-            },
+            suffixIcon: isPassword
+                ? IconButton(
+                    icon: Icon(
+                      obscureText
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      color: const Color(0xFF1A1A1A).withOpacity(0.7),
+                    ),
+                    onPressed: onTogglePassword,
+                  )
+                : null,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.5)),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
+            hintStyle: TextStyle(
+              color: const Color(0xFF1A1A1A).withOpacity(0.4),
+            ),
+            errorStyle: const TextStyle(color: Colors.white, fontSize: 12),
           ),
+          validator: (value) {
+            if (value == null || value.isEmpty) return 'Wajib diisi';
+            if (!isPassword &&
+                !value.contains('@') &&
+                label.toLowerCase().contains('email'))
+              return 'Email tidak valid';
+            return null;
+          },
         ),
       ],
     );

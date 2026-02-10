@@ -142,34 +142,46 @@ class AppTheme {
       // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: const Color(0xFFF1F5F9), // Slate 100 — soft grey fill
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 16,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: colorPrimary, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: colorSecondary.withValues(alpha: 0.5),
+            width: 1.5,
+          ),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: error),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: error, width: 1),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: error, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: error, width: 1.5),
+        ),
+        errorStyle: GoogleFonts.inter(
+          fontSize: 12,
+          color: Colors.white,
+          fontWeight: FontWeight.w400,
         ),
         labelStyle: GoogleFonts.inter(fontSize: 14, color: textLight),
         hintStyle: GoogleFonts.inter(fontSize: 14, color: textLight),
-        floatingLabelStyle: const TextStyle(color: colorPrimary),
+        floatingLabelStyle: TextStyle(
+          color: colorPrimary,
+          fontWeight: FontWeight.w500,
+        ),
+        prefixIconColor: textLight,
       ),
 
       // Card Theme

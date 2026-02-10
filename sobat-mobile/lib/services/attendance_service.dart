@@ -72,8 +72,19 @@ class AttendanceService {
 
       return response.data;
     } on DioException catch (e) {
-      throw e.response?.data['message'] ??
-          'Gagal melakukan absensi: ${e.message}';
+      String errorMessage = 'Gagal melakukan absensi';
+      if (e.response != null) {
+        if (e.response!.data is Map) {
+          errorMessage = e.response!.data['message'] ?? errorMessage;
+        } else if (e.response!.data is String) {
+          errorMessage = e.response!.data;
+        }
+      }
+
+      if (errorMessage == 'Gagal melakukan absensi' && e.message != null) {
+        errorMessage += ': ${e.message}';
+      }
+      throw errorMessage;
     } catch (e) {
       throw 'Terjadi kesalahan: $e';
     }
@@ -153,8 +164,19 @@ class AttendanceService {
 
       return response.data;
     } on DioException catch (e) {
-      throw e.response?.data['message'] ??
-          'Gagal melakukan check-out: ${e.message}';
+      String errorMessage = 'Gagal melakukan check-out';
+      if (e.response != null) {
+        if (e.response!.data is Map) {
+          errorMessage = e.response!.data['message'] ?? errorMessage;
+        } else if (e.response!.data is String) {
+          errorMessage = e.response!.data;
+        }
+      }
+
+      if (errorMessage == 'Gagal melakukan check-out' && e.message != null) {
+        errorMessage += ': ${e.message}';
+      }
+      throw errorMessage;
     } catch (e) {
       throw 'Terjadi kesalahan: $e';
     }

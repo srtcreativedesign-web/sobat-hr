@@ -785,60 +785,72 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: AppTheme.colorCyan.withAlpha(50),
-                        backgroundImage:
-                            (user?.avatar != null && user!.avatar!.isNotEmpty)
-                            ? NetworkImage(
-                                ApiConfig.getStorageUrl(user!.avatar) ?? '',
-                              )
-                            : null,
-                        child: (user?.avatar == null || user!.avatar!.isEmpty)
-                            ? Text(
-                                (user?.name.isNotEmpty == true)
-                                    ? user!.name[0].toUpperCase()
-                                    : 'U',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.colorEggplant,
-                                ),
-                              )
-                            : null,
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            user?.name ?? 'User',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.textDark,
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/profile').then((_) {
+                        // Refresh user data when returning from profile
+                        Provider.of<AuthProvider>(
+                          context,
+                          listen: false,
+                        ).refreshProfile();
+                      });
+                    },
+                    behavior: HitTestBehavior.opaque,
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: AppTheme.colorCyan.withAlpha(50),
+                          backgroundImage:
+                              (user?.avatar != null && user!.avatar!.isNotEmpty)
+                              ? NetworkImage(
+                                  ApiConfig.getStorageUrl(user.avatar!) ?? '',
+                                )
+                              : null,
+                          child: (user?.avatar == null || user!.avatar!.isEmpty)
+                              ? Text(
+                                  (user?.name.isNotEmpty == true)
+                                      ? user!.name[0].toUpperCase()
+                                      : 'U',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.colorEggplant,
+                                  ),
+                                )
+                              : null,
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              user?.name ?? 'User',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.textDark,
+                              ),
                             ),
-                          ),
-                          Text(
-                            (user?.jobLevel?.isNotEmpty == true
-                                    ? user!.jobLevel!.replaceAll('_', ' ')
-                                    : (user?.position?.isNotEmpty == true
-                                          ? user!.position!
-                                          : (user?.role?.toUpperCase() ??
-                                                'STAFF')))
-                                .toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.textLight,
-                              letterSpacing: 0.5,
+                            Text(
+                              (user?.jobLevel?.isNotEmpty == true
+                                      ? user!.jobLevel!.replaceAll('_', ' ')
+                                      : (user?.position?.isNotEmpty == true
+                                            ? user!.position!
+                                            : (user?.role?.toUpperCase() ??
+                                                  'STAFF')))
+                                  .toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textLight,
+                                letterSpacing: 0.5,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
 
                   // Notification Bell
@@ -1947,6 +1959,70 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildQuickActions() {
+    final user = Provider.of<AuthProvider>(context).user;
+    final jobLevel = user?.jobLevel?.toLowerCase() ?? '';
+    final role = user?.role?.toLowerCase() ?? '';
+    final canApprove =
+        [
+          'director',
+          'manager',
+          'manager_ops',
+          'manager_divisi',
+          'spv',
+          'deputy_manager',
+          'team_leader',
+        ].contains(jobLevel) ||
+        role == 'super_admin' ||
+        role == 'admin_cabang';
+
+    final menuItems = <Map<String, dynamic>>[
+      {
+        'icon': Icons.receipt_long_rounded,
+        'label': 'Slip Gaji',
+        'subtitle': 'Lihat slip',
+        'gradient': [const Color(0xFF667EEA), const Color(0xFF764BA2)],
+        'onTap': _navigateToPayroll,
+      },
+      {
+        'icon': Icons.flight_takeoff_rounded,
+        'label': _isLoadingLeave ? 'Cuti' : 'Cuti ($_leaveBalance)',
+        'subtitle': 'Ajukan cuti',
+        'gradient': [const Color(0xFF43E97B), const Color(0xFF38F9D7)],
+        'onTap': () async {
+          await Navigator.pushNamed(
+            context,
+            '/submission/create',
+            arguments: 'Cuti',
+          );
+          _loadLeaveBalance();
+        },
+      },
+      {
+        'icon': Icons.history_rounded,
+        'label': 'Riwayat',
+        'subtitle': 'Kehadiran',
+        'gradient': [const Color(0xFFF6D365), const Color(0xFFFDA085)],
+        'onTap': () => Navigator.pushNamed(context, '/attendance/history'),
+      },
+      if (canApprove)
+        {
+          'icon': Icons.verified_rounded,
+          'label': 'Approval',
+          'subtitle': _pendingApprovalsCount > 0
+              ? '$_pendingApprovalsCount pending'
+              : 'Persetujuan',
+          'gradient': [const Color(0xFFA18CD1), const Color(0xFFFBC2EB)],
+          'badge': _pendingApprovalsCount,
+          'onTap': () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ApprovalListScreen()),
+            );
+            _loadPendingApprovals();
+          },
+        },
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1962,114 +2038,59 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             GestureDetector(
-              onTap: () {
-                // Navigate to full menu or show bottom sheet
-                Navigator.pushNamed(context, '/submission/menu');
-              },
-              child: Text(
-                'Lihat Semua',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.colorEggplant,
+              onTap: () => Navigator.pushNamed(context, '/submission/menu'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppTheme.colorEggplant.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Semua',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.colorEggplant,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 10,
+                      color: AppTheme.colorEggplant,
+                    ),
+                  ],
                 ),
               ),
             ),
           ],
         ),
         const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildActionItem(
-              Icons.description_outlined,
-              'Slip Gaji',
-              AppTheme.colorEggplant,
-              onTap: _navigateToPayroll,
-            ),
-            _buildActionItem(
-              Icons.flight_takeoff,
-              _isLoadingLeave ? 'Cuti' : 'Cuti ($_leaveBalance)',
-              Colors.blue,
-              onTap: () async {
-                await Navigator.pushNamed(
-                  context,
-                  '/submission/create',
-                  arguments: 'Cuti',
-                );
-                _loadLeaveBalance(); // Refresh on return
-              },
-            ),
-            /*
-            _buildActionItem(
-              Icons.attach_money,
-              'Klaim',
-              Colors.teal,
-              onTap: () {
-                Navigator.pushNamed(
-                  context,
-                  '/submission/create',
-                  arguments: 'Reimbursement',
-                );
-              },
-            ),
-            */
-            _buildActionItem(
-              Icons.history_outlined,
-              'Riwayat Kehadiran',
-              Colors.orange,
-              onTap: () {
-                Navigator.pushNamed(context, '/attendance/history');
-              },
-            ),
-          ],
-        ),
-
-        // Approval Button for Managers
-        Builder(
-          builder: (context) {
-            final user = Provider.of<AuthProvider>(context).user;
-            final jobLevel = user?.jobLevel?.toLowerCase() ?? '';
-            final role = user?.role?.toLowerCase() ?? '';
-
-            final canApprove =
-                [
-                  'director',
-                  'manager',
-                  'manager_ops',
-                  'manager_divisi',
-                  'spv',
-                  'deputy_manager',
-                  'team_leader',
-                ].contains(jobLevel) ||
-                role == 'super_admin' ||
-                role == 'admin_cabang'; // Admin cabang sometimes approves?
-
-            if (!canApprove) return const SizedBox.shrink();
-
-            return Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: Row(
-                children: [
-                  _buildActionItem(
-                    Icons.approval,
-                    'Persetujuan',
-                    AppTheme.colorEggplant,
-                    badgeCount: _pendingApprovalsCount, // Pass count
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ApprovalListScreen(),
-                        ),
-                      );
-                      _loadPendingApprovals(); // Refresh on return
-                    },
-                  ),
-                ],
-              ),
+        GridView.count(
+          crossAxisCount: menuItems.length <= 3
+              ? menuItems.length
+              : (menuItems.length == 4 ? 4 : 3),
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
+          childAspectRatio: 0.78,
+          children: menuItems.map((item) {
+            return _buildActionItem(
+              item['icon'] as IconData,
+              item['label'] as String,
+              item['gradient'] as List<Color>,
+              subtitle: item['subtitle'] as String,
+              badgeCount: (item['badge'] as int?) ?? 0,
+              onTap: item['onTap'] as VoidCallback?,
             );
-          },
+          }).toList(),
         ),
       ],
     );
@@ -2078,76 +2099,118 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildActionItem(
     IconData icon,
     String label,
-    Color color, {
+    List<Color> gradientColors, {
+    String subtitle = '',
     VoidCallback? onTap,
-    int badgeCount = 0, // Added optional badge count
+    int badgeCount = 0,
   }) {
-    return Column(
-      children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade100),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
-              ),
-            ],
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: gradientColors[0].withValues(alpha: 0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onTap ?? () {},
-              borderRadius: BorderRadius.circular(16),
-              child: Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.center,
-                children: [
-                  Icon(icon, color: color, size: 28),
-                  if (badgeCount > 0)
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap ?? () {},
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: gradientColors,
                         ),
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Text(
-                          badgeCount > 99 ? '99+' : badgeCount.toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: gradientColors[0].withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
                           ),
-                          textAlign: TextAlign.center,
+                        ],
+                      ),
+                      child: Icon(icon, color: Colors.white, size: 22),
+                    ),
+                    if (badgeCount > 0)
+                      Positioned(
+                        top: -4,
+                        right: -4,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1.5),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 18,
+                            minHeight: 18,
+                          ),
+                          child: Text(
+                            badgeCount > 99 ? '99+' : badgeCount.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                       ),
-                    ),
-                ],
-              ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textDark,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                    color: AppTheme.textLight.withValues(alpha: 0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ),
         ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textLight,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
