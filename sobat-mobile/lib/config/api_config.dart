@@ -14,7 +14,7 @@ class ApiConfig {
   // ==========================================================================
 
   static const String _env = String.fromEnvironment('ENV', defaultValue: 'dev');
-  static const String _hostIp = '192.168.1.12';
+  static const String _hostIp = '192.168.0.127';
   static const String _port = '8000';
 
   // Production URL

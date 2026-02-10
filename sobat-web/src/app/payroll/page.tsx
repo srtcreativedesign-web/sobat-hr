@@ -187,7 +187,9 @@ export default function PayrollPage() {
       setParsedRows([]);
 
       // Use division-specific import endpoint
+      // Use division-specific import endpoint
       let importEndpoint = '';
+      if (selectedDivision === 'office') importEndpoint = '/payrolls/ho/import'; // Use HO endpoint
       if (selectedDivision === 'fnb') importEndpoint = '/payrolls/fnb/import';
       if (selectedDivision === 'minimarket') importEndpoint = '/payrolls/mm/import';
       if (selectedDivision === 'reflexiology') importEndpoint = '/payrolls/ref/import';
@@ -1259,9 +1261,22 @@ export default function PayrollPage() {
                             <tr key={idx} className="even:bg-white odd:bg-gray-50">
                               {Object.keys(parsedRows[0]).map((col) => (
                                 <td key={col} className="p-2 whitespace-nowrap">
-                                  {typeof row[col] === 'object' && row[col] !== null
-                                    ? JSON.stringify(row[col])
-                                    : row[col]}
+                                  {typeof row[col] === 'object' && row[col] !== null ? (
+                                    <div className="text-xs max-h-20 overflow-y-auto">
+                                      {Object.entries(row[col]).map(([k, v]) => {
+                                        // Skip empty/zero values in preview to save space
+                                        if (v === 0 || v === '0' || v === null) return null;
+                                        return (
+                                          <div key={k} className="whitespace-nowrap">
+                                            <span className="font-semibold">{k}:</span> {String(v)}
+                                          </div>
+                                        );
+                                      })}
+                                      {Object.values(row[col]).every(v => v === 0 || v === '0' || v === null) && <span className="text-gray-400">-</span>}
+                                    </div>
+                                  ) : (
+                                    row[col]
+                                  )}
                                 </td>
                               ))}
                             </tr>
@@ -1285,6 +1300,7 @@ export default function PayrollPage() {
                           try {
                             // Use division-specific save endpoint
                             let saveEndpoint = '/payrolls/import/save';
+                            if (selectedDivision === 'office') saveEndpoint = '/payrolls/ho/import/save';
                             if (selectedDivision === 'fnb') saveEndpoint = '/payrolls/fnb/import/save';
                             if (selectedDivision === 'minimarket') saveEndpoint = '/payrolls/mm/import/save';
                             if (selectedDivision === 'reflexiology') saveEndpoint = '/payrolls/ref/import/save';

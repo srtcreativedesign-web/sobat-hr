@@ -343,24 +343,35 @@ class PayrollController extends Controller
                 'no_rekening' => 'No Rekening',
                 'gaji_pokok' => 'Gaji Pokok',
                 'kehadiran_jumlah' => ['Kehadiran', 'Jumlah'], // Multi-row header
+                'kehadiran_rate' => ['Kehadiran', '@hari'],
                 'transport_jumlah' => ['Transport', 'Jumlah'],
+                'transport_rate' => ['Transport', '@hari'],
                 'kesehatan_jumlah' => ['Kesehatan', 'Jumlah'],
                 'tunj_jabatan' => 'Tunj. Jabatan',
                 'total_gaji' => 'Total Gaji',
                 'lembur_jam' => ['Lembur', 'Jam'],
                 'lembur_jumlah' => ['Lembur', 'Jumlah'],
+                'lembur_rate' => ['Lembur', '@'],
                 'insentif' => 'Insentif',
+                'insentif_luar_kota' => 'Insentif Luar Kota',
+                'insentif_kehadiran' => 'Insentif Kehadiran',
                 'adjustment' => 'Adj',
+                'piket_um_sabtu' => 'Piket',
                 'absen' => 'Absen',
+                'alfa' => 'ALFA',
                 'terlambat' => 'Terlambat',
                 'selisih' => 'Selisih',
                 'pinjaman' => 'Pinjaman',
+                'kasbon' => 'Kasbon',
                 'adm_bank' => 'Adm Bank',
                 'bpjs_tk' => 'BPJS TK',
                 'jumlah_potongan' => ['Potongan', 'Jumlah'],
                 'grand_total' => 'Grand Total',
                 'ewa' => 'EWA',
+                'potongan_ewa' => 'Potongan EWA',
                 'payroll' => 'Payroll',
+                'jml_hr_masuk' => 'JML HR',
+                'gaji_diterima' => 'Gaji',
             ];
             
             // Use cell iterator to support columns beyond Z (AA, AB, etc.)
@@ -412,28 +423,40 @@ class PayrollController extends Controller
                 // Basic Salary
                 $basicSalary = $getCellValue($columnMapping['gaji_pokok'] ?? 'K', $row);
                 
+                // Days present (JML HR MASUK)
+                $daysPresent = $getCellValue($columnMapping['jml_hr_masuk'] ?? 'E', $row);
+                
                 // Allowances - use "Jumlah" columns
                 $kehadiranAllowance = $getCellValue($columnMapping['kehadiran_jumlah'] ?? 'M', $row);
+                $kehadiranRate = $getCellValue($columnMapping['kehadiran_rate'] ?? 'H', $row);
                 $transportAllowance = $getCellValue($columnMapping['transport_jumlah'] ?? 'O', $row);
+                $transportRate = $getCellValue($columnMapping['transport_rate'] ?? 'F', $row);
                 $healthAllowance = $getCellValue($columnMapping['kesehatan_jumlah'] ?? 'Q', $row);
                 $positionAllowance = $getCellValue($columnMapping['tunj_jabatan'] ?? 'R', $row);
                 
                 // Overtime
                 $overtimeHours = $getCellValue($columnMapping['lembur_jam'] ?? 'U', $row);
                 $overtimePay = $getCellValue($columnMapping['lembur_jumlah'] ?? 'V', $row);
+                $overtimeRate = $getCellValue($columnMapping['lembur_rate'] ?? 'K', $row);
                 
                 // Other Income
                 $holidayAllowance = $getCellValue($columnMapping['insentif'] ?? 'W', $row);
+                $insentifLuarKota = $getCellValue($columnMapping['insentif_luar_kota'] ?? 'P', $row);
+                $insentifKehadiran = $getCellValue($columnMapping['insentif_kehadiran'] ?? 'Q', $row);
                 $adjustment = $getCellValue($columnMapping['adjustment'] ?? 'X', $row);
+                $piketUmSabtu = $getCellValue($columnMapping['piket_um_sabtu'] ?? 'S', $row);
                 
                 // Totals (FORMULAS or calculated)
                 $totalGaji = $getCellValue($columnMapping['total_gaji'] ?? 'Y', $row);
+                $gajiDiterima = $getCellValue($columnMapping['gaji_diterima'] ?? 'T', $row);
                 
                 // Deductions Breakdown
                 $absen = $getCellValue($columnMapping['absen'] ?? 'AA', $row);
+                $alfa = $getCellValue($columnMapping['alfa'] ?? 'V', $row);
                 $terlambat = $getCellValue($columnMapping['terlambat'] ?? 'AB', $row);
                 $selisihSO = $getCellValue($columnMapping['selisih'] ?? 'AC', $row);
                 $pinjaman = $getCellValue($columnMapping['pinjaman'] ?? 'AD', $row);
+                $kasbon = $getCellValue($columnMapping['kasbon'] ?? 'U', $row);
                 $admBank = $getCellValue($columnMapping['adm_bank'] ?? 'AE', $row);
                 $bpjsTK = $getCellValue($columnMapping['bpjs_tk'] ?? 'AF', $row);
                 
@@ -443,6 +466,7 @@ class PayrollController extends Controller
                 // Grand Total and Final Net Salary (FORMULAS)
                 $grandTotal = $getCellValue($columnMapping['grand_total'] ?? 'AH', $row);
                 $ewa = $getCellValue($columnMapping['ewa'] ?? 'AI', $row);
+                $potEwa = $getCellValue($columnMapping['potongan_ewa'] ?? 'W', $row);
                 $netSalary = $getCellValue($columnMapping['payroll'] ?? 'AJ', $row);
                 
                 // Calculate total allowances for storage
@@ -460,26 +484,39 @@ class PayrollController extends Controller
                 if ($netSalary == 0 && $grandTotal > 0) {
                     $netSalary = $grandTotal - $ewa;
                 }
+                if ($netSalary == 0 && $gajiDiterima > 0) {
+                    $netSalary = $gajiDiterima - $kasbon - $alfa - ($potEwa > 0 ? $potEwa : $ewa);
+                }
                 
                 // Details for JSON storage
                 $details = [
                     'account_number' => $accountNumber,
+                    'days_present' => $daysPresent,
                     'transport_allowance' => $transportAllowance,
+                    'transport_rate' => $transportRate,
                     'health_allowance' => $healthAllowance,
                     'position_allowance' => $positionAllowance,
                     'holiday_allowance' => $holidayAllowance,
                     'attendance_allowance' => $kehadiranAllowance,
+                    'attendance_rate' => $kehadiranRate,
                     'adjustment' => $adjustment,
                     'overtime_hours' => $overtimeHours,
+                    'overtime_rate' => $overtimeRate,
+                    'insentif_luar_kota' => $insentifLuarKota,
+                    'insentif_kehadiran' => $insentifKehadiran,
+                    'piket_um_sabtu' => $piketUmSabtu,
+                    'total_gaji' => $totalGaji,
+                    'gaji_diterima' => $gajiDiterima,
                     'deductions' => [
                         'absent' => $absen,
+                        'alfa' => $alfa,
                         'late' => $terlambat,
                         'shortage' => $selisihSO,
-                        'loan' => $pinjaman,
+                        'loan' => $pinjaman > 0 ? $pinjaman : $kasbon,
                         'bank_fee' => $admBank,
                         'bpjs_tk' => $bpjsTK,
                     ],
-                    'ewa' => $ewa,
+                    'ewa' => $potEwa > 0 ? $potEwa : $ewa,
                     'grand_total' => $grandTotal,
                 ];
                 
@@ -540,6 +577,7 @@ class PayrollController extends Controller
         ]);
 
         $rows = $request->input('rows');
+        Log::info("GENERIC Payroll Import Save Hit. Rows: " . count($rows));
         $saved = [];
         $failed = [];
 
@@ -806,19 +844,37 @@ class PayrollController extends Controller
     }
 
     /**
-     * Generate payslip PDF
+     * Generate payslip PDF for Head Office
      */
     public function generatePayslip($id)
     {
         $payroll = Payroll::with(['employee'])->findOrFail($id);
 
-        // TODO: Implement PDF generation
-        // This will be implemented after payslip template is finalized
+        // Generate AI-powered personalized message
+        $aiMessage = null;
+        try {
+            $groqService = new GroqAiService();
+            $aiMessage = $groqService->generatePayslipMessage([
+                'employee_name' => $payroll->employee->full_name,
+                'period' => date('F Y', strtotime($payroll->period . '-01')),
+                'basic_salary' => $payroll->basic_salary,
+                'overtime' => $payroll->overtime_pay ?? 0,
+                'net_salary' => $payroll->net_salary,
+                'join_date' => $payroll->employee->join_date,
+            ]);
+        } catch (\Exception $e) {}
 
-        return response()->json([
-            'message' => 'Payslip generation will be implemented',
-            'payroll_id' => $id,
+        $pdf = Pdf::loadView('payslips.ho', [
+            'payroll' => $payroll,
+            'aiMessage' => $aiMessage,
+            'employee' => $payroll->employee,
         ]);
+
+        $pdf->setPaper('a4', 'portrait');
+
+        $filename = 'Slip_Gaji_HO_' . str_replace(' ', '_', $payroll->employee->full_name) . '_' . $payroll->period . '.pdf';
+
+        return $pdf->download($filename);
     }
 
     /**
@@ -1030,7 +1086,7 @@ class PayrollController extends Controller
                  $processDivision(\App\Models\PayrollWrapping::class, 'payslips.wrapping', 'Wrapping');
             }
             if ($division === 'all' || $division === 'office') {
-                $processDivision(\App\Models\Payroll::class, 'payroll.slip', 'Office');
+                $processDivision(\App\Models\Payroll::class, 'payslips.ho', 'HO');
             }
 
             if (empty($files)) {

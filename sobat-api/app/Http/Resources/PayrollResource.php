@@ -25,7 +25,8 @@ class PayrollResource extends JsonResource
             'overtime_pay' => $this->overtime_pay,
             // Mirror Excel: Use stored Gross
             'gross_salary' => $this->gross_salary, 
-            'deductions' => $this->deductions,
+            'deductions' => $this->details['deductions'] ?? [], // Fix: Get from details JSON
+            'details' => $this->details, // Include full details
             'bpjs_health' => $this->bpjs_health,
             'tax_pph21' => $this->tax_pph21,
             

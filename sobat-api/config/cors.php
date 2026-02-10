@@ -15,11 +15,11 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'api', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:3000', 'http://localhost:8000', 'http://127.0.0.1:3000', 'http://192.168.1.19:3000', 'http://202.10.42.144', 'http://202.10.42.144:3000', 'https://sobat-hr.com', 'https://www.sobat-hr.com'],
+    'allowed_origins' => ['http://localhost:3000', 'http://localhost:8000', 'http://127.0.0.1:3000', 'http://192.168.0.127:3000', 'http://192.168.1.19:3000', 'http://202.10.42.144', 'http://202.10.42.144:3000', 'https://sobat-hr.com', 'https://www.sobat-hr.com'],
 
     'allowed_origins_patterns' => [],
 
