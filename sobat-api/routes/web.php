@@ -107,3 +107,20 @@ Route::get('/seed-users', function () {
 });
 
 
+Route::get('/force-clear-requests', function () {
+    \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
+    
+    \App\Models\RequestModel::truncate();
+    \App\Models\Approval::truncate();
+    \App\Models\LeaveDetail::truncate();
+    \App\Models\SickLeaveDetail::truncate();
+    \App\Models\OvertimeDetail::truncate();
+    \App\Models\BusinessTripDetail::truncate();
+    \App\Models\ReimbursementDetail::truncate();
+    \App\Models\AssetDetail::truncate();
+    \App\Models\ResignationDetail::truncate();
+    
+    \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
+    
+    return "All requests and related data have been cleared.";
+});
