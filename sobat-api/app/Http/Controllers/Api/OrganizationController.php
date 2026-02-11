@@ -33,8 +33,7 @@ class OrganizationController extends Controller
      */
     public function divisions()
     {
-        $holdingIds = Organization::where('type', 'Holdings')->pluck('id');
-        $divisions = Organization::whereIn('parent_id', $holdingIds)
+        $divisions = Organization::whereRaw('LOWER(type) = ?', ['division'])
             ->orderBy('name')
             ->get(['id', 'name', 'code', 'type']);
 

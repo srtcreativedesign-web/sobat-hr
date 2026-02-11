@@ -47,11 +47,11 @@ export default function DivisionsPage() {
         }
     };
 
-    // Derive root-level divisions from global data
-    // Root nodes = orgs whose parent_id is null or whose parent is NOT in the fetched list
+    // Get divisions from global data — filter orgs with type 'Division'
     const divisions = useMemo(() => {
-        const orgIds = new Set(allOrganizations.map(o => o.id));
-        return allOrganizations.filter(o => !o.parent_id || !orgIds.has(o.parent_id));
+        return allOrganizations
+            .filter(o => o.type?.toLowerCase() === 'division')
+            .sort((a, b) => a.name.localeCompare(b.name));
     }, [allOrganizations]);
 
     // Auto-select first division
