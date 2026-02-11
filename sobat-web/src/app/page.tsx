@@ -9,7 +9,7 @@ export default function Home() {
       {/* Dynamic Background */}
       <div className="absolute inset-0 z-0 bg-black">
         {/* Fallback Image */}
-        <div className="absolute inset-0 z-0 opacity-40">
+        <div className="absolute inset-0 z-0 opacity-70">
           <img
             src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1920&q=80"
             alt="Background"
