@@ -11,7 +11,7 @@ export default function Home() {
         {/* Fallback Image */}
         <div className="absolute inset-0 z-0 opacity-40">
           <img
-            src="/assets/welcome-bg.png"
+            src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1920&q=80"
             alt="Background"
             className="w-full h-full object-cover"
           />
