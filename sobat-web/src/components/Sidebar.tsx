@@ -126,6 +126,18 @@ export default function Sidebar() {
         </svg>
       ),
       roles: ['super_admin'],
+      subItems: [
+        {
+          name: 'Struktur Global',
+          href: '/organizations',
+          icon: null
+        },
+        {
+          name: 'Per Divisi',
+          href: '/organizations/divisions',
+          icon: null
+        }
+      ]
     },
     {
       name: 'Attendance',

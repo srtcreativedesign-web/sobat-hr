@@ -12,17 +12,46 @@ class OrganizationController extends Controller
     {
         $query = Organization::with('parentOrganization');
         
-        // Filter by type if provided, or default to 'division' to exclude positions/holdings
-        if ($request->has('type')) {
+        // Filter by specific division sub-tree
+        if ($request->has('division_id')) {
+            $divisionId = $request->division_id;
+            // Get the division and all its descendants recursively
+            $ids = $this->getDescendantIds($divisionId);
+            $ids[] = (int) $divisionId;
+            $query->whereIn('id', $ids);
+        } elseif ($request->has('type')) {
             $query->where('type', $request->type);
         } else {
-             // Correct approach based on actual unique types found in DB:
-             // Types are diverse (e.g., "Minimarket", "HR", "IT", "CCTV"), so whitelisting is too risky.
-             // We will BLACKLIST the non-operational types as requested.
              $query->whereNotIn('type', ['Board Of Directors', 'Holdings']);
         }
 
         return response()->json($query->get());
+    }
+
+    /**
+     * Get list of divisions (organizations whose parent is a Holdings type)
+     */
+    public function divisions()
+    {
+        $holdingIds = Organization::where('type', 'Holdings')->pluck('id');
+        $divisions = Organization::whereIn('parent_id', $holdingIds)
+            ->orderBy('name')
+            ->get(['id', 'name', 'code', 'type']);
+
+        return response()->json($divisions);
+    }
+
+    /**
+     * Get all descendant IDs recursively
+     */
+    private function getDescendantIds(int $parentId): array
+    {
+        $childIds = Organization::where('parent_id', $parentId)->pluck('id')->toArray();
+        $allIds = $childIds;
+        foreach ($childIds as $childId) {
+            $allIds = array_merge($allIds, $this->getDescendantIds($childId));
+        }
+        return $allIds;
     }
 
     public function store(Request $request)
@@ -91,11 +120,7 @@ class OrganizationController extends Controller
 
     public function reset()
     {
-        // Disable foreign key checks to allow truncation if needed, 
-        // or just delete query if cascading is set up. 
-        // Safer to just delete all.
         Organization::query()->delete();
-
         return response()->json(['message' => 'All organizations reset successfully']);
     }
 }

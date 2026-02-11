@@ -289,15 +289,16 @@ class ApprovalService
     {
         Log::info("Searching for approver with role: {$roleName}" . ($organizationId ? " in Org {$organizationId}" : ""));
 
-        // Match exact role name in DB (usually lowercase 'coo', 'hrd', etc based on seeder)
-        // If DB has 'COO', we might need to be careful. Laravel seeder usually predictable.
-        // Let's assume role names are lowercase in DB or we use ILIKE if postgres, or just let it consist.
-        $query = Employee::whereHas('user.role', function ($q) use ($roleName) {
-            $q->where('name', $roleName);
+        // HRD function is handled by Super Admin
+        // When looking for 'hrd', also match 'super_admin'
+        $roleNames = ($roleName === 'hrd') ? ['hrd', 'super_admin'] : [$roleName];
+
+        $query = Employee::whereHas('user.role', function ($q) use ($roleNames) {
+            $q->whereIn('name', $roleNames);
         });
         
         $count = (clone $query)->count();
-        Log::info("Found {$count} employees with role {$roleName} (globally)");
+        Log::info("Found {$count} employees with role(s) " . implode('/', $roleNames) . " (globally)");
 
         // For SPV and Manager Divisi, try to find someone in the same organization first
         if ($organizationId && in_array($roleName, ['spv', 'manager_divisi', 'manager'])) {

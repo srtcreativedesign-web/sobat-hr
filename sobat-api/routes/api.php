@@ -24,6 +24,7 @@ Route::get('/announcements/active', [App\Http\Controllers\Api\AnnouncementContro
 Route::post('/auth/forgot-password', [App\Http\Controllers\Api\PasswordResetController::class, 'request']); // Public Forgot Password
 Route::get('/divisions', [App\Http\Controllers\Api\DivisionController::class, 'index']); // Public Divisions List
 Route::get('/organizations', [App\Http\Controllers\Api\OrganizationController::class, 'index']); // Public Organizations List
+Route::get('/organizations/divisions', [App\Http\Controllers\Api\OrganizationController::class, 'divisions']); // Public Divisions List
 
 Route::middleware(['auth:sanctum', 'role:super_admin,admin_cabang'])->group(function () {
     Route::get('/admin/password-requests', [App\Http\Controllers\Api\PasswordResetController::class, 'index']);
