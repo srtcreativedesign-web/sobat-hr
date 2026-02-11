@@ -91,7 +91,7 @@ export default function PayrollPage() {
 
       // Use division-specific endpoint
       let endpoint = '';
-      if (selectedDivision === 'office') endpoint = '/payrolls';
+      if (selectedDivision === 'office') endpoint = '/payrolls/ho';
       if (selectedDivision === 'fnb') endpoint = '/payrolls/fnb';
       if (selectedDivision === 'minimarket') endpoint = '/payrolls/mm';
       if (selectedDivision === 'reflexiology') endpoint = '/payrolls/ref';
@@ -258,6 +258,7 @@ export default function PayrollPage() {
         if (selectedDivision === 'reflexiology') endpoint = `/payrolls/ref/${pendingApprovalId}/status`;
         if (selectedDivision === 'wrapping') endpoint = `/payrolls/wrapping/${pendingApprovalId}/status`;
         if (selectedDivision === 'hans') endpoint = `/payrolls/hans/${pendingApprovalId}/status`;
+        if (selectedDivision === 'office') endpoint = `/payrolls/ho/${pendingApprovalId}/status`;
 
         // Note: FNB uses updateStatus which takes 'status' and 'approval_signature'
         // Generic Controller might need update. Assuming Generic uses PATCH /payrolls/{id}/status
@@ -703,7 +704,9 @@ export default function PayrollPage() {
                                         ? `/payrolls/wrapping/${payroll.id}/slip`
                                         : selectedDivision === 'hans'
                                           ? `/payrolls/hans/${payroll.id}/slip`
-                                          : `/payrolls/${payroll.id}/slip`;
+                                          : selectedDivision === 'office'
+                                            ? `/payrolls/ho/${payroll.id}/slip`
+                                            : `/payrolls/${payroll.id}/slip`;
 
                                 const response = await apiClient.get(endpoint, {
                                   responseType: 'blob',
@@ -922,6 +925,30 @@ export default function PayrollPage() {
                               <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.details.health_allowance)}</span>
                             </div>
                           )}
+                          {selectedPayroll.details?.position_allowance > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Tunj. Jabatan</span>
+                              <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.details.position_allowance)}</span>
+                            </div>
+                          )}
+                          {selectedPayroll.details?.attendance_allowance > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Tunj. Kehadiran</span>
+                              <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.details.attendance_allowance)}</span>
+                            </div>
+                          )}
+                          {selectedPayroll.details?.insentif_kehadiran > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Insentif Kehadiran</span>
+                              <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.details.insentif_kehadiran)}</span>
+                            </div>
+                          )}
+                          {selectedPayroll.details?.insentif_luar_kota > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Insentif Luar Kota</span>
+                              <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.details.insentif_luar_kota)}</span>
+                            </div>
+                          )}
                           {/* Add Generic Overtime if available in details */}
                           {selectedPayroll.details?.overtime_hours > 0 && (
                             <div className="flex justify-between text-sm">
@@ -950,8 +977,8 @@ export default function PayrollPage() {
                   <div>
                     <h4 className="text-sm font-bold text-red-500 uppercase tracking-wider mb-4 border-b border-red-100 pb-2">Potongan</h4>
                     <div className="space-y-3">
-                      {/* FnB/MM/Ref/Wrapping/Hans Deductions Breakdown */}
-                      {(selectedDivision === 'fnb' || selectedDivision === 'minimarket' || selectedDivision === 'reflexiology' || selectedDivision === 'wrapping' || selectedDivision === 'hans') && selectedPayroll.deductions && (
+                      {/* FnB/MM/Ref/Wrapping/Hans/Office Deductions Breakdown */}
+                      {(selectedDivision === 'fnb' || selectedDivision === 'minimarket' || selectedDivision === 'reflexiology' || selectedDivision === 'wrapping' || selectedDivision === 'hans' || selectedDivision === 'office') && selectedPayroll.deductions && (
                         <>
                           {Object.entries(selectedPayroll.deductions).map(([key, value]: [string, any]) => {
                             const numValue = parseFloat(value);
@@ -1041,7 +1068,9 @@ export default function PayrollPage() {
                                 ? `/payrolls/wrapping/${selectedPayroll.id}/slip`
                                 : selectedDivision === 'hans'
                                   ? `/payrolls/hans/${selectedPayroll.id}/slip`
-                                  : `/payrolls/${selectedPayroll.id}/slip`;
+                                  : selectedDivision === 'office'
+                                    ? `/payrolls/ho/${selectedPayroll.id}/slip`
+                                    : `/payrolls/${selectedPayroll.id}/slip`;
 
                         const response = await apiClient.get(endpoint, {
                           responseType: 'blob',

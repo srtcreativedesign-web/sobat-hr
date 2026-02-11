@@ -461,11 +461,17 @@ class PayrollHoController extends Controller
                                $row['piket_um_sabtu'];
             
             $deductionsTotal = array_sum($row['deductions']);
+
+            // Merge EWA: use pot_ewa if ewa is 0 (Excel column might be labeled "Potongan EWA")
+            $ewaAmount = ($row['ewa'] > 0) ? $row['ewa'] : ($row['pot_ewa'] ?? 0);
+            
+            // Include EWA in total deductions
+            $deductionsTotal += $ewaAmount;
             
             $gross = $row['total_gaji'] > 0 ? $row['total_gaji'] : 
                      ($row['basic_salary'] + $allowancesTotal + $row['overtime_amount'] + $row['holiday_allowance'] + $row['adjustment']);
             
-            $net = $row['net_salary'] > 0 ? $row['net_salary'] : ($gross - $deductionsTotal - $row['ewa']);
+            $net = $row['net_salary'] > 0 ? $row['net_salary'] : ($gross - $deductionsTotal);
 
             Log::info("Row $index Check: Gross=$gross, DedTotal=$deductionsTotal, Net=$net, RawDed=".json_encode($row['deductions']));
 
@@ -487,7 +493,7 @@ class PayrollHoController extends Controller
                 'holiday_allowance' => $row['holiday_allowance'], // THR/Bonus/Insentif
                 'adjustment' => $row['adjustment'],
                 'deductions' => is_string($row['deductions']) ? json_decode($row['deductions'], true) : $row['deductions'],
-                'ewa' => $row['ewa']
+                'ewa' => $ewaAmount
             ];
 
             Payroll::updateOrCreate(
