@@ -31,6 +31,8 @@ interface Payroll {
   attendance?: Record<string, number>;
   ewa_amount?: number | string;
   approval_signature?: string;
+  final_payment?: number; // Added for Cellular
+  account_number?: string; // Added for detail display
 }
 
 export default function PayrollPage() {
@@ -54,7 +56,7 @@ export default function PayrollPage() {
   const sigPad = useRef<SignatureCanvas>(null);
 
   // Division selector
-  const [selectedDivision, setSelectedDivision] = useState<'all' | 'office' | 'fnb' | 'minimarket' | 'reflexiology' | 'wrapping' | 'hans'>('fnb');
+  const [selectedDivision, setSelectedDivision] = useState<'all' | 'office' | 'fnb' | 'minimarket' | 'reflexiology' | 'wrapping' | 'hans' | 'cellular'>('fnb');
 
   // Filter States
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // Default current month
@@ -97,6 +99,7 @@ export default function PayrollPage() {
       if (selectedDivision === 'reflexiology') endpoint = '/payrolls/ref';
       if (selectedDivision === 'wrapping') endpoint = '/payrolls/wrapping';
       if (selectedDivision === 'hans') endpoint = '/payrolls/hans';
+      if (selectedDivision === 'cellular') endpoint = '/payroll-cellullers'; // New Endpoint
 
       const response = await apiClient.get(endpoint, {
         params: {
@@ -195,6 +198,7 @@ export default function PayrollPage() {
       if (selectedDivision === 'reflexiology') importEndpoint = '/payrolls/ref/import';
       if (selectedDivision === 'wrapping') importEndpoint = '/payrolls/wrapping/import';
       if (selectedDivision === 'hans') importEndpoint = '/payrolls/hans/import';
+      if (selectedDivision === 'cellular') importEndpoint = '/payroll-cellullers/import'; // New Endpoint
 
       const response = await apiClient.post(importEndpoint, formData, {
         headers: {
@@ -259,6 +263,7 @@ export default function PayrollPage() {
         if (selectedDivision === 'wrapping') endpoint = `/payrolls/wrapping/${pendingApprovalId}/status`;
         if (selectedDivision === 'hans') endpoint = `/payrolls/hans/${pendingApprovalId}/status`;
         if (selectedDivision === 'office') endpoint = `/payrolls/ho/${pendingApprovalId}/status`;
+        if (selectedDivision === 'cellular') endpoint = `/payroll-cellullers/${pendingApprovalId}/status`; // New Endpoint
 
         // Note: FNB uses updateStatus which takes 'status' and 'approval_signature'
         // Generic Controller might need update. Assuming Generic uses PATCH /payrolls/{id}/status
@@ -298,7 +303,7 @@ export default function PayrollPage() {
 
   // Helper to calculate total allowances for FnB/MM/Ref/Wrapping payroll
   const calculateTotalAllowances = (payroll: any) => {
-    if (['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans'].includes(selectedDivision)) {
+    if (['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular'].includes(selectedDivision)) {
       // FnB/MM/Ref backend returns structured allowances object
       if (payroll.allowances && typeof payroll.allowances === 'object') {
         const allowances = payroll.allowances;
@@ -329,7 +334,9 @@ export default function PayrollPage() {
           parseValue(allowances['Target Koli']) +
           parseValue(allowances['Fee Aksesoris']) +
           parseValue(allowances['Adj BPJS']) +
-          parseValue(allowances['Gaji Training'])
+          parseValue(allowances['Gaji Training']) +
+          // Cellular specific
+          parseValue(allowances['Lembur Wajib'])
         );
       }
       // Fallback to direct fields if structured object not available
@@ -348,7 +355,8 @@ export default function PayrollPage() {
         (parseFloat(payroll.target_koli) || 0) +
         (parseFloat(payroll.fee_aksesoris) || 0) +
         (parseFloat(payroll.adj_bpjs) || 0) +
-        (parseFloat(payroll.training_salary) || 0)
+        (parseFloat(payroll.training_salary) || 0) +
+        (parseFloat(payroll.mandatory_overtime) || 0)
       );
     }
     // Generic payroll - allowances is a single number
@@ -357,7 +365,7 @@ export default function PayrollPage() {
 
   // Helper to calculate overtime pay for FnB/MM/Ref/Wrapping payroll
   const calculateOvertimePay = (payroll: any) => {
-    if (['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans'].includes(selectedDivision)) {
+    if (['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular'].includes(selectedDivision)) {
       // Check structured allowances first
       if (payroll.allowances?.Lembur) {
         const lembur = payroll.allowances.Lembur;
@@ -376,6 +384,9 @@ export default function PayrollPage() {
     if (['minimarket', 'reflexiology', 'wrapping', 'hans'].includes(selectedDivision)) {
       return parseFloat(payroll.deduction_total) || 0;
     }
+    if (selectedDivision === 'cellular') {
+      return parseFloat(payroll.total_deduction) || 0;
+    }
     // Generic
     return parseFloat(payroll.total_deductions) || 0;
   };
@@ -385,7 +396,7 @@ export default function PayrollPage() {
     if (selectedDivision === 'wrapping') {
       return parseFloat(payroll.total_salary_gross) || 0;
     }
-    if (['fnb', 'minimarket', 'reflexiology', 'hans'].includes(selectedDivision)) {
+    if (['fnb', 'minimarket', 'reflexiology', 'hans', 'cellular'].includes(selectedDivision)) {
       // For FnB/MM/Ref, use total_salary_2 which includes everything
       return parseFloat(payroll.total_salary_2) || 0;
     }
@@ -483,6 +494,7 @@ export default function PayrollPage() {
               <option value="reflexiology">Reflexiology</option>
               <option value="wrapping">Wrapping</option>
               <option value="hans">Hans</option>
+              <option value="cellular">Cellular</option>
             </select>
           </div>
 
@@ -704,9 +716,11 @@ export default function PayrollPage() {
                                         ? `/payrolls/wrapping/${payroll.id}/slip`
                                         : selectedDivision === 'hans'
                                           ? `/payrolls/hans/${payroll.id}/slip`
-                                          : selectedDivision === 'office'
-                                            ? `/payrolls/ho/${payroll.id}/slip`
-                                            : `/payrolls/${payroll.id}/slip`;
+                                          : selectedDivision === 'cellular'
+                                            ? `/payroll-cellullers/${payroll.id}/slip`
+                                            : selectedDivision === 'office'
+                                              ? `/payrolls/ho/${payroll.id}/slip`
+                                              : `/payrolls/${payroll.id}/slip`;
 
                                 const response = await apiClient.get(endpoint, {
                                   responseType: 'blob',
@@ -837,8 +851,8 @@ export default function PayrollPage() {
               </div>
 
               <div className="p-6 overflow-y-auto flex-1">
-                {/* Attendance Summary (for FnB/MM/Ref/Wrapping) */}
-                {['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans'].includes(selectedDivision) && (selectedPayroll as any).attendance && (
+                {/* Attendance Summary (for FnB/MM/Ref/Wrapping/Cellular) */}
+                {['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular'].includes(selectedDivision) && (selectedPayroll as any).attendance && (
                   <div className="mb-6 bg-blue-50 p-4 rounded-xl">
                     <h4 className="text-sm font-bold text-blue-700 uppercase tracking-wider mb-3">Data Kehadiran</h4>
                     <div className="grid grid-cols-4 gap-2 text-xs">
@@ -862,44 +876,26 @@ export default function PayrollPage() {
                         <span className="font-semibold">{formatCurrency(selectedPayroll.basic_salary)}</span>
                       </div>
 
-                      {/* FnB/MM/Ref/Wrapping Allowances Breakdown */}
-                      {['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans'].includes(selectedDivision) && selectedPayroll.allowances && (
+                      {/* FnB/MM/Ref/Wrapping/Cellular Allowances Breakdown */}
+                      {['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular'].includes(selectedDivision) && selectedPayroll.allowances && (
                         <>
                           {Object.entries(selectedPayroll.allowances).map(([key, value]: [string, any]) => {
                             if (!value || value === 0 || value === '0.00') return null;
 
                             // Handle nested objects (like Kehadiran, Transport, Lembur)
                             if (typeof value === 'object' && value.amount) {
-                              // Special handling for Lembur to show hours
-                              if (key === 'Lembur') {
-                                const hours = value.hours || 0;
-                                return (
-                                  <div key={key} className="flex justify-between text-sm">
-                                    <span className="text-gray-600">Lembur {hours > 0 ? `(${hours} Jam)` : ''}</span>
-                                    <span className="font-medium text-gray-800">{formatCurrency(parseFloat(value.amount))}</span>
-                                  </div>
-                                );
-                              }
-
                               return (
                                 <div key={key} className="flex justify-between text-sm">
-                                  <span className="text-gray-600">{key}</span>
+                                  <span className="text-gray-600">
+                                    {key} {value.rate ? `(${formatCurrency(parseFloat(value.rate))} /hari)` : ''}
+                                    {value.hours ? `(${value.hours} Jam)` : ''}
+                                  </span>
                                   <span className="font-medium text-gray-800">{formatCurrency(parseFloat(value.amount))}</span>
                                 </div>
                               );
                             }
 
                             // Handle simple values
-                            // Since we handled Lembur above (if it was an object), we check if it's simple Lembur (unlikely but safe)
-                            if (key === 'Lembur') {
-                              return (
-                                <div key={key} className="flex justify-between text-sm">
-                                  <span className="text-gray-600">Lembur</span>
-                                  <span className="font-medium text-gray-800">{formatCurrency(parseFloat(value))}</span>
-                                </div>
-                              );
-                            }
-
                             return (
                               <div key={key} className="flex justify-between text-sm">
                                 <span className="text-gray-600">{key}</span>
@@ -966,8 +962,15 @@ export default function PayrollPage() {
                       )}
                       {/* Deductions - FnB EWA */}
 
+                      {selectedDivision === 'cellular' && selectedPayroll.details?.subtotal_1 > 0 && (
+                        <div className="flex justify-between text-sm italic font-medium pt-1 border-t border-dashed border-gray-100">
+                          <span className="text-gray-500">Subtotal Gaji Rutin</span>
+                          <span className="text-gray-700">{formatCurrency(parseFloat(selectedPayroll.details.subtotal_1))}</span>
+                        </div>
+                      )}
+
                       <div className="pt-2 border-t border-gray-100 flex justify-between font-bold text-gray-900 mt-2">
-                        <span>Total Pendapatan</span>
+                        <span>{selectedDivision === 'cellular' ? 'Total Gaji & Bonus (Gross)' : 'Total Pendapatan'}</span>
                         <span>{formatCurrency(calculateGrossSalary(selectedPayroll))}</span>
                       </div>
                     </div>
@@ -977,8 +980,8 @@ export default function PayrollPage() {
                   <div>
                     <h4 className="text-sm font-bold text-red-500 uppercase tracking-wider mb-4 border-b border-red-100 pb-2">Potongan</h4>
                     <div className="space-y-3">
-                      {/* FnB/MM/Ref/Wrapping/Hans/Office Deductions Breakdown */}
-                      {(selectedDivision === 'fnb' || selectedDivision === 'minimarket' || selectedDivision === 'reflexiology' || selectedDivision === 'wrapping' || selectedDivision === 'hans' || selectedDivision === 'office') && selectedPayroll.deductions && (
+                      {/* FnB/MM/Ref/Wrapping/Hans/Office/Cellular Deductions Breakdown */}
+                      {(selectedDivision === 'fnb' || selectedDivision === 'minimarket' || selectedDivision === 'reflexiology' || selectedDivision === 'wrapping' || selectedDivision === 'hans' || selectedDivision === 'office' || selectedDivision === 'cellular') && selectedPayroll.deductions && (
                         <>
                           {Object.entries(selectedPayroll.deductions).map(([key, value]: [string, any]) => {
                             const numValue = parseFloat(value);
@@ -995,7 +998,7 @@ export default function PayrollPage() {
                       )}
 
                       {/* Generic Payroll Deductions */}
-                      {selectedDivision !== 'fnb' && selectedDivision !== 'minimarket' && selectedDivision !== 'reflexiology' && selectedDivision !== 'wrapping' && selectedDivision !== 'hans' && (
+                      {selectedDivision !== 'fnb' && selectedDivision !== 'minimarket' && selectedDivision !== 'reflexiology' && selectedDivision !== 'wrapping' && selectedDivision !== 'hans' && selectedDivision !== 'cellular' && (
                         <>
                           {selectedPayroll.bpjs_health > 0 && (
                             <div className="flex justify-between text-sm">
@@ -1039,15 +1042,38 @@ export default function PayrollPage() {
                 </div>
 
                 {/* Net Salary Summary */}
-                <div className="mt-8 bg-[#1C3ECA] text-white p-6 rounded-xl flex items-center justify-between shadow-lg">
-                  <div>
-                    <p className="text-indigo-100 text-sm font-medium">TAKE HOME PAY (THP)</p>
-                    <p className="text-3xl font-bold">{formatCurrency(selectedPayroll.net_salary)}</p>
+                <div className="mt-8 bg-[#1C3ECA] text-white p-6 rounded-xl space-y-4 shadow-lg">
+                  <div className="flex items-center justify-between border-b border-white/20 pb-4">
+                    <div>
+                      <p className="text-indigo-100 text-xs font-medium uppercase tracking-wider">Grand Total</p>
+                      <p className="text-2xl font-bold">{formatCurrency(selectedPayroll.net_salary)}</p>
+                    </div>
+                    {selectedDivision === 'cellular' && selectedPayroll.ewa_amount && (
+                      <div className="text-right">
+                        <p className="text-indigo-100 text-xs font-medium uppercase tracking-wider">EWA (Kasbon)</p>
+                        <p className="text-xl font-semibold opacity-90">-{formatCurrency(typeof selectedPayroll.ewa_amount === 'string' ? parseFloat(selectedPayroll.ewa_amount) : selectedPayroll.ewa_amount)}</p>
+                      </div>
+                    )}
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs text-indigo-200">Ditransfer ke</p>
-                    {/* If we had account number we would show it here */}
-                    <p className="font-semibold">Rekening Karyawan</p>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-indigo-100 text-sm font-medium">TOTAL DITRANSFER (PAYROLL)</p>
+                      <p className="text-4xl font-black">
+                        {formatCurrency(
+                          selectedDivision === 'cellular' && selectedPayroll.final_payment
+                            ? selectedPayroll.final_payment
+                            : selectedPayroll.net_salary
+                        )}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-indigo-200">Ditransfer ke</p>
+                      <p className="font-semibold">Rekening Karyawan</p>
+                      {selectedPayroll.account_number && (
+                        <p className="text-xs opacity-80">{selectedPayroll.account_number}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1070,7 +1096,9 @@ export default function PayrollPage() {
                                   ? `/payrolls/hans/${selectedPayroll.id}/slip`
                                   : selectedDivision === 'office'
                                     ? `/payrolls/ho/${selectedPayroll.id}/slip`
-                                    : `/payrolls/${selectedPayroll.id}/slip`;
+                                    : selectedDivision === 'cellular'
+                                      ? `/payroll-cellullers/${selectedPayroll.id}/slip`
+                                      : `/payrolls/${selectedPayroll.id}/slip`;
 
                         const response = await apiClient.get(endpoint, {
                           responseType: 'blob',
@@ -1335,6 +1363,7 @@ export default function PayrollPage() {
                             if (selectedDivision === 'reflexiology') saveEndpoint = '/payrolls/ref/import/save';
                             if (selectedDivision === 'wrapping') saveEndpoint = '/payrolls/wrapping/import/save';
                             if (selectedDivision === 'hans') saveEndpoint = '/payrolls/hans/import/save';
+                            if (selectedDivision === 'cellular') saveEndpoint = '/payroll-cellullers/import/save';
 
                             const response = await apiClient.post(saveEndpoint, {
                               rows: parsedRows,

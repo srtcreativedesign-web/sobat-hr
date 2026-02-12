@@ -35,19 +35,19 @@ export default function InviteStaffPage() {
     track: 'office',
     organization_id: ''
   });
-  const [organizations, setOrganizations] = useState<any[]>([]);
+  const [divisions, setDivisions] = useState<any[]>([]);
 
-  // Fetch Organizations on Mount
+  // Fetch Divisions on Mount
   useEffect(() => {
-    const fetchOrgs = async () => {
+    const fetchDivisions = async () => {
       try {
-        const res = await apiClient.get('/organizations');
-        setOrganizations(res.data.data || res.data || []);
+        const res = await apiClient.get('/divisions');
+        setDivisions(res.data.data || res.data || []);
       } catch (e) {
-        console.error('Failed to fetch orgs', e);
+        console.error('Failed to fetch divisions', e);
       }
     };
-    fetchOrgs();
+    fetchDivisions();
   }, []);
 
   const handleManualSubmit = async (e: React.FormEvent) => {
@@ -63,7 +63,8 @@ export default function InviteStaffPage() {
           role: manualForm.role,
           job_level: manualForm.job_level,
           track: manualForm.track,
-          organization_id: manualForm.organization_id || null
+          division_id: manualForm.organization_id || null, // Map UI 'organization_id' to backend 'division_id'
+          organization_id: null // Legacy
         }]
       };
 
@@ -296,11 +297,9 @@ export default function InviteStaffPage() {
                 onChange={e => setManualForm({ ...manualForm, organization_id: e.target.value })}
               >
                 <option value="">Select Division...</option>
-                {organizations
-                  .filter(org => !['Board Of Directors', 'Holdings'].includes(org.type))
-                  .map(org => (
-                    <option key={org.id} value={org.id}>{org.name}</option>
-                  ))}
+                {divisions.map(div => (
+                  <option key={div.id} value={div.id}>{div.name}</option>
+                ))}
               </select>
             </div>
             <div className="md:col-span-2 flex justify-end">

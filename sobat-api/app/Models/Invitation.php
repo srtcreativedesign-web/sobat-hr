@@ -18,6 +18,7 @@ class Invitation extends Model
         'password_encrypted',
         'role',
         'organization_id',
+        'division_id',
     ];
 
     protected $casts = [
@@ -29,5 +30,10 @@ class Invitation extends Model
     public function organization()
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    public function division()
+    {
+        return $this->belongsTo(Division::class);
     }
 }

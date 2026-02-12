@@ -40,6 +40,7 @@ class JobPositionController extends Controller
             'code' => 'nullable|string|max:50|unique:job_positions,code',
             'division_id' => 'nullable|exists:divisions,id',
             'level' => 'required|integer|min:0',
+            'track' => 'required|in:office,operational',
             'parent_position_id' => 'nullable|exists:job_positions,id',
         ]);
 
@@ -69,6 +70,7 @@ class JobPositionController extends Controller
             'code' => 'nullable|string|max:50|unique:job_positions,code,' . $jobPosition->id,
             'division_id' => 'nullable|exists:divisions,id',
             'level' => 'required|integer|min:0',
+            'track' => 'required|in:office,operational',
             'parent_position_id' => 'nullable|exists:job_positions,id',
         ]);
 

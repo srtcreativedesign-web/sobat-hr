@@ -20,6 +20,7 @@ interface JobPosition {
     code: string | null;
     division_id: number | null;
     level: number;
+    track: 'office' | 'operational';
     parent_position_id: number | null;
     division?: Division;
     parent_position?: JobPosition;
@@ -41,15 +42,27 @@ export default function ManageJobPositionsPage() {
         name: '',
         code: '',
         division_id: '',
-        level: 0
+        level: 0,
+        track: 'office' // Default track
     });
 
-    const levels = [
+    const officeLevels = [
         { value: 0, label: 'Staff' },
         { value: 1, label: 'Supervisor (SPV)' },
         { value: 2, label: 'Manager' },
         { value: 3, label: 'General Manager (GM)' },
         { value: 4, label: 'Director' },
+    ];
+
+    const operationalLevels = [
+        { value: 0, label: 'Crew' },
+        { value: 1, label: 'Supervisor' },
+        { value: 2, label: 'Manager' },
+    ];
+
+    const tracks = [
+        { value: 'office', label: 'Office' },
+        { value: 'operational', label: 'Operational' },
     ];
 
     useEffect(() => {
@@ -81,7 +94,7 @@ export default function ManageJobPositionsPage() {
     };
 
     const resetForm = () => {
-        setFormData({ name: '', code: '', division_id: '', level: 0 });
+        setFormData({ name: '', code: '', division_id: '', level: 0, track: 'office' });
         setEditingId(null);
     };
 
@@ -92,7 +105,8 @@ export default function ManageJobPositionsPage() {
                 name: position.name,
                 code: position.code || '',
                 division_id: position.division_id ? position.division_id.toString() : '',
-                level: position.level
+                level: position.level,
+                track: position.track || 'office'
             });
         } else {
             resetForm();
@@ -151,10 +165,18 @@ export default function ManageJobPositionsPage() {
         }
     };
 
-    const getLevelLabel = (level: number) => {
+    const getLevelLabel = (level: number, track: string = 'office') => {
+        const levels = track === 'operational' ? operationalLevels : officeLevels;
         const found = levels.find(l => l.value === level);
         return found ? found.label : 'Unknown';
     };
+
+    const getTrackLabel = (track: string) => {
+        const found = tracks.find(t => t.value === track);
+        return found ? found.label : track;
+    }
+
+    const currentLevels = formData.track === 'operational' ? operationalLevels : officeLevels;
 
     return (
         <div className="p-6">
@@ -194,6 +216,7 @@ export default function ManageJobPositionsPage() {
                         <thead className="bg-gray-50 border-b border-gray-100">
                             <tr>
                                 <th className="px-6 py-4 font-semibold text-gray-700">Nama Jabatan</th>
+                                <th className="px-6 py-4 font-semibold text-gray-700">Track</th>
                                 <th className="px-6 py-4 font-semibold text-gray-700">Departemen</th>
                                 <th className="px-6 py-4 font-semibold text-gray-700">Divisi</th>
                                 <th className="px-6 py-4 font-semibold text-gray-700">Level Approval</th>
@@ -203,13 +226,13 @@ export default function ManageJobPositionsPage() {
                         <tbody className="divide-y divide-gray-100">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                                         Memuat data...
                                     </td>
                                 </tr>
                             ) : jobPositions.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                                         Belum ada data jabatan.
                                     </td>
                                 </tr>
@@ -219,6 +242,14 @@ export default function ManageJobPositionsPage() {
                                         <td className="px-6 py-4 font-medium text-gray-900">
                                             {item.name}
                                             {item.code && <span className="ml-2 text-xs text-gray-500">({item.code})</span>}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.track === 'operational'
+                                                ? 'bg-orange-100 text-orange-800'
+                                                : 'bg-teal-100 text-teal-800'
+                                                }`}>
+                                                {getTrackLabel(item.track || 'office')}
+                                            </span>
                                         </td>
                                         <td className="px-6 py-4 text-gray-600">
                                             {item.division?.department?.name || '-'}
@@ -230,7 +261,7 @@ export default function ManageJobPositionsPage() {
                                                     item.level === 2 ? 'bg-indigo-100 text-indigo-800' :
                                                         'bg-purple-100 text-purple-800'
                                                 }`}>
-                                                {getLevelLabel(item.level)}
+                                                {getLevelLabel(item.level, item.track)}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
@@ -309,10 +340,29 @@ export default function ManageJobPositionsPage() {
                                         value={formData.level}
                                         onChange={(e) => setFormData({ ...formData, level: parseInt(e.target.value) })}
                                     >
-                                        {levels.map(l => (
+                                        {currentLevels.map(l => (
                                             <option key={l.value} value={l.value}>{l.label}</option>
                                         ))}
                                     </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Track (Office / Operational) <span className="text-red-500">*</span></label>
+                                <div className="flex gap-4 mt-2">
+                                    {tracks.map(t => (
+                                        <label key={t.value} className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="track"
+                                                value={t.value}
+                                                checked={formData.track === t.value}
+                                                onChange={(e) => setFormData({ ...formData, track: e.target.value })}
+                                                className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                                            />
+                                            <span className="text-sm text-gray-700">{t.label}</span>
+                                        </label>
+                                    ))}
                                 </div>
                             </div>
 

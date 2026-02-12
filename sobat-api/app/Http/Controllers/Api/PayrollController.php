@@ -9,6 +9,7 @@ use App\Models\Employee;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\GroqAiService;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Log;
 
 class PayrollController extends Controller
 {
@@ -1021,7 +1022,31 @@ class PayrollController extends Controller
                             'Adm Bank' => $payroll->deduction_admin_fee,
                             'BPJS TK' => $payroll->deduction_bpjs_tk,
                         ];
-                    }
+                     }
+                     // Celluller Logic
+                     elseif (str_contains($modelClass, 'PayrollCelluller')) {
+                        $payroll->allowances = [
+                             'Uang Makan' => ['rate' => $payroll->meal_rate, 'amount' => $payroll->meal_amount],
+                             'Transport' => ['rate' => $payroll->transport_rate, 'amount' => $payroll->transport_amount],
+                             'Lembur Wajib' => ['rate' => $payroll->mandatory_overtime_rate, 'amount' => $payroll->mandatory_overtime_amount],
+                             'Tunjangan Kehadiran' => $payroll->attendance_allowance,
+                             'Tunjangan Kesehatan' => $payroll->health_allowance,
+                             'Tunjangan Jabatan' => $payroll->position_allowance,
+                             'Lembur Tambahan' => ['rate' => $payroll->overtime_rate, 'hours' => $payroll->overtime_hours, 'amount' => $payroll->overtime_amount],
+                             'Bonus' => $payroll->bonus,
+                             'Insentif Lebaran' => $payroll->holiday_allowance,
+                             'Adj Kekurangan Gaji' => $payroll->adjustment,
+                             'Kebijakan HO' => $payroll->policy_ho,
+                        ];
+                        $payroll->deductions = [
+                            'Absen 1X' => $payroll->deduction_absent,
+                            'Terlambat' => $payroll->deduction_late, 
+                            'Selisih SO' => $payroll->deduction_so_shortage,
+                            'Pinjaman' => $payroll->deduction_loan,
+                            'Adm Bank' => $payroll->deduction_admin_fee,
+                            'BPJS TK' => $payroll->deduction_bpjs_tk,
+                        ];
+                     }
                      // MM & Ref - Assuming identical to FnB 
                      elseif (str_contains($modelClass, 'PayrollMm') || str_contains($modelClass, 'PayrollRef')) {
                         $payroll->allowances = [
@@ -1088,6 +1113,9 @@ class PayrollController extends Controller
             if ($division === 'all' || $division === 'office') {
                 $processDivision(\App\Models\Payroll::class, 'payslips.ho', 'HO');
             }
+            if ($division === 'all' || $division === 'cellular') {
+                $processDivision(\App\Models\PayrollCelluller::class, 'payslips.celluller', 'Cellular'); // Note: View name 'payslips.celluller'
+            }
 
             if (empty($files)) {
                 return response()->json(['message' => 'No payrolls found for this period'], 404);
@@ -1115,7 +1143,7 @@ class PayrollController extends Controller
             return response()->download($zipPath)->deleteFileAfterSend(true);
 
         } catch (\Exception $e) {
-            \Log::error("Bulk Download Error: " . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error("Bulk Download Error: " . $e->getMessage());
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }

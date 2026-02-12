@@ -11,6 +11,7 @@ class JobPosition extends Model
         'code',
         'division_id',
         'level',
+        'track',
         'parent_position_id',
     ];
 

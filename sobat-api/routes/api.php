@@ -177,6 +177,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/payrolls/period/{month}/{year}', [App\Http\Controllers\Api\PayrollController::class, 'periodPayrolls']);
     Route::post('/payrolls/bulk-download', [App\Http\Controllers\Api\PayrollController::class, 'bulkDownload']);
 
+    // Payroll Celluller (NEW)
+    Route::apiResource('payroll-cellullers', App\Http\Controllers\Api\PayrollCellullerController::class);
+    Route::post('payroll-cellullers/import', [App\Http\Controllers\Api\PayrollCellullerController::class, 'import']);
+    Route::post('payroll-cellullers/import/save', [App\Http\Controllers\Api\PayrollCellullerController::class, 'saveImport']);
+    Route::patch('payroll-cellullers/{id}/status', [App\Http\Controllers\Api\PayrollCellullerController::class, 'updateStatus']);
+    Route::get('payroll-cellullers/{id}/slip', [App\Http\Controllers\Api\PayrollCellullerController::class, 'generateSlip']);
+
     // Role routes (Super Admin only)
     Route::middleware('role:super_admin')->group(function () {
         Route::apiResource('roles', App\Http\Controllers\Api\RoleController::class);

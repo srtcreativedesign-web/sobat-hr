@@ -157,6 +157,29 @@ class PayrollService {
       debugPrint('Failed to fetch Hans payrolls: $e');
     }
 
+    // Try to fetch from Celluller endpoint
+    try {
+      final response = await _dio.get(
+        '/payrolls/cellullers',
+        queryParameters: {if (year != null) 'year': year},
+      );
+
+      if (response.statusCode == 200 && response.data['data'] != null) {
+        final cellData = response.data['data'];
+        if (cellData is List) {
+          // Mark Cell payrolls with division type
+          for (var item in cellData) {
+            if (item is Map<String, dynamic>) {
+              item['division'] = 'celluller';
+            }
+          }
+          allPayrolls.addAll(cellData);
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to fetch Celluller payrolls: $e');
+    }
+
     // Sort by period descending (latest first)
     try {
       allPayrolls.sort((a, b) {
@@ -191,6 +214,8 @@ class PayrollService {
         endpoint = '/payrolls/wrapping/$payrollId/slip';
       } else if (division == 'hans') {
         endpoint = '/payrolls/hans/$payrollId/slip';
+      } else if (division == 'celluller') {
+        endpoint = '/payrolls/cellullers/$payrollId/slip';
       } else {
         // Fallback or Error? Since generic is removed, we should probably throw error or default to one
         throw Exception('Unknown Division for download');

@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use App\Models\Invitation;
 use App\Models\Organization;
+use App\Models\Division;
+use App\Models\Employee;
 use App\Exports\InvitationsExport;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -49,7 +51,7 @@ class StaffInvitationController extends Controller
             }
 
             $preview = [];
-            $organizations = Organization::all(); // Cache organizations for matching
+            $divisions = Division::all(); // Cache divisions for matching
 
             foreach ($data as $index => $row) {
                 if ($index === 0)
@@ -64,7 +66,7 @@ class StaffInvitationController extends Controller
                 $track = isset($row[5]) ? mb_convert_encoding($row[5], 'UTF-8', 'auto') : '';
 
                 // Fuzzy Match Division
-                $matchedOrg = $this->findOrganization($divisionInput, $organizations);
+                $matchedDiv = $this->findDivision($divisionInput, $divisions);
 
                 $rowData = [
                     'rowIndex' => $index + 1,
@@ -74,8 +76,11 @@ class StaffInvitationController extends Controller
                     'division_input' => trim($divisionInput),
                     'job_level' => trim($jobLevel),
                     'track' => trim($track),
-                    'organization_id' => $matchedOrg ? $matchedOrg->id : null,
-                    'organization_name' => $matchedOrg ? $matchedOrg->name : null,
+                    'track' => trim($track),
+                    'division_id' => $matchedDiv ? $matchedDiv->id : null,
+                    'organization_name' => $matchedDiv ? $matchedDiv->name : null,
+                    // Legacy support
+                    'organization_id' => null, 
                     'valid' => true,
                     'errors' => [],
                     'temporary_password' => null,
@@ -100,9 +105,9 @@ class StaffInvitationController extends Controller
                     $rowData['valid'] = false;
                     $rowData['errors'] = $validator->errors()->all();
                 } else {
-                    if (!$matchedOrg && !empty($divisionInput)) {
+                    if (!$matchedDiv && !empty($divisionInput)) {
                         $rowData['valid'] = false;
-                        $rowData['errors'][] = "Divisi '$divisionInput' tidak ditemukan di sistem.";
+                        $rowData['errors'][] = "Divisi '$divisionInput' tidak ditemukan di Master Data.";
                     }
                     if (empty($divisionInput)) {
                         // Warning or Error? Let's assume default will be assigned or warning.
@@ -144,9 +149,9 @@ class StaffInvitationController extends Controller
     }
 
     /**
-     * Fuzzy search for organization
+     * Fuzzy search for Division
      */
-    private function findOrganization($input, $organizations)
+    private function findDivision($input, $divisions)
     {
         if (empty($input))
             return null;
@@ -155,17 +160,17 @@ class StaffInvitationController extends Controller
         $bestMatch = null;
         $shortestDistance = -1;
 
-        foreach ($organizations as $org) {
-            $orgName = strtolower($org->name);
-            $orgCode = strtolower($org->code);
+        foreach ($divisions as $div) {
+            $divName = strtolower($div->name);
+            $divCode = $div->code ? strtolower($div->code) : '';
 
             // Exact match on Name or Code
-            if ($orgName === $input || $orgCode === $input) {
-                return $org;
+            if ($divName === $input || $divCode === $input) {
+                return $div;
             }
 
             // Levenshtein distance on Name only
-            $distance = levenshtein($input, $orgName);
+            $distance = levenshtein($input, $divName);
 
             // Check if this is a better match
             // Allow distance up to 3 or 30% of string length
@@ -174,7 +179,7 @@ class StaffInvitationController extends Controller
             if ($distance <= $threshold) {
                 if ($shortestDistance < 0 || $distance < $shortestDistance) {
                     $shortestDistance = $distance;
-                    $bestMatch = $org;
+                    $bestMatch = $div;
                 }
             }
         }
@@ -193,6 +198,7 @@ class StaffInvitationController extends Controller
             'rows.*.role' => 'nullable|string',
             'rows.*.job_level' => 'nullable|string',
             'rows.*.track' => 'nullable|in:operational,office',
+            'rows.*.division_id' => 'nullable|exists:divisions,id',
             'rows.*.organization_id' => 'nullable|exists:organizations,id',
         ]);
 
@@ -226,6 +232,7 @@ class StaffInvitationController extends Controller
                     'email' => $row['email'],
                     'name' => $row['name'],
                     'role' => $row['role'] ?? 'staff',
+                    'division_id' => $row['division_id'] ?? null,
                     'organization_id' => $row['organization_id'] ?? null,
                     'token' => Str::random(32),
                     'status' => 'pending',
@@ -254,7 +261,7 @@ class StaffInvitationController extends Controller
     public function verifyToken($token)
     {
         $token = trim($token);
-        $anyInvite = Invitation::where('token', $token)->with('organization')->first();
+        $anyInvite = Invitation::where('token', $token)->with(['organization', 'division'])->first();
 
         if (!$anyInvite) {
             return response()->json(['valid' => false, 'message' => 'Token not found in database.'], 404);
@@ -271,7 +278,8 @@ class StaffInvitationController extends Controller
             'valid' => true,
             'name' => $anyInvite->name,
             'email' => $anyInvite->email,
-            'organization' => $anyInvite->organization ? $anyInvite->organization->name : null,
+            'organization' => $anyInvite->organization ? $anyInvite->organization->name : ($anyInvite->division ? $anyInvite->division->name : null),
+            'division_id' => $anyInvite->division_id,
             'organization_id' => $anyInvite->organization_id,
             'job_level' => $payload['job_level'] ?? null,
             'track' => $payload['track'] ?? null,
@@ -287,6 +295,7 @@ class StaffInvitationController extends Controller
             'job_level' => 'nullable|string',
             'track' => 'nullable|in:operational,office',
             'organization_id' => 'nullable|exists:organizations,id',
+            'division_id' => 'nullable|exists:divisions,id', // Added
             'division' => 'nullable|string',
             'role' => 'nullable|string',
         ]);
@@ -310,13 +319,20 @@ class StaffInvitationController extends Controller
 
             // Organization fallback (Try to match division name to organization, or use ID 1)
             $orgId = $invitation->organization_id;
+            $divId = $invitation->division_id;
             
-            // If user selected a division, try to find matching organization if possible
-            if ($request->has('division')) {
-                $org = Organization::where('name', $request->division)->first();
-                if ($org) {
-                    $orgId = $org->id;
+            // If user selected a division (string), try to find matching Division model
+            if ($request->has('division') && !$divId) {
+                $div = Division::where('name', $request->division)->first();
+                if ($div) {
+                    $divId = $div->id;
                 }
+            }
+
+            // If we have a division ID, we can get the department from it
+            $divisionModel = null;
+            if ($divId) {
+                $divisionModel = Division::with('department')->find($divId);
             }
 
             if (!$orgId) {
@@ -331,7 +347,7 @@ class StaffInvitationController extends Controller
                 'email' => $invitation->email,
                 'password' => \Illuminate\Support\Facades\Hash::make($request->password),
                 'role_id' => $role ? $role->id : 1,
-                'division' => $request->division ?? null, // Save division name
+                'division' => $divisionModel ? $divisionModel->name : ($request->division ?? null), // Save division name
             ]);
 
             // 3. Create Employee Profile
@@ -341,6 +357,7 @@ class StaffInvitationController extends Controller
             $jobLevel = $request->has('job_level') ? $request->job_level : ($payload['job_level'] ?? null);
             $track = $request->has('track') ? $request->track : ($payload['track'] ?? null);
             $finalOrgId = $request->has('organization_id') && $request->organization_id ? $request->organization_id : $orgId;
+            $finalDivId = $request->has('division_id') && $request->division_id ? $request->division_id : $divId;
             $roleName = $request->has('role') ? $request->role : ($invitation->role ?: 'staff');
 
             // Re-fetch role if overridden
@@ -358,7 +375,8 @@ class StaffInvitationController extends Controller
                 'position' => ucfirst($role ? $role->name : 'Staff'),
                 'job_level' => $jobLevel,
                 'track' => $track,
-                'department' => $request->division ?? null, // Save division as department
+                'division_id' => $finalDivId, // Store Division ID
+                'department' => $divisionModel && $divisionModel->department ? $divisionModel->department->name : ($request->division ?? null),
                 'phone' => '-',
                 'address' => '-',
                 'join_date' => now(),
