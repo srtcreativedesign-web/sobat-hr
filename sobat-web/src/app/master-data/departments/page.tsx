@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth-store';
 import apiClient from '@/lib/api-client';
-import Swal from 'sweetalert2/dist/sweetalert2.js';
-import 'sweetalert2/src/sweetalert2.scss';
+import Swal from 'sweetalert2';
 
 interface Department {
     id: number;
