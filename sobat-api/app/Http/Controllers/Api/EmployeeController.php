@@ -115,6 +115,7 @@ class EmployeeController extends Controller
             'education' => 'nullable', // Accept array/json or string
             'supervisor_name' => 'nullable|string',
             'supervisor_position' => 'nullable|string',
+            'supervisor_id' => 'nullable|exists:employees,id', // Added
             'photo_path' => 'nullable|string',
         ]);
 
@@ -185,6 +186,7 @@ class EmployeeController extends Controller
             'education',
             'supervisor_name',
             'supervisor_position',
+            'supervisor_id', // Added
             'department',
             'photo_path'
         ];
@@ -307,6 +309,7 @@ class EmployeeController extends Controller
             'education' => 'nullable', // Accept array/json or string
             'supervisor_name' => 'nullable|string',
             'supervisor_position' => 'nullable|string',
+            'supervisor_id' => 'nullable|exists:employees,id', // Added
             'photo_path' => 'nullable|image|max:2048', // 2MB Max
         ]);
 
@@ -396,6 +399,7 @@ class EmployeeController extends Controller
             'education',
             'supervisor_name',
             'supervisor_position',
+            'supervisor_id', // Added
             'department',
             // 'photo_path' handled separately below
         ];

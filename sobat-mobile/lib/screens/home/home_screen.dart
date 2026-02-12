@@ -1597,17 +1597,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             _isLoadingPayroll
                                 ? '...'
                                 : _lastPayroll != null
-                                ? NumberFormat.currency(
-                                    locale: 'id_ID',
-                                    symbol: 'Rp ',
-                                    decimalDigits: 0,
-                                  ).format(
-                                    double.tryParse(
-                                          _lastPayroll!['net_salary']
-                                              .toString(),
-                                        ) ??
-                                        0,
-                                  )
+                                ? 'Rp  * * * * * *'
                                 : '-',
                             style: const TextStyle(
                               fontSize: 24,
@@ -1960,20 +1950,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildQuickActions() {
     final user = Provider.of<AuthProvider>(context).user;
-    final jobLevel = user?.jobLevel?.toLowerCase() ?? '';
-    final role = user?.role?.toLowerCase() ?? '';
-    final canApprove =
-        [
-          'director',
-          'manager',
-          'manager_ops',
-          'manager_divisi',
-          'spv',
-          'deputy_manager',
-          'team_leader',
-        ].contains(jobLevel) ||
-        role == 'super_admin' ||
-        role == 'admin_cabang';
+    // final jobLevel = user?.jobLevel?.toLowerCase() ?? ''; // Removed
+    // final role = user?.role?.toLowerCase() ?? ''; // Removed
+    final canApprove = user?.canApprove ?? false;
 
     final menuItems = <Map<String, dynamic>>[
       {

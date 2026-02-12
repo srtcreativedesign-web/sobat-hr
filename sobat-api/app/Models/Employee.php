@@ -50,6 +50,7 @@ class Employee extends Model
         'education',
         'supervisor_name',
         'supervisor_position',
+        'supervisor_id', // Added
         'photo_path',
     ];
 
@@ -67,6 +68,11 @@ class Employee extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+    
+    public function supervisor()
+    {
+        return $this->belongsTo(Employee::class, 'supervisor_id');
     }
 
     public function organization()
@@ -97,6 +103,11 @@ class Employee extends Model
     public function requests()
     {
         return $this->hasMany(RequestModel::class);
+    }
+
+    public function jobPosition()
+    {
+        return $this->belongsTo(JobPosition::class, 'position', 'name');
     }
 
     public function approvals()

@@ -9,6 +9,7 @@ import '../../config/api_config.dart';
 import '../../config/theme.dart';
 
 import '../../services/auth_service.dart';
+import '../../services/employee_service.dart';
 import 'enroll_face_screen.dart';
 import '../../l10n/app_localizations.dart';
 
@@ -22,11 +23,15 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final AuthService _authService = AuthService();
+  final EmployeeService _employeeService = EmployeeService();
 
   // Basic fields
   final TextEditingController _nameCtrl = TextEditingController();
   final TextEditingController _emailCtrl = TextEditingController();
   final TextEditingController _phoneCtrl = TextEditingController();
+
+  // Focus Nodes
+  final FocusNode _supervisorFocusNode = FocusNode(); // Added
 
   // Employee fields
   final TextEditingController _employeeIdCtrl = TextEditingController();
@@ -86,49 +91,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   // UI helpers
   String? _department;
   String? _position;
-  String? _track;
+  // String? _track; // Removed unused field
 
-  List<String> _departmentOptions = [
-    'Wrapping',
-    'Refleksi',
-    'Celullar',
-    'Minimarket',
-    'HANS',
-    'Food & Beverages',
-    'Human Resources Development',
-    'Business Development',
-    'Finance, Accounting, & Tax',
-    'Training & Development',
-    'Internal Keuangan',
-    'Project',
-    'Money Changer',
-    'Yang lain',
-  ];
-
-  // Position options based on track
-  static const List<String> _operationalPositions = [
-    'Crew',
-    'Crew Leader',
-    'Supervisor',
-    'Manager',
-  ];
-
-  static const List<String> _officePositions = [
-    'Staff',
-    'Team Leader',
-    'Supervisor',
-    'Deputy Manager',
-    'Manager',
-    'Holding 1',
-    'Holding 2',
-    'Holding 3',
-    'Holding 4',
-    'Direktur',
-  ];
-
-  List<String> _positionOptions = [];
-
-  final List<String> _ptkpOptions = [
+  List<String> _ptkpOptions = [
     'TK0',
     'TK1',
     'TK2',
@@ -147,10 +112,85 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   int? _employeeRecordId;
   int _joinDateEditCount = 0;
 
+  // Dynamic Options
+  List<Map<String, dynamic>> _divisions = [];
+  List<Map<String, dynamic>> _jobPositions = [];
+  bool _isLoadingDivisions = false;
+  bool _isLoadingJobPositions = false;
+  int? _selectedDivisionId;
+  int? _selectedJobPositionId;
+  int? _supervisorId; // Added
+
   @override
   void initState() {
     super.initState();
-    _loadInitial();
+    _initAsync();
+  }
+
+  Future<void> _initAsync() async {
+    // 1. Fetch Divisions FIRST
+    await _fetchDivisions();
+
+    // 2. Load User Profile and Match
+    await _loadInitial();
+  }
+
+  Future<void> _fetchDivisions() async {
+    setState(() => _isLoadingDivisions = true);
+    try {
+      final dio = Dio();
+      final token = await _authService.getToken();
+      if (token != null) {
+        dio.options.headers['Authorization'] = 'Bearer $token';
+      }
+      final response = await dio.get('${ApiConfig.baseUrl}/divisions');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        if (mounted) {
+          setState(() {
+            _divisions = data.map((e) => e as Map<String, dynamic>).toList();
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching divisions: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingDivisions = false);
+    }
+  }
+
+  Future<void> _fetchJobPositions(int? divisionId) async {
+    if (divisionId == null) {
+      setState(() => _jobPositions = []);
+      return;
+    }
+
+    setState(() => _isLoadingJobPositions = true);
+    try {
+      final dio = Dio();
+      final token = await _authService.getToken();
+      if (token != null) {
+        dio.options.headers['Authorization'] = 'Bearer $token';
+      }
+      // Fetch positions for specific division
+      final response = await dio.get(
+        '${ApiConfig.baseUrl}/job-positions',
+        queryParameters: {'division_id': divisionId},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        if (mounted) {
+          setState(() {
+            _jobPositions = data.map((e) => e as Map<String, dynamic>).toList();
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching job positions: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingJobPositions = false);
+    }
   }
 
   Future<void> _loadInitial() async {
@@ -254,31 +294,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           } catch (_) {}
         }
 
-        // Prioritize data from Employee object (from registration)
+        _department = emp['department'];
+
+        // Variables needed for logic
         final userJobLevel = emp['job_level'];
         final userTrack = emp['track'];
 
-        // Set track and position options based on track
-        _track = userTrack?.toString();
-        _positionOptions = List<String>.from(
-          _track == 'operational' ? _operationalPositions : _officePositions,
-        );
-
-        String? userOrgName;
         int? userOrgId;
-
         if (emp['organization'] != null && emp['organization'] is Map) {
-          userOrgName = emp['organization']['name'];
           userOrgId = emp['organization']['id'];
         } else {
-          // Fallback if organization is not eager loaded but id exists
           userOrgId = emp['organization_id'];
-        }
-
-        if (userOrgName != null && userOrgName.isNotEmpty) {
-          _department = userOrgName;
-        } else {
-          _department = emp['department'];
         }
 
         if (userJobLevel != null && userJobLevel.toString().isNotEmpty) {
@@ -295,22 +321,54 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _position = emp['position'];
         }
 
-        // Ensure values exist in options to prevent Dropdown crash
-        if (_department != null &&
-            _department!.isNotEmpty &&
-            !_departmentOptions.contains(_department)) {
-          _departmentOptions.add(_department!);
-        }
-        if (_position != null &&
-            _position!.isNotEmpty &&
-            !_positionOptions.contains(_position)) {
-          _positionOptions.add(_position!);
-        }
-
         _departmentCtrl.text = _department ?? '';
         _positionCtrl.text = _position ?? '';
+
+        // Wait for divisions to load, then try to match
+        // But since _fetchDivisions is async called in initState, it might not be ready.
+        // We can just try to match if _divisions is populated.
+        // If not, maybe retry? For simplicity, let's assume fast loading or rely on text value fallback.
+
+        // Match Department Name to Division ID
+        // Note: _divisions should be populated by now due to sequential _initAsync
+        if (_department != null && _divisions.isNotEmpty) {
+          final matchedDiv = _divisions.firstWhere(
+            (div) => div['name'] == _department,
+            orElse: () => {},
+          );
+
+          if (matchedDiv.isNotEmpty) {
+            _selectedDivisionId = matchedDiv['id'] as int;
+
+            // Fetch positions for this division
+            await _fetchJobPositions(_selectedDivisionId);
+
+            debugPrint('DEBUG: _position from API/EMP: "$_position"');
+            debugPrint('DEBUG: _jobPositions count: ${_jobPositions.length}');
+
+            // Then match position
+            if (_position != null && _jobPositions.isNotEmpty) {
+              final matchedPos = _jobPositions.firstWhere((pos) {
+                final posName = pos['name']?.toString().trim().toLowerCase();
+                final targetPos = _position!.trim().toLowerCase();
+                debugPrint('DEBUG: Compare pos "$posName" vs "$targetPos"');
+                return posName == targetPos;
+              }, orElse: () => {});
+              if (matchedPos.isNotEmpty) {
+                _selectedJobPositionId = matchedPos['id'] as int;
+                debugPrint(
+                  'DEBUG: Matched Job Position ID: $_selectedJobPositionId',
+                );
+              } else {
+                debugPrint('DEBUG: No matching job position found.');
+              }
+            }
+          }
+        }
         _supervisorNameCtrl.text = emp['supervisor_name'] ?? '';
         _supervisorPositionCtrl.text = emp['supervisor_position'] ?? '';
+        _supervisorId =
+            emp['supervisor_id']; // Added logic to load existing supervisor_id
 
         // Auto-fill Supervisor if empty
         if (_supervisorNameCtrl.text.isEmpty &&
@@ -319,11 +377,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           // Call API to find supervisor candidate
           try {
             final candidate = await _authService.getSupervisorCandidate(
-              organizationId: userOrgId is int
-                  ? userOrgId
-                  : int.parse(userOrgId.toString()),
+              organizationId: userOrgId,
               jobLevel: userJobLevel.toString(),
-              track: userTrack?.toString() ?? 'office',
+              track: userTrack is String ? userTrack : 'office',
             );
 
             if (candidate != null && mounted) {
@@ -452,6 +508,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         'supervisor_name': _supervisorNameCtrl.text.trim(),
         'supervisor_position': _supervisorPositionCtrl.text.trim(),
+        'supervisor_id': _supervisorId,
       };
 
       // Only add _method: PUT if we are updating (not creating)
@@ -526,6 +583,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         'supervisor_name': _supervisorNameCtrl.text.trim(),
         'supervisor_position': _supervisorPositionCtrl.text.trim(),
+        'supervisor_id': _supervisorId,
       };
     }
 
@@ -580,6 +638,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _departmentCtrl.dispose();
     _positionCtrl.dispose();
     _supervisorNameCtrl.dispose();
+    _supervisorFocusNode.dispose(); // Added
 
     _supervisorPositionCtrl.dispose();
 
@@ -1078,49 +1137,97 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const Divider(),
                     const SizedBox(height: 16),
                     const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      isExpanded: true,
-                      initialValue:
-                          _department ??
-                          (_departmentCtrl.text.isNotEmpty
-                              ? _departmentCtrl.text
-                              : null),
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.business),
-                        labelText: 'Divisi / Departemen',
-                      ),
-                      items: _departmentOptions
-                          .map((d) => _buildDropdownItem(d))
-                          .toList(),
-                      onChanged: (v) {
-                        setState(() {
-                          _department = v;
-                          _departmentCtrl.text = v ?? '';
-                        });
-                      },
-                    ),
                     const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      isExpanded: true,
-                      initialValue:
-                          _position ??
-                          (_positionCtrl.text.isNotEmpty
-                              ? _positionCtrl.text
-                              : null),
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.work),
-                        labelText: 'Jabatan',
-                      ),
-                      items: _positionOptions
-                          .map((p) => _buildDropdownItem(p))
-                          .toList(),
-                      onChanged: (v) {
-                        setState(() {
-                          _position = v;
-                          _positionCtrl.text = v ?? '';
-                        });
-                      },
-                    ),
+
+                    // Division Dropdown
+                    _isLoadingDivisions
+                        ? const Center(child: CircularProgressIndicator())
+                        : DropdownButtonFormField<int>(
+                            isExpanded: true,
+                            value: _selectedDivisionId,
+                            decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.business),
+                              labelText: 'Divisi',
+                            ),
+                            items: _divisions.map((div) {
+                              return DropdownMenuItem<int>(
+                                value: div['id'] as int,
+                                child: Text(
+                                  div['name'] ?? '',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              setState(() {
+                                _selectedDivisionId = val;
+                                _selectedJobPositionId = null; // Reset position
+                                _jobPositions = [];
+
+                                // Update controller text
+                                final selectedDiv = _divisions.firstWhere(
+                                  (d) => d['id'] == val,
+                                  orElse: () => {},
+                                );
+                                if (selectedDiv.isNotEmpty) {
+                                  _departmentCtrl.text = selectedDiv['name'];
+                                  _department = selectedDiv['name'];
+                                }
+                              });
+                              _fetchJobPositions(val);
+                            },
+                            validator: (v) =>
+                                v == null ? 'Wajib pilih divisi' : null,
+                          ),
+
+                    const SizedBox(height: 12),
+
+                    // Job Position Dropdown
+                    _isLoadingJobPositions
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        : DropdownButtonFormField<int>(
+                            isExpanded: true,
+                            value: _selectedJobPositionId,
+                            decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.work),
+                              labelText: 'Jabatan',
+                            ),
+                            items: _jobPositions.map((pos) {
+                              return DropdownMenuItem<int>(
+                                value: pos['id'] as int,
+                                child: Text(
+                                  pos['name'] ?? '',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: _selectedDivisionId == null
+                                ? null
+                                : (val) {
+                                    setState(() {
+                                      _selectedJobPositionId = val;
+
+                                      // Update controller text
+                                      final selectedPos = _jobPositions
+                                          .firstWhere(
+                                            (p) => p['id'] == val,
+                                            orElse: () => {},
+                                          );
+                                      if (selectedPos.isNotEmpty) {
+                                        _positionCtrl.text =
+                                            selectedPos['name'];
+                                        _position = selectedPos['name'];
+                                      }
+                                    });
+                                  },
+                            validator: (v) =>
+                                v == null ? 'Wajib pilih jabatan' : null,
+                          ),
                     const SizedBox(height: 12),
                     InkWell(
                       onTap: _pickJoinDate,
@@ -1150,11 +1257,83 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _supervisorNameCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Nama Atasan Langsung',
-                      ),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        return RawAutocomplete<Map<String, dynamic>>(
+                          textEditingController: _supervisorNameCtrl,
+                          focusNode: _supervisorFocusNode,
+                          optionsBuilder:
+                              (TextEditingValue textEditingValue) async {
+                                if (textEditingValue.text.isEmpty) {
+                                  return const Iterable<
+                                    Map<String, dynamic>
+                                  >.empty();
+                                }
+                                return await _employeeService.searchEmployees(
+                                  textEditingValue.text,
+                                );
+                              },
+                          displayStringForOption: (option) =>
+                              option['full_name'] ?? '',
+                          onSelected: (option) {
+                            setState(() {
+                              _supervisorPositionCtrl.text =
+                                  option['position'] ?? '';
+                              _supervisorId = option['id']; // Capture ID
+                            });
+                          },
+                          optionsViewBuilder: (context, onSelected, options) {
+                            return Align(
+                              alignment: Alignment.topLeft,
+                              child: Material(
+                                elevation: 4.0,
+                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.white,
+                                child: SizedBox(
+                                  width: constraints.maxWidth,
+                                  height: 200,
+                                  child: ListView.builder(
+                                    padding: EdgeInsets.zero,
+                                    itemCount: options.length,
+                                    itemBuilder:
+                                        (BuildContext context, int index) {
+                                          final option = options.elementAt(
+                                            index,
+                                          );
+                                          return ListTile(
+                                            title: Text(
+                                              option['full_name'] ?? '',
+                                            ),
+                                            subtitle: Text(
+                                              option['position'] ?? '-',
+                                            ),
+                                            onTap: () => onSelected(option),
+                                          );
+                                        },
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          fieldViewBuilder:
+                              (
+                                context,
+                                controller,
+                                focusNode,
+                                onFieldSubmitted,
+                              ) {
+                                return TextFormField(
+                                  controller:
+                                      controller, // Uses _supervisorNameCtrl internally
+                                  focusNode: focusNode,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Nama Atasan Langsung',
+                                    suffixIcon: Icon(Icons.search),
+                                  ),
+                                );
+                              },
+                        );
+                      },
                     ),
                     const SizedBox(height: 12),
                     TextFormField(

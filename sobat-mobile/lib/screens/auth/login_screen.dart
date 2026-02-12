@@ -131,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
           // 2. Dark Overlay for better contrast
           Positioned.fill(
-            child: Container(color: Colors.black.withOpacity(0.3)),
+            child: Container(color: Colors.black.withValues(alpha: 0.3)),
           ),
 
           // 3. Glassmorphism Card Content
@@ -158,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text(
                     'Welcome Back!',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 16,
                     ),
                   ),
@@ -172,10 +172,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             width: 1.5,
                           ),
                         ),
@@ -227,7 +227,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: Text(
                                     'Lupa Password?',
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.9),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.9,
+                                      ),
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -243,10 +245,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                       padding: const EdgeInsets.all(12),
                                       margin: const EdgeInsets.only(bottom: 16),
                                       decoration: BoxDecoration(
-                                        color: Colors.red.withOpacity(0.2),
+                                        color: Colors.red.withValues(
+                                          alpha: 0.2,
+                                        ),
                                         borderRadius: BorderRadius.circular(8),
                                         border: Border.all(
-                                          color: Colors.red.withOpacity(0.5),
+                                          color: Colors.red.withValues(
+                                            alpha: 0.5,
+                                          ),
                                         ),
                                       ),
                                       child: Row(
@@ -356,7 +362,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
@@ -372,7 +378,7 @@ class _LoginScreenState extends State<LoginScreen> {
             fillColor: Colors.white,
             prefixIcon: Icon(
               icon,
-              color: const Color(0xFF1A1A1A).withOpacity(0.7),
+              color: const Color(0xFF1A1A1A).withValues(alpha: 0.7),
             ),
             suffixIcon: isPassword
                 ? IconButton(
@@ -380,7 +386,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       obscureText
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
-                      color: const Color(0xFF1A1A1A).withOpacity(0.7),
+                      color: const Color(0xFF1A1A1A).withValues(alpha: 0.7),
                     ),
                     onPressed: onTogglePassword,
                   )
@@ -391,11 +397,15 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+              borderSide: BorderSide(
+                color: Colors.white.withValues(alpha: 0.2),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.5)),
+              borderSide: BorderSide(
+                color: Colors.white.withValues(alpha: 0.5),
+              ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -410,7 +420,7 @@ class _LoginScreenState extends State<LoginScreen> {
               vertical: 12,
             ),
             hintStyle: TextStyle(
-              color: const Color(0xFF1A1A1A).withOpacity(0.4),
+              color: const Color(0xFF1A1A1A).withValues(alpha: 0.4),
             ),
             errorStyle: const TextStyle(color: Colors.white, fontSize: 12),
           ),

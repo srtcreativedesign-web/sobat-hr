@@ -9,5 +9,18 @@ class Division extends Model
 {
     use HasFactory;
     
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'code', 'description', 'department_id'];
+
+    /**
+     * Relationships
+     */
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function jobPositions()
+    {
+        return $this->hasMany(JobPosition::class);
+    }
 }

@@ -195,6 +195,32 @@ class ApprovalService
      */
     public function determineApprovers(Employee $requester, ?Model $request = null): array
     {
+        $approvers = [];
+
+        // 1. DIRECT SUPERVISOR LOGIC (Priority)
+        if ($requester->supervisor_id) {
+            Log::info("Using Direct Supervisor Flow for Employee ID: {$requester->id}");
+            
+            // Step 1: Direct Supervisor
+            $approvers[] = $requester->supervisor_id;
+
+            // Step 2: HRD (Final Step)
+            // Unless the supervisor IS the HRD, to avoid double approval
+            $hrd = $this->findApproverByRoleName('hrd');
+            
+            // If Supervisor is NOT HRD, add HRD as second step
+            if ($hrd && $hrd->id != $requester->supervisor_id) {
+                 $approvers[] = $hrd->id;
+            }
+            
+            Log::info("Direct Supervisor Flow Approvers: " . json_encode($approvers));
+            return array_unique($approvers);
+        }
+
+        // ==========================================
+        // FALLBACK: EXISTING ROLE-BASED LOGIC
+        // ==========================================
+
         // Get requester's approval level from their user's role
         $userRoleLevel = $requester->user?->role?->approval_level ?? 0;
         
@@ -203,7 +229,7 @@ class ApprovalService
         
         Log::info("Determining approvers for Employee ID: {$requester->id} ({$requester->full_name}), Role Level: {$userRoleLevel}, Org ID: {$organizationId}, Request Type: " . ($request ? $request->type : 'null'));
         
-        $approvers = [];
+        // ... (rest of the existing logic)
 
         // SPECIAL CASE: Sick Leave for Manager Level (Level >= 2)
         // Workflow: COO -> HRD

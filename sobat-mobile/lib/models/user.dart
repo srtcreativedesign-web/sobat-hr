@@ -21,6 +21,7 @@ class User {
   final double? officeLongitude;
   final int? officeRadius;
   final String? facePhotoPath;
+  final int approvalLevel;
 
   User({
     required this.id,
@@ -46,6 +47,7 @@ class User {
     this.officeRadius,
     this.joinDateEditCount = 0,
     this.facePhotoPath,
+    this.approvalLevel = 0,
   });
 
   final int joinDateEditCount;
@@ -63,6 +65,22 @@ class User {
     double? lng;
     int? rad;
     int editCount = 0;
+    int appLevel = 0;
+
+    // Parse Approval Level (Root Level priority)
+    if (json['approval_level'] != null) {
+      if (json['approval_level'] is int) {
+        appLevel = json['approval_level'];
+      } else if (json['approval_level'] is String) {
+        appLevel = int.tryParse(json['approval_level']) ?? 0;
+      }
+    } else if (json['role'] is Map && json['role']['approval_level'] != null) {
+      if (json['role']['approval_level'] is int) {
+        appLevel = json['role']['approval_level'];
+      } else if (json['role']['approval_level'] is String) {
+        appLevel = int.tryParse(json['role']['approval_level']) ?? 0;
+      }
+    }
 
     if (json['employee'] != null) {
       empRecordId = json['employee']['id']; // Store integer ID
@@ -70,14 +88,38 @@ class User {
       jobLvl = json['employee']['job_level'];
       trk = json['employee']['track'];
       pos = json['employee']['position'];
-      editCount = json['employee']['join_date_edit_count'] ?? 0;
+      if (json['employee']['join_date_edit_count'] != null) {
+        editCount =
+            int.tryParse(json['employee']['join_date_edit_count'].toString()) ??
+            0;
+      }
 
       print('=== USER.DART fromJson ===');
       print('Raw track value: $trk');
       print('Raw position value: $pos');
+      print('Raw approval level: $appLevel');
       print('========================');
 
-      if (json['employee']['organization'] != null) {
+      if (json['employee']['department'] != null &&
+          json['employee']['department'].toString().isNotEmpty) {
+        orgName = json['employee']['department'];
+        // Still parse lat/long if organization exists, as department string doesn't have it
+        if (json['employee']['organization'] != null) {
+          orgId = json['employee']['organization']['id'];
+          if (json['employee']['organization']['latitude'] != null) {
+            lat = double.tryParse(
+              json['employee']['organization']['latitude'].toString(),
+            );
+            lng = double.tryParse(
+              json['employee']['organization']['longitude'].toString(),
+            );
+            rad = int.tryParse(
+              json['employee']['organization']['radius_meters'].toString(),
+            );
+            hasLoc = lat != null && lng != null;
+          }
+        }
+      } else if (json['employee']['organization'] != null) {
         orgName = json['employee']['organization']['name'];
         orgId = json['employee']['organization']['id'];
 
@@ -144,6 +186,7 @@ class User {
               json['employee']['face_photo_path'] != null)
           ? json['employee']['face_photo_path'] as String
           : json['face_photo_path'] as String?,
+      approvalLevel: appLevel,
     );
   }
 
@@ -166,6 +209,7 @@ class User {
       'organization_id': organizationId,
       'join_date_edit_count': joinDateEditCount,
       'face_photo_path': facePhotoPath,
+      'approval_level': approvalLevel,
     };
   }
 
@@ -173,4 +217,7 @@ class User {
   bool get isAdmin => role == 'admin';
   bool get isManager => role == 'manager';
   bool get isEmployee => role == 'employee';
+
+  // New helper for approval logic
+  bool get canApprove => approvalLevel >= 1 || role == 'super_admin';
 }
