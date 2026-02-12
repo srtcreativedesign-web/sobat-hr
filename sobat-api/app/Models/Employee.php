@@ -51,6 +51,8 @@ class Employee extends Model
         'supervisor_name',
         'supervisor_position',
         'supervisor_id', // Added
+        'division_id', // New Master Data
+        'job_position_id', // New Master Data
         'photo_path',
     ];
 
@@ -108,6 +110,16 @@ class Employee extends Model
     public function jobPosition()
     {
         return $this->belongsTo(JobPosition::class, 'position', 'name');
+    }
+
+    public function division()
+    {
+        return $this->belongsTo(Division::class);
+    }
+
+    public function assignedJobPosition()
+    {
+        return $this->belongsTo(JobPosition::class, 'job_position_id');
     }
 
     public function approvals()

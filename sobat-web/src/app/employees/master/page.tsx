@@ -8,6 +8,8 @@ import EmployeeForm from '../components/EmployeeForm';
 export default function EmployeeMasterPage() {
     const [employees, setEmployees] = useState<any[]>([]);
     const [organizations, setOrganizations] = useState<any[]>([]);
+    const [divisions, setDivisions] = useState<any[]>([]);
+    const [jobPositions, setJobPositions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [showForm, setShowForm] = useState(false);
@@ -20,12 +22,16 @@ export default function EmployeeMasterPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [empRes, orgRes] = await Promise.all([
+            const [empRes, orgRes, divRes, posRes] = await Promise.all([
                 apiClient.get('/employees'), // Fetch all employees
-                apiClient.get('/organizations')
+                apiClient.get('/organizations'),
+                apiClient.get('/divisions'),
+                apiClient.get('/job-positions')
             ]);
             setEmployees(empRes.data.data || empRes.data || []);
             setOrganizations(orgRes.data.data || orgRes.data || []);
+            setDivisions(divRes.data.data || divRes.data || []);
+            setJobPositions(posRes.data.data || posRes.data || []);
         } catch (error) {
             console.error('Failed to fetch data', error);
         } finally {
@@ -193,6 +199,8 @@ export default function EmployeeMasterPage() {
                 onSuccess={handleFormSuccess}
                 initialData={selectedEmployee}
                 organizations={organizations}
+                divisions={divisions}
+                jobPositions={jobPositions}
             />
         </DashboardLayout>
     );

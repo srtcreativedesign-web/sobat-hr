@@ -9,9 +9,11 @@ interface EmployeeFormProps {
     onSuccess: () => void;
     initialData?: any;
     organizations: any[];
+    divisions: any[];
+    jobPositions: any[];
 }
 
-export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, organizations }: EmployeeFormProps) {
+export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, organizations, divisions, jobPositions }: EmployeeFormProps) {
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('personal');
     const [formData, setFormData] = useState<any>({});
@@ -25,6 +27,8 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                 join_date: initialData.join_date ? initialData.join_date.split('T')[0] : '',
                 birth_date: initialData.birth_date ? initialData.birth_date.split('T')[0] : '',
                 contract_end_date: initialData.contract_end_date ? initialData.contract_end_date.split('T')[0] : '',
+                division_id: initialData.division_id || '',
+                job_position_id: initialData.job_position_id || '',
             });
         } else {
             setFormData({
@@ -205,9 +209,18 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Divisi / Organisasi</label>
-                                    <select name="organization_id" value={formData.organization_id || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none text-gray-900">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Divisi (Baru)</label>
+                                    <select name="division_id" value={formData.division_id || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none text-gray-900 bg-white">
                                         <option value="">Pilih Divisi...</option>
+                                        {divisions.map(div => (
+                                            <option key={div.id} value={div.id}>{div.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="hidden">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Organisasi (Legacy)</label>
+                                    <select name="organization_id" value={formData.organization_id || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none text-gray-900">
+                                        <option value="">Pilih Organisasi...</option>
                                         {organizations.map(org => (
                                             <option key={org.id} value={org.id}>{org.name}</option>
                                         ))}
@@ -215,7 +228,12 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Jabatan (Position)</label>
-                                    <input type="text" name="position" value={formData.position || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none text-gray-900" />
+                                    <select name="job_position_id" value={formData.job_position_id || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none text-gray-900 bg-white">
+                                        <option value="">Pilih Jabatan...</option>
+                                        {jobPositions.map(pos => (
+                                            <option key={pos.id} value={pos.id}>{pos.name}</option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Status Kepegawaian</label>

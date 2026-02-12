@@ -13,7 +13,7 @@ class EmployeeController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Employee::with(['user', 'organization', 'role']);
+        $query = Employee::with(['user', 'organization', 'role', 'division', 'assignedJobPosition']);
 
         // Filter by organization
         if ($request->has('organization_id')) {
@@ -116,6 +116,8 @@ class EmployeeController extends Controller
             'supervisor_name' => 'nullable|string',
             'supervisor_position' => 'nullable|string',
             'supervisor_id' => 'nullable|exists:employees,id', // Added
+            'division_id' => 'nullable|exists:divisions,id',
+            'job_position_id' => 'nullable|exists:job_positions,id',
             'photo_path' => 'nullable|string',
         ]);
 
@@ -165,6 +167,22 @@ class EmployeeController extends Controller
             $data['job_level'] = $validated['job_level'];
         if (isset($validated['track']))
             $data['track'] = $validated['track'];
+
+        // Handle new Master Data logic
+        if (isset($validated['division_id'])) {
+            $data['division_id'] = $validated['division_id'];
+            $div = \App\Models\Division::find($validated['division_id']);
+            if ($div) $data['department'] = $div->name;
+        }
+        
+        if (isset($validated['job_position_id'])) {
+            $data['job_position_id'] = $validated['job_position_id'];
+            $pos = \App\Models\JobPosition::find($validated['job_position_id']);
+            if ($pos) {
+                $data['position'] = $pos->name;
+                $data['job_level'] = (string)$pos->level;
+            }
+        }
 
         // New additional fields added by migration (same names)
         $extraFields = [
@@ -310,6 +328,8 @@ class EmployeeController extends Controller
             'supervisor_name' => 'nullable|string',
             'supervisor_position' => 'nullable|string',
             'supervisor_id' => 'nullable|exists:employees,id', // Added
+            'division_id' => 'nullable|exists:divisions,id',
+            'job_position_id' => 'nullable|exists:job_positions,id',
             'photo_path' => 'nullable|image|max:2048', // 2MB Max
         ]);
 
@@ -379,6 +399,22 @@ class EmployeeController extends Controller
             $data['job_level'] = $validated['job_level'];
         if (isset($validated['track']))
             $data['track'] = $validated['track'];
+
+        // Handle new Master Data logic
+        if (isset($validated['division_id'])) {
+            $data['division_id'] = $validated['division_id'];
+            $div = \App\Models\Division::find($validated['division_id']);
+            if ($div) $data['department'] = $div->name;
+        }
+        
+        if (isset($validated['job_position_id'])) {
+            $data['job_position_id'] = $validated['job_position_id'];
+            $pos = \App\Models\JobPosition::find($validated['job_position_id']);
+            if ($pos) {
+                $data['position'] = $pos->name;
+                $data['job_level'] = (string)$pos->level;
+            }
+        }
 
         $extraFields = [
             'place_of_birth',
