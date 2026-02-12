@@ -36,6 +36,9 @@ class PayrollFnbController extends Controller
         // Filter by period
         if ($request->has('period')) {
             $query->where('period', $request->period);
+        } elseif ($request->has('month') && $request->has('year') && $request->month != 0 && $request->year != 0) {
+            $periodString = sprintf('%04d-%02d', $request->year, $request->month);
+            $query->where('period', $periodString);
         }
         
         // Filter by status (allow overriding if user is checking 'draft' etc, but mostly for admins)
@@ -174,7 +177,7 @@ class PayrollFnbController extends Controller
                 // Map all columns based on FnB Excel structure (from analysis)
                 $parsed = [
                     'employee_name' => $employeeName,
-                    'period' => date('Y-m'), // Current period
+                    'period' => $request->period ?? date('Y-m'), // Use period from request if provided
                     'account_number' => $getCellValue('D', $row), // Shifted +1 (C->D)
                     
                     // Attendance (E-J)

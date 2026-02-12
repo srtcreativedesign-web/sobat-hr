@@ -523,7 +523,7 @@ class PayrollController extends Controller
                 
                 $parsed = [
                     'employee_name' => $employeeName,
-                    'period' => date('Y-m'),
+                    'period' => $request->period ?? date('Y-m'),
                     'basic_salary' => $basicSalary,
                     'allowances' => $allowancesTotal,
                     'overtime' => $overtimePay,

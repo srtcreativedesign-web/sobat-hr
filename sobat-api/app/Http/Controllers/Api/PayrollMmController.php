@@ -38,6 +38,9 @@ class PayrollMmController extends Controller
         // Filter by period
         if ($request->has('period')) {
             $query->where('period', $request->period);
+        } elseif ($request->has('month') && $request->has('year') && $request->month != 0 && $request->year != 0) {
+            $periodString = sprintf('%04d-%02d', $request->year, $request->month);
+            $query->where('period', $periodString);
         }
         
         // Filter by status (override for admins)
@@ -123,7 +126,7 @@ class PayrollMmController extends Controller
                 // MAP COLUMNS BASED ON 'read_headers.php' OUTPUT FOR MM
                 $parsed = [
                     'employee_name' => $employeeName,
-                    'period' => date('Y-m'), // Default to current
+                    'period' => $request->period ?? date('Y-m'), // Use period from request if provided
                     'account_number' => $getCellValue('D', $row),
                     
                     // Attendance (E-K)

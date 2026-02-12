@@ -183,7 +183,16 @@ class _PayrollScreenState extends State<PayrollScreen> {
     double lastSalary = 0;
     String lastDate = '-';
     if (_payrolls.isNotEmpty) {
-      lastSalary = double.tryParse(_payrolls[0]['net_salary'].toString()) ?? 0;
+      final payroll = _payrolls[0];
+      final isCellular = payroll['division'] == 'celluller';
+      lastSalary =
+          double.tryParse(
+            (isCellular
+                    ? (payroll['final_payment'] ?? payroll['net_salary'])
+                    : payroll['net_salary'])
+                .toString(),
+          ) ??
+          0;
       // Handle both 'period' (FnB) and 'period_start' (generic)
       final periodStr = _payrolls[0]['period'] ?? _payrolls[0]['period_start'];
       if (periodStr != null) {
@@ -442,7 +451,11 @@ class _PayrollScreenState extends State<PayrollScreen> {
                               Text(
                                 _formatCurrency(
                                   double.tryParse(
-                                        payroll['net_salary']?.toString() ??
+                                        (payroll['division'] == 'celluller'
+                                                    ? (payroll['final_payment'] ??
+                                                          payroll['net_salary'])
+                                                    : payroll['net_salary'])
+                                                ?.toString() ??
                                             '0',
                                       ) ??
                                       0,
@@ -830,7 +843,12 @@ class _PayrollScreenState extends State<PayrollScreen> {
                       Text(
                         _formatCurrency(
                           double.tryParse(
-                                payroll['net_salary']?.toString() ?? '0',
+                                (payroll['division'] == 'celluller'
+                                            ? (payroll['final_payment'] ??
+                                                  payroll['net_salary'])
+                                            : payroll['net_salary'])
+                                        ?.toString() ??
+                                    '0',
                               ) ??
                               0,
                         ),

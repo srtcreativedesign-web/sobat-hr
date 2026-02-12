@@ -36,7 +36,11 @@ class PayrollHoController extends Controller
         // Filter
         if ($request->has('period')) {
             $query->where('period', $request->period);
+        } elseif ($request->has('month') && $request->has('year') && $request->month != 0 && $request->year != 0) {
+            $periodString = sprintf('%04d-%02d', $request->year, $request->month);
+            $query->where('period', $periodString);
         }
+
         if ($request->has('status')) {
             $query->where('status', $request->status);
         }
@@ -340,7 +344,7 @@ class PayrollHoController extends Controller
                 // Extract Values
                 $parsed = [
                     'employee_name' => $name,
-                    'period' => date('Y-m'), // Default
+                    'period' => $request->period ?? date('Y-m'), // Use period from request if provided
                     'account_number' => !empty($cols['account']) ? $sheet->getCell($cols['account'] . $row)->getValue() : '',
                     'basic_salary' => $safeGet('basic'),
                     'days_present' => $safeGet('present'),

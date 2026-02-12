@@ -126,7 +126,7 @@ class PayrollCellullerController extends Controller
                 // MAPPING BASED ON 'payslip cell.xlsx' (refer to payslip_celluller_format.md)
                 $parsed = [
                     'employee_name' => $employeeName,
-                    'period' => date('Y-m'), // Default to current
+                    'period' => $request->period ?? date('Y-m'), // Use period from request if provided
                     'account_number' => $getCellValue('C', $row),
                     
                     // Attendance

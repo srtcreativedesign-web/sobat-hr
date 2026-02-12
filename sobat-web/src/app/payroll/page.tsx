@@ -185,6 +185,12 @@ export default function PayrollPage() {
     const formData = new FormData();
     formData.append('file', selectedFile);
 
+    // If month and year are selected, send it as period
+    if (selectedMonth !== 0 && selectedYear !== 0) {
+      const period = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
+      formData.append('period', period);
+    }
+
     try {
       setUploadProgress(0);
       setParsedRows([]);

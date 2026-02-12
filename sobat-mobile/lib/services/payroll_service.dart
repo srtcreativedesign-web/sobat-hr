@@ -39,8 +39,28 @@ class PayrollService {
   Future<List<dynamic>> getPayrolls({int? year}) async {
     List<dynamic> allPayrolls = [];
 
-    // Generic payrolls removed - fetching only division specific data
-    // List<dynamic> allPayrolls = [];
+    // Try to fetch from HO endpoint
+    try {
+      final response = await _dio.get(
+        '/payrolls/ho',
+        queryParameters: {if (year != null) 'year': year},
+      );
+
+      if (response.statusCode == 200 && response.data['data'] != null) {
+        final hoData = response.data['data'];
+        if (hoData is List) {
+          // Mark HO payrolls with division type
+          for (var item in hoData) {
+            if (item is Map<String, dynamic>) {
+              item['division'] = 'office';
+            }
+          }
+          allPayrolls.addAll(hoData);
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to fetch HO payrolls: $e');
+    }
 
     // Try to fetch from FnB endpoint
     try {
@@ -160,7 +180,7 @@ class PayrollService {
     // Try to fetch from Celluller endpoint
     try {
       final response = await _dio.get(
-        '/payrolls/cellullers',
+        '/payroll-cellullers',
         queryParameters: {if (year != null) 'year': year},
       );
 
@@ -215,7 +235,9 @@ class PayrollService {
       } else if (division == 'hans') {
         endpoint = '/payrolls/hans/$payrollId/slip';
       } else if (division == 'celluller') {
-        endpoint = '/payrolls/cellullers/$payrollId/slip';
+        endpoint = '/payroll-cellullers/$payrollId/slip';
+      } else if (division == 'office') {
+        endpoint = '/payrolls/ho/$payrollId/slip';
       } else {
         // Fallback or Error? Since generic is removed, we should probably throw error or default to one
         throw Exception('Unknown Division for download');
