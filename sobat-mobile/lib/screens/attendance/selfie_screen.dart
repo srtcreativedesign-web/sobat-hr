@@ -45,6 +45,10 @@ class _SelfieScreenState extends State<SelfieScreen>
   String _statusText = 'INITIALIZING...';
   Color _statusColor = AppTheme.colorCyan;
 
+  // Manual Capture Fallback
+  bool _showManualCapture = false;
+  Timer? _manualCaptureTimer;
+
   // Time
   late Timer _timer;
   String _currentTime = '';
@@ -54,6 +58,13 @@ class _SelfieScreenState extends State<SelfieScreen>
   void initState() {
     super.initState();
     _checkDeviceAndInit();
+
+    // Start fallback timer
+    _manualCaptureTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() => _showManualCapture = true);
+      }
+    });
   }
 
   Future<void> _checkDeviceAndInit() async {
@@ -200,8 +211,8 @@ class _SelfieScreenState extends State<SelfieScreen>
     double rotY = face.headEulerAngleY ?? 0;
     double rotZ = face.headEulerAngleZ ?? 0;
 
-    bool isFacingForward = rotY.abs() < 15;
-    bool isStraight = rotZ.abs() < 15;
+    bool isFacingForward = rotY.abs() < 35; // Previously 15
+    bool isStraight = rotZ.abs() < 35; // Previously 15
 
     final Rect box = face.boundingBox;
     final double centerX = imageSize.width / 2;
@@ -219,7 +230,7 @@ class _SelfieScreenState extends State<SelfieScreen>
     // double faceHeightPercent = box.height / imageSize.height;
 
     // Thresholds
-    bool isCentered = offsetX < 0.25 && offsetY < 0.25;
+    bool isCentered = offsetX < 0.35 && offsetY < 0.35; // Previously 0.25
     bool isCloseEnough = faceWidthPercent > 0.15;
 
     if (isFacingForward && isStraight && isCentered && isCloseEnough) {
@@ -314,6 +325,45 @@ class _SelfieScreenState extends State<SelfieScreen>
       Navigator.pop(context, image.path);
     } catch (e) {
       debugPrint("Error auto-capturing: $e");
+      setState(() {
+        _isAutoCapturing = false;
+        _statusText = 'RETRYING...';
+        _initCamera();
+      });
+    }
+  }
+
+  Future<void> _takePictureManual() async {
+    if (_isAutoCapturing) return;
+
+    _captureDebounce?.cancel();
+    _progressTimer?.cancel();
+    _manualCaptureTimer?.cancel();
+
+    setState(() {
+      _isAutoCapturing = true;
+      _statusText = 'CAPTURING...';
+      _progressValue = 1.0;
+      _statusColor = AppTheme.success;
+    });
+
+    try {
+      if (_controller != null && _controller!.value.isStreamingImages) {
+        await _controller?.stopImageStream();
+      }
+
+      XFile image;
+      try {
+        image = await _controller!.takePicture();
+      } catch (e) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        image = await _controller!.takePicture();
+      }
+
+      if (!mounted) return;
+      Navigator.pop(context, image.path);
+    } catch (e) {
+      debugPrint("Error manual capture: $e");
       setState(() {
         _isAutoCapturing = false;
         _statusText = 'RETRYING...';
@@ -719,6 +769,29 @@ class _SelfieScreenState extends State<SelfieScreen>
                           ),
 
                           const SizedBox(height: 20),
+
+                          // Manual Capture
+                          if (_showManualCapture) ...[
+                            Center(
+                              child: ElevatedButton.icon(
+                                onPressed: _takePictureManual,
+                                icon: const Icon(Icons.camera_alt),
+                                label: const Text('MANUAL CAPTURE'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: AppTheme.colorEggplant,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
 
                           // Footer Buttons
                           Row(

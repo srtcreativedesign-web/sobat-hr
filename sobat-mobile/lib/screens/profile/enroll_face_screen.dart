@@ -43,10 +43,21 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
   String _statusText = 'INITIALIZING...';
   Color _statusColor = AppTheme.colorCyan;
 
+  // Manual Capture Fallback
+  bool _showManualCapture = false;
+  Timer? _manualCaptureTimer;
+
   @override
   void initState() {
     super.initState();
     _checkDeviceAndInit();
+
+    // Start fallback timer
+    _manualCaptureTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() => _showManualCapture = true);
+      }
+    });
   }
 
   Future<void> _checkDeviceAndInit() async {
@@ -175,8 +186,8 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
     double rotY = face.headEulerAngleY ?? 0;
     double rotZ = face.headEulerAngleZ ?? 0;
 
-    bool isFacingForward = rotY.abs() < 15;
-    bool isStraight = rotZ.abs() < 15;
+    bool isFacingForward = rotY.abs() < 35; // Previously 15
+    bool isStraight = rotZ.abs() < 35; // Previously 15
 
     final Rect box = face.boundingBox;
     final double centerX = imageSize.width / 2;
@@ -190,7 +201,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
 
     double faceWidthPercent = box.width / imageSize.width;
 
-    bool isCentered = offsetX < 0.25 && offsetY < 0.25;
+    bool isCentered = offsetX < 0.35 && offsetY < 0.35; // Previously 0.25
     bool isCloseEnough = faceWidthPercent > 0.15;
 
     if (isFacingForward && isStraight && isCentered && isCloseEnough) {
@@ -236,6 +247,47 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
         }
       });
     });
+  }
+
+  Future<void> _takePictureManual() async {
+    if (_isAutoCapturing) return;
+
+    _captureDebounce?.cancel();
+    _progressTimer?.cancel();
+    _manualCaptureTimer?.cancel();
+
+    setState(() {
+      _isAutoCapturing = true;
+      _statusText = 'CAPTURING...';
+      _progressValue = 1.0;
+      _statusColor = AppTheme.success;
+    });
+
+    try {
+      if (_controller != null && _controller!.value.isStreamingImages) {
+        await _controller?.stopImageStream();
+      }
+
+      XFile image;
+      try {
+        image = await _controller!.takePicture();
+      } catch (e) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        image = await _controller!.takePicture();
+      }
+
+      if (!mounted) return;
+
+      // Upload face
+      await _uploadFace(image.path);
+    } catch (e) {
+      debugPrint("Error manual capture: $e");
+      setState(() {
+        _isAutoCapturing = false;
+        _statusText = 'RETRYING...';
+        _initCamera();
+      });
+    }
   }
 
   void _resetValidation(String message) {
@@ -647,6 +699,30 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
                         ),
                       ),
                     ),
+
+                    // Manual Capture Button
+                    if (_showManualCapture)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: ElevatedButton.icon(
+                            onPressed: _takePictureManual,
+                            icon: const Icon(Icons.camera_alt),
+                            label: const Text('MANUAL CAPTURE'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: AppTheme.colorEggplant,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
 
                     // Bottom Card
                     Container(

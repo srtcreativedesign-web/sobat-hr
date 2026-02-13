@@ -46,6 +46,7 @@ dependencies:
   google_mlkit_face_detection: ^0.13.1
   device_info_plus: ^12.3.0
   local_auth: ^3.0.0
+  screen_protector: ^1.5.1
   
 dev_dependencies:
   flutter_test:

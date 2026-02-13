@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:screen_protector/screen_protector.dart';
 import '../../config/theme.dart';
 import '../../services/payroll_service.dart';
 import 'package:intl/intl.dart';
@@ -516,8 +518,14 @@ class _PayrollScreenState extends State<PayrollScreen> {
     );
   }
 
-  void _showDetailSheet(Map<String, dynamic> payroll) {
-    showModalBottomSheet(
+  Future<void> _showDetailSheet(Map<String, dynamic> payroll) async {
+    if (Platform.isAndroid) {
+      await ScreenProtector.preventScreenshotOn();
+    }
+
+    if (!mounted) return;
+
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -916,6 +924,10 @@ class _PayrollScreenState extends State<PayrollScreen> {
         ),
       ),
     );
+
+    if (Platform.isAndroid) {
+      await ScreenProtector.preventScreenshotOff();
+    }
   }
 
   Widget _buildDetailRow(
