@@ -267,6 +267,10 @@ export default function Sidebar() {
     const roleName = typeof user?.role === 'string'
       ? user.role
       : (user?.role && typeof user.role === 'object' ? (user.role as Role).name : '');
+
+    // DEBUG: Check what's happening
+    // console.log('Sidebar Debug:', { roleName, item: item.name, allowed: item.roles, hasAccess: item.roles.includes(roleName || '') });
+
     return item.roles.includes(roleName || '');
   });
 
