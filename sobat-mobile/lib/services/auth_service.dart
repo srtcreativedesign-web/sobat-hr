@@ -48,6 +48,14 @@ class AuthService {
         data: {'email': email, 'password': password},
       );
 
+      // Check if response data is Map (JSON)
+      if (response.data is! Map) {
+        // If not Map (likely HTML or String), throw error with preview
+        final raw = response.data.toString();
+        final preview = raw.length > 50 ? '${raw.substring(0, 50)}...' : raw;
+        throw Exception('Server Error (Not JSON): $preview');
+      }
+
       if (response.statusCode == 200 && response.data['success'] == true) {
         final data = response.data['data'];
         final token = data['access_token'] as String;

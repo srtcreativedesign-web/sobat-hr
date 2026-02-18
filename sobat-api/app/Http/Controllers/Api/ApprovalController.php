@@ -17,6 +17,7 @@ class ApprovalController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+
         $query = Approval::with(['approvable.employee']);
 
         // Check Role
@@ -47,6 +48,24 @@ class ApprovalController extends Controller
             }
             
             $query = Approval::with(['approvable.employee']);
+
+            // Developer Role: No Data Visibility
+            if ($user->role && $user->role->name === 'developer') {
+                return response()->json([
+                    'current_page' => 1,
+                    'data' => [],
+                    'first_page_url' => '',
+                    'from' => null,
+                    'last_page' => 1,
+                    'last_page_url' => '',
+                    'next_page_url' => null,
+                    'path' => '',
+                    'per_page' => 20,
+                    'prev_page_url' => null,
+                    'to' => null,
+                    'total' => 0,
+                ]);
+            }
 
             // Check Role
             $user->load('role');

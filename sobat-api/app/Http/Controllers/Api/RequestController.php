@@ -18,6 +18,7 @@ class RequestController extends Controller
         $user = $request->user();
         $query = RequestModel::with(['employee.organization', 'approvals']);
         
+        
         \Illuminate\Support\Facades\Log::info('Request Index Params:', $request->all());
 
         // Check Role
@@ -473,10 +474,6 @@ class RequestController extends Controller
     {
         $user = $request->user();
         $employee = $user->employee;
-
-        if (!$employee) {
-            return response()->json(['message' => 'Employee not found'], 404);
-        }
 
         if (!$employee->join_date) {
              // Handle case where join_date is missing. Assume eligible? Or not?

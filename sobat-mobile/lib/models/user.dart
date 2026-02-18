@@ -82,7 +82,7 @@ class User {
       }
     }
 
-    if (json['employee'] != null) {
+    if (json['employee'] != null && json['employee'] is Map) {
       empRecordId = json['employee']['id']; // Store integer ID
       empId = json['employee']['employee_code'];
       jobLvl = json['employee']['job_level'];
@@ -104,7 +104,8 @@ class User {
           json['employee']['department'].toString().isNotEmpty) {
         orgName = json['employee']['department'];
         // Still parse lat/long if organization exists, as department string doesn't have it
-        if (json['employee']['organization'] != null) {
+        if (json['employee']['organization'] != null &&
+            json['employee']['organization'] is Map) {
           orgId = json['employee']['organization']['id'];
           if (json['employee']['organization']['latitude'] != null) {
             lat = double.tryParse(
@@ -119,7 +120,8 @@ class User {
             hasLoc = lat != null && lng != null;
           }
         }
-      } else if (json['employee']['organization'] != null) {
+      } else if (json['employee']['organization'] != null &&
+          json['employee']['organization'] is Map) {
         orgName = json['employee']['organization']['name'];
         orgId = json['employee']['organization']['id'];
 

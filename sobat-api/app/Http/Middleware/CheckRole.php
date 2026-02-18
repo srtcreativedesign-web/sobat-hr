@@ -22,6 +22,14 @@ class CheckRole
         $userRole = $request->user()->role->name ?? null;
 
         if (!in_array($userRole, $roles)) {
+            \Illuminate\Support\Facades\Log::warning('Unauthorized Role Access', [
+                'user_id' => $request->user()->id,
+                'email' => $request->user()->email,
+                'user_role' => $userRole,
+                'required_roles' => $roles,
+                'path' => $request->path()
+            ]);
+            
             return response()->json([
                 'message' => 'Unauthorized. Required role: ' . implode(' or ', $roles)
             ], 403);

@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::middleware(['throttle:login'])->group(function () {
-    Route::post('/auth/login', [App\Http\Controllers\Api\AuthController::class, 'login']);
+    Route::post('/auth/login', [App\Http\Controllers\Api\AuthController::class, 'login'])->name('login');
     Route::post('/auth/register', [App\Http\Controllers\Api\AuthController::class, 'register']);
 });
 Route::get('/announcements/active', [App\Http\Controllers\Api\AnnouncementController::class, 'getActive']);
