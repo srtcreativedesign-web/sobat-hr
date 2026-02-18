@@ -31,12 +31,8 @@ export default function Sidebar() {
   useEffect(() => {
     const fetchPendingCount = async () => {
       try {
-        // Only fetch if user has access (Super Admin & Admin Cabang & Developer)
-        if (
-          user?.role === 'super_admin' ||
-          user?.role === 'developer' ||
-          (typeof user?.role === 'object' && user.role !== null && (user.role as Role).name === 'admin_cabang')
-        ) {
+        // Only fetch if user has access (Super Admin & Admin Cabang likely)
+        if (user?.role === 'super_admin' || (typeof user?.role === 'object' && (user.role as Role).name === 'admin_cabang')) {
           const token = localStorage.getItem('token');
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/attendance/pending-count`, {
             headers: {
