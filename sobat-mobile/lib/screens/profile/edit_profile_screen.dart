@@ -199,7 +199,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final current = await _authService.getCurrentUser();
 
     // DEBUG: Inspect raw data
-    debugPrint('EDIT PROFILE RAW USER: $current');
+    // debugPrint('EDIT PROFILE RAW USER: $current');
 
     if (current != null) {
       // top-level user fields
@@ -215,7 +215,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           current['employee_data'] ??
           current['employee_record'];
 
-      debugPrint('EDIT PROFILE EMP DATA: $emp');
+      // debugPrint('EDIT PROFILE EMP DATA: $emp');
 
       if (emp != null && emp is Map<String, dynamic>) {
         if (_nameCtrl.text.isEmpty) {
@@ -343,24 +343,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             // Fetch positions for this division
             await _fetchJobPositions(_selectedDivisionId);
 
-            debugPrint('DEBUG: _position from API/EMP: "$_position"');
-            debugPrint('DEBUG: _jobPositions count: ${_jobPositions.length}');
+            // debugPrint('DEBUG: _position from API/EMP: "$_position"');
+            // debugPrint('DEBUG: _jobPositions count: ${_jobPositions.length}');
 
             // Then match position
             if (_position != null && _jobPositions.isNotEmpty) {
               final matchedPos = _jobPositions.firstWhere((pos) {
                 final posName = pos['name']?.toString().trim().toLowerCase();
                 final targetPos = _position!.trim().toLowerCase();
-                debugPrint('DEBUG: Compare pos "$posName" vs "$targetPos"');
+                // debugPrint('DEBUG: Compare pos "$posName" vs "$targetPos"');
                 return posName == targetPos;
               }, orElse: () => {});
               if (matchedPos.isNotEmpty) {
                 _selectedJobPositionId = matchedPos['id'] as int;
-                debugPrint(
-                  'DEBUG: Matched Job Position ID: $_selectedJobPositionId',
-                );
+                // debugPrint(
+                //   'DEBUG: Matched Job Position ID: $_selectedJobPositionId',
+                // );
               } else {
-                debugPrint('DEBUG: No matching job position found.');
+                // debugPrint('DEBUG: No matching job position found.');
               }
             }
           }

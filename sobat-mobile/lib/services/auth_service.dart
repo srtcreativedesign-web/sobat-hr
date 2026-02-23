@@ -42,14 +42,21 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
+    print(
+      'AuthService: Starting login request to ${ApiConfig.baseUrl}${ApiConfig.login}',
+    );
     try {
       final response = await _dio.post(
         ApiConfig.login,
         data: {'email': email, 'password': password},
       );
+      print('AuthService: Received response ${response.statusCode}');
 
       // Check if response data is Map (JSON)
       if (response.data is! Map) {
+        print(
+          'AuthService: Response data is not a Map: ${response.data.runtimeType}',
+        );
         // If not Map (likely HTML or String), throw error with preview
         final raw = response.data.toString();
         final preview = raw.length > 50 ? '${raw.substring(0, 50)}...' : raw;
@@ -84,14 +91,27 @@ class AuthService {
         throw Exception(response.data['message'] ?? 'Login gagal');
       }
     } on DioException catch (e) {
+      print('AuthService: DioError -> ${e.type} | ${e.message}');
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        throw Exception(
+          'Koneksi timeout. Pastikan internet stabil atau server sedang tidak sibuk.',
+        );
+      }
+
       if (e.response != null) {
+        print('AuthService: DioError Response -> ${e.response?.data}');
         throw Exception(
           e.response?.data['message'] ?? 'Login gagal: ${e.message}',
         );
       } else {
-        throw Exception('Koneksi gagal. Periksa internet Anda.');
+        throw Exception(
+          'Koneksi gagal. Periksa internet Anda atau firewall HP.',
+        );
       }
     } catch (e) {
+      print('AuthService: Unexpected Error -> $e');
       throw Exception('Terjadi kesalahan: $e');
     }
   }

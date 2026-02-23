@@ -274,7 +274,7 @@ export default function PayrollPage() {
         // Note: FNB uses updateStatus which takes 'status' and 'approval_signature'
         // Generic Controller might need update. Assuming Generic uses PATCH /payrolls/{id}/status
 
-        console.log('Approving with Endpoint:', endpoint, 'ID:', pendingApprovalId); // DEBUG
+        // console.log('Approving with Endpoint:', endpoint, 'ID:', pendingApprovalId); // DEBUG
 
         await apiClient.patch(endpoint, {
           status: 'approved',
@@ -1392,7 +1392,7 @@ export default function PayrollPage() {
                               if (data.failed.length > 5) {
                                 message += `\n... dan ${data.failed.length - 5} lainnya (lihat console)`;
                               }
-                              console.log('All failed rows:', data.failed);
+                              // console.log('All failed rows:', data.failed);
                             }
 
                             alert(message);

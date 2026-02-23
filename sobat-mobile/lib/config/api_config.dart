@@ -14,7 +14,7 @@ class ApiConfig {
   // ==========================================================================
 
   static const String _env = String.fromEnvironment('ENV', defaultValue: 'dev');
-  static const String _hostIp = '192.168.1.4';
+  static const String _hostIp = '192.168.1.7';
   static const String _port = '8000';
 
   // Production URL
@@ -85,8 +85,8 @@ class ApiConfig {
   static const String payroll = '/payrolls';
 
   // Timeout configuration
-  static const Duration connectTimeout = Duration(seconds: 60);
-  static const Duration receiveTimeout = Duration(seconds: 60);
+  static const Duration connectTimeout = Duration(seconds: 15);
+  static const Duration receiveTimeout = Duration(seconds: 15);
 
   /// Helper to construct storage URL safely
   /// Handles null, full URLs, path normalization

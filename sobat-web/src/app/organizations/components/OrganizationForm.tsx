@@ -116,7 +116,7 @@ export default function OrganizationForm({ isOpen, onClose, onSuccess, initialDa
             onClose();
         } catch (err: any) {
             console.error('Save Error:', err);
-            console.log('Failed Payload:', payload);
+            // console.log('Failed Payload:', payload);
             if (err.response) {
                 console.error('Validation Response:', JSON.stringify(err.response.data, null, 2));
                 console.error('Validation Errors:', err.response.data?.errors);

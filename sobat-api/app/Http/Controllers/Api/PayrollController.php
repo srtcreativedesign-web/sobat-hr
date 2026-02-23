@@ -31,7 +31,7 @@ class PayrollController extends Controller
         $user = auth()->user();
         // Check if user has a role relation and if that role is admin/hr
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        \Illuminate\Support\Facades\Log::info("DEBUG PAYROLL: User ID {$user->id}, Role: {$roleName}"); // DEBUG
+
 
         if (!in_array($roleName, ['admin', 'super_admin', 'hr'])) {
             // Access employee via relation
@@ -39,17 +39,14 @@ class PayrollController extends Controller
 
             if ($employeeId) {
                 $query->where('employee_id', $employeeId);
-                \Illuminate\Support\Facades\Log::info("DEBUG PAYROLL: Filtered by Employee ID {$employeeId}");
             } else {
                 // If user has no employee_id linked, they shouldn't see any payrolls
-                \Illuminate\Support\Facades\Log::info("DEBUG PAYROLL: No Employee ID linked for non-admin");
                 return response()->json(['data' => []]);
             }
             
             // Non-admin users can ONLY see approved or paid payrolls
             $query->whereIn('status', ['approved', 'paid']);
         } else {
-            \Illuminate\Support\Facades\Log::info("DEBUG PAYROLL: Admin Access Granted");
         }
 
         // Filter by period (month and year)
