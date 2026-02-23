@@ -19,7 +19,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
   int? _selectedYear; // Null means "All Years"
 
   // Selected payroll for detail view in bottom sheet
-  Map<String, dynamic>? _selectedPayroll;
+  // Map<String, dynamic>? _selectedPayroll;
 
   @override
   void initState() {
@@ -37,6 +37,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal memuat data: $e'),
@@ -56,7 +57,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
       );
 
       final filename = 'Slip_Gaji_$period.pdf';
-      debugPrint('Downloading slip: $filename, division: $division');
+      // debugPrint('Downloading slip: $filename, division: $division');
 
       await _payrollService.downloadSlip(id, filename, division: division);
 
@@ -373,16 +374,12 @@ class _PayrollScreenState extends State<PayrollScreen> {
     // Status config
     Color statusColor = Colors.orange;
     String statusText = 'Pending';
-    IconData statusIcon = Icons.access_time;
-
     if (status == 'paid') {
       statusColor = AppTheme.success;
       statusText = 'Lunas';
-      statusIcon = Icons.check_circle;
     } else if (status == 'approved') {
       statusColor = Colors.blue;
       statusText = 'Disetujui';
-      statusIcon = Icons.thumb_up;
     }
 
     return Container(
@@ -672,7 +669,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
                         return _buildDetailRow(entry.key, amount, isPlus: true);
                       }
                       return const SizedBox.shrink();
-                    }).toList(),
+                    }),
                   ],
 
                   // OVERTIME (if available)
@@ -766,7 +763,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
                         );
                       }
                       return const SizedBox.shrink();
-                    }).toList(),
+                    }),
                   ] else ...[
                     // Generic payroll deductions
                     if ((payroll['bpjs_health'] ?? 0) > 0)

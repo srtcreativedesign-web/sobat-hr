@@ -83,7 +83,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
         }
       }
     } catch (e) {
-      print('Error loading leave balance: $e');
+      // print('Error loading leave balance: $e');
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -1149,7 +1149,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
           Navigator.pop(context);
         }
       } catch (e) {
-        debugPrint('❌ Submission Failed: $e');
+        // debugPrint('❌ Submission Failed: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),

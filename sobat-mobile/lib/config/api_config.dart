@@ -23,28 +23,28 @@ class ApiConfig {
   // Base URL Logic
   static String get baseUrl {
     if (_env == 'prod') {
-      debugPrint('🚀 Environment: PRODUCTION');
+      // debugPrint('🚀 Environment: PRODUCTION');
       return _prodUrl;
     }
 
     // DEVELOPMENT
-    debugPrint('🛠️ Environment: DEVELOPMENT');
+    // debugPrint('🛠️ Environment: DEVELOPMENT');
 
     // Web
     if (kIsWeb) {
-      debugPrint('🌐 Platform: Web Browser');
+      // debugPrint('🌐 Platform: Web Browser');
       return 'http://127.0.0.1:$_port/api';
     }
 
     // Android
     if (Platform.isAndroid) {
-      debugPrint('🤖 Platform: Android → IP: $_hostIp');
+      // debugPrint('🤖 Platform: Android → IP: $_hostIp');
       return 'http://$_hostIp:$_port/api';
     }
 
     // iOS
     if (Platform.isIOS) {
-      debugPrint('🍎 Platform: iOS → IP: $_hostIp');
+      // debugPrint('🍎 Platform: iOS → IP: $_hostIp');
       return 'http://$_hostIp:$_port/api';
     }
 

@@ -41,12 +41,12 @@ class RequestService {
       final response = await _dio.post('/requests', data: data);
       return response.data;
     } on DioException catch (e) {
-      debugPrint(
-        '❌ Create Request Error: ${e.response?.statusCode} - ${e.response?.data}',
-      );
+      // debugPrint(
+        // '❌ Create Request Error: ${e.response?.statusCode} - ${e.response?.data}',
+      // );
       throw e.response?.data['message'] ?? 'Gagal mengirim pengajuan';
     } catch (e) {
-      debugPrint('❌ General Error: $e');
+      // debugPrint('❌ General Error: $e');
       throw 'Terjadi kesalahan: $e';
     }
   }

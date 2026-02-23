@@ -42,21 +42,21 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
-    print(
-      'AuthService: Starting login request to ${ApiConfig.baseUrl}${ApiConfig.login}',
-    );
+    // print(
+      // 'AuthService: Starting login request to ${ApiConfig.baseUrl}${ApiConfig.login}',
+    // );
     try {
       final response = await _dio.post(
         ApiConfig.login,
         data: {'email': email, 'password': password},
       );
-      print('AuthService: Received response ${response.statusCode}');
+      // print('AuthService: Received response ${response.statusCode}');
 
       // Check if response data is Map (JSON)
       if (response.data is! Map) {
-        print(
-          'AuthService: Response data is not a Map: ${response.data.runtimeType}',
-        );
+        // print(
+          // 'AuthService: Response data is not a Map: ${response.data.runtimeType}',
+        // );
         // If not Map (likely HTML or String), throw error with preview
         final raw = response.data.toString();
         final preview = raw.length > 50 ? '${raw.substring(0, 50)}...' : raw;
@@ -69,14 +69,14 @@ class AuthService {
         final userData = data['user'] as Map<String, dynamic>;
 
         // DEBUG: Print full user data
-        print('=== LOGIN API RESPONSE ===');
-        print('Full userData: $userData');
+        // print('=== LOGIN API RESPONSE ===');
+        // print('Full userData: $userData');
         if (userData['employee'] != null) {
-          print('Employee data: ${userData['employee']}');
-          print('Track: ${userData['employee']['track']}');
-          print('Position: ${userData['employee']['position']}');
+          // print('Employee data: ${userData['employee']}');
+          // print('Track: ${userData['employee']['track']}');
+          // print('Position: ${userData['employee']['position']}');
         }
-        print('========================');
+        // print('========================');
 
         // Save token dan user data
         await StorageService.saveToken(token);
@@ -91,7 +91,7 @@ class AuthService {
         throw Exception(response.data['message'] ?? 'Login gagal');
       }
     } on DioException catch (e) {
-      print('AuthService: DioError -> ${e.type} | ${e.message}');
+      // print('AuthService: DioError -> ${e.type} | ${e.message}');
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.sendTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
@@ -101,7 +101,7 @@ class AuthService {
       }
 
       if (e.response != null) {
-        print('AuthService: DioError Response -> ${e.response?.data}');
+        // print('AuthService: DioError Response -> ${e.response?.data}');
         throw Exception(
           e.response?.data['message'] ?? 'Login gagal: ${e.message}',
         );
@@ -111,7 +111,7 @@ class AuthService {
         );
       }
     } catch (e) {
-      print('AuthService: Unexpected Error -> $e');
+      // print('AuthService: Unexpected Error -> $e');
       throw Exception('Terjadi kesalahan: $e');
     }
   }
@@ -177,9 +177,9 @@ class AuthService {
       if (status == 422) {
         final data = e.response?.data;
         // Debug: print raw response body for easier inspection
-        print(
-          'AuthService.updateEmployee 422 response raw: ${jsonEncode(data)}',
-        );
+        // print(
+          // 'AuthService.updateEmployee 422 response raw: ${jsonEncode(data)}',
+        // );
         final errors = data != null && data['errors'] != null
             ? data['errors'] as Map<String, dynamic>
             : null;
@@ -212,9 +212,9 @@ class AuthService {
       if (status == 422) {
         final data = e.response?.data;
         // Debug: print raw response body for easier inspection
-        print(
-          'AuthService.createEmployee 422 response raw: ${jsonEncode(data)}',
-        );
+        // print(
+          // 'AuthService.createEmployee 422 response raw: ${jsonEncode(data)}',
+        // );
         final errors = data != null && data['errors'] != null
             ? data['errors'] as Map<String, dynamic>
             : null;

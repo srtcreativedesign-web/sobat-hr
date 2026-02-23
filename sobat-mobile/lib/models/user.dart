@@ -94,12 +94,6 @@ class User {
             0;
       }
 
-      print('=== USER.DART fromJson ===');
-      print('Raw track value: $trk');
-      print('Raw position value: $pos');
-      print('Raw approval level: $appLevel');
-      print('========================');
-
       if (json['employee']['department'] != null &&
           json['employee']['department'].toString().isNotEmpty) {
         orgName = json['employee']['department'];

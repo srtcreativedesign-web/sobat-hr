@@ -31,7 +31,7 @@ class NotificationService {
       return [];
     } catch (e) {
       // ignore: avoid_print
-      print('Error get notifications: $e');
+      // print('Error get notifications: $e');
       return [];
     }
   }
@@ -43,7 +43,7 @@ class NotificationService {
       return response.statusCode == 200;
     } catch (e) {
       // ignore: avoid_print
-      print('Error mark as read: $e');
+      // print('Error mark as read: $e');
       return false;
     }
   }

@@ -118,7 +118,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
         _startImageStream();
       }
     } catch (e) {
-      debugPrint('Error initializing camera: $e');
+      // debugPrint('Error initializing camera: $e');
       setState(() => _statusText = 'CAMERA ERROR');
     }
   }
@@ -174,7 +174,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
         _resetValidation('NO FACE DETECTED');
       }
     } catch (e) {
-      debugPrint("Error processing face: $e");
+      // debugPrint("Error processing face: $e");
     } finally {
       _isProcessing = false;
     }
@@ -281,7 +281,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
       // Upload face
       await _uploadFace(image.path);
     } catch (e) {
-      debugPrint("Error manual capture: $e");
+      // debugPrint("Error manual capture: $e");
       setState(() {
         _isAutoCapturing = false;
         _statusText = 'RETRYING...';
@@ -337,7 +337,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
       // Upload face
       await _uploadFace(image.path);
     } catch (e) {
-      debugPrint("Error auto-capturing: $e");
+      // debugPrint("Error auto-capturing: $e");
       setState(() {
         _isAutoCapturing = false;
         _statusText = 'RETRYING...';
@@ -377,7 +377,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
         await Future.delayed(const Duration(milliseconds: 500));
         _showSuccessDialog();
       } else {
-        debugPrint('Enroll Face Error: ${response.body}');
+        // debugPrint('Enroll Face Error: ${response.body}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal: ${response.body}'),
@@ -392,7 +392,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
         });
       }
     } catch (e) {
-      debugPrint('Error enrolling face: $e');
+      // debugPrint('Error enrolling face: $e');
       if (mounted) {
         ScaffoldMessenger.of(
           context,

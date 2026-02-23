@@ -55,7 +55,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         });
       }
     } catch (e) {
-      debugPrint('Error picking image: $e');
+      // debugPrint('Error picking image: $e');
     }
   }
 
@@ -153,7 +153,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         }
       }
     } catch (e) {
-      debugPrint('Error fetching divisions: $e');
+      // debugPrint('Error fetching divisions: $e');
     } finally {
       if (mounted) setState(() => _isLoadingDivisions = false);
     }
@@ -187,7 +187,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         }
       }
     } catch (e) {
-      debugPrint('Error fetching job positions: $e');
+      // debugPrint('Error fetching job positions: $e');
     } finally {
       if (mounted) setState(() => _isLoadingJobPositions = false);
     }
@@ -389,7 +389,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               });
             }
           } catch (e) {
-            print('Supervisor lookup failed: $e');
+            // print('Supervisor lookup failed: $e');
           }
         }
       }
@@ -588,9 +588,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
 
     // Debug: print payload and target id to console
-    print(
-      'EditProfile: saving employeeRecordId=$_employeeRecordId payload=${payload.toString()}',
-    );
+    // print(
+      // 'EditProfile: saving employeeRecordId=$_employeeRecordId payload=${payload.toString()}',
+    // );
 
     try {
       if (_employeeRecordId != null) {
@@ -606,8 +606,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
     } catch (e, st) {
       // Log full error and stacktrace for debugging
-      print('EditProfile: save failed -> $e');
-      print('EditProfile: stacktrace -> $st');
+      // print('EditProfile: save failed -> $e');
+      // print('EditProfile: stacktrace -> $st');
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,

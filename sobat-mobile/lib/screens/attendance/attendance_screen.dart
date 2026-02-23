@@ -97,7 +97,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         });
       }
     } catch (e) {
-      debugPrint('Error fetching attendance: $e');
+      // debugPrint('Error fetching attendance: $e');
     }
   }
 
@@ -122,7 +122,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 '${place.street}, ${place.subLocality}, ${place.locality}';
           }
         } catch (e) {
-          debugPrint('Error getting address: $e');
+          // debugPrint('Error getting address: $e');
           _currentAddress = 'Lokasi tidak diketahui';
         }
 

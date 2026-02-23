@@ -69,7 +69,7 @@ class AnnouncementService {
         }
       }
     } catch (e) {
-      print('Error fetching active announcement: $e');
+      // print('Error fetching active announcement: $e');
     }
     return null;
   }

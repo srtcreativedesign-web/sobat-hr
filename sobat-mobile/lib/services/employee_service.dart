@@ -33,7 +33,7 @@ class EmployeeService {
       }
       return [];
     } catch (e) {
-      debugPrint('Error searching employees: $e');
+      // debugPrint('Error searching employees: $e');
       return [];
     }
   }

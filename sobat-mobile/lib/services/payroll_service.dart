@@ -59,7 +59,7 @@ class PayrollService {
         }
       }
     } catch (e) {
-      debugPrint('Failed to fetch HO payrolls: $e');
+      // debugPrint('Failed to fetch HO payrolls: $e');
     }
 
     // Try to fetch from FnB endpoint
@@ -82,7 +82,7 @@ class PayrollService {
         }
       }
     } catch (e) {
-      debugPrint('Failed to fetch FnB payrolls: $e');
+      // debugPrint('Failed to fetch FnB payrolls: $e');
     }
 
     // Try to fetch from Minimarket endpoint
@@ -105,7 +105,7 @@ class PayrollService {
         }
       }
     } catch (e) {
-      debugPrint('Failed to fetch MM payrolls: $e');
+      // debugPrint('Failed to fetch MM payrolls: $e');
     }
 
     // Try to fetch from Reflexiology endpoint
@@ -128,7 +128,7 @@ class PayrollService {
         }
       }
     } catch (e) {
-      debugPrint('Failed to fetch Ref payrolls: $e');
+      // debugPrint('Failed to fetch Ref payrolls: $e');
     }
 
     // Try to fetch from Wrapping endpoint
@@ -151,7 +151,7 @@ class PayrollService {
         }
       }
     } catch (e) {
-      debugPrint('Failed to fetch Wrapping payrolls: $e');
+      // debugPrint('Failed to fetch Wrapping payrolls: $e');
     }
 
     // Try to fetch from Hans endpoint
@@ -174,7 +174,7 @@ class PayrollService {
         }
       }
     } catch (e) {
-      debugPrint('Failed to fetch Hans payrolls: $e');
+      // debugPrint('Failed to fetch Hans payrolls: $e');
     }
 
     // Try to fetch from Celluller endpoint
@@ -197,7 +197,7 @@ class PayrollService {
         }
       }
     } catch (e) {
-      debugPrint('Failed to fetch Celluller payrolls: $e');
+      // debugPrint('Failed to fetch Celluller payrolls: $e');
     }
 
     // Sort by period descending (latest first)
@@ -208,7 +208,7 @@ class PayrollService {
         return bStr.toString().compareTo(aStr.toString());
       });
     } catch (e) {
-      debugPrint('Failed to sort payrolls: $e');
+      // debugPrint('Failed to sort payrolls: $e');
     }
 
     return allPayrolls;
@@ -243,7 +243,7 @@ class PayrollService {
         throw Exception('Unknown Division for download');
       }
 
-      debugPrint('Downloading slip from: $endpoint');
+      // debugPrint('Downloading slip from: $endpoint');
 
       final response = await _dio.get(
         endpoint,
@@ -253,17 +253,17 @@ class PayrollService {
         ),
       );
 
-      debugPrint('Response status: ${response.statusCode}');
+      // debugPrint('Response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final directory = await getApplicationDocumentsDirectory();
         final file = File('${directory.path}/$filename');
         await file.writeAsBytes(response.data);
 
-        debugPrint('File saved to: ${file.path}');
+        // debugPrint('File saved to: ${file.path}');
 
         final result = await OpenFile.open(file.path);
-        debugPrint('OpenFile result: ${result.message}');
+        // debugPrint('OpenFile result: ${result.message}');
 
         if (result.type != ResultType.done) {
           throw Exception('Gagal membuka file: ${result.message}');
@@ -272,7 +272,7 @@ class PayrollService {
         throw Exception('Server error: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('Download error: $e');
+      // debugPrint('Download error: $e');
       throw Exception('Gagal download slip: $e');
     }
   }

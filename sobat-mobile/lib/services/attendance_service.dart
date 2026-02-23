@@ -107,7 +107,7 @@ class AttendanceService {
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return null; // Not found
       // If error is something else, maybe silence it or throw
-      print('Error fetching today attendance: ${e.message}');
+      // print('Error fetching today attendance: ${e.message}');
       return null;
     } catch (e) {
       return null;

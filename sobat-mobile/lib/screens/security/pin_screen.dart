@@ -56,7 +56,7 @@ class _PinScreenState extends State<PinScreen> {
         _authenticate();
       }
     } catch (e) {
-      debugPrint('Biometric check failed: $e');
+      // debugPrint('Biometric check failed: $e');
     }
   }
 
@@ -74,7 +74,7 @@ class _PinScreenState extends State<PinScreen> {
         widget.onSuccess();
       }
     } catch (e) {
-      debugPrint('Authentication failed: $e');
+      // debugPrint('Authentication failed: $e');
       // Do nothing, let user input PIN
     }
   }

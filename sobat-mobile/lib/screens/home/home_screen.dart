@@ -127,9 +127,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 fit: BoxFit.cover,
                                 width: double.infinity,
                                 errorBuilder: (ctx, err, stack) {
-                                  debugPrint(
-                                    'Error loading banner image: $err',
-                                  );
+                                  // debugPrint(
+                                    // 'Error loading banner image: $err',
+                                  // );
                                   return Container(
                                     height: 150,
                                     color: Colors.grey[200],
@@ -245,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     } catch (e) {
-      debugPrint('Error checking announcement: $e');
+      // debugPrint('Error checking announcement: $e');
     }
   }
 
@@ -261,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      debugPrint('Error loading recent activity: $e');
+      // debugPrint('Error loading recent activity: $e');
     }
   }
 
@@ -275,7 +275,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      print('Error loading pending approvals: $e');
+      // print('Error loading pending approvals: $e');
     }
   }
 
@@ -291,7 +291,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      print('Error loading leave: $e');
+      // print('Error loading leave: $e');
       if (mounted) setState(() => _isLoadingLeave = false);
     }
   }
@@ -306,7 +306,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      print('Error loading attendance: $e');
+      // print('Error loading attendance: $e');
       if (mounted) setState(() => _isLoadingAttendance = false);
     }
   }
@@ -343,7 +343,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _startAutoScroll();
       }
     } catch (e) {
-      debugPrint('Error loading announcements: $e');
+      // debugPrint('Error loading announcements: $e');
       if (mounted) setState(() => _isLoadingAnnouncements = false);
     }
   }
@@ -360,7 +360,7 @@ class _HomeScreenState extends State<HomeScreen> {
             return bStr.compareTo(aStr);
           });
         } catch (e) {
-          debugPrint('Failed to sort payrolls in home: $e');
+          // debugPrint('Failed to sort payrolls in home: $e');
         }
 
         setState(() {
@@ -371,7 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() => _isLoadingPayroll = false);
       }
     } catch (e) {
-      debugPrint('Error loading last payroll: $e');
+      // debugPrint('Error loading last payroll: $e');
       if (mounted) setState(() => _isLoadingPayroll = false);
     }
   }
@@ -411,7 +411,7 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         }
       } catch (e) {
-        debugPrint('Error loading attendance history: $e');
+        // debugPrint('Error loading attendance history: $e');
       }
 
       // 2. Fetch Requests (Leave/Permit)
@@ -446,7 +446,7 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         }
       } catch (e) {
-        debugPrint('Error loading requests: $e');
+        // debugPrint('Error loading requests: $e');
       }
 
       // 3. Fetch Payrolls
@@ -474,7 +474,7 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         }
       } catch (e) {
-        debugPrint('Error loading payrolls activity: $e');
+        // debugPrint('Error loading payrolls activity: $e');
       }
 
       // Sort by Date Descending
@@ -490,7 +490,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      debugPrint('Error consolidating activities: $e');
+      // debugPrint('Error consolidating activities: $e');
       if (mounted) setState(() => _isLoadingRecentActivities = false);
     }
   }
@@ -977,7 +977,7 @@ class _HomeScreenState extends State<HomeScreen> {
             }
           }
         } catch (e) {
-          debugPrint('Error parsing check_in time: $e');
+          // debugPrint('Error parsing check_in time: $e');
         }
 
         if (statusStr == 'pending') {

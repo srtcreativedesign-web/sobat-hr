@@ -53,7 +53,7 @@ export default function SessionProvider({ children }: { children: React.ReactNod
         const interval = setInterval(() => {
             const now = Date.now();
             if (lastActivity && (now - lastActivity > INACTIVITY_LIMIT)) {
-                console.log('Session timed out due to inactivity');
+                // console.log('Session timed out due to inactivity');
                 logout();
                 router.push('/login');
             }

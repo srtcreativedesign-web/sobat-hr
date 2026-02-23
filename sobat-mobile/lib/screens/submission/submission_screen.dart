@@ -36,7 +36,7 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
         });
       }
     } catch (e) {
-      debugPrint('Error loading submissions: $e');
+      // debugPrint('Error loading submissions: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(

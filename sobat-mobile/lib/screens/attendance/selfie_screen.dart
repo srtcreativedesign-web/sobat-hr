@@ -143,7 +143,7 @@ class _SelfieScreenState extends State<SelfieScreen>
         _startImageStream();
       }
     } catch (e) {
-      debugPrint('Error initializing camera: $e');
+      // debugPrint('Error initializing camera: $e');
       setState(() => _statusText = 'CAMERA ERROR');
     }
   }
@@ -199,7 +199,7 @@ class _SelfieScreenState extends State<SelfieScreen>
         _resetValidation('NO FACE DETECTED');
       }
     } catch (e) {
-      debugPrint("Error processing face: $e");
+      // debugPrint("Error processing face: $e");
     } finally {
       _isProcessing = false;
     }
@@ -324,7 +324,7 @@ class _SelfieScreenState extends State<SelfieScreen>
       if (!mounted) return;
       Navigator.pop(context, image.path);
     } catch (e) {
-      debugPrint("Error auto-capturing: $e");
+      // debugPrint("Error auto-capturing: $e");
       setState(() {
         _isAutoCapturing = false;
         _statusText = 'RETRYING...';
@@ -363,7 +363,7 @@ class _SelfieScreenState extends State<SelfieScreen>
       if (!mounted) return;
       Navigator.pop(context, image.path);
     } catch (e) {
-      debugPrint("Error manual capture: $e");
+      // debugPrint("Error manual capture: $e");
       setState(() {
         _isAutoCapturing = false;
         _statusText = 'RETRYING...';

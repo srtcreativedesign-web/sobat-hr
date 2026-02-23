@@ -11,12 +11,12 @@ class StorageService {
 
   // Token Management (Secure Storage)
   static Future<void> saveToken(String token) async {
-    print('StorageService: Saving token...');
+    // print('StorageService: Saving token...');
     try {
       await _secureStorage.write(key: _tokenKey, value: token);
-      print('StorageService: Token save complete');
+      // print('StorageService: Token save complete');
     } catch (e) {
-      print('StorageService: Error saving token: $e');
+      // print('StorageService: Error saving token: $e');
       rethrow;
     }
   }
