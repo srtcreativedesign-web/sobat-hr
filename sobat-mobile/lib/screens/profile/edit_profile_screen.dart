@@ -589,7 +589,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     // Debug: print payload and target id to console
     // print(
-      // 'EditProfile: saving employeeRecordId=$_employeeRecordId payload=${payload.toString()}',
+    // 'EditProfile: saving employeeRecordId=$_employeeRecordId payload=${payload.toString()}',
     // );
 
     try {
@@ -1144,7 +1144,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ? const Center(child: CircularProgressIndicator())
                         : DropdownButtonFormField<int>(
                             isExpanded: true,
-                            value: _selectedDivisionId,
+                            initialValue: _selectedDivisionId,
                             decoration: const InputDecoration(
                               prefixIcon: Icon(Icons.business),
                               labelText: 'Divisi',
@@ -1192,7 +1192,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           )
                         : DropdownButtonFormField<int>(
                             isExpanded: true,
-                            value: _selectedJobPositionId,
+                            initialValue: _selectedJobPositionId,
                             decoration: const InputDecoration(
                               prefixIcon: Icon(Icons.work),
                               labelText: 'Jabatan',

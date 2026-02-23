@@ -12,8 +12,19 @@ except ImportError:
 
 def compare_faces(known_image_path, unknown_image_path):
     try:
+        # Helper to load and fix EXIF orientation
+        from PIL import Image, ImageOps
+        import numpy as np
+        
+        def load_image_fixed(path):
+            img = Image.open(path)
+            img = ImageOps.exif_transpose(img)
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            return np.array(img)
+
         # Load the known image and encode it
-        known_image = face_recognition.load_image_file(known_image_path)
+        known_image = load_image_fixed(known_image_path)
         known_encodings = face_recognition.face_encodings(known_image)
 
         if not known_encodings:
@@ -22,7 +33,7 @@ def compare_faces(known_image_path, unknown_image_path):
         known_encoding = known_encodings[0]
 
         # Load the unknown image and encode it
-        unknown_image = face_recognition.load_image_file(unknown_image_path)
+        unknown_image = load_image_fixed(unknown_image_path)
         unknown_encodings = face_recognition.face_encodings(unknown_image)
 
         if not unknown_encodings:

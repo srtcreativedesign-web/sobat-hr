@@ -32,7 +32,16 @@ def detect_face(image_path):
         if not os.path.exists(image_path):
              return {"status": "error", "message": f"File not found at {image_path}"}
              
-        image = face_recognition.load_image_file(image_path)
+        # Exif rotation fix: face_recognition.load_image_file ignores EXIF orientation
+        from PIL import Image, ImageOps
+        import numpy as np
+        
+        img = Image.open(image_path)
+        img = ImageOps.exif_transpose(img)
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        image = np.array(img)
+        
         face_locations = face_recognition.face_locations(image)
         
         face_count = len(face_locations)
