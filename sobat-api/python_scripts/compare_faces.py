@@ -12,20 +12,30 @@ except ImportError:
 
 def compare_faces(known_image_path, unknown_image_path):
     try:
-        # Helper to load and fix EXIF orientation
+        # Helper to load, scale down, and brute-force orientations
         from PIL import Image, ImageOps
         import numpy as np
         
-        def load_image_fixed(path):
+        def find_face_encodings_robustly(path):
             img = Image.open(path)
-            img = ImageOps.exif_transpose(img)
+            img = ImageOps.exif_transpose(img) # Try EXIF first
             if img.mode != 'RGB':
                 img = img.convert('RGB')
-            return np.array(img)
+            
+            # Compress image mildly to speed up and improve HOG detection
+            img.thumbnail((1200, 1200))
+            
+            # If standard EXIF failed, brute-force rotations (Samsung issue)
+            rotations = [img, img.rotate(90, expand=True), img.rotate(180, expand=True), img.rotate(270, expand=True)]
+            for rot_img in rotations:
+                arr = np.array(rot_img)
+                encs = face_recognition.face_encodings(arr)
+                if encs:
+                    return encs
+            return []
 
         # Load the known image and encode it
-        known_image = load_image_fixed(known_image_path)
-        known_encodings = face_recognition.face_encodings(known_image)
+        known_encodings = find_face_encodings_robustly(known_image_path)
 
         if not known_encodings:
             return {"status": "error", "message": "No face found in known image"}
@@ -33,8 +43,7 @@ def compare_faces(known_image_path, unknown_image_path):
         known_encoding = known_encodings[0]
 
         # Load the unknown image and encode it
-        unknown_image = load_image_fixed(unknown_image_path)
-        unknown_encodings = face_recognition.face_encodings(unknown_image)
+        unknown_encodings = find_face_encodings_robustly(unknown_image_path)
 
         if not unknown_encodings:
             return {"status": "error", "message": "No face found in check-in image"}

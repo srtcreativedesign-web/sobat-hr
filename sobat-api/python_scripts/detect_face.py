@@ -32,7 +32,7 @@ def detect_face(image_path):
         if not os.path.exists(image_path):
              return {"status": "error", "message": f"File not found at {image_path}"}
              
-        # Exif rotation fix: face_recognition.load_image_file ignores EXIF orientation
+        # Robust loading: Exif fix, resize, and brute-force rotation
         from PIL import Image, ImageOps
         import numpy as np
         
@@ -40,9 +40,17 @@ def detect_face(image_path):
         img = ImageOps.exif_transpose(img)
         if img.mode != 'RGB':
             img = img.convert('RGB')
-        image = np.array(img)
+            
+        img.thumbnail((1200, 1200))
         
-        face_locations = face_recognition.face_locations(image)
+        rotations = [img, img.rotate(90, expand=True), img.rotate(180, expand=True), img.rotate(270, expand=True)]
+        face_locations = []
+        for rot_img in rotations:
+            arr = np.array(rot_img)
+            locs = face_recognition.face_locations(arr)
+            if locs:
+                face_locations = locs
+                break
         
         face_count = len(face_locations)
 
