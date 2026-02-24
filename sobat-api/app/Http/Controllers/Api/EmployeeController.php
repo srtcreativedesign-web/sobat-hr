@@ -13,7 +13,7 @@ class EmployeeController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Employee::with(['user', 'role', 'division', 'assignedJobPosition']);
+        $query = Employee::with(['user', 'role', 'division', 'organization', 'assignedJobPosition']);
 
         // Filter by organization
         if ($request->has('division_id')) {
@@ -250,12 +250,12 @@ class EmployeeController extends Controller
             // Update existing employee
             $existingEmployee->update($data);
             $existingEmployee->refresh();
-            $existingEmployee->load(['division', 'role']);
+            $existingEmployee->load(['division', 'role', 'organization']);
             return response()->json(new \App\Http\Resources\EmployeeResource($existingEmployee), 200);
         } else {
             // Create new employee
             $employee = Employee::create($data);
-            $employee->load(['division', 'role']);
+            $employee->load(['division', 'role', 'organization']);
             return response()->json(new \App\Http\Resources\EmployeeResource($employee), 201);
         }
     }
@@ -265,7 +265,7 @@ class EmployeeController extends Controller
      */
     public function show(string $id)
     {
-        $employee = Employee::with(['user', 'division', 'role', 'attendances', 'payrolls'])
+        $employee = Employee::with(['user', 'division', 'organization', 'role', 'attendances', 'payrolls'])
             ->findOrFail($id);
 
         return response()->json($employee);
@@ -457,7 +457,7 @@ class EmployeeController extends Controller
 
         // Reload fresh data with relations
         $employee->refresh();
-        $employee->load(['division', 'role']);
+        $employee->load(['division', 'role', 'organization']);
 
         return response()->json(new \App\Http\Resources\EmployeeResource($employee));
     }
