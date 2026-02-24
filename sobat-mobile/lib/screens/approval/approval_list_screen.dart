@@ -80,11 +80,11 @@ class _ApprovalListScreenState extends State<ApprovalListScreen> {
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: _loadApprovals,
-                      child: const Text('Coba Lagi'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.colorEggplant,
                         foregroundColor: Colors.white,
                       ),
+                      child: const Text('Coba Lagi'),
                     ),
                   ],
                 ),

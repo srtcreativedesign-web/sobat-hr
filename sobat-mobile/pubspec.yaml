@@ -48,6 +48,8 @@ dependencies:
   local_auth: ^3.0.0
   screen_protector: ^1.5.1
   
+  http: any
+  http_parser: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

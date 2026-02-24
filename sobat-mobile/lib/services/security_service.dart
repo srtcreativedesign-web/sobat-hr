@@ -33,7 +33,7 @@ class SecurityService {
 
   Future<void> setupPin(String pin, String pinConfirmation) async {
     try {
-      final response = await _dio.post(
+      await _dio.post(
         '/security/pin/setup',
         data: {'pin': pin, 'pin_confirmation': pinConfirmation},
       );

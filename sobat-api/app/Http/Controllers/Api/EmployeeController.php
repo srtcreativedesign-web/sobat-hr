@@ -331,8 +331,6 @@ class EmployeeController extends Controller
 
         // Map validated to actual DB columns similar to store()
         $data = [];
-        if (isset($validated['organization_id']))
-            $data['organization_id'] = $validated['organization_id'];
         if (isset($validated['role_id']))
             $data['role_id'] = $validated['role_id'];
         if (isset($validated['employee_number']))

@@ -142,6 +142,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
           'desc': 'Pengajuan perjalanan bisnis luar kota.',
           'quota': null,
         };
+      case 'Pengajuan Aset':
         return {
           'icon': Icons.devices,
           'color': const Color(0xFF7C3AED),
@@ -359,8 +360,9 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
                               firstDate: DateTime.now(),
                               lastDate: DateTime(2030),
                             );
-                            if (picked != null)
+                            if (picked != null) {
                               setState(() => _startDate = picked);
+                            }
                           },
                         ),
                         const SizedBox(height: 20),
@@ -804,6 +806,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Gagal mengambil gambar: $e')));
@@ -826,6 +829,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Gagal mengambil file: $e')));
@@ -988,7 +992,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
           Switch(
             value: _isUrgent,
             onChanged: (val) => setState(() => _isUrgent = val),
-            activeColor: Colors.red,
+            activeThumbColor: Colors.red,
           ),
         ],
       ),

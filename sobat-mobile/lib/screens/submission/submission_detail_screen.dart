@@ -340,7 +340,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                               height: 200,
                               width: 200,
                               fit: BoxFit.cover,
-                              errorBuilder: (ctx, _, __) {
+                              errorBuilder: (ctx, _, _) {
                                 return Container(
                                   width: 200,
                                   color: Colors.grey.shade200,

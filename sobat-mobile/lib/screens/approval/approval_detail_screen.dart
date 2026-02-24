@@ -64,8 +64,9 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
 
     try {
       final signatureBytes = await _signatureController.toPngBytes();
-      if (signatureBytes == null)
+      if (signatureBytes == null) {
         throw Exception('Gagal mengambil tanda tangan');
+      }
 
       final signatureBase64 = base64Encode(signatureBytes);
       // Backend expects 'data:image/png;base64,...' usually, or just base64?
@@ -430,7 +431,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                                   height: 200,
                                   width: 200,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (ctx, _, __) {
+                                  errorBuilder: (ctx, _, _) {
                                     return Container(
                                       width: 200,
                                       color: Colors.grey.shade200,

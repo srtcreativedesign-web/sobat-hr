@@ -302,19 +302,4 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
       ),
     );
   }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: Colors.grey.shade400,
-          letterSpacing: 1,
-        ),
-      ),
-    );
-  }
 }

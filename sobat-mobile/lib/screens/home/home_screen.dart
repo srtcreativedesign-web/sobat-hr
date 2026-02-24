@@ -2,7 +2,6 @@ import 'package:sobat_hr/config/api_config.dart';
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
@@ -128,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 width: double.infinity,
                                 errorBuilder: (ctx, err, stack) {
                                   // debugPrint(
-                                    // 'Error loading banner image: $err',
+                                  // 'Error loading banner image: $err',
                                   // );
                                   return Container(
                                     height: 150,
@@ -788,6 +787,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   GestureDetector(
                     onTap: () {
                       Navigator.pushNamed(context, '/profile').then((_) {
+                        if (!mounted) return;
                         // Refresh user data when returning from profile
                         Provider.of<AuthProvider>(
                           context,
@@ -2249,8 +2249,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       color = activity['status'] == 'success'
                           ? Colors.green
                           : Colors.orange;
-                      if (activity['title'] == 'Absen Keluar')
+                      if (activity['title'] == 'Absen Keluar') {
                         color = Colors.orange;
+                      }
                       break;
                     case 'request':
                       icon = Icons.description;
@@ -2376,8 +2377,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBanner(User? user) {
-    if (user == null || user.contractEnd == null)
+    if (user == null || user.contractEnd == null) {
       return const SizedBox.shrink();
+    }
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);

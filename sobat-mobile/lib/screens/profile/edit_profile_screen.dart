@@ -93,7 +93,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? _position;
   // String? _track; // Removed unused field
 
-  List<String> _ptkpOptions = [
+  final List<String> _ptkpOptions = [
     'TK0',
     'TK1',
     'TK2',
@@ -598,17 +598,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       } else {
         await _authService.createEmployee(payload);
       }
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profil berhasil disimpan')),
         );
         Navigator.of(context).pop(true);
       }
-    } catch (e, st) {
+    } catch (e) {
       // Log full error and stacktrace for debugging
       // print('EditProfile: save failed -> $e');
       // print('EditProfile: stacktrace -> $st');
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Gagal menyimpan: $e')));

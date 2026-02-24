@@ -46,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final phoneController = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Lupa Password'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -70,44 +70,43 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Batal'),
           ),
           ElevatedButton(
             onPressed: () async {
               if (phoneController.text.isEmpty) return;
 
-              Navigator.pop(context); // Close input dialog
+              Navigator.pop(dialogContext); // Close input dialog
 
               final authProvider = Provider.of<AuthProvider>(
-                context,
+                context, // Safe: Uses State's context
                 listen: false,
               );
               final success = await authProvider.forgotPassword(
                 phoneController.text.trim(),
               );
 
-              if (mounted) {
-                if (success) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Permintaan terkirim. Hubungi Admin untuk persetujuan.',
-                      ),
-                      backgroundColor: Colors.green,
+              if (!mounted) return;
+
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Permintaan terkirim. Hubungi Admin untuk persetujuan.',
                     ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        authProvider.errorMessage ??
-                            'Gagal mengirim permintaan',
-                      ),
-                      backgroundColor: Colors.red,
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      authProvider.errorMessage ?? 'Gagal mengirim permintaan',
                     ),
-                  );
-                }
+                    backgroundColor: Colors.red,
+                  ),
+                );
               }
             },
             child: const Text('Kirim'),
@@ -425,11 +424,14 @@ class _LoginScreenState extends State<LoginScreen> {
             errorStyle: const TextStyle(color: Colors.white, fontSize: 12),
           ),
           validator: (value) {
-            if (value == null || value.isEmpty) return 'Wajib diisi';
+            if (value == null || value.isEmpty) {
+              return 'Wajib diisi';
+            }
             if (!isPassword &&
                 !value.contains('@') &&
-                label.toLowerCase().contains('email'))
+                label.toLowerCase().contains('email')) {
               return 'Email tidak valid';
+            }
             return null;
           },
         ),
