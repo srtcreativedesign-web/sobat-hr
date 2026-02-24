@@ -34,7 +34,11 @@ class EmployeeResource extends JsonResource
             'track' => $this->track, // 'office' or 'operational'
             'contract_type' => $this->employment_status,
             'contract_end_date' => $this->contract_end_date?->format('Y-m-d'),
-            'organization' => new OrganizationResource($this->whenLoaded('division')),
+            'organization' => $this->relationLoaded('division') && $this->division ? [
+                'id' => $this->division->id,
+                'name' => $this->division->name,
+                'department_id' => $this->division->department_id,
+            ] : null,
             'role' => new RoleResource($this->whenLoaded('role')),
             'shift' => new ShiftResource($this->whenLoaded('shift')),
             'user' => new UserResource($this->whenLoaded('user')),
