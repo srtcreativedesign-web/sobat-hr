@@ -229,7 +229,7 @@ function RegisterForm() {
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full py-3 px-4 bg-[#1C3ECA] text-[#60A5FA] rounded-lg font-semibold shadow-lg hover:shadow-[#1C3ECA]/30 transform hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="w-full py-3 px-4 bg-[#1C3ECA] text-white rounded-lg font-semibold shadow-lg hover:shadow-[#1C3ECA]/30 transform hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? 'Mengaktifkan...' : 'Aktifkan Akun'}
                         </button>

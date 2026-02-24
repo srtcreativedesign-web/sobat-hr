@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dart:ui' as ui;
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
-import '../../l10n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -116,229 +114,111 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset:
-          false, // Handle keyboard externally or use SingleChildScrollView logic
-      body: Stack(
-        children: [
-          // 1. Fullscreen Background Image
-          Positioned.fill(
-            child: Image.asset('assets/images/welcome.jpg', fit: BoxFit.cover),
-          ),
-
-          // 2. Dark Overlay for better contrast
-          Positioned.fill(
-            child: Container(color: Colors.black.withValues(alpha: 0.3)),
-          ),
-
-          // 3. Glassmorphism Card Content
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+  void _showHelpOptions() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Pusat Bantuan (FAQ)',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.colorPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 children: [
-                  // Logo
-                  Image.asset('assets/logo/logo.png', width: 100, height: 100),
-                  const SizedBox(height: 16),
-
-                  // Title
-                  Text(
-                    'SOBAT HR',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2,
-                    ),
+                  _buildFaqItem(
+                    'Bagaimana cara aktivasi akun?',
+                    'Gunakan link yang diberikan oleh Admin HR Anda. Klik tombol "Aktivasi Akun" di halaman awal dan masukkan link tersebut.',
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Welcome Back!',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      fontSize: 16,
-                    ),
+                  _buildFaqItem(
+                    'Lupa password?',
+                    'Klik "Forget Password?" di bawah kolom input password. Admin akan meninjau permintaan Anda.',
                   ),
-                  const SizedBox(height: 32),
-
-                  // GLASS CARD
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: BackdropFilter(
-                      filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                AppLocalizations.of(context)!.loginTitle,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-
-                              // Email Input
-                              _buildGlassTextField(
-                                controller: _emailController,
-                                label: AppLocalizations.of(context)!.emailLabel,
-                                icon: Icons.email_outlined,
-                                keyboardType: TextInputType.emailAddress,
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Password Input
-                              _buildGlassTextField(
-                                controller: _passwordController,
-                                label: AppLocalizations.of(
-                                  context,
-                                )!.passwordLabel,
-                                icon: Icons.lock_outline,
-                                isPassword: true,
-                                obscureText: _obscurePassword,
-                                onTogglePassword: () {
-                                  setState(() {
-                                    _obscurePassword = !_obscurePassword;
-                                  });
-                                },
-                              ),
-
-                              // Forgot Password
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton(
-                                  onPressed: _showForgotPasswordDialog,
-                                  child: Text(
-                                    'Lupa Password?',
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.9,
-                                      ),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-
-                              // Error Message
-                              Consumer<AuthProvider>(
-                                builder: (context, authProvider, child) {
-                                  if (authProvider.errorMessage != null) {
-                                    return Container(
-                                      padding: const EdgeInsets.all(12),
-                                      margin: const EdgeInsets.only(bottom: 16),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red.withValues(
-                                          alpha: 0.2,
-                                        ),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: Colors.red.withValues(
-                                            alpha: 0.5,
-                                          ),
-                                        ),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.error_outline,
-                                            color: Colors.white,
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              authProvider.errorMessage!,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }
-                                  return const SizedBox.shrink();
-                                },
-                              ),
-
-                              // Login Button
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    final authProvider =
-                                        Provider.of<AuthProvider>(
-                                          context,
-                                          listen: false,
-                                        );
-                                    if (authProvider.isLoading) return;
-                                    _handleLogin();
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppTheme.colorCyan,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    elevation: 0,
-                                  ),
-                                  child: Consumer<AuthProvider>(
-                                    builder: (context, authProvider, child) {
-                                      return authProvider.isLoading
-                                          ? const SizedBox(
-                                              height: 20,
-                                              width: 20,
-                                              child: CircularProgressIndicator(
-                                                color: Colors.white,
-                                                strokeWidth: 2,
-                                              ),
-                                            )
-                                          : Text(
-                                              AppLocalizations.of(
-                                                context,
-                                              )!.loginButton,
-                                              style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
+                  _buildFaqItem(
+                    'Kenapa saya tidak bisa login?',
+                    'Pastikan email dan password sudah benar. Jika masih bermasalah, hubungi bagian HR di kantor Anda.',
                   ),
-
-                  // Footer
-                  const SizedBox(height: 24),
-
-                  // Demo Info
+                  _buildFaqItem(
+                    'Apa itu SOBAT HR?',
+                    'Smart Operations & Business Administrative Tool adalah aplikasi manajemen HR terpadu dari SRT.',
+                  ),
                 ],
               ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.colorPrimary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text('Tutup'),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFaqItem(String question, String answer) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: ExpansionTile(
+        title: Text(
+          question,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color: AppTheme.textDark,
+          ),
+        ),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        expandedAlignment: Alignment.topLeft,
+        children: [
+          Text(
+            answer,
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppTheme.textLight,
+              height: 1.5,
             ),
           ),
         ],
@@ -346,96 +226,226 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildGlassTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
-    bool isPassword = false,
-    bool obscureText = false,
-    VoidCallback? onTogglePassword,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.8),
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF93C5FD), // Match bottom gradient color
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFE0F2FE), // Sky 100
+              Color(0xFFBAE6FD), // Sky 200
+              Color(0xFF93C5FD), // Blue 300
+            ],
           ),
         ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          obscureText: obscureText,
-          keyboardType: keyboardType,
-          style: const TextStyle(color: Color(0xFF1A1A1A)), // AppTheme.textDark
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white,
-            prefixIcon: Icon(
-              icon,
-              color: const Color(0xFF1A1A1A).withValues(alpha: 0.7),
-            ),
-            suffixIcon: isPassword
-                ? IconButton(
-                    icon: Icon(
-                      obscureText
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                      color: const Color(0xFF1A1A1A).withValues(alpha: 0.7),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      onPressed: _showHelpOptions, // Help
+                      icon: const Icon(
+                        Icons.help_outline_rounded,
+                        color: AppTheme.colorPrimary,
+                      ),
                     ),
-                    onPressed: onTogglePassword,
-                  )
-                : null,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
+                  ],
+                ),
+
+                const SizedBox(height: 8),
+                const Text(
+                  'SOBAT HR',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.colorPrimary,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+
+                // Illustration
+                const SizedBox(height: 24),
+                SizedBox(
+                  height: 250,
+                  width: double.infinity,
+                  child: Image.asset(
+                    'assets/images/ilustrasi.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+
+                // Form Label
+                const SizedBox(height: 48),
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Email
+                      const Padding(
+                        padding: EdgeInsets.only(left: 4, bottom: 8),
+                        child: Text(
+                          'Email',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textDark,
+                          ),
+                        ),
+                      ),
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          hintText: 'Masukkan email anda',
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 18,
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Wajib diisi';
+                          }
+                          if (!value.contains('@')) {
+                            return 'Email tidak valid';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      // Password
+                      const SizedBox(height: 24),
+                      const Padding(
+                        padding: EdgeInsets.only(left: 4, bottom: 8),
+                        child: Text(
+                          'Password',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textDark,
+                          ),
+                        ),
+                      ),
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        decoration: InputDecoration(
+                          hintText: 'Masukkan password anda',
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                              color: AppTheme.textLight,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 18,
+                          ),
+                        ),
+                        validator: (value) => value == null || value.isEmpty
+                            ? 'Wajib diisi'
+                            : null,
+                      ),
+
+                      // Forgot Password
+                      Align(
+                        alignment: Alignment.center,
+                        child: TextButton(
+                          onPressed: _showForgotPasswordDialog,
+                          child: const Text(
+                            'Forget Password?',
+                            style: TextStyle(
+                              color: AppTheme.textLight,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Login Button
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            final authProvider = Provider.of<AuthProvider>(
+                              context,
+                              listen: false,
+                            );
+                            if (authProvider.isLoading) return;
+                            _handleLogin();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.colorPrimary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          child: Consumer<AuthProvider>(
+                            builder: (context, authProvider, child) {
+                              return authProvider.isLoading
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Login',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    );
+                            },
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Colors.white.withValues(alpha: 0.2),
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Colors.white.withValues(alpha: 0.5),
-              ),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 1),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 1.5),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
-            hintStyle: TextStyle(
-              color: const Color(0xFF1A1A1A).withValues(alpha: 0.4),
-            ),
-            errorStyle: const TextStyle(color: Colors.white, fontSize: 12),
           ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Wajib diisi';
-            }
-            if (!isPassword &&
-                !value.contains('@') &&
-                label.toLowerCase().contains('email')) {
-              return 'Email tidak valid';
-            }
-            return null;
-          },
         ),
-      ],
+      ),
     );
   }
 }

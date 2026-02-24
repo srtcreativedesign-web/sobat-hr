@@ -9,124 +9,110 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // Background Image
-          Positioned.fill(
-            child: Image.asset('assets/images/welcome.jpg', fit: BoxFit.cover),
+      backgroundColor: const Color(0xFF93C5FD), // Match bottom gradient color
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFE0F2FE), // Sky 100
+              Color(0xFFBAE6FD), // Sky 200
+              Color(0xFF93C5FD), // Blue 300
+            ],
           ),
-          // Gradient Overlay
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.1),
-                    Colors.black.withValues(alpha: 0.8),
-                  ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: Column(
+              children: [
+                // 2. Logo / Title
+                const SizedBox(height: 20),
+                const Text(
+                  'SOBAT HR',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.colorPrimary,
+                    letterSpacing: 1.2,
+                  ),
                 ),
-              ),
-            ),
-          ),
+                const Spacer(),
 
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Logo
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
+                // 3. Central Illustration
+                SizedBox(
+                  height: 320,
+                  width: double.infinity,
+                  child: Image.asset(
+                    'assets/images/ilustrasi.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                const Spacer(),
+
+                // 4. Welcome Text
+                const Text(
+                  'Mudah Kelola Karirmu',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textDark,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Manajemen HR yang lebih simpel,\nefisien, dan transparan.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: AppTheme.textLight,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 48),
+
+                // 5. Action Buttons
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.colorPrimary,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Image.asset(
-                      'assets/logo/logo.png',
-                      width: 40,
-                      height: 40,
-                      fit: BoxFit.contain,
-                    ),
+                    elevation: 0,
                   ),
-                  const Spacer(),
-
-                  // Text Content
-                  const Text(
-                    'Welcome to\nSOBAT HR',
+                  child: const Text('Mulai Sekarang'),
+                ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () => _showInvitationDialog(context),
+                  child: const Text(
+                    'Aktivasi Akun',
                     style: TextStyle(
-                      fontSize: 40,
+                      color: AppTheme.colorPrimary,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      height: 1.1,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Streamline your workforce management with our comprehensive HR solution.',
-                    style: TextStyle(
                       fontSize: 16,
-                      color: Colors.white.withValues(alpha: 0.8),
-                      height: 1.5,
                     ),
                   ),
-                  const SizedBox(height: 48),
-
-                  // Action Buttons
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LoginScreen(),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.colorCyan,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 56),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'Log In',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  OutlinedButton(
-                    onPressed: () {
-                      _showInvitationDialog(context);
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.white, width: 1.5),
-                      minimumSize: const Size(double.infinity, 56),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: const Text(
-                      'Activate Account',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 20),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
