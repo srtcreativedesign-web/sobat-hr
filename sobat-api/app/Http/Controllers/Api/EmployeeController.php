@@ -13,11 +13,11 @@ class EmployeeController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Employee::with(['user', 'organization', 'role', 'division', 'assignedJobPosition']);
+        $query = Employee::with(['user', 'role', 'division', 'assignedJobPosition']);
 
         // Filter by organization
-        if ($request->has('organization_id')) {
-            $query->where('organization_id', $request->organization_id);
+        if ($request->has('division_id')) {
+            $query->where('division_id', $request->division_id);
         }
 
         // Filter by status
@@ -125,8 +125,6 @@ class EmployeeController extends Controller
         $data = [];
         if (isset($validated['user_id']))
             $data['user_id'] = $validated['user_id'];
-        if (isset($validated['organization_id']))
-            $data['organization_id'] = $validated['organization_id'];
         if (isset($validated['role_id']))
             $data['role_id'] = $validated['role_id'];
         // support both employee_number and employee_code from clients
@@ -229,11 +227,11 @@ class EmployeeController extends Controller
             $data['employee_code'] = $prefix . substr(uniqid(), -6);
         }
 
-        // Default organization_id to first available organization if not set
-        if (empty($data['organization_id'])) {
-            $defaultOrg = \App\Models\Organization::first();
-            if ($defaultOrg) {
-                $data['organization_id'] = $defaultOrg->id;
+        // Default division_id to first available division if not set
+        if (empty($data['division_id'])) {
+            $defaultDiv = \App\Models\Division::first();
+            if ($defaultDiv) {
+                $data['division_id'] = $defaultDiv->id;
             }
         }
 
@@ -253,12 +251,12 @@ class EmployeeController extends Controller
             // Update existing employee
             $existingEmployee->update($data);
             $existingEmployee->refresh();
-            $existingEmployee->load(['organization', 'role']);
+            $existingEmployee->load(['division', 'role']);
             return response()->json(new \App\Http\Resources\EmployeeResource($existingEmployee), 200);
         } else {
             // Create new employee
             $employee = Employee::create($data);
-            $employee->load(['organization', 'role']);
+            $employee->load(['division', 'role']);
             return response()->json(new \App\Http\Resources\EmployeeResource($employee), 201);
         }
     }
@@ -268,7 +266,7 @@ class EmployeeController extends Controller
      */
     public function show(string $id)
     {
-        $employee = Employee::with(['user', 'organization', 'role', 'attendances', 'payrolls'])
+        $employee = Employee::with(['user', 'division', 'role', 'attendances', 'payrolls'])
             ->findOrFail($id);
 
         return response()->json($employee);
@@ -463,7 +461,7 @@ class EmployeeController extends Controller
 
         // Reload fresh data with relations
         $employee->refresh();
-        $employee->load(['organization', 'role']);
+        $employee->load(['division', 'role']);
 
         return response()->json(new \App\Http\Resources\EmployeeResource($employee));
     }
