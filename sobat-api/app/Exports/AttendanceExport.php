@@ -24,7 +24,7 @@ class AttendanceExport implements FromQuery, WithHeadings, WithMapping, WithStyl
 
     public function query()
     {
-        $query = Attendance::with(['employee.division']);
+        $query = Attendance::with(['employee.organization']);
 
         if ($this->request->has('employee_id') && $this->request->employee_id) {
             $query->where('employee_id', $this->request->employee_id);
@@ -46,7 +46,7 @@ class AttendanceExport implements FromQuery, WithHeadings, WithMapping, WithStyl
         // Division Filter
         if ($this->request->has('division_id') && $this->request->division_id) {
             $query->whereHas('employee', function ($q) {
-                $q->where('division_id', $this->request->division_id);
+                $q->where('organization_id', $this->request->division_id);
             });
         }
 
@@ -89,7 +89,7 @@ class AttendanceExport implements FromQuery, WithHeadings, WithMapping, WithStyl
             $attendance->id,
             $attendance->employee->employee_code ?? '-',
             $attendance->employee->full_name ?? '-',
-            $attendance->employee->division->name ?? '-',
+            $attendance->employee->organization->name ?? '-',
             $attendance->date->format('Y-m-d'),
             $attendance->check_in,
             $attendance->check_out,

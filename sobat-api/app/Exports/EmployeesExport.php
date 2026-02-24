@@ -25,7 +25,7 @@ class EmployeesExport implements FromQuery, WithHeadings, WithMapping, WithStyle
 
         // Division Filter
         if ($this->request->has('organization_id') && $this->request->organization_id) {
-            $query->where('division_id', $this->request->organization_id);
+            $query->where('organization_id', $this->request->organization_id);
         }
 
         // Status Filter
@@ -100,7 +100,7 @@ class EmployeesExport implements FromQuery, WithHeadings, WithMapping, WithStyle
             $employee->religion ?? '-',
             $employee->marital_status ?? '-',
             $education ?? '-',
-            $employee->division->name ?? '-',
+            $employee->organization->name ?? '-',
             $employee->position ?? '-',
             $employee->status === 'active' ? 'Aktif' : ($employee->status === 'inactive' ? 'Non-Aktif' : ($employee->status === 'resigned' ? 'Resign' : $employee->status ?? '-')),
             $employee->employment_status === 'permanent' ? 'Tetap' : ($employee->employment_status === 'contract' ? 'Kontrak' : ($employee->employment_status === 'probation' ? 'Probation' : $employee->employment_status ?? '-')),

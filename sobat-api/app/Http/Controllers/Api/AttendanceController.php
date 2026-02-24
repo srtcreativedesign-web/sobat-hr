@@ -33,9 +33,10 @@ class AttendanceController extends Controller
             $query->whereDate('date', $request->date);
         }
 
+        // Division Filter
         if ($request->has('division_id') && $request->division_id) {
             $query->whereHas('employee', function ($q) use ($request) {
-                $q->where('division_id', $request->division_id);
+                $q->where('organization_id', $request->division_id);
             });
         }
 

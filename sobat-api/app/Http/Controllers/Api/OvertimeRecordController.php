@@ -18,7 +18,7 @@ class OvertimeRecordController extends Controller
         if ($request->has('organization_id')) {
             $orgId = $request->organization_id;
             $query->whereHas('employee', function ($q) use ($orgId) {
-                $q->where('division_id', $orgId);
+                $q->where('organization_id', $orgId);
             });
         }
 
