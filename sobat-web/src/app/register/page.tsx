@@ -36,7 +36,7 @@ function RegisterForm() {
         }
 
         // Fetch Divisions
-        apiClient.get('/divisions').then(res => {
+        apiClient.get('/public/divisions').then(res => {
             setDivisions(res.data.data || res.data || []);
         }).catch(err => console.error(err));
 
