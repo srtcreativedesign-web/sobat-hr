@@ -78,7 +78,6 @@ class EmployeeController extends Controller
         // the client can create/update progressively.
         $validated = $request->validate([
             'user_id' => 'nullable|exists:users,id',
-            'organization_id' => 'nullable|exists:organizations,id',
             'role_id' => 'nullable|exists:roles,id',
             'employee_number' => 'nullable|string|unique:employees',
             'employee_code' => 'nullable|string|unique:employees',
@@ -285,7 +284,6 @@ class EmployeeController extends Controller
         }
 
         $validated = $request->validate([
-            'organization_id' => 'sometimes|exists:organizations,id',
             'role_id' => 'sometimes|exists:roles,id',
             'employee_number' => 'sometimes|nullable|string|unique:employees,employee_code,' . $id,
             'employee_code' => 'sometimes|nullable|string|unique:employees,employee_code,' . $id,
