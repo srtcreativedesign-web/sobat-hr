@@ -23,9 +23,11 @@ class EmployeesExport implements FromQuery, WithHeadings, WithMapping, WithStyle
     {
         $query = Employee::with(['organization', 'user']);
 
-        // Division Filter
         if ($this->request->has('organization_id') && $this->request->organization_id) {
-            $query->where('organization_id', $this->request->organization_id);
+            $orgName = \App\Models\Organization::find($this->request->organization_id)?->name;
+            if ($orgName) {
+                $query->where('department', $orgName);
+            }
         }
 
         // Status Filter

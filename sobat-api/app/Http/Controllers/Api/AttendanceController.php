@@ -33,11 +33,14 @@ class AttendanceController extends Controller
             $query->whereDate('date', $request->date);
         }
 
-        // Division Filter
+        // Division Filter (Matches UI 'Organizations' name against Employee 'department' string)
         if ($request->has('division_id') && $request->division_id) {
-            $query->whereHas('employee', function ($q) use ($request) {
-                $q->where('organization_id', $request->division_id);
-            });
+            $orgName = \App\Models\Organization::find($request->division_id)?->name;
+            if ($orgName) {
+                $query->whereHas('employee', function ($q) use ($orgName) {
+                    $q->where('department', $orgName);
+                });
+            }
         }
 
         if ($request->has('status')) {

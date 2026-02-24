@@ -26,10 +26,12 @@ class OvertimeExport implements FromQuery, WithHeadings, WithMapping
             ->where('status', 'approved');
 
         if ($this->request->has('organization_id') && $this->request->organization_id) {
-            $orgId = $this->request->organization_id;
-            $query->whereHas('employee', function($q) use ($orgId) {
-                $q->where('organization_id', $orgId);
-            });
+            $orgName = \App\Models\Organization::find($this->request->organization_id)?->name;
+            if ($orgName) {
+                $query->whereHas('employee', function($q) use ($orgName) {
+                    $q->where('department', $orgName);
+                });
+            }
         }
 
         if ($this->request->has('search') && $this->request->search) {

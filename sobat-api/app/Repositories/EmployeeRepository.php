@@ -23,7 +23,10 @@ class EmployeeRepository
         $query = $this->model->with(['user', 'organization', 'role']);
 
         if (isset($filters['organization_id'])) {
-            $query->where('organization_id', $filters['organization_id']);
+            $orgName = \App\Models\Organization::find($filters['organization_id'])?->name;
+            if ($orgName) {
+                $query->where('department', $orgName);
+            }
         }
 
         if (isset($filters['status'])) {

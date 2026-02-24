@@ -45,9 +45,12 @@ class AttendanceExport implements FromQuery, WithHeadings, WithMapping, WithStyl
 
         // Division Filter
         if ($this->request->has('division_id') && $this->request->division_id) {
-            $query->whereHas('employee', function ($q) {
-                $q->where('organization_id', $this->request->division_id);
-            });
+            $orgName = \App\Models\Organization::find($this->request->division_id)?->name;
+            if ($orgName) {
+                $query->whereHas('employee', function ($q) use ($orgName) {
+                    $q->where('department', $orgName);
+                });
+            }
         }
 
         if ($this->request->has('status') && $this->request->status) {

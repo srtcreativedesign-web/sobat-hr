@@ -16,10 +16,12 @@ class OvertimeRecordController extends Controller
         $query = OvertimeRecord::with('employee.organization');
 
         if ($request->has('organization_id')) {
-            $orgId = $request->organization_id;
-            $query->whereHas('employee', function ($q) use ($orgId) {
-                $q->where('organization_id', $orgId);
-            });
+            $orgName = \App\Models\Organization::find($request->organization_id)?->name;
+            if ($orgName) {
+                $query->whereHas('employee', function ($q) use ($orgName) {
+                    $q->where('department', $orgName);
+                });
+            }
         }
 
         if ($request->has('search')) {
