@@ -14,7 +14,7 @@ interface Employee {
   phone: string;
   position: string;
   level?: string;
-  organization?: {
+  division?: {
     id: number;
     name: string;
   };
@@ -421,7 +421,7 @@ export default function EmployeesPage() {
                         {employee.level && <div className="text-xs text-gray-500">{employee.level}</div>}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {employee.organization?.name || '-'}
+                        {employee.division?.name || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {employee.contract_end_date ? (
@@ -528,7 +528,7 @@ export default function EmployeesPage() {
                     <div>
                       <h3 className="text-2xl font-bold">{selectedEmployee.full_name}</h3>
                       <p className="text-[#1C3ECA] font-semibold">{selectedEmployee.employee_code}</p>
-                      <p className="text-sm mt-1">{selectedEmployee.position} • {selectedEmployee.organization?.name}</p>
+                      <p className="text-sm mt-1">{selectedEmployee.position} • {selectedEmployee.division?.name}</p>
                     </div>
                   </div>
                 </div>

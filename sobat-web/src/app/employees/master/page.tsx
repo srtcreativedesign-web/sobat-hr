@@ -152,7 +152,7 @@ export default function EmployeeMasterPage() {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="text-sm text-gray-900">{emp.position || '-'}</div>
-                                                <div className="text-xs text-gray-500">{emp.organization?.name || '-'}</div>
+                                                <div className="text-xs text-gray-500">{emp.division?.name || '-'}</div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className={`text-sm font-semibold ${emp.leave_balance !== '-' ? 'text-green-600 bg-green-50 px-2 py-1 rounded-md' : 'text-gray-400'}`}>

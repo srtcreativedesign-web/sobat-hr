@@ -14,7 +14,7 @@ interface Employee {
     department: string;
     contract_end_date: string | null;
     status: string;
-    organization: {
+    division?: {
         name: string;
     };
     track?: string;
@@ -256,7 +256,7 @@ export default function ContractsPage() {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <p className="text-sm text-gray-700">{emp.position || '-'}</p>
-                                                    <p className="text-xs text-gray-400">{emp.organization?.name || '-'}</p>
+                                                    <p className="text-xs text-gray-400">{emp.division?.name || '-'}</p>
                                                     <p className="text-xs text-gray-500 mt-1">{emp.department || '-'}</p>
                                                 </td>
                                                 <td className="px-6 py-4">

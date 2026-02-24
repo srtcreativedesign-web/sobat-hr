@@ -13,7 +13,7 @@ interface Request {
     employee: {
         id: number;
         full_name: string;
-        organization?: {
+        division?: {
             name: string;
         }
     };
@@ -225,7 +225,7 @@ export default function OvertimePage() {
                                                 {req.employee?.full_name}
                                             </td>
                                             <td className="px-6 py-4 text-sm text-[#1C3ECA]/70">
-                                                {req.employee?.organization?.name || '-'}
+                                                {req.employee?.division?.name || '-'}
                                             </td>
                                             <td className="px-6 py-4 text-sm text-[#1C3ECA]/70">
                                                 {new Date(req.date).toLocaleDateString('id-ID', {

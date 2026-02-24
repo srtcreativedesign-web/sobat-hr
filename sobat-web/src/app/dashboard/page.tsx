@@ -35,7 +35,7 @@ interface ContractExpiringEmployee {
     name: string;
     email: string;
   };
-  organization: {
+  division?: {
     name: string;
   };
   position: string;
@@ -299,7 +299,7 @@ export default function DashboardPage() {
                         </td>
                         <td className="px-4 py-3">
                           <p className="text-sm text-gray-700">{emp.position}</p>
-                          <p className="text-xs text-gray-400">{emp.organization.name}</p>
+                          <p className="text-xs text-gray-400">{emp.division?.name || '-'}</p>
                         </td>
                         <td className="px-4 py-3">
                           <p className="text-sm font-medium text-gray-900">
