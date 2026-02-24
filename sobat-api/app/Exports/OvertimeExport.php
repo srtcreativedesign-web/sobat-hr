@@ -21,14 +21,14 @@ class OvertimeExport implements FromQuery, WithHeadings, WithMapping
     public function query()
     {
         $query = RequestModel::query()
-            ->with(['employee.organization', 'overtimeDetail'])
+            ->with(['employee.division', 'overtimeDetail'])
             ->where('type', 'overtime')
             ->where('status', 'approved');
 
         if ($this->request->has('organization_id') && $this->request->organization_id) {
             $orgId = $this->request->organization_id;
             $query->whereHas('employee', function($q) use ($orgId) {
-                $q->where('organization_id', $orgId);
+                $q->where('division_id', $orgId);
             });
         }
 
@@ -61,7 +61,7 @@ class OvertimeExport implements FromQuery, WithHeadings, WithMapping
     {
         return [
             $request->employee ? $request->employee->full_name : '-',
-            $request->employee && $request->employee->organization ? $request->employee->organization->name : '-',
+            $request->employee && $request->employee->division ? $request->employee->division->name : '-',
             $request->start_date ? $request->start_date->format('Y-m-d') : '-',
             $request->overtimeDetail ? $request->overtimeDetail->start_time : '-',
             $request->overtimeDetail ? $request->overtimeDetail->end_time : '-',
