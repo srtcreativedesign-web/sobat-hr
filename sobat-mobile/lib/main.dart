@@ -25,6 +25,7 @@ import 'screens/attendance/attendance_screen.dart';
 import 'screens/attendance/attendance_history_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'services/notification_service.dart';
+import 'services/update_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +44,10 @@ void main() async {
 
   await initializeDateFormatting('id_ID', null);
   final prefs = await SharedPreferences.getInstance();
+
+  // Check for in-app updates (non-blocking)
+  UpdateService().checkForUpdate();
+
   runApp(MyApp(prefs: prefs));
 }
 
