@@ -606,6 +606,19 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 11) {
+      return 'Selamat Pagi';
+    } else if (hour < 15) {
+      return 'Selamat Siang';
+    } else if (hour < 18) {
+      return 'Selamat Sore';
+    } else {
+      return 'Selamat Malam';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Use AuthProvider
@@ -699,93 +712,204 @@ class _HomeScreenState extends State<HomeScreen> {
       onRefresh: _onRefresh,
       color: AppTheme.colorEggplant,
       backgroundColor: Colors.white,
-      child: CustomScrollView(
-        physics:
-            const AlwaysScrollableScrollPhysics(), // Ensure scroll even if content is short
-        slivers: [
-          // 1. Sticky Header
-          _buildStickyHeader(user),
-
-          // 2. Main Content
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Section Title
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Dashboard',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textDark,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Ringkasan aktivitas dan data penting Anda.',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppTheme.textLight,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Attendance Card
-                  // Attendance Card (hidden for operational staff)
-                  if (user?.track != 'operational') _buildAttendanceCard(user),
-                  const SizedBox(height: 24),
-
-                  // Horizontal Cards (Carousel)
-                  _buildHorizontalCards(),
-
-                  const SizedBox(height: 32),
-
-                  // Announcements
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: _buildAnnouncements(),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Quick Actions
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: _buildQuickActions(),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Banner
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: _buildBanner(user),
-                  ),
-
-                  // const SizedBox(height: 32);
-
-                  // Recent Activity
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: _buildRecentActivity(),
-                  ),
-
-                  // Bottom padding for floating nav
-                  const SizedBox(height: 120),
-                ],
+      child: Stack(
+        children: [
+          // Background Gradient Blobs
+          Positioned(
+            top: -100,
+            right: -50,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppTheme.colorCyan.withValues(alpha: 0.15),
+                    AppTheme.colorCyan.withValues(alpha: 0),
+                  ],
+                ),
               ),
             ),
+          ),
+          Positioned(
+            top: 50,
+            left: -100,
+            child: Container(
+              width: 400,
+              height: 400,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppTheme.colorEggplant.withValues(alpha: 0.08),
+                    AppTheme.colorEggplant.withValues(alpha: 0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              // 1. Sticky Header
+              _buildStickyHeader(user),
+
+              // 2. Main Content
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Greeting Header
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  _getGreeting().toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppTheme.colorCyan,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  width: 4,
+                                  height: 4,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.grey,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  DateFormat(
+                                    'EEEE, d MMM',
+                                    'id_ID',
+                                  ).format(DateTime.now()),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.textLight,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: RichText(
+                                    text: TextSpan(
+                                      style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w900,
+                                        color: AppTheme.textDark,
+                                        letterSpacing: -1,
+                                        fontFamily: 'Manrope',
+                                      ),
+                                      children: [
+                                        const TextSpan(text: 'Halo, '),
+                                        TextSpan(
+                                          text:
+                                              user?.name.split(' ').first ??
+                                              'User',
+                                          style: const TextStyle(
+                                            color: AppTheme.colorEggplant,
+                                          ),
+                                        ),
+                                        const TextSpan(
+                                          text: '!',
+                                          style: TextStyle(
+                                            color: AppTheme.colorCyan,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.05,
+                                        ),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Text(
+                                    '✨',
+                                    style: TextStyle(fontSize: 20),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      // Attendance Card
+                      // Attendance Card (hidden for operational staff)
+                      if (user?.track != 'operational')
+                        _buildAttendanceCard(user),
+                      const SizedBox(height: 24),
+
+                      // Horizontal Cards (Carousel)
+                      _buildHorizontalCards(),
+
+                      const SizedBox(height: 32),
+
+                      // Announcements
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: _buildAnnouncements(),
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      // Quick Actions
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: _buildQuickActions(),
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      // Banner
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: _buildBanner(user),
+                      ),
+
+                      // const SizedBox(height: 32);
+
+                      // Recent Activity
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: _buildRecentActivity(),
+                      ),
+
+                      const SizedBox(height: 120),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -2275,22 +2399,7 @@ class _HomeScreenState extends State<HomeScreen> {
     int badgeCount = 0,
   }) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: gradientColors[0].withValues(alpha: 0.15),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: const BoxDecoration(color: Colors.transparent),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
