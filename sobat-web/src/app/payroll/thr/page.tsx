@@ -194,9 +194,7 @@ export default function ThrPage() {
                             <tr>
                                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Karyawan</th>
                                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Tahun</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">THR Kotor</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Pajak</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">THR Bersih</th>
+                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Jumlah THR</th>
                                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Status</th>
                                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Aksi</th>
                             </tr>
@@ -214,13 +212,11 @@ export default function ThrPage() {
                                             <div className="text-xs text-gray-500">{thr.employee.employee_code}</div>
                                         </td>
                                         <td className="px-6 py-4 text-gray-600">{thr.year}</td>
-                                        <td className="px-6 py-4 text-right font-medium">{formatCurrency(thr.amount)}</td>
-                                        <td className="px-6 py-4 text-right text-red-500">{formatCurrency(thr.tax)}</td>
                                         <td className="px-6 py-4 text-right font-bold text-[#06B6D4]">{formatCurrency(thr.net_amount)}</td>
                                         <td className="px-6 py-4 text-center">
                                             <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${thr.status === 'paid' ? 'bg-green-50 border-green-200 text-green-700' :
-                                                    thr.status === 'approved' ? 'bg-blue-50 border-blue-200 text-blue-700' :
-                                                        'bg-yellow-50 border-yellow-200 text-yellow-700'
+                                                thr.status === 'approved' ? 'bg-blue-50 border-blue-200 text-blue-700' :
+                                                    'bg-yellow-50 border-yellow-200 text-yellow-700'
                                                 }`}>
                                                 {thr.status}
                                             </span>
@@ -301,17 +297,13 @@ export default function ThrPage() {
                                             <thead className="bg-white border-b sticky top-0 z-10">
                                                 <tr>
                                                     <th className="px-4 py-3 text-left font-bold text-gray-500 uppercase tracking-wider">Nama Karyawan</th>
-                                                    <th className="px-4 py-3 text-right font-bold text-gray-500 uppercase tracking-wider">THR Kotor</th>
-                                                    <th className="px-4 py-3 text-right font-bold text-gray-500 uppercase tracking-wider">Pajak</th>
-                                                    <th className="px-4 py-3 text-right font-bold text-gray-500 uppercase tracking-wider">THR Bersih</th>
+                                                    <th className="px-4 py-3 text-right font-bold text-gray-500 uppercase tracking-wider">Jumlah THR</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-100">
                                                 {parsedRows.map((row, idx) => (
                                                     <tr key={idx} className="bg-white">
                                                         <td className="px-4 py-3 font-medium text-gray-700">{row.employee_name}</td>
-                                                        <td className="px-4 py-3 text-right font-mono">{formatCurrency(row.amount)}</td>
-                                                        <td className="px-4 py-3 text-right font-mono text-red-500">{formatCurrency(row.tax)}</td>
                                                         <td className="px-4 py-3 text-right font-mono font-bold text-[#06B6D4]">{formatCurrency(row.net_amount)}</td>
                                                     </tr>
                                                 ))}
