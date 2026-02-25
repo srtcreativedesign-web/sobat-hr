@@ -82,7 +82,7 @@ class ApiConfig {
   static const String employees = 'employees';
 
   // Attendance
-  static const String attendance = 'attendance';
+  static const String attendance = 'attendances';
   static const String attendanceToday = 'attendance/today';
   static const String attendanceCheckIn = 'attendance/check-in';
   static const String attendanceCheckOut = 'attendance/check-out';
