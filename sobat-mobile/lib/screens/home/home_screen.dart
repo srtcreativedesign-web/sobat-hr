@@ -44,6 +44,12 @@ class _HomeScreenState extends State<HomeScreen> {
   late PageController _pageController;
   Timer? _carouselTimer;
   int _currentAnnouncementIndex = 0;
+
+  // Dashboard Cards Carousel State
+  late PageController _dashboardController;
+  Timer? _dashboardTimer;
+  int _currentDashboardIndex = 0;
+
   Map<String, dynamic>? _todayAttendance;
   bool _isLoadingAttendance = true;
   int _leaveBalance = 0;
@@ -61,6 +67,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _carouselTimer?.cancel();
     _pageController.dispose();
+    _dashboardTimer?.cancel();
+    _dashboardController.dispose();
     super.dispose();
   }
 
@@ -68,6 +76,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _pageController = PageController(viewportFraction: 0.92);
+    _dashboardController = PageController(viewportFraction: 0.92);
+    _startDashboardAutoScroll();
     // Data is loaded by AuthProvider in main.dart
     _loadTodayAttendance();
     _loadLeaveBalance();
@@ -327,6 +337,24 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       });
     }
+  }
+
+  void _startDashboardAutoScroll() {
+    _dashboardTimer?.cancel();
+    _dashboardTimer = Timer.periodic(const Duration(seconds: 7), (timer) {
+      if (_dashboardController.hasClients) {
+        int nextPage = _currentDashboardIndex + 1;
+        // Total cards = 3 (Leave, Salary, THR)
+        if (nextPage >= 3) {
+          nextPage = 0;
+        }
+        _dashboardController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.fastOutSlowIn,
+        );
+      }
+    });
   }
 
   Future<void> _loadAnnouncements() async {
@@ -1316,365 +1344,528 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHorizontalCards() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      physics: const BouncingScrollPhysics(),
-      child: Row(
+    return Column(
+      children: [
+        SizedBox(
+          height: 220,
+          child: PageView(
+            controller: _dashboardController,
+            onPageChanged: (index) {
+              setState(() {
+                _currentDashboardIndex = index;
+              });
+            },
+            physics: const BouncingScrollPhysics(),
+            children: [
+              _buildLeaveBalanceCard(),
+              _buildLastSalaryCard(),
+              _buildThrDashboardCard(),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Dots Indicator
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(3, (index) {
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: _currentDashboardIndex == index ? 20 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: _currentDashboardIndex == index
+                    ? AppTheme.colorEggplant
+                    : Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLeaveBalanceCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Colors.grey.shade50),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Card 1: Leave Balance
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'SISA CUTI',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textLight,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: _isLoadingLeave
+                              ? '...'
+                              : (_isEligibleLeave ? '$_leaveBalance ' : '- '),
+                          style: TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textDark,
+                            fontFamily: 'Manrope',
+                          ),
+                        ),
+                        TextSpan(
+                          text: 'Hari',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.textLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              // Conic Chart Simulation
+              Container(
+                height: 56,
+                width: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: SweepGradient(
+                    colors: [AppTheme.colorCyan, Colors.grey.shade100],
+                    stops: const [0.75, 0.75],
+                    transform: const GradientRotation(-1.57), // Start from top
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Icon(
+                        Icons.percent,
+                        size: 16,
+                        color: AppTheme.colorEggplant,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           Container(
-            width: 300,
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
+              color: AppTheme.success.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_circle, size: 12, color: AppTheme.success),
+                const SizedBox(width: 4),
+                Text(
+                  'Valid s/d Des',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.success,
+                  ),
                 ),
               ],
-              border: Border.all(color: Colors.grey.shade50),
             ),
-            child: Column(
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _isEligibleLeave
+                    ? 'Total jatah: $_leaveQuota hari'
+                    : 'Belum Eligible',
+                style: TextStyle(fontSize: 12, color: AppTheme.textLight),
+              ),
+              InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const CreateSubmissionScreen(type: 'Cuti'),
+                    ),
+                  ).then((_) {
+                    _loadLeaveBalance(); // Refresh on return
+                  });
+                },
+                child: Text(
+                  'Ajukan →',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.colorEggplant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLastSalaryCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.colorEggplant,
+            AppTheme.colorEggplant.withValues(alpha: 0.8),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.colorEggplant.withValues(alpha: 0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: _navigateToPayroll,
+        child: Stack(
+          children: [
+            Positioned(
+              top: -10,
+              right: -10,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.05),
+                ),
+              ),
+            ),
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'SISA CUTI',
+                          'Slip Gaji Terakhir',
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textLight,
-                            letterSpacing: 0.5,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.white.withValues(alpha: 0.7),
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                text: _isLoadingLeave
-                                    ? '...'
-                                    : (_isEligibleLeave
-                                          ? '$_leaveBalance '
-                                          : '- '),
-                                style: TextStyle(
-                                  fontSize: 30,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.textDark,
-                                  fontFamily: 'Manrope',
-                                ),
-                              ),
-                              TextSpan(
-                                text: 'Hari',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppTheme.textLight,
-                                ),
-                              ),
-                            ],
+                        const SizedBox(height: 2),
+                        Text(
+                          _isLoadingPayroll
+                              ? 'Memuat...'
+                              : _lastPayroll != null
+                              ? () {
+                                  final periodStr =
+                                      _lastPayroll!['period'] ??
+                                      _lastPayroll!['period_start'];
+                                  if (periodStr != null) {
+                                    final dateStr =
+                                        periodStr.toString().length == 7
+                                        ? '$periodStr-01'
+                                        : periodStr.toString();
+                                    return 'Periode ${DateFormat('MMM yyyy', 'id_ID').format(DateTime.parse(dateStr))}';
+                                  }
+                                  return 'Belum ada data';
+                                }()
+                              : 'Belum ada data',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white,
                           ),
                         ),
                       ],
                     ),
-                    // Conic Chart Simulation
                     Container(
-                      height: 56,
-                      width: 56,
+                      padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: SweepGradient(
-                          colors: [AppTheme.colorCyan, Colors.grey.shade100],
-                          stops: const [0.75, 0.75],
-                          transform: const GradientRotation(
-                            -1.57,
-                          ), // Start from top
-                        ),
+                        color: Colors.white.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Icon(
-                              Icons.percent,
-                              size: 16,
-                              color: AppTheme.colorEggplant,
-                            ),
-                          ),
-                        ),
+                      child: const Icon(
+                        Icons.payments_outlined,
+                        color: Colors.white,
+                        size: 18,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.success.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.check_circle,
-                        size: 12,
-                        color: AppTheme.success,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Valid s/d Des',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.success,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Divider(height: 1),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                const SizedBox(height: 20),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _isEligibleLeave
-                          ? 'Total jatah: $_leaveQuota hari'
-                          : 'Belum Eligible',
-                      style: TextStyle(fontSize: 12, color: AppTheme.textLight),
+                      _isLoadingPayroll
+                          ? '...'
+                          : _lastPayroll != null
+                          ? 'Rp  * * * * * *'
+                          : '-',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                    InkWell(
-                      // Wrap text with InkWell or similar
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const CreateSubmissionScreen(type: 'Cuti'),
-                          ),
-                        ).then((_) {
-                          _loadLeaveBalance(); // Refresh on return
-                        });
-                      },
-                      child: Text(
-                        'Ajukan →',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.colorEggplant,
-                        ),
+                    Text(
+                      '*Ketuk untuk melihat detail',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.white.withValues(alpha: 0.5),
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-
-          // Card 2: Salary Slip (Dark Gradient)
-          Container(
-            width: 300,
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppTheme.colorEggplant,
-                  AppTheme.colorEggplant.withValues(alpha: 0.8),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.colorEggplant.withValues(alpha: 0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: InkWell(
-              onTap: _navigateToPayroll,
-              child: Stack(
-                children: [
-                  Positioned(
-                    top: -10,
-                    right: -10,
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.05),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.only(top: 12),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.1),
                       ),
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Row(
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Slip Gaji Terakhir',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.normal,
-                                  color: Colors.white.withValues(alpha: 0.7),
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _isLoadingPayroll
-                                    ? 'Memuat...'
-                                    : _lastPayroll != null
-                                    ? () {
-                                        final periodStr =
-                                            _lastPayroll!['period'] ??
-                                            _lastPayroll!['period_start'];
-                                        if (periodStr != null) {
-                                          // Handle YYYY-MM format by appending -01
-                                          final dateStr =
-                                              periodStr.toString().length == 7
-                                              ? '$periodStr-01'
-                                              : periodStr.toString();
-                                          return 'Periode ${DateFormat('MMM yyyy', 'id_ID').format(DateTime.parse(dateStr))}';
-                                        }
-                                        return 'Belum ada data';
-                                      }()
-                                    : 'Belum ada data',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.all(6),
+                      Builder(
+                        builder: (context) {
+                          final status = _lastPayroll != null
+                              ? _lastPayroll!['status']
+                              : 'pending';
+                          Color color;
+                          String text;
+
+                          if (status == 'paid') {
+                            color = const Color(0xFF86EFAC); // Green
+                            text = 'Sudah Ditransfer';
+                          } else if (status == 'approved') {
+                            color = Colors.lightBlueAccent; // Blue
+                            text = 'Disetujui';
+                          } else {
+                            color = Colors.amberAccent; // Orange/Yellow
+                            text = 'Proses';
+                          }
+
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
+                              color: color.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Icon(
-                              Icons.payments_outlined,
-                              color: Colors.white,
-                              size: 18,
+                            child: Text(
+                              text,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                                color: color,
+                              ),
                             ),
-                          ),
-                        ],
+                          );
+                        },
                       ),
-                      const SizedBox(height: 20),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _isLoadingPayroll
-                                ? '...'
-                                : _lastPayroll != null
-                                ? 'Rp  * * * * * *'
-                                : '-',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          Text(
-                            '*Ketuk untuk melihat detail',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.white.withValues(alpha: 0.5),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.only(top: 12),
-                        decoration: BoxDecoration(
-                          border: Border(
-                            top: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.1),
-                            ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThrDashboardCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF06B6D4), // Cyan 500
+            Color(0xFF3B82F6), // Blue 500
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF06B6D4).withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () => Navigator.pushNamed(context, '/payroll/thr'),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -10,
+              right: -10,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.1),
+                ),
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Tunjangan Hari Raya',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.white.withValues(alpha: 0.9),
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            Builder(
-                              builder: (context) {
-                                final status = _lastPayroll != null
-                                    ? _lastPayroll!['status']
-                                    : 'pending';
-                                Color color;
-                                String text;
-
-                                if (status == 'paid') {
-                                  color = const Color(0xFF86EFAC); // Green
-                                  text = 'Sudah Ditransfer';
-                                } else if (status == 'approved') {
-                                  color = Colors.lightBlueAccent; // Blue
-                                  text = 'Disetujui';
-                                } else {
-                                  color = Colors.amberAccent; // Orange/Yellow
-                                  text = 'Proses';
-                                }
-
-                                return Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: color.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    text,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w500,
-                                      color: color,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
+                        const SizedBox(height: 2),
+                        Text(
+                          'Tahun ${DateTime.now().year}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.card_giftcard_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Cek Slip THR ✨',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      '*Ketuk untuk melihat riwayat',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.white.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.only(top: 12),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.2),
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'Bonus Tahunan',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

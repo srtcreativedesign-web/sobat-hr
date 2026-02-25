@@ -126,6 +126,15 @@ class SubmissionMenuScreen extends StatelessWidget {
           const SizedBox(height: 16),
           _buildUtilityCard(
             context,
+            'Slip THR',
+            'Tunjangan Hari Raya',
+            Icons.card_giftcard_rounded,
+            const Color(0xFF06B6D4),
+            onTap: () => Navigator.pushNamed(context, '/payroll/thr'),
+          ),
+          const SizedBox(height: 12),
+          _buildUtilityCard(
+            context,
             'Perjalanan Dinas',
             'Business Trip',
             Icons.flight_takeoff_rounded,
@@ -241,16 +250,19 @@ class SubmissionMenuScreen extends StatelessWidget {
     String label,
     String subLabel,
     IconData icon,
-    Color color,
-  ) {
+    Color color, {
+    VoidCallback? onTap,
+  }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => Navigator.pushNamed(
-          context,
-          '/submission/create',
-          arguments: label,
-        ),
+        onTap:
+            onTap ??
+            () => Navigator.pushNamed(
+              context,
+              '/submission/create',
+              arguments: label,
+            ),
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.all(16),

@@ -16,6 +16,7 @@ import 'screens/profile/edit_profile_screen.dart';
 import 'screens/profile/change_password_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/payroll/payroll_screen.dart';
+import 'screens/payroll/thr_screen.dart';
 import 'screens/submission/submission_menu_screen.dart';
 import 'screens/submission/submission_screen.dart';
 import 'screens/submission/create_submission_screen.dart';
@@ -88,6 +89,7 @@ class MyApp extends StatelessWidget {
                   const ChangePasswordScreen(),
               '/settings': (context) => const SettingsScreen(),
               '/payroll': (context) => const PayrollScreen(),
+              '/payroll/thr': (context) => const ThrScreen(),
               '/submission/menu': (context) => const SubmissionMenuScreen(),
               '/submission/list': (context) => const Scaffold(
                 backgroundColor: Color(0xFFF9FAFB),

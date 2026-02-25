@@ -179,6 +179,25 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/payrolls/period/{month}/{year}', [App\Http\Controllers\Api\PayrollController::class, 'periodPayrolls']);
     Route::post('/payrolls/bulk-download', [App\Http\Controllers\Api\PayrollController::class, 'bulkDownload']);
 
+    // THR (Holiday Bonus) routes
+    Route::prefix('thrs')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\ThrController::class, 'index']);
+        Route::post('/import', [App\Http\Controllers\Api\ThrController::class, 'import']);
+        Route::post('/import/save', [App\Http\Controllers\Api\ThrController::class, 'saveImport']);
+        Route::get('/{id}', [App\Http\Controllers\Api\ThrController::class, 'show']);
+        Route::get('/{id}/slip', [App\Http\Controllers\Api\ThrController::class, 'generateSlip']);
+        
+        // HO & Operational specific
+        Route::prefix('ho')->group(function () {
+            Route::post('/import', [App\Http\Controllers\Api\ThrHoController::class, 'import']);
+            Route::post('/import/save', [App\Http\Controllers\Api\ThrHoController::class, 'saveImport']);
+        });
+        Route::prefix('op')->group(function () {
+            Route::post('/import', [App\Http\Controllers\Api\ThrOperationalController::class, 'import']);
+            Route::post('/import/save', [App\Http\Controllers\Api\ThrOperationalController::class, 'saveImport']);
+        });
+    });
+
     // Payroll Celluller (NEW)
     Route::apiResource('payroll-cellullers', App\Http\Controllers\Api\PayrollCellullerController::class);
     Route::post('payroll-cellullers/import', [App\Http\Controllers\Api\PayrollCellullerController::class, 'import']);
