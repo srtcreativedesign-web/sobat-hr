@@ -144,6 +144,7 @@ class ThrController extends Controller
                 
                 if (stripos($headerValue, 'Nama Karyawan') !== false) $columnMapping['nama_karyawan'] = $colName;
                 if (stripos($headerValue, 'Tahun') !== false) $columnMapping['year'] = $colName;
+                if (stripos($headerValue, 'Masa kerja') !== false) $columnMapping['masa_kerja'] = $colName;
                 if (stripos($headerValue, 'THR') !== false || stripos($headerValue, 'Jumlah') !== false) $columnMapping['amount'] = $colName;
                 if (stripos($headerValue, 'Pajak') !== false || stripos($headerValue, 'PPh') !== false) $columnMapping['tax'] = $colName;
                 if (stripos($headerValue, 'Diterima') !== false || stripos($headerValue, 'Net') !== false) $columnMapping['net_amount'] = $colName;
@@ -159,6 +160,7 @@ class ThrController extends Controller
                 if (empty($employeeName)) continue;
                 
                 $year = $sheet->getCell(($columnMapping['year'] ?? 'A') . $row)->getValue() ?? $request->year ?? date('Y');
+                $masaKerja = $columnMapping['masa_kerja'] ?? null ? $sheet->getCell($columnMapping['masa_kerja'] . $row)->getValue() : null;
                 $amount = (float) $sheet->getCell(($columnMapping['amount'] ?? 'C') . $row)->getCalculatedValue();
                 $tax = (float) $sheet->getCell(($columnMapping['tax'] ?? 'D') . $row)->getCalculatedValue();
                 $netAmount = (float) $sheet->getCell(($columnMapping['net_amount'] ?? 'E') . $row)->getCalculatedValue();
@@ -173,7 +175,9 @@ class ThrController extends Controller
                     'amount' => $amount,
                     'tax' => $tax,
                     'net_amount' => $netAmount,
-                    'details' => [],
+                    'details' => [
+                        'masa_kerja' => $masaKerja
+                    ],
                 ];
             }
 
