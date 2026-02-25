@@ -40,6 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [App\Http\Controllers\Api\AuthController::class, 'me']);
     Route::put('/auth/profile', [App\Http\Controllers\Api\AuthController::class, 'updateProfile']);
     Route::put('/auth/password', [App\Http\Controllers\Api\AuthController::class, 'changePassword']);
+    Route::post('/auth/fcm-token', [App\Http\Controllers\Api\AuthController::class, 'updateFcmToken']);
 
     // Security PIN
     Route::middleware(['throttle:pin'])->group(function () {
@@ -228,7 +229,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('announcements', App\Http\Controllers\Api\AnnouncementController::class);
     // Notification routes
     Route::get('/notifications', [App\Http\Controllers\Api\NotificationController::class, 'index']);
-    Route::post('/notifications/read', [App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/mark-as-read', [App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
 
     // Feedback routes (Mobile)
     Route::post('/feedbacks', [App\Http\Controllers\FeedbackController::class, 'store']);

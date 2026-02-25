@@ -74,6 +74,17 @@ class AnnouncementController extends Controller
             'end_date' => $request->end_date,
         ]);
 
+        // Send Push Notification via FCM
+        try {
+            $fcm = new \App\Services\FcmService();
+            $fcm->broadcastNotification(
+                "Pengumuman Baru: " . $announcement->title,
+                strip_tags(mb_strimwidth($announcement->description, 0, 100, "..."))
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Gagal mengirim broadcast FCM: ' . $e->getMessage());
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Announcement created successfully',
