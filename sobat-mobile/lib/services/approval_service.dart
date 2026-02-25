@@ -6,11 +6,17 @@ class ApprovalService {
   final Dio _dio = Dio();
   final AuthService _authService = AuthService();
 
+  ApprovalService() {
+    _dio.options.baseUrl = ApiConfig.baseUrl;
+    _dio.options.connectTimeout = ApiConfig.connectTimeout;
+    _dio.options.receiveTimeout = ApiConfig.receiveTimeout;
+  }
+
   Future<List<dynamic>> getPendingApprovals() async {
     try {
       final token = await _authService.getToken();
       final response = await _dio.get(
-        '${ApiConfig.baseUrl}/approvals/pending',
+        'approvals/pending',
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
@@ -43,7 +49,7 @@ class ApprovalService {
     try {
       final token = await _authService.getToken();
       final response = await _dio.post(
-        '${ApiConfig.baseUrl}/requests/$requestId/approve',
+        'requests/$requestId/approve',
         data: {'signature': signatureBase64},
         options: Options(
           headers: {
@@ -71,7 +77,7 @@ class ApprovalService {
     try {
       final token = await _authService.getToken();
       final response = await _dio.post(
-        '${ApiConfig.baseUrl}/requests/$requestId/reject',
+        'requests/$requestId/reject',
         data: {'reason': reason},
         options: Options(
           headers: {

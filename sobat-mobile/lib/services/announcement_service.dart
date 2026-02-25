@@ -12,7 +12,7 @@ class AnnouncementService {
     final token = await _authService.getToken();
     if (token == null) throw Exception('No auth token found');
 
-    var url = '${ApiConfig.baseUrl}/announcements';
+    var url = '${ApiConfig.baseUrl}${ApiConfig.announcements}';
     if (category != null) {
       url += '?category=$category';
     }
@@ -38,7 +38,7 @@ class AnnouncementService {
     if (token == null) throw Exception('No auth token found');
 
     final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}/announcements/$id'),
+      Uri.parse('${ApiConfig.baseUrl}${ApiConfig.announcements}/$id'),
       headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
     );
 
@@ -55,7 +55,7 @@ class AnnouncementService {
 
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/announcements/active'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.announcementsActive}'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',

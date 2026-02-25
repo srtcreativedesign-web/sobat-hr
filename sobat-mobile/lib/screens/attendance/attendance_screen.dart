@@ -67,16 +67,21 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
   void _initOfficeLocation() {
     final user = context.read<AuthProvider>().user;
+
+    // Default Head Office Coordinates
+    const double fallbackLat = -6.13778;
+    const double fallbackLng = 106.62295;
+    const double fallbackRadius = 100;
+
     if (user != null &&
         user.officeLatitude != null &&
         user.officeLongitude != null) {
       _officeLocation = LatLng(user.officeLatitude!, user.officeLongitude!);
-      if (user.officeRadius != null) {
-        _attendanceRadius = user.officeRadius!.toDouble();
-      }
+      _attendanceRadius = user.officeRadius?.toDouble() ?? fallbackRadius;
     } else {
-      // Fallback or Handle Error? For now keep dummy as worst case fallback or null
-      // _officeLocation = const LatLng(-6.13778, 106.62295);
+      // Fallback to Head Office if server data is missing
+      _officeLocation = const LatLng(fallbackLat, fallbackLng);
+      _attendanceRadius = fallbackRadius;
     }
   }
 

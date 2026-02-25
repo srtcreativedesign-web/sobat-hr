@@ -41,7 +41,7 @@ class PayrollService {
     // Try to fetch from HO endpoint
     try {
       final response = await _dio.get(
-        '/payrolls/ho',
+        'payrolls/ho', // Removed leading slash
         queryParameters: {if (year != null) 'year': year},
       );
 
@@ -64,7 +64,7 @@ class PayrollService {
     // Try to fetch from FnB endpoint
     try {
       final response = await _dio.get(
-        '/payrolls/fnb',
+        'payrolls/fnb', // Removed leading slash
         queryParameters: {if (year != null) 'year': year},
       );
 
@@ -87,7 +87,7 @@ class PayrollService {
     // Try to fetch from Minimarket endpoint
     try {
       final response = await _dio.get(
-        '/payrolls/mm',
+        'payrolls/mm', // Removed leading slash
         queryParameters: {if (year != null) 'year': year},
       );
 
@@ -110,7 +110,7 @@ class PayrollService {
     // Try to fetch from Reflexiology endpoint
     try {
       final response = await _dio.get(
-        '/payrolls/ref',
+        'payrolls/ref', // Removed leading slash
         queryParameters: {if (year != null) 'year': year},
       );
 
@@ -133,7 +133,7 @@ class PayrollService {
     // Try to fetch from Wrapping endpoint
     try {
       final response = await _dio.get(
-        '/payrolls/wrapping',
+        'payrolls/wrapping', // Removed leading slash
         queryParameters: {if (year != null) 'year': year},
       );
 
@@ -156,7 +156,7 @@ class PayrollService {
     // Try to fetch from Hans endpoint
     try {
       final response = await _dio.get(
-        '/payrolls/hans',
+        'payrolls/hans', // Removed leading slash
         queryParameters: {if (year != null) 'year': year},
       );
 
@@ -179,7 +179,7 @@ class PayrollService {
     // Try to fetch from Celluller endpoint
     try {
       final response = await _dio.get(
-        '/payroll-cellullers',
+        'payroll-cellullers', // Removed leading slash
         queryParameters: {if (year != null) 'year': year},
       );
 
@@ -224,19 +224,19 @@ class PayrollService {
       // Use division-specific endpoint
       String endpoint;
       if (division == 'minimarket') {
-        endpoint = '/payrolls/mm/$payrollId/slip';
+        endpoint = 'payrolls/mm/$payrollId/slip';
       } else if (division == 'fnb') {
-        endpoint = '/payrolls/fnb/$payrollId/slip';
+        endpoint = 'payrolls/fnb/$payrollId/slip';
       } else if (division == 'reflexiology') {
-        endpoint = '/payrolls/ref/$payrollId/slip';
+        endpoint = 'payrolls/ref/$payrollId/slip';
       } else if (division == 'wrapping') {
-        endpoint = '/payrolls/wrapping/$payrollId/slip';
+        endpoint = 'payrolls/wrapping/$payrollId/slip';
       } else if (division == 'hans') {
-        endpoint = '/payrolls/hans/$payrollId/slip';
+        endpoint = 'payrolls/hans/$payrollId/slip';
       } else if (division == 'celluller') {
-        endpoint = '/payroll-cellullers/$payrollId/slip';
+        endpoint = 'payroll-cellullers/$payrollId/slip';
       } else if (division == 'office') {
-        endpoint = '/payrolls/ho/$payrollId/slip';
+        endpoint = 'payrolls/ho/$payrollId/slip';
       } else {
         // Fallback or Error? Since generic is removed, we should probably throw error or default to one
         throw Exception('Unknown Division for download');

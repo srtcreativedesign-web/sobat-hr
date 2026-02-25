@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../config/api_config.dart';
 import '../models/user.dart';
@@ -43,7 +44,7 @@ class AuthService {
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     // print(
-      // 'AuthService: Starting login request to ${ApiConfig.baseUrl}${ApiConfig.login}',
+    // 'AuthService: Starting login request to ${ApiConfig.baseUrl}${ApiConfig.login}',
     // );
     try {
       final response = await _dio.post(
@@ -55,7 +56,7 @@ class AuthService {
       // Check if response data is Map (JSON)
       if (response.data is! Map) {
         // print(
-          // 'AuthService: Response data is not a Map: ${response.data.runtimeType}',
+        // 'AuthService: Response data is not a Map: ${response.data.runtimeType}',
         // );
         // If not Map (likely HTML or String), throw error with preview
         final raw = response.data.toString();
@@ -178,7 +179,7 @@ class AuthService {
         final data = e.response?.data;
         // Debug: print raw response body for easier inspection
         // print(
-          // 'AuthService.updateEmployee 422 response raw: ${jsonEncode(data)}',
+        // 'AuthService.updateEmployee 422 response raw: ${jsonEncode(data)}',
         // );
         final errors = data != null && data['errors'] != null
             ? data['errors'] as Map<String, dynamic>
@@ -213,7 +214,7 @@ class AuthService {
         final data = e.response?.data;
         // Debug: print raw response body for easier inspection
         // print(
-          // 'AuthService.createEmployee 422 response raw: ${jsonEncode(data)}',
+        // 'AuthService.createEmployee 422 response raw: ${jsonEncode(data)}',
         // );
         final errors = data != null && data['errors'] != null
             ? data['errors'] as Map<String, dynamic>
@@ -265,7 +266,7 @@ class AuthService {
   ) async {
     try {
       final response = await _dio.put(
-        '/auth/password',
+        'auth/password', // Removed leading slash
         data: {
           'current_password': currentPassword,
           'new_password': newPassword,
@@ -297,7 +298,7 @@ class AuthService {
   Future<void> forgotPassword(String phone) async {
     try {
       final response = await _dio.post(
-        '/auth/forgot-password',
+        'auth/forgot-password', // Removed leading slash
         data: {'phone': phone},
       );
       if (response.statusCode == 200) {
@@ -306,6 +307,20 @@ class AuthService {
       throw Exception(response.data['message'] ?? 'Gagal mengirim permintaan');
     } on DioException catch (e) {
       throw Exception(e.response?.data['message'] ?? e.message);
+    }
+  }
+
+  Future<void> updateFcmToken(String token) async {
+    try {
+      if (kDebugMode) {
+        print('Updating FCM token...');
+      }
+      await _dio.post(ApiConfig.fcmToken, data: {'fcm_token': token});
+    } catch (e) {
+      // Silently fail, not critical for app usage
+      if (kDebugMode) {
+        print('Error updating FCM token: $e');
+      }
     }
   }
 }

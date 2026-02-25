@@ -65,10 +65,7 @@ class AttendanceService {
 
       FormData formData = FormData.fromMap(map);
 
-      final response = await _dio.post(
-        '/attendances', // ApiConfig.attendance might be different, let's use direct path or update Config
-        data: formData,
-      );
+      final response = await _dio.post(ApiConfig.attendance, data: formData);
 
       return response.data;
     } on DioException catch (e) {
@@ -94,7 +91,7 @@ class AttendanceService {
     await _addAuthHeader();
     try {
       // Use standard endpoint
-      final response = await _dio.get('/attendance/today');
+      final response = await _dio.get(ApiConfig.attendanceToday);
 
       // If response data is empty or null, return null (Belum Absen)
       if (response.data == null ||
@@ -122,7 +119,7 @@ class AttendanceService {
       if (year != null) queryParams['year'] = year;
 
       final response = await _dio.get(
-        '/attendance/history',
+        'attendance/history', // No leading slash
         queryParameters: queryParams,
       );
 
@@ -158,7 +155,7 @@ class AttendanceService {
       });
 
       final response = await _dio.post(
-        '/attendances/$attendanceId',
+        'attendances/$attendanceId', // Manual path without leading slash
         data: formData,
       );
 

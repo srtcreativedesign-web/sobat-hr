@@ -34,7 +34,7 @@ class SecurityService {
   Future<void> setupPin(String pin, String pinConfirmation) async {
     try {
       await _dio.post(
-        '/security/pin/setup',
+        'security/pin/setup', // Removed leading slash
         data: {'pin': pin, 'pin_confirmation': pinConfirmation},
       );
       // Success
@@ -55,7 +55,10 @@ class SecurityService {
 
   Future<bool> verifyPin(String pin) async {
     try {
-      await _dio.post('/security/pin/verify', data: {'pin': pin});
+      await _dio.post(
+        'security/pin/verify',
+        data: {'pin': pin},
+      ); // Removed leading slash
       return true;
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {

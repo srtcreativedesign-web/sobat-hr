@@ -24,7 +24,9 @@ class RequestService {
   Future<Map<String, dynamic>> getLeaveBalance() async {
     await _addAuthHeader();
     try {
-      final response = await _dio.get('/requests/leave-balance');
+      final response = await _dio.get(
+        'requests/leave-balance',
+      ); // Removed leading slash
       return response.data;
     } on DioException catch (e) {
       throw e.response?.data['message'] ?? 'Gagal mengambil data saldo cuti';
@@ -37,11 +39,14 @@ class RequestService {
   Future<Map<String, dynamic>> createRequest(Map<String, dynamic> data) async {
     await _addAuthHeader();
     try {
-      final response = await _dio.post('/requests', data: data);
+      final response = await _dio.post(
+        'requests',
+        data: data,
+      ); // Removed leading slash
       return response.data;
     } on DioException catch (e) {
       // debugPrint(
-        // '❌ Create Request Error: ${e.response?.statusCode} - ${e.response?.data}',
+      // '❌ Create Request Error: ${e.response?.statusCode} - ${e.response?.data}',
       // );
       throw e.response?.data['message'] ?? 'Gagal mengirim pengajuan';
     } catch (e) {
@@ -55,7 +60,7 @@ class RequestService {
     await _addAuthHeader();
     try {
       final response = await _dio.get(
-        '/requests',
+        'requests', // Removed leading slash
         queryParameters: {
           if (type != null) 'type': type,
           if (status != null && status != 'Semua') 'status': status,

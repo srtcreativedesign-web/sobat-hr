@@ -60,9 +60,15 @@ class FcmService
                 'json' => $payload,
             ]);
 
-            return $response->getStatusCode() === 200;
+            $isSuccess = $response->getStatusCode() === 200;
+            Log::info("FCM Send to $token: " . ($isSuccess ? 'Success' : 'Failed (' . $response->getStatusCode() . ')'));
+
+            return $isSuccess;
         } catch (\Exception $e) {
             Log::error('FCM Error: ' . $e->getMessage());
+            if (method_exists($e, 'getResponse') && $e->getResponse()) {
+                Log::error('FCM Error Body: ' . $e->getResponse()->getBody()->getContents());
+            }
             return false;
         }
     }

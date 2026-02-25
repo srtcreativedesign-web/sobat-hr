@@ -18,7 +18,7 @@ class ApiConfig {
   static const String _port = '8000';
 
   // Production URL
-  static const String _prodUrl = 'https://api.sobat-hr.com/api';
+  static const String _prodUrl = 'https://api.sobat-hr.com/api/';
 
   // Base URL Logic
   static String get baseUrl {
@@ -33,23 +33,23 @@ class ApiConfig {
     // Web
     if (kIsWeb) {
       // debugPrint('🌐 Platform: Web Browser');
-      return 'http://127.0.0.1:$_port/api';
+      return 'http://127.0.0.1:$_port/api/';
     }
 
     // Android
     if (Platform.isAndroid) {
       // debugPrint('🤖 Platform: Android → IP: $_hostIp');
-      return 'http://$_hostIp:$_port/api';
+      return 'http://$_hostIp:$_port/api/';
     }
 
     // iOS
     if (Platform.isIOS) {
       // debugPrint('🍎 Platform: iOS → IP: $_hostIp');
-      return 'http://$_hostIp:$_port/api';
+      return 'http://$_hostIp:$_port/api/';
     }
 
     // Fallback
-    return 'http://127.0.0.1:$_port/api';
+    return 'http://127.0.0.1:$_port/api/';
   }
 
   /// Check if running in production
@@ -59,30 +59,39 @@ class ApiConfig {
   // 🔌 ENDPOINTS
   // ==========================================================================
 
-  static const String login = '/auth/login';
-  static const String logout = '/auth/logout';
-  static const String profile = '/auth/me';
+  static const String login = 'auth/login';
+  static const String logout = 'auth/logout';
+  static const String profile = 'auth/me';
+  static const String fcmToken = 'auth/fcm-token';
+
+  // Notifications
+  static const String notifications = 'notifications';
+  static const String markNotificationsAsRead = 'notifications/mark-as-read';
+
+  // Announcements
+  static const String announcements = 'announcements';
+  static const String announcementsActive = 'announcements/active';
 
   // Dashboard
-  static const String analytics = '/dashboard/analytics';
-  static const String turnover = '/dashboard/turnover';
-  static const String attendanceHeatmap = '/dashboard/attendance-heatmap';
-  static const String contractExpiring = '/dashboard/contract-expiring';
+  static const String analytics = 'dashboard/analytics';
+  static const String turnover = 'dashboard/turnover';
+  static const String attendanceHeatmap = 'dashboard/attendance-heatmap';
+  static const String contractExpiring = 'dashboard/contract-expiring';
 
   // Employees
-  static const String employees = '/employees';
+  static const String employees = 'employees';
 
   // Attendance
-  static const String attendance = '/attendance';
-  static const String attendanceToday = '/attendance/today';
-  static const String attendanceCheckIn = '/attendance/check-in';
-  static const String attendanceCheckOut = '/attendance/check-out';
+  static const String attendance = 'attendance';
+  static const String attendanceToday = 'attendance/today';
+  static const String attendanceCheckIn = 'attendance/check-in';
+  static const String attendanceCheckOut = 'attendance/check-out';
 
   // Leave Requests
-  static const String leaveRequests = '/leave-requests';
+  static const String leaveRequests = 'leave-requests';
 
   // Payroll
-  static const String payroll = '/payrolls';
+  static const String payroll = 'payrolls';
 
   // Timeout configuration
   static const Duration connectTimeout = Duration(seconds: 15);
@@ -98,8 +107,8 @@ class ApiConfig {
     // Already a full URL
     if (p.startsWith('http')) return p;
 
-    // Get base URL without trailing /api (use regex to avoid stripping /api from subdomain)
-    final base = baseUrl.replaceFirst(RegExp(r'/api$'), '');
+    // Get base URL without trailing /api/
+    final base = baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
 
     // Remove leading slash
     if (p.startsWith('/')) p = p.substring(1);

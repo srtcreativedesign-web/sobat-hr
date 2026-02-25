@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -23,9 +24,23 @@ import 'screens/notification/notification_screen.dart';
 import 'screens/attendance/attendance_screen.dart';
 import 'screens/attendance/attendance_history_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase (Requires Full Rebuild if Gradle files changed)
+  try {
+    await Firebase.initializeApp();
+    final notificationService = NotificationService();
+    await notificationService.initialize();
+  } catch (e) {
+    debugPrint('Firebase initialization failed: $e');
+    debugPrint(
+      'If this is Android, please perform a FULL app stop and re-run.',
+    );
+  }
+
   await initializeDateFormatting('id_ID', null);
   final prefs = await SharedPreferences.getInstance();
   runApp(MyApp(prefs: prefs));

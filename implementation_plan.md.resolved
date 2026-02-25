@@ -1,0 +1,43 @@
+# Logic for Handling Missing Clock-out
+
+Currently, if a user forgets to clock out, the system allows them to clock in the next day, leaving the previous day's attendance "open" (NULL check_out). This causes data inconsistency.
+
+## Proposed Logic
+
+### 1. Unified "Active Session" API
+Modify the `/attendance/today` endpoint to be more intelligent. Instead of only looking at "today's date", it will:
+1. Search for any attendance record that has `check_out == NULL`.
+2. If multiple exist, return the latest one.
+3. If none exist, return the latest record for today (even if closed).
+
+### 2. Mobile App UX Flow
+The [AttendanceScreen](file:///Applications/XAMPP/xamppfiles/htdocs/sobat-hr/sobat-mobile/lib/screens/attendance/attendance_screen.dart#17-23) will handle the response as follows:
+- **Case A: No record OR Latest record is closed**
+    - Action: Show "Clock In" button (Normal flow).
+- **Case B: Open record from TODAY**
+    - Action: Show "Clock Out" button (Normal flow).
+- **Case C: Open record from YESTERDAY (or older)**
+    - Action: Show "Resolve Missing Clock-out" UI.
+    - Options for user:
+        - "Clock Out Now" (Uses a default time or current time with a 'Forgot' flag).
+        - "Mark as Forgotten" (HR will handle it).
+    - **Crucial**: The user MUST resolve this before being allowed to "Clock In" for the new day.
+
+### 3. Server-Side Auto-Close (Optional/Safety)
+Implement a scheduled task (Artisan command) that runs at midnight to:
+- Find any `NULL` check_out records from the previous day.
+- Set them to a default check_out time (e.g., 17:00).
+- Mark them with a `system_note` = "Auto-closed by system".
+
+## Proposed Changes
+
+### [MODIFY] [AttendanceController.php](file:///Applications/XAMPP/xamppfiles/htdocs/sobat-hr/sobat-api/app/Http/Controllers/Api/AttendanceController.php)
+- Update [today()](file:///Applications/XAMPP/xamppfiles/htdocs/sobat-hr/sobat-api/app/Http/Controllers/Api/AttendanceController.php#439-455) method to find the latest "Open" session.
+
+### [MODIFY] [AttendanceScreen.dart](file:///Applications/XAMPP/xamppfiles/htdocs/sobat-hr/sobat-mobile/lib/screens/attendance/attendance_screen.dart)
+- Update UI logic to handle "Stale" open sessions (older than today).
+
+## Verification Plan
+1. **Simulation**: Manually set an attendance record's `check_out` to `NULL` for a past date in the DB.
+2. **App Check**: Open the mobile app and verify it prompts to resolve the stale session instead of showing a fresh "Clock In".
+3. **Execution**: Resolve the stale session and verify it now allows "Clock In" for the current day.

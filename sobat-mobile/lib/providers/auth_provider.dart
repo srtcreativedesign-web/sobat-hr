@@ -2,11 +2,13 @@ import 'package:flutter/foundation.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
 import '../services/storage_service.dart';
+import '../services/notification_service.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
+  final NotificationService _notificationService = NotificationService();
 
   User? _user;
   bool _isAuthenticated = false;
@@ -36,6 +38,8 @@ class AuthProvider with ChangeNotifier {
         if (userData != null) {
           _user = User.fromJson(userData);
           _isAuthenticated = true;
+          // Sync FCM Token
+          syncFcmToken();
         }
       }
     } catch (e) {
@@ -59,6 +63,10 @@ class AuthProvider with ChangeNotifier {
         _user = result['user'] as User;
         _isAuthenticated = true;
         _isLoading = false;
+
+        // Sync FCM Token
+        syncFcmToken();
+
         notifyListeners();
         return true;
       } else {
@@ -165,5 +173,12 @@ class AuthProvider with ChangeNotifier {
     await prefs.setBool('biometric_enabled', value);
     _biometricEnabled = value;
     notifyListeners();
+  }
+
+  Future<void> syncFcmToken() async {
+    final token = await _notificationService.getToken();
+    if (token != null) {
+      await _authService.updateFcmToken(token);
+    }
   }
 }

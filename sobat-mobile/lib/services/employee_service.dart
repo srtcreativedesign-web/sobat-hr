@@ -6,6 +6,12 @@ class EmployeeService {
   final Dio _dio = Dio();
   final AuthService _authService = AuthService();
 
+  EmployeeService() {
+    _dio.options.baseUrl = ApiConfig.baseUrl;
+    _dio.options.connectTimeout = ApiConfig.connectTimeout;
+    _dio.options.receiveTimeout = ApiConfig.receiveTimeout;
+  }
+
   // Search employees by name or code
   Future<List<Map<String, dynamic>>> searchEmployees(String query) async {
     try {
@@ -15,7 +21,7 @@ class EmployeeService {
       }
 
       final response = await _dio.get(
-        '${ApiConfig.baseUrl}/employees',
+        'employees', // Use relative path
         queryParameters: {'search': query, 'per_page': 10}, // Limit results
       );
 
