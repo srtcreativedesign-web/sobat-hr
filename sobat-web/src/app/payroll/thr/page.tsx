@@ -33,6 +33,7 @@ export default function ThrPage() {
     const [parsedRows, setParsedRows] = useState<any[]>([]);
 
     const [selectedDivision, setSelectedDivision] = useState<'ho' | 'op'>('ho');
+    const [selectedViewDivision, setSelectedViewDivision] = useState<string>('all');
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
     useEffect(() => {
@@ -42,14 +43,15 @@ export default function ThrPage() {
     useEffect(() => {
         fetchThrs();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedYear]);
+    }, [selectedYear, selectedViewDivision]);
 
     const fetchThrs = async () => {
         try {
             setLoading(true);
             const response = await apiClient.get('/thrs', {
                 params: {
-                    year: selectedYear
+                    year: selectedYear,
+                    division: selectedViewDivision !== 'all' ? selectedViewDivision : undefined
                 }
             });
             setThrs(response.data.data || []);
@@ -102,7 +104,8 @@ export default function ThrPage() {
         try {
             setLoading(true);
             const response = await apiClient.post('/thrs/import/save', {
-                rows: parsedRows
+                rows: parsedRows,
+                division: selectedDivision
             });
 
             alert(response.data.message);
@@ -182,6 +185,19 @@ export default function ThrPage() {
                             const year = new Date().getFullYear() - i;
                             return <option key={year} value={year}>{year}</option>;
                         })}
+                    </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-700">Divisi:</span>
+                    <select
+                        value={selectedViewDivision}
+                        onChange={(e) => setSelectedViewDivision(e.target.value)}
+                        className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#06B6D4] text-sm font-medium"
+                    >
+                        <option value="all">Semua Divisi</option>
+                        <option value="ho">Head Office</option>
+                        <option value="op">Operational</option>
                     </select>
                 </div>
             </div>

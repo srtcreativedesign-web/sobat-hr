@@ -21,6 +21,11 @@ class ThrController extends Controller
             $query->where('year', $request->year);
         }
 
+        // Filter by division
+        if ($request->has('division')) {
+            $query->where('division', $request->division);
+        }
+
         // Automatic scope for non-admin users
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
@@ -49,6 +54,7 @@ class ThrController extends Controller
                         'full_name' => $thr->employee->full_name ?? 'Unknown',
                     ],
                     'year' => $thr->year,
+                    'division' => $thr->division,
                     'amount' => (float) $thr->amount,
                     'nominal' => (float) $thr->amount, // Alias for mobile
                     'tax' => (float) $thr->tax,
@@ -189,6 +195,7 @@ class ThrController extends Controller
     {
         $request->validate([
             'rows' => 'required|array',
+            'division' => 'nullable|string',
             'rows.*.employee_name' => 'required|string',
             'rows.*.year' => 'required|string',
             'rows.*.amount' => 'required|numeric',
@@ -196,6 +203,7 @@ class ThrController extends Controller
         ]);
 
         $rows = $request->input('rows');
+        $division = $request->input('division');
         $saved = [];
         $failed = [];
 
@@ -218,6 +226,7 @@ class ThrController extends Controller
                         'year' => $row['year'],
                     ],
                     [
+                        'division' => $division,
                         'amount' => $row['amount'],
                         'tax' => $row['tax'] ?? 0,
                         'net_amount' => $row['net_amount'],

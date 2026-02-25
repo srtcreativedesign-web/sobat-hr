@@ -10,6 +10,7 @@ class Thr extends Model
 
     protected $fillable = [
         'employee_id',
+        'division',
         'year',
         'amount',
         'tax',
