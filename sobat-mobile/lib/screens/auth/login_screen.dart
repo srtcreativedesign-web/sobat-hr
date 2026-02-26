@@ -36,6 +36,14 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.of(
           context,
         ).pushNamedAndRemoveUntil('/home', (route) => false);
+      } else if (mounted && authProvider.errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.errorMessage!),
+            backgroundColor: Colors.red.shade700,
+            duration: const Duration(seconds: 4),
+          ),
+        );
       }
     }
   }
@@ -435,6 +443,47 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                           ),
                         ),
+                      ),
+
+                      // Error message display
+                      Consumer<AuthProvider>(
+                        builder: (context, authProvider, child) {
+                          if (authProvider.errorMessage != null) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 16),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.red.shade200,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.error_outline,
+                                      color: Colors.red.shade700,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        authProvider.errorMessage!,
+                                        style: TextStyle(
+                                          color: Colors.red.shade700,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
                       ),
 
                       const SizedBox(height: 40),

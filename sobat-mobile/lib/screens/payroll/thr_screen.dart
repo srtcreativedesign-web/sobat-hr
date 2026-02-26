@@ -1,7 +1,13 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
 import '../../services/thr_service.dart';
+import '../../providers/auth_provider.dart';
+import '../security/pin_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:signature/signature.dart';
 
 class ThrScreen extends StatefulWidget {
   const ThrScreen({super.key});
@@ -13,12 +19,35 @@ class ThrScreen extends StatefulWidget {
 class _ThrScreenState extends State<ThrScreen> {
   final ThrService _thrService = ThrService();
   bool _isLoading = true;
+  bool _pinVerified = false;
   List<dynamic> _thrs = [];
 
   @override
   void initState() {
     super.initState();
-    _loadThrs();
+    // Show PIN screen after build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showPinVerification();
+    });
+  }
+
+  void _showPinVerification() {
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    if (user == null) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PinScreen(
+          mode: user.hasPin ? PinMode.verify : PinMode.setup,
+          onSuccess: () {
+            Navigator.pop(context); // Close PIN Screen
+            setState(() => _pinVerified = true);
+            _loadThrs();
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _loadThrs() async {
@@ -41,7 +70,38 @@ class _ThrScreenState extends State<ThrScreen> {
     }
   }
 
-  Future<void> _downloadThrSlip(int id, int year) async {
+  void _handleDownload(Map<String, dynamic> thr) {
+    final id = thr['id'];
+    final year = int.parse(thr['year'].toString());
+    final details = thr['details'] ?? {};
+    final storedSignature = details['employee_signature'];
+
+    if (storedSignature != null && storedSignature.toString().isNotEmpty) {
+      // Already signed — download directly (no signature page)
+      _downloadThrSlip(id, year, null);
+    } else {
+      // First time — show signature page
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => _SignaturePage(
+            onSigned: (Uint8List signatureBytes) async {
+              Navigator.pop(context); // Close signature page
+              await _downloadThrSlip(id, year, signatureBytes);
+              // Refresh data so next time it skips signature
+              _loadThrs();
+            },
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _downloadThrSlip(
+    int id,
+    int year,
+    Uint8List? signatureBytes,
+  ) async {
     try {
       showDialog(
         context: context,
@@ -49,8 +109,19 @@ class _ThrScreenState extends State<ThrScreen> {
         builder: (c) => const Center(child: CircularProgressIndicator()),
       );
 
+      // Convert signature bytes to base64 data URI
+      String? signatureBase64;
+      if (signatureBytes != null) {
+        signatureBase64 =
+            'data:image/png;base64,${base64Encode(signatureBytes)}';
+      }
+
       final filename = 'Slip_THR_$year.pdf';
-      await _thrService.downloadThrSlip(id, filename);
+      await _thrService.downloadThrSlip(
+        id,
+        filename,
+        employeeSignature: signatureBase64,
+      );
 
       if (!mounted) return;
       Navigator.pop(context); // Close loading
@@ -99,7 +170,50 @@ class _ThrScreenState extends State<ThrScreen> {
         ),
         centerTitle: true,
       ),
-      body: _isLoading
+      body: !_pinVerified
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.lock_outline,
+                    size: 64,
+                    color: Colors.grey.shade300,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Verifikasi PIN diperlukan',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _showPinVerification,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.colorEggplant,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 14,
+                      ),
+                    ),
+                    child: const Text(
+                      'Masukkan PIN',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: AppTheme.colorEggplant),
             )
@@ -151,7 +265,7 @@ class _ThrScreenState extends State<ThrScreen> {
 
   Widget _buildThrCard(Map<String, dynamic> thr) {
     final year = thr['year'];
-    final nominal = thr['net_nominal'] ?? thr['nominal'] ?? 0;
+    final amount = thr['amount'] ?? 0;
     final details = thr['details'] ?? {};
     final keterangan = details['keterangan'] ?? 'THR Idul Fitri $year';
 
@@ -173,10 +287,7 @@ class _ThrScreenState extends State<ThrScreen> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF06B6D4), // Cyan 500
-                  const Color(0xFF3B82F6), // Blue 500
-                ],
+                colors: [const Color(0xFF06B6D4), const Color(0xFF3B82F6)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -232,8 +343,10 @@ class _ThrScreenState extends State<ThrScreen> {
             child: Column(
               children: [
                 _buildInfoRow(
-                  'Nominal Bersih',
-                  _formatCurrency(nominal),
+                  'Jumlah THR',
+                  _formatCurrency(
+                    amount is String ? num.parse(amount) : amount,
+                  ),
                   isTotal: true,
                 ),
                 if (details['masa_kerja'] != null) ...[
@@ -262,7 +375,7 @@ class _ThrScreenState extends State<ThrScreen> {
                     ),
                     Expanded(
                       child: TextButton.icon(
-                        onPressed: () => _downloadThrSlip(thr['id'], year),
+                        onPressed: () => _handleDownload(thr),
                         icon: const Icon(Icons.download_rounded, size: 20),
                         label: const Text('Download PDF'),
                         style: TextButton.styleFrom(
@@ -304,6 +417,7 @@ class _ThrScreenState extends State<ThrScreen> {
   }
 
   void _showDetailSheet(Map<String, dynamic> thr) {
+    final amount = thr['amount'] ?? 0;
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -322,18 +436,12 @@ class _ThrScreenState extends State<ThrScreen> {
             const SizedBox(height: 24),
             _buildDetailItem('Tahun', thr['year'].toString()),
             _buildDetailItem(
-              'Nominal Kotor',
-              _formatCurrency(thr['nominal'] ?? 0),
+              'Jumlah THR',
+              _formatCurrency(amount is String ? num.parse(amount) : amount),
             ),
             _buildDetailItem(
-              'Potongan Pajak',
-              _formatCurrency(thr['tax'] ?? 0),
-            ),
-            const Divider(height: 32),
-            _buildDetailItem(
-              'Nominal Diterima',
-              _formatCurrency(thr['net_nominal'] ?? 0),
-              isBold: true,
+              'Status',
+              (thr['status'] ?? 'draft').toString().toUpperCase(),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -370,6 +478,206 @@ class _ThrScreenState extends State<ThrScreen> {
             value,
             style: TextStyle(
               fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Signature Page - shown before downloading THR slip
+class _SignaturePage extends StatefulWidget {
+  final Future<void> Function(Uint8List signatureBytes) onSigned;
+
+  const _SignaturePage({required this.onSigned});
+
+  @override
+  State<_SignaturePage> createState() => _SignaturePageState();
+}
+
+class _SignaturePageState extends State<_SignaturePage> {
+  final SignatureController _controller = SignatureController(
+    penStrokeWidth: 3,
+    penColor: Colors.black,
+    exportBackgroundColor: Colors.white,
+    exportPenColor: Colors.black,
+  );
+  bool _isSaving = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _confirmAndDownload() async {
+    if (_controller.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Silakan tanda tangan terlebih dahulu'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      final signatureBytes = await _controller.toPngBytes();
+      if (signatureBytes != null) {
+        await widget.onSigned(signatureBytes);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: AppTheme.colorEggplant,
+        elevation: 0,
+        leading: const BackButton(color: Colors.white),
+        title: const Text(
+          'Tanda Tangan Digital',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: () => _controller.clear(),
+            tooltip: 'Hapus tanda tangan',
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Info section
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppTheme.colorEggplant.withValues(alpha: 0.05),
+                  Colors.white,
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.draw_rounded,
+                  size: 48,
+                  color: AppTheme.colorEggplant.withValues(alpha: 0.6),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Tanda Tangan Penerima',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Silakan tanda tangan di area bawah ini sebelum download slip THR',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+
+          // Signature pad area
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 24),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300, width: 2),
+                borderRadius: BorderRadius.circular(16),
+                color: Colors.white,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Signature(
+                  controller: _controller,
+                  backgroundColor: Colors.white,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+          Text(
+            'Tanda tangan menggunakan jari Anda',
+            style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+          ),
+
+          // Buttons
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _controller.clear(),
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Hapus'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red.shade400,
+                      side: BorderSide(color: Colors.red.shade200),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: _isSaving ? null : _confirmAndDownload,
+                    icon: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.download_rounded),
+                    label: Text(
+                      _isSaving ? 'Memproses...' : 'Download Slip THR',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.colorEggplant,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      elevation: 2,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

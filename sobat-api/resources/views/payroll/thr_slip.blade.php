@@ -193,6 +193,10 @@
                     <div class="info-value">: {{ $employee->position ?? '-' }}</div>
                 </div>
                 <div class="info-row">
+                    <div class="info-label">Masa Kerja</div>
+                    <div class="info-value">: {{ $masaKerja }}</div>
+                </div>
+                <div class="info-row">
                     <div class="info-label">Tahun</div>
                     <div class="info-value">: {{ $thr->year }}</div>
                 </div>
@@ -213,19 +217,13 @@
                         <td>Tunjangan Hari Raya (THR)</td>
                         <td class="amount">{{ number_format($thr->amount, 0, ',', '.') }}</td>
                     </tr>
-                    @if($thr->tax > 0)
-                    <tr>
-                        <td>Potongan Pajak (PPh 21)</td>
-                        <td class="amount" style="color: #dc2626;">-{{ number_format($thr->tax, 0, ',', '.') }}</td>
-                    </tr>
-                    @endif
                 </tbody>
             </table>
 
             <div class="summary-table">
                 <div class="summary-row">
-                    <div class="summary-label">TOTAL DITERIMA (NET)</div>
-                    <div class="summary-value">Rp {{ number_format($thr->net_amount, 0, ',', '.') }}</div>
+                    <div class="summary-label">TOTAL DITERIMA</div>
+                    <div class="summary-value">Rp {{ number_format($thr->amount, 0, ',', '.') }}</div>
                 </div>
             </div>
         </div>
@@ -234,17 +232,21 @@
             <tr>
                 <td class="signature-box" style="border: none;">
                     <p>Diterima oleh,</p>
-                    <div class="signature-space"></div>
+                    <div class="signature-space">
+                        @if(!empty($employeeSignature))
+                            <img src="{{ $employeeSignature }}" alt="Employee Signature" style="height: 60px;">
+                        @endif
+                    </div>
                     <p><strong>{{ $employee->full_name }}</strong></p>
                 </td>
                 <td class="signature-box" style="border: none;">
                     <p>Disetujui oleh,</p>
                     <div class="signature-space">
-                        @if(!empty($thr->approval_signature))
-                            <img src="{{ $thr->approval_signature }}" alt="Signature" style="height: 60px;">
+                        @if(!empty($thr->details['signature']))
+                            <img src="{{ $thr->details['signature'] }}" alt="Signature" style="height: 60px;">
                         @endif
                     </div>
-                    <p><strong>{{ $thr->signer_name ?? 'Management' }}</strong></p>
+                    <p><strong>{{ $thr->details['signer_name'] ?? 'Management' }}</strong></p>
                 </td>
             </tr>
         </table>

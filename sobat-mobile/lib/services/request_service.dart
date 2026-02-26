@@ -1,15 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../config/api_config.dart';
+import '../config/dio_factory.dart';
 
 class RequestService {
-  final Dio _dio = Dio();
+  late final Dio _dio;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   RequestService() {
-    _dio.options.baseUrl = ApiConfig.baseUrl;
-    _dio.options.connectTimeout = ApiConfig.connectTimeout;
-    _dio.options.receiveTimeout = ApiConfig.receiveTimeout;
+    _dio = DioFactory.create();
   }
 
   Future<void> _addAuthHeader() async {

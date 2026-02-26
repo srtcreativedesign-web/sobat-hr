@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../config/api_config.dart';
+import '../config/dio_factory.dart';
 import '../models/user.dart';
 import 'storage_service.dart';
 
@@ -9,17 +10,7 @@ class AuthService {
   late final Dio _dio;
 
   AuthService() {
-    _dio = Dio(
-      BaseOptions(
-        baseUrl: ApiConfig.baseUrl,
-        connectTimeout: ApiConfig.connectTimeout,
-        receiveTimeout: ApiConfig.receiveTimeout,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      ),
-    );
+    _dio = DioFactory.create();
 
     // Add interceptor untuk attach token
     _dio.interceptors.add(

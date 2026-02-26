@@ -4,20 +4,17 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../config/api_config.dart';
+import '../config/dio_factory.dart';
 
 class NotificationService {
   // Singleton pattern
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
-  NotificationService._internal() {
-    _dio.options.baseUrl = ApiConfig.baseUrl;
-    _dio.options.connectTimeout = ApiConfig.connectTimeout;
-    _dio.options.receiveTimeout = ApiConfig.receiveTimeout;
-  }
+  NotificationService._internal();
 
   bool _isInitialized = false;
   FirebaseMessaging get _fcm => FirebaseMessaging.instance;
-  final Dio _dio = Dio();
+  late final Dio _dio = DioFactory.create();
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();

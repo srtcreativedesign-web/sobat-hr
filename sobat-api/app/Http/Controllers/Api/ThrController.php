@@ -52,17 +52,14 @@ class ThrController extends Controller
                     'employee' => [
                         'employee_code' => $thr->employee->employee_code ?? 'N/A',
                         'full_name' => $thr->employee->full_name ?? 'Unknown',
+                        'join_date' => $thr->employee->join_date?->toDateString(),
                     ],
                     'year' => $thr->year,
                     'division' => $thr->division,
                     'amount' => (float) $thr->amount,
                     'nominal' => (float) $thr->amount, // Alias for mobile
-                    'tax' => (float) $thr->tax,
-                    'net_amount' => (float) $thr->net_amount,
-                    'net_nominal' => (float) $thr->net_amount, // Alias for mobile
                     'details' => $thr->details,
                     'status' => $thr->status,
-                    'paid_at' => $thr->paid_at,
                 ];
             }),
         ]);
@@ -77,14 +74,43 @@ class ThrController extends Controller
     /**
      * Generate THR slip PDF
      */
-    public function generateSlip(string $id)
+    public function generateSlip(Request $request, string $id)
     {
-        $thr = Thr::with(['employee', 'employee.organization'])->findOrFail($id);
+        $thr = Thr::with(['employee'])->findOrFail($id);
 
-        // Generate PDF
+        // Calculate masa kerja from join_date
+        $masaKerja = '-';
+        if ($thr->employee->join_date) {
+            $joinDate = Carbon::parse($thr->employee->join_date);
+            $now = Carbon::now();
+            $years = (int) $joinDate->diffInYears($now);
+            $months = (int) $joinDate->copy()->addYears($years)->diffInMonths($now);
+            if ($years == 0) {
+                $masaKerja = $months . ' bulan';
+            } elseif ($months == 0) {
+                $masaKerja = $years . ' tahun';
+            } else {
+                $masaKerja = $years . ' tahun ' . $months . ' bulan';
+            }
+        }
+
+        // Get employee signature: use stored one, or save new one from request
+        $employeeSignature = $thr->details['employee_signature'] ?? null;
+        $incomingSignature = $request->input('employee_signature');
+
+        if (!$employeeSignature && $incomingSignature) {
+            // First time signing — save permanently
+            $details = $thr->details ?? [];
+            $details['employee_signature'] = $incomingSignature;
+            $thr->update(['details' => $details]);
+            $employeeSignature = $incomingSignature;
+        }
+
         $pdf = Pdf::loadView('payroll.thr_slip', [
             'thr' => $thr,
             'employee' => $thr->employee,
+            'masaKerja' => $masaKerja,
+            'employeeSignature' => $employeeSignature,
         ]);
 
         $pdf->setPaper('a4', 'portrait');
@@ -96,6 +122,7 @@ class ThrController extends Controller
 
     /**
      * Import THR from Excel/CSV file
+     * Expected format: Nama Karyawan | Tahun | THR
      */
     public function import(Request $request)
     {
@@ -114,7 +141,7 @@ class ThrController extends Controller
             $highestRow = $sheet->getHighestRow();
             $highestColumn = $sheet->getHighestColumn();
             
-            // Header detection
+            // Header detection - look for "Nama Karyawan"
             $headerRowIndex = -1;
             for ($row = 1; $row <= min(10, $highestRow); $row++) {
                 $rowValues = $sheet->rangeToArray('A' . $row . ':' . $highestColumn . $row, NULL, TRUE, FALSE)[0];
@@ -130,12 +157,10 @@ class ThrController extends Controller
                 return response()->json(['message' => 'Format tidak dikenali. Pastikan ada kolom "Nama Karyawan".'], 422);
             }
             
-            // Define mapping (Simplified for THR)
+            // Define mapping
             $columnMapping = [];
             $headerRowValues = $sheet->rangeToArray('A' . $headerRowIndex . ':' . $highestColumn . $headerRowIndex, NULL, TRUE, FALSE)[0];
-            $cols = range('A', $highestColumn); // This only works for A-Z
             
-            // Better column detection
             $colIndex = 0;
             foreach ($headerRowValues as $headerValue) {
                 if (!$headerValue) { $colIndex++; continue; }
@@ -144,42 +169,36 @@ class ThrController extends Controller
                 
                 if (stripos($headerValue, 'Nama Karyawan') !== false) $columnMapping['nama_karyawan'] = $colName;
                 if (stripos($headerValue, 'Tahun') !== false) $columnMapping['year'] = $colName;
-                if (stripos($headerValue, 'Masa kerja') !== false) $columnMapping['masa_kerja'] = $colName;
                 if (stripos($headerValue, 'THR') !== false || stripos($headerValue, 'Jumlah') !== false) $columnMapping['amount'] = $colName;
-                if (stripos($headerValue, 'Pajak') !== false || stripos($headerValue, 'PPh') !== false) $columnMapping['tax'] = $colName;
-                if (stripos($headerValue, 'Diterima') !== false || stripos($headerValue, 'Net') !== false) $columnMapping['net_amount'] = $colName;
                 
                 $colIndex++;
             }
+
+            Log::info('THR Import - Column mapping:', $columnMapping);
             
             $dataRows = [];
             $startDataRow = $headerRowIndex + 1;
             
             for ($row = $startDataRow; $row <= $highestRow; $row++) {
-                $employeeName = $sheet->getCell(($columnMapping['nama_karyawan'] ?? 'B') . $row)->getValue();
+                $employeeName = $sheet->getCell(($columnMapping['nama_karyawan'] ?? 'A') . $row)->getValue();
                 if (empty($employeeName)) continue;
                 
-                $year = $sheet->getCell(($columnMapping['year'] ?? 'A') . $row)->getValue() ?? $request->year ?? date('Y');
-                $masaKerja = $columnMapping['masa_kerja'] ?? null ? $sheet->getCell($columnMapping['masa_kerja'] . $row)->getValue() : null;
-                $amount = (float) $sheet->getCell(($columnMapping['amount'] ?? 'C') . $row)->getCalculatedValue();
-                $tax = (float) $sheet->getCell(($columnMapping['tax'] ?? 'D') . $row)->getCalculatedValue();
-                $netAmount = (float) $sheet->getCell(($columnMapping['net_amount'] ?? 'E') . $row)->getCalculatedValue();
+                $year = isset($columnMapping['year']) 
+                    ? $sheet->getCell($columnMapping['year'] . $row)->getValue() 
+                    : ($request->year ?? date('Y'));
+                    
+                $amount = isset($columnMapping['amount'])
+                    ? (float) $sheet->getCell($columnMapping['amount'] . $row)->getCalculatedValue()
+                    : 0;
 
-                if ($netAmount == 0 && $amount > 0) {
-                    $netAmount = $amount - $tax;
-                }
-                
                 $dataRows[] = [
                     'employee_name' => $employeeName,
                     'year' => (string) $year,
                     'amount' => $amount,
-                    'tax' => $tax,
-                    'net_amount' => $netAmount,
-                    'details' => [
-                        'masa_kerja' => $masaKerja
-                    ],
                 ];
             }
+
+            Log::info('THR Import - Parsed rows:', ['count' => count($dataRows), 'sample' => array_slice($dataRows, 0, 3)]);
 
             return response()->json([
                 'message' => 'File parsed successfully',
@@ -188,6 +207,7 @@ class ThrController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::error('THR Import Error: ' . $e->getMessage());
             return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
@@ -203,7 +223,6 @@ class ThrController extends Controller
             'rows.*.employee_name' => 'required|string',
             'rows.*.year' => 'required|string',
             'rows.*.amount' => 'required|numeric',
-            'rows.*.net_amount' => 'required|numeric',
         ]);
 
         $rows = $request->input('rows');
@@ -232,9 +251,6 @@ class ThrController extends Controller
                     [
                         'division' => $division,
                         'amount' => $row['amount'],
-                        'tax' => $row['tax'] ?? 0,
-                        'net_amount' => $row['net_amount'],
-                        'details' => $row['details'] ?? [],
                         'status' => 'draft',
                     ]
                 );
@@ -263,6 +279,85 @@ class ThrController extends Controller
             ],
             'saved' => $saved,
             'failed' => $failed,
+        ]);
+    }
+
+    /**
+     * Approve a single THR
+     */
+    public function approve(Request $request, string $id)
+    {
+        $request->validate([
+            'signer_name' => 'required|string',
+            'signature' => 'required|string',
+        ]);
+
+        $thr = Thr::findOrFail($id);
+
+        if ($thr->status === 'approved') {
+            return response()->json(['message' => 'THR sudah di-approve'], 422);
+        }
+
+        $details = $thr->details ?? [];
+        $details['signer_name'] = $request->signer_name;
+        $details['signature'] = $request->signature;
+        $details['approved_at'] = now()->toDateTimeString();
+
+        $thr->update([
+            'status' => 'approved',
+            'details' => $details,
+        ]);
+
+        return response()->json([
+            'message' => 'THR berhasil di-approve',
+            'data' => $thr,
+        ]);
+    }
+
+    /**
+     * Bulk approve THR records
+     */
+    public function bulkApprove(Request $request)
+    {
+        $request->validate([
+            'signer_name' => 'required|string',
+            'signature' => 'required|string',
+        ]);
+
+        $ids = $request->input('ids', []);
+        $signerData = [
+            'signer_name' => $request->signer_name,
+            'signature' => $request->signature,
+            'approved_at' => now()->toDateTimeString(),
+        ];
+
+        if (empty($ids)) {
+            $query = Thr::where('status', 'draft');
+            if ($request->has('year')) {
+                $query->where('year', $request->year);
+            }
+            if ($request->has('division') && $request->division !== 'all') {
+                $query->where('division', $request->division);
+            }
+            $thrs = $query->get();
+        } else {
+            $thrs = Thr::whereIn('id', $ids)->where('status', 'draft')->get();
+        }
+
+        $count = 0;
+        foreach ($thrs as $thr) {
+            $details = $thr->details ?? [];
+            $details = array_merge($details, $signerData);
+            $thr->update([
+                'status' => 'approved',
+                'details' => $details,
+            ]);
+            $count++;
+        }
+
+        return response()->json([
+            'message' => "{$count} THR berhasil di-approve",
+            'approved_count' => $count,
         ]);
     }
 }

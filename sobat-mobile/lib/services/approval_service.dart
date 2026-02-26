@@ -1,15 +1,13 @@
 import 'package:dio/dio.dart';
-import '../config/api_config.dart';
+import '../config/dio_factory.dart';
 import 'auth_service.dart';
 
 class ApprovalService {
-  final Dio _dio = Dio();
+  late final Dio _dio;
   final AuthService _authService = AuthService();
 
   ApprovalService() {
-    _dio.options.baseUrl = ApiConfig.baseUrl;
-    _dio.options.connectTimeout = ApiConfig.connectTimeout;
-    _dio.options.receiveTimeout = ApiConfig.receiveTimeout;
+    _dio = DioFactory.create();
   }
 
   Future<List<dynamic>> getPendingApprovals() async {

@@ -184,8 +184,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [App\Http\Controllers\Api\ThrController::class, 'index']);
         Route::post('/import', [App\Http\Controllers\Api\ThrController::class, 'import']);
         Route::post('/import/save', [App\Http\Controllers\Api\ThrController::class, 'saveImport']);
+        Route::post('/bulk-approve', [App\Http\Controllers\Api\ThrController::class, 'bulkApprove']);
+        Route::post('/{id}/approve', [App\Http\Controllers\Api\ThrController::class, 'approve']);
         Route::get('/{id}', [App\Http\Controllers\Api\ThrController::class, 'show']);
-        Route::get('/{id}/slip', [App\Http\Controllers\Api\ThrController::class, 'generateSlip']);
+        Route::match(['get', 'post'], '/{id}/slip', [App\Http\Controllers\Api\ThrController::class, 'generateSlip']);
         
         // HO & Operational specific
         Route::prefix('ho')->group(function () {

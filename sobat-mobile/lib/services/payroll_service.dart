@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import '../config/api_config.dart';
+import '../config/dio_factory.dart';
 import 'storage_service.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
@@ -9,17 +9,7 @@ class PayrollService {
   late final Dio _dio;
 
   PayrollService() {
-    _dio = Dio(
-      BaseOptions(
-        baseUrl: ApiConfig.baseUrl,
-        connectTimeout: ApiConfig.connectTimeout,
-        receiveTimeout: ApiConfig.receiveTimeout,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      ),
-    );
+    _dio = DioFactory.create();
 
     // Add interceptor untuk attach token
     _dio.interceptors.add(

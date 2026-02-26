@@ -1,22 +1,12 @@
 import 'package:dio/dio.dart';
-import '../config/api_config.dart';
+import '../config/dio_factory.dart';
 import '../services/storage_service.dart';
 
 class SecurityService {
   late final Dio _dio;
 
   SecurityService() {
-    _dio = Dio(
-      BaseOptions(
-        baseUrl: ApiConfig.baseUrl,
-        connectTimeout: ApiConfig.connectTimeout,
-        receiveTimeout: ApiConfig.receiveTimeout,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      ),
-    );
+    _dio = DioFactory.create();
 
     _dio.interceptors.add(
       InterceptorsWrapper(

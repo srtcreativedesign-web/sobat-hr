@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import '../config/api_config.dart';
+import '../config/dio_factory.dart';
 import 'storage_service.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
@@ -9,17 +9,7 @@ class ThrService {
   late final Dio _dio;
 
   ThrService() {
-    _dio = Dio(
-      BaseOptions(
-        baseUrl: ApiConfig.baseUrl,
-        connectTimeout: ApiConfig.connectTimeout,
-        receiveTimeout: ApiConfig.receiveTimeout,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      ),
-    );
+    _dio = DioFactory.create();
 
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -76,16 +66,35 @@ class ThrService {
     }
   }
 
-  Future<void> downloadThrSlip(int id, String filename) async {
+  Future<void> downloadThrSlip(
+    int id,
+    String filename, {
+    String? employeeSignature,
+  }) async {
     try {
       final token = await StorageService.getToken();
-      final response = await _dio.get(
-        'thrs/$id/slip',
-        options: Options(
-          responseType: ResponseType.bytes,
-          headers: {'Authorization': 'Bearer $token'},
-        ),
-      );
+      final Response response;
+
+      if (employeeSignature != null) {
+        // POST with employee signature
+        response = await _dio.post(
+          'thrs/$id/slip',
+          data: {'employee_signature': employeeSignature},
+          options: Options(
+            responseType: ResponseType.bytes,
+            headers: {'Authorization': 'Bearer $token'},
+          ),
+        );
+      } else {
+        // GET without signature
+        response = await _dio.get(
+          'thrs/$id/slip',
+          options: Options(
+            responseType: ResponseType.bytes,
+            headers: {'Authorization': 'Bearer $token'},
+          ),
+        );
+      }
 
       if (response.statusCode == 200) {
         final directory = await getApplicationDocumentsDirectory();
