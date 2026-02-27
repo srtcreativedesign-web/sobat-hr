@@ -24,7 +24,7 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);
+            background-color: #0891b2;
             color: white;
             padding: 15px 20px;
             border-radius: 8px;
@@ -36,11 +36,12 @@
             font-size: 20px;
             letter-spacing: 2px;
             margin-bottom: 5px;
+            color: white;
         }
 
         .header .company {
-            font-size: 12px;
-            opacity: 0.9;
+            font-size: 14px;
+            color: white;
         }
 
         .info-section {
@@ -175,7 +176,8 @@
     <div class="container">
         <div class="header">
             <h1>SLIP TUNJANGAN HARI RAYA</h1>
-            <div class="company">PT Mandala Karya Sentosa</div>
+            <div class="company">SRT Corporation</div>
+            <div style="font-size: 12px; color: #666; margin-top: 4px;">Periode {{ $thr->year }}</div>
         </div>
 
         <div class="info-section">
