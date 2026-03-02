@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\RequestModel;
 use App\Models\Approval;
+use App\Models\Role;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\DB;
 use App\Notifications\RequestNotification;
@@ -23,7 +24,7 @@ class RequestController extends Controller
 
         // Check Role
         $roleName = $user->role ? $user->role->name : '';
-        $isAdmin = in_array($roleName, ['super_admin', 'admin_cabang', 'hrd']);
+        $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD, Role::ADMIN]);
         
         \Illuminate\Support\Facades\Log::info('User Info:', ['id' => $user->id, 'role' => $roleName, 'isAdmin' => $isAdmin]);
 
@@ -143,11 +144,18 @@ class RequestController extends Controller
                 // 2. Create Detail based on Type
                 switch ($validated['type']) {
                     case 'leave':
-                        // 1. Check Eligibility (1 Year Service)
-                        if (!$user->employee->join_date || $user->employee->join_date->diffInYears(now()) < 1) {
+                        // 1. Check Eligibility (1 Year Service) - ALLOW ADMINISTRATIVE OVERRIDE
+                        $isEligible = $user->employee->join_date && $user->employee->join_date->diffInYears(now()) >= 1;
+                        
+                        if (!$isEligible && !$isAdmin) {
                             throw new \Illuminate\Validation\ValidationException(\Illuminate\Support\Facades\Validator::make([], [
                                 'type' => 'Anda belum bekerja selama 1 tahun, belum berhak mengajukan cuti tahunan.',
                             ]));
+                        }
+
+                        if (!$isEligible && $isAdmin) {
+                            \Illuminate\Support\Facades\Log::warning("Exceptional Leave: Admin {$user->name} created a leave request for employee {$user->employee->full_name} with < 1 year of service.");
+                            $validated['reason'] = "[EXCEPTIONAL LEAVE] " . ($validated['reason'] ?? $validated['description']);
                         }
 
                         // 2. Calculate Duration

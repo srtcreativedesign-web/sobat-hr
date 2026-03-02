@@ -86,11 +86,15 @@ class AttendanceController extends Controller
             'final_attendanceType' => $attendanceType,
         ]);
 
-        // Geolocation Validation (Skip for field attendance)
+            // Geolocation Validation (Skip for field attendance)
         if ($attendanceType === 'office' && isset($validated['latitude']) && isset($validated['longitude']) && $employee && $employee->organization && $employee->organization->latitude) {
             $orgLat = $employee->organization->latitude;
             $orgLng = $employee->organization->longitude;
             $radius = $employee->organization->radius_meters ?? 50;
+            
+            // Add 10 meter tolerance buffer for GPS inaccuracy
+            $tolerance = 10;
+            $maxDistance = $radius + $tolerance;
 
             $distance = $this->haversineGreatCircleDistance(
                 $validated['latitude'],
@@ -99,11 +103,11 @@ class AttendanceController extends Controller
                 $orgLng
             );
 
-            if ($distance > $radius) {
+            if ($distance > $maxDistance) {
                 return response()->json([
                     'message' => 'Anda berada di luar jangkauan kantor.',
                     'distance' => round($distance, 2) . ' meter',
-                    'radius' => $radius . ' meter'
+                    'radius' => $radius . ' meter (dengan toleransi ' . $tolerance . ' meter)'
                 ], 422); // Unprocessable Entity
             }
         }
@@ -151,18 +155,26 @@ class AttendanceController extends Controller
 
                 // FAIL-SECURE: If verification fails for ANY reason, BLOCK attendance
                 if (!$result) {
-                    \Illuminate\Support\Facades\Log::error('Face Verification Script Output Empty or Invalid', ['output' => $output]);
+                    \Illuminate\Support\Facades\Log::error('Face Verification Critical Failure: Script response empty or malformed.', [
+                        'raw_output' => $output,
+                        'employee_id' => $employee->id,
+                        'check_in_photo' => $path
+                    ]);
                     \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
                     return response()->json([
-                        'message' => 'Verifikasi wajah gagal: Script tidak merespons. Hubungi administrator.',
-                    ], 422);
+                        'message' => 'Sistem verifikasi wajah sedang mengalami kendala teknis. Harap hubungi IT Support.',
+                        'debug_hint' => 'Check PHP/Python bridge logs.'
+                    ], 500);
                 }
 
                 if ($result['status'] === 'error') {
-                    \Illuminate\Support\Facades\Log::error('Face Verification Error: ' . $result['message']);
+                    \Illuminate\Support\Facades\Log::error('Face Verification Error: ' . ($result['message'] ?? 'Unknown script error'), [
+                        'details' => $result,
+                        'employee_id' => $employee->id
+                    ]);
                     \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
                     return response()->json([
-                        'message' => 'Verifikasi wajah gagal: ' . $result['message'],
+                        'message' => 'Verifikasi wajah gagal: ' . ($result['message'] ?? 'Kesalahan internal script.'),
                     ], 422);
                 }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Approval;
+use App\Models\Role;
 
 class ApprovalController extends Controller
 {
@@ -22,7 +23,7 @@ class ApprovalController extends Controller
 
         // Check Role
         $roleName = $user->role ? $user->role->name : '';
-        $isAdmin = in_array($roleName, ['super_admin', 'admin_cabang', 'hrd']);
+        $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD]);
 
         if (!$isAdmin) {
              if (!$user->employee) {
@@ -70,7 +71,7 @@ class ApprovalController extends Controller
             // Check Role
             $user->load('role');
             $roleName = $user->role ? $user->role->name : '';
-            $isAdmin = in_array($roleName, ['super_admin', 'admin_cabang', 'hrd']);
+            $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD]);
 
             if (!$isAdmin) {
                  if (!$user->employee) {

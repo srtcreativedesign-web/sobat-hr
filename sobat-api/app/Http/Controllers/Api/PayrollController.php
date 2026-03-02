@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Payroll;
 use App\Models\Employee;
+use App\Models\Role;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\GroqAiService;
 use Maatwebsite\Excel\Facades\Excel;
@@ -33,7 +34,7 @@ class PayrollController extends Controller
         $roleName = $user->role ? strtolower($user->role->name) : '';
 
 
-        if (!in_array($roleName, ['admin', 'super_admin', 'hr'])) {
+        if (!in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR])) {
             // Access employee via relation
             $employeeId = $user->employee ? $user->employee->id : null;
 
@@ -46,7 +47,6 @@ class PayrollController extends Controller
             
             // Non-admin users can ONLY see approved or paid payrolls
             $query->whereIn('status', ['approved', 'paid']);
-        } else {
         }
 
         // Filter by period (month and year)
@@ -79,15 +79,15 @@ class PayrollController extends Controller
                     'period' => $payroll->period, // Add strict period string (YYYY-MM)
                     'period_start' => $periodStart,
                     'period_end' => $periodEnd,
-                    'basic_salary' => (float) $payroll->basic_salary,
-                    'allowances' => (float) ($payroll->allowances ?? 0),
-                    'overtime_pay' => (float) ($payroll->overtime_pay ?? 0),
-                    'deductions' => (float) ($payroll->total_deductions ?? 0),
-                    'bpjs_health' => (float) ($payroll->bpjs_kesehatan ?? 0),
-                    'bpjs_employment' => (float) ($payroll->bpjs_ketenagakerjaan ?? 0),
-                    'tax' => (float) ($payroll->pph21 ?? 0),
-                    'gross_salary' => (float) $payroll->gross_salary,
-                    'net_salary' => (float) $payroll->net_salary,
+                    'basic_salary' => round((float) $payroll->basic_salary, 0),
+                    'allowances' => round((float) ($payroll->allowances ?? 0), 0),
+                    'overtime_pay' => round((float) ($payroll->overtime_pay ?? 0), 0),
+                    'deductions' => round((float) ($payroll->total_deductions ?? 0), 0),
+                    'bpjs_health' => round((float) ($payroll->bpjs_kesehatan ?? 0), 0),
+                    'bpjs_employment' => round((float) ($payroll->bpjs_ketenagakerjaan ?? 0), 0),
+                    'tax' => round((float) ($payroll->pph21 ?? 0), 0),
+                    'gross_salary' => round((float) $payroll->gross_salary, 0),
+                    'net_salary' => round((float) $payroll->net_salary, 0),
                     'details' => $payroll->details,
                     'status' => $payroll->status === 'draft' ? 'pending' : $payroll->status,
                 ];
