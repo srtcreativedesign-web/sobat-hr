@@ -8,9 +8,12 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Illuminate\Http\Request;
+use App\Traits\ExcelSanitizer;
 
 class OvertimeExport implements FromQuery, WithHeadings, WithMapping
 {
+    use ExcelSanitizer;
+
     protected $request;
 
     public function __construct(Request $request)
@@ -61,7 +64,7 @@ class OvertimeExport implements FromQuery, WithHeadings, WithMapping
 
     public function map($request): array
     {
-        return [
+        return $this->sanitizeArray([
             $request->employee ? $request->employee->full_name : '-',
             $request->employee && $request->employee->organization ? $request->employee->organization->name : '-',
             $request->start_date ? $request->start_date->format('Y-m-d') : '-',
@@ -70,6 +73,6 @@ class OvertimeExport implements FromQuery, WithHeadings, WithMapping
             $request->amount ? ($request->amount * 60) : ($request->overtimeDetail ? $request->overtimeDetail->duration : '-'), // amount is hours usually
             $request->reason,
             $request->status,
-        ];
+        ]);
     }
 }

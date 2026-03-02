@@ -19,9 +19,6 @@ class RequestController extends Controller
         $user = $request->user();
         $query = RequestModel::with(['employee.organization', 'approvals']);
         
-        
-        \Illuminate\Support\Facades\Log::info('Request Index Params:', $request->all());
-
         // Check Role
         $roleName = $user->role ? $user->role->name : '';
         $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD, Role::ADMIN]);
@@ -69,9 +66,6 @@ class RequestController extends Controller
             }
         }
         
-        \Illuminate\Support\Facades\Log::info('SQL:', [$query->toSql(), $query->getBindings()]);
-        \Illuminate\Support\Facades\Log::info('Count:', [$query->count()]);
-
         $requests = $query->orderBy('created_at', 'desc')->paginate(20);
 
         return response()->json($requests);

@@ -12,9 +12,12 @@ use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Illuminate\Http\Request;
+use App\Traits\ExcelSanitizer;
 
 class AttendanceExport implements FromQuery, WithHeadings, WithMapping, WithStyles
 {
+    use ExcelSanitizer;
+
     protected $request;
 
     public function __construct(Request $request)
@@ -88,7 +91,7 @@ class AttendanceExport implements FromQuery, WithHeadings, WithMapping, WithStyl
 
     public function map($attendance): array
     {
-        return [
+        return $this->sanitizeArray([
             $attendance->id,
             $attendance->employee->employee_code ?? '-',
             $attendance->employee->full_name ?? '-',
@@ -101,7 +104,7 @@ class AttendanceExport implements FromQuery, WithHeadings, WithMapping, WithStyl
             strtoupper($attendance->status),
             $attendance->location_address,
             $attendance->notes,
-        ];
+        ]);
     }
 
     public function styles(Worksheet $sheet)

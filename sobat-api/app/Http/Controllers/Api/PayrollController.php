@@ -336,10 +336,6 @@ class PayrollController extends Controller
             }
             
             if ($headerRowIndex === -1) {
-                \Illuminate\Support\Facades\Log::error('Header detection failed', [
-                    'highest_row' => $highestRow,
-                    'highest_column' => $highestColumn,
-                ]);
                 return response()->json(['message' => 'Format tidak dikenali. Pastikan ada kolom "Nama Karyawan".'], 422);
             }
             
@@ -539,18 +535,6 @@ class PayrollController extends Controller
                     'gross_salary' => $grossSalary,
                     'details' => $details,
                 ];
-                
-                // Debug logging
-                \Illuminate\Support\Facades\Log::info("Excel Import Row $row", [
-                    'employee' => $employeeName,
-                    'basic_salary' => $basicSalary,
-                    'allowances_total' => $allowancesTotal,
-                    'gross_salary' => $grossSalary,
-                    'total_deductions' => $totalDeductions,
-                    'grand_total' => $grandTotal,
-                    'ewa' => $ewa,
-                    'net_salary' => $netSalary,
-                ]);
                 
                 $dataRows[] = $parsed;
             }

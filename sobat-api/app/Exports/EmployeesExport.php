@@ -9,9 +9,12 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Illuminate\Http\Request;
+use App\Traits\ExcelSanitizer;
 
 class EmployeesExport implements FromQuery, WithHeadings, WithMapping, WithStyles
 {
+    use ExcelSanitizer;
+
     protected $request;
 
     public function __construct(Request $request)
@@ -90,7 +93,7 @@ class EmployeesExport implements FromQuery, WithHeadings, WithMapping, WithStyle
             $education = implode(', ', $educationParts) ?: '-';
         }
 
-        return [
+        return $this->sanitizeArray([
             $employee->id,
             $employee->employee_code ?? '-',
             $employee->full_name ?? '-',
@@ -122,7 +125,7 @@ class EmployeesExport implements FromQuery, WithHeadings, WithMapping, WithStyle
             $employee->ktp_address ?? '-',
             $employee->current_address ?? '-',
             $employee->supervisor_name ?? '-',
-        ];
+        ]);
     }
 
     public function styles(Worksheet $sheet)
