@@ -140,38 +140,38 @@ class User {
     }
 
     return User(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      email: json['email'] as String,
+      id: (json['id'] is int)
+          ? json['id']
+          : int.tryParse(json['id']?.toString() ?? '') ?? 0,
+      name: json['name']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
       employeeRecordId: empRecordId,
       employeeId: empId,
       avatar:
           (json['employee'] != null && json['employee']['photo_path'] != null)
-          ? json['employee']['photo_path'] as String
-          : json['avatar'] as String?,
+          ? json['employee']['photo_path']?.toString()
+          : json['avatar']?.toString(),
       role: (json['role'] is Map)
-          ? json['role']['name'] as String?
-          : json['role'] as String?,
-      emailVerifiedAt: json['email_verified_at'] != null
-          ? DateTime.parse(json['email_verified_at'] as String)
-          : null,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : null,
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : null,
+          ? json['role']['name']?.toString()
+          : json['role']?.toString(),
+      emailVerifiedAt: _tryParseDate(json['email_verified_at']),
+      createdAt: _tryParseDate(json['created_at']),
+      updatedAt: _tryParseDate(json['updated_at']),
       jobLevel: jobLvl,
       track: trk,
       position: pos,
       organization: orgName,
       organizationId: orgId,
-      hasPin: json['has_pin'] as bool? ?? false,
+      hasPin:
+          json['has_pin'] == true ||
+          json['has_pin'] == 1 ||
+          json['has_pin'] == '1' ||
+          json['has_pin'] == 'true',
       hasOfficeLocation: hasLoc,
       contractEnd:
           (json['employee'] != null &&
               json['employee']['contract_end_date'] != null)
-          ? DateTime.parse(json['employee']['contract_end_date'])
+          ? _tryParseDate(json['employee']['contract_end_date'])
           : null,
       officeLatitude: lat,
       officeLongitude: lng,
@@ -180,8 +180,8 @@ class User {
       facePhotoPath:
           (json['employee'] != null &&
               json['employee']['face_photo_path'] != null)
-          ? json['employee']['face_photo_path'] as String
-          : json['face_photo_path'] as String?,
+          ? json['employee']['face_photo_path']?.toString()
+          : json['face_photo_path']?.toString(),
       approvalLevel: appLevel,
     );
   }
@@ -216,4 +216,15 @@ class User {
 
   // New helper for approval logic
   bool get canApprove => approvalLevel >= 1 || role == 'super_admin';
+}
+
+DateTime? _tryParseDate(dynamic dateString) {
+  if (dateString == null) return null;
+  final str = dateString.toString().trim();
+  if (str.isEmpty) return null;
+  try {
+    return DateTime.parse(str);
+  } catch (_) {
+    return null;
+  }
 }

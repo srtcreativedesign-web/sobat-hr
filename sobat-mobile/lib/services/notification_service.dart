@@ -1,10 +1,10 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../config/api_config.dart';
 import '../config/dio_factory.dart';
+import 'storage_service.dart';
 
 class NotificationService {
   // Singleton pattern
@@ -15,7 +15,6 @@ class NotificationService {
   bool _isInitialized = false;
   FirebaseMessaging get _fcm => FirebaseMessaging.instance;
   late final Dio _dio = DioFactory.create();
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
@@ -29,7 +28,7 @@ class NotificationService {
   );
 
   Future<void> _addAuthHeader() async {
-    final token = await _storage.read(key: 'auth_token');
+    final token = await StorageService.getToken();
     if (token != null) {
       _dio.options.headers['Authorization'] = 'Bearer $token';
     }
