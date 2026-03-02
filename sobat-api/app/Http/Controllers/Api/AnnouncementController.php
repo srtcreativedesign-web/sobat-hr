@@ -29,12 +29,7 @@ class AnnouncementController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
-            'image' => 'nullable|image|max:5120', // Made nullable if just creating text announcement? Plan said image_path still for banner image. 
-            // Let's keep image required IF it's a banner? Or just nullable in general? Plan said specific banner image.
-            // Let's make image nullable for standard announcements, but maybe required for banner? 
-            // For now, let's make it nullable to be flexible as per "modify existing" which implies general announcements might not need it.
-            // User requirement: "popup everytime login" -> likely needs image.
-            // But let's stick to nullable to be safe for "News" without image.
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120', 
             'category' => 'in:news,policy',
             'description' => 'nullable|string',
             'attachment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB
@@ -54,7 +49,13 @@ class AnnouncementController extends Controller
 
         $imagePath = null;
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('announcements', 'public');
+            $photo = $request->file('image');
+            $filename = uniqid() . '_' . time() . '.jpg';
+            $path = 'announcements/' . $filename;
+            $fullPath = storage_path('app/public/' . $path);
+
+            $this->resizeAndSaveImage($photo->getPathname(), $fullPath, 1024, 75);
+            $imagePath = $path;
         }
 
         $attachmentUrl = null;
@@ -101,7 +102,7 @@ class AnnouncementController extends Controller
 
         $validator = Validator::make($request->all(), [
             'title' => 'sometimes|string|max:255',
-            'image' => 'nullable|image|max:5120',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'description' => 'nullable|string',
             'category' => 'sometimes|in:news,policy',
             'attachment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
@@ -121,7 +122,14 @@ class AnnouncementController extends Controller
             if ($announcement->image_path) {
                 Storage::disk('public')->delete($announcement->image_path);
             }
-            $announcement->image_path = $request->file('image')->store('announcements', 'public');
+            
+            $photo = $request->file('image');
+            $filename = uniqid() . '_' . time() . '.jpg';
+            $path = 'announcements/' . $filename;
+            $fullPath = storage_path('app/public/' . $path);
+
+            $this->resizeAndSaveImage($photo->getPathname(), $fullPath, 1024, 75);
+            $announcement->image_path = $path;
         }
 
         if ($request->hasFile('attachment')) {
@@ -177,5 +185,46 @@ class AnnouncementController extends Controller
             'success' => true,
             'data' => $announcement
         ]);
+    }
+
+    private function resizeAndSaveImage($sourcePath, $destinationPath, $maxWidth, $quality)
+    {
+        list($width, $height, $type) = getimagesize($sourcePath);
+        
+        switch ($type) {
+            case IMAGETYPE_JPEG:
+                $sourceImage = imagecreatefromjpeg($sourcePath);
+                break;
+            case IMAGETYPE_PNG:
+                $sourceImage = imagecreatefrompng($sourcePath);
+                break;
+            default:
+                copy($sourcePath, $destinationPath);
+                return;
+        }
+
+        if ($width > $maxWidth) {
+            $newWidth = $maxWidth;
+            $newHeight = ($height / $width) * $newWidth;
+        } else {
+            $newWidth = $width;
+            $newHeight = $height;
+        }
+
+        $newImage = imagecreatetruecolor($newWidth, $newHeight);
+        if ($type == IMAGETYPE_PNG) {
+            imagealphablending($newImage, false);
+            imagesavealpha($newImage, true);
+        }
+
+        imagecopyresampled($newImage, $sourceImage, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+        $directory = dirname($destinationPath);
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        imagejpeg($newImage, $destinationPath, $quality);
+        imagedestroy($sourceImage);
+        imagedestroy($newImage);
     }
 }
