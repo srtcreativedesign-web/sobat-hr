@@ -98,10 +98,12 @@ class ThrController extends Controller
         $employeeSignature = $thr->details['employee_signature'] ?? null;
         $incomingSignature = $request->input('employee_signature');
 
+        // Solve 3: Kunci Tanda Tangan (Signature Lock)
         if (!$employeeSignature && $incomingSignature) {
             // First time signing — save permanently
             $details = $thr->details ?? [];
             $details['employee_signature'] = $incomingSignature;
+            $details['signed_at'] = now()->toDateTimeString();
             $thr->update(['details' => $details]);
             $employeeSignature = $incomingSignature;
         }
@@ -122,7 +124,6 @@ class ThrController extends Controller
 
     /**
      * Import THR from Excel/CSV file
-     * Expected format: Nama Karyawan | Tahun | THR
      */
     public function import(Request $request)
     {
@@ -134,7 +135,7 @@ class ThrController extends Controller
 
         try {
             $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile($file->getRealPath());
-            $reader->setReadDataOnly(true);
+            $reader->setReadDataOnly(true); // Optimization: Read data only
             $spreadsheet = $reader->load($file->getRealPath());
             $sheet = $spreadsheet->getActiveSheet();
             
@@ -187,9 +188,12 @@ class ThrController extends Controller
                     ? $sheet->getCell($columnMapping['year'] . $row)->getValue() 
                     : ($request->year ?? date('Y'));
                     
-                $amount = isset($columnMapping['amount'])
-                    ? (float) $sheet->getCell($columnMapping['amount'] . $row)->getCalculatedValue()
+                $amountValue = isset($columnMapping['amount'])
+                    ? $sheet->getCell($columnMapping['amount'] . $row)->getCalculatedValue()
                     : 0;
+                
+                // Solve 2: Force Rounding (pas simpan/parsing)
+                $amount = round((float) $amountValue, 0);
 
                 $dataRows[] = [
                     'employee_name' => $employeeName,
@@ -202,6 +206,7 @@ class ThrController extends Controller
 
             return response()->json([
                 'message' => 'File parsed successfully',
+                'file_name' => $file->getClientOriginalName(),
                 'rows_count' => count($dataRows),
                 'rows' => $dataRows,
             ]);
