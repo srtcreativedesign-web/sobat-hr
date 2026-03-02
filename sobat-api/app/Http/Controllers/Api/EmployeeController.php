@@ -268,6 +268,15 @@ class EmployeeController extends Controller
         $employee = Employee::with(['user', 'division', 'organization', 'role', 'attendances', 'payrolls'])
             ->findOrFail($id);
 
+        // --- IDOR GUARD ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::ADMIN_CABANG]);
+
+        if (!$isAdmin && $employee->id !== $user->employee?->id) {
+            return response()->json(['message' => 'Anda tidak memiliki akses ke data karyawan ini.'], 403);
+        }
+
         return response()->json($employee);
     }
 
@@ -326,7 +335,7 @@ class EmployeeController extends Controller
             'supervisor_id' => 'nullable|exists:employees,id', // Added
             'division_id' => 'nullable|exists:divisions,id',
             'job_position_id' => 'nullable|exists:job_positions,id',
-            'photo_path' => 'nullable|image|max:2048', // 2MB Max
+            'photo_path' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // 2MB Max + ADDED MIMES VALIDATION
         ]);
 
         // Map validated to actual DB columns similar to store()

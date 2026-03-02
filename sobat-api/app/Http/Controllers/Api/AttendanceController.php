@@ -63,7 +63,7 @@ class AttendanceController extends Controller
             'notes' => 'nullable|string',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'photo' => 'nullable|image|max:5120', // Max 5MB
+            'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:5120', // ADDED MIMES VALIDATION
             'location_address' => 'nullable|string',
             'attendance_type' => 'nullable|in:office,field', // New: attendance type
             'field_notes' => 'nullable|string|required_if:attendance_type,field', // Mandatory for field
@@ -336,6 +336,16 @@ class AttendanceController extends Controller
     public function show(string $id)
     {
         $attendance = Attendance::with('employee')->findOrFail($id);
+        
+        // --- IDOR GUARD ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR]);
+
+        if (!$isAdmin && $attendance->employee_id !== $user->employee?->id) {
+            return response()->json(['message' => 'Anda tidak memiliki akses ke data absensi ini.'], 403);
+        }
+
         return response()->json($attendance);
     }
 
@@ -348,7 +358,7 @@ class AttendanceController extends Controller
             'check_out' => 'nullable',
             'status' => 'sometimes|in:present,late,absent,leave,sick',
             'notes' => 'nullable|string',
-            'photo' => 'required_with:check_out|image|max:5120', // PHOTO MANDATORY ON CHECKOUT
+            'photo' => 'required_with:check_out|image|mimes:jpg,jpeg,png|max:5120', // ADDED MIMES VALIDATION
         ]);
 
         // Handle Checkout Photo Upload (with compression)
