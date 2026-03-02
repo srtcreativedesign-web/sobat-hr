@@ -28,8 +28,10 @@
 - **Role Constants:** Menggunakan `App\Models\Role` sebagai *Single Source of Truth* untuk pengecekan hak akses (Anti-Hardcoded String).
 - **IDOR Protection:** Pengecekan kepemilikan data pada endpoint `show()` dan `update()` untuk Absensi, Payroll, dan Employee (User hanya bisa melihat data milik sendiri).
 - **Rate Limiting:** `throttle:login` (5/min) diterapkan pada Login, Register, PIN, dan Forgot Password untuk mencegah Bruteforce & Bot Spamming.
-- **MIME Validation:** Validasi ketat `mimes:jpg,jpeg,png` pada semua fitur upload file untuk mencegah Remote Code Execution (RCE).
+- **MIME Validation:** Validasi ketat `mimes:jpg,jpeg,png` pada seluruh modul upload foto untuk mencegah Remote Code Execution (RCE).
 - **Mass Assignment Guard:** Kolom sensitif seperti `role_id` dilindungi dari pengisian masal via request user.
+- **CSV Injection Protection:** Implementasi `ExcelSanitizer` trait pada semua modul export untuk menetralkan karakter berbahaya (`=`, `+`, `-`, `@`) di awal sel Excel.
+- **Sensitive Log Cleaning:** Pengurangan logging data mentah (`$request->all()`) pada level produksi untuk melindungi data pribadi user di file log server.
 
 ### **B. Data & Storage Integrity**
 - **Auto-Cleanup:** Menghapus file fisik (Foto/Lampiran) secara otomatis dari storage saat record database dihapus (Absensi/Request).
@@ -38,7 +40,7 @@
 
 ### **C. Mobile & Web Security**
 - **Secure Storage:** Menggunakan `encryptedSharedPreferences` (Android) dengan satu pintu akses via `StorageService`.
-- **XSS Guard:** Larangan penggunaan `dangerouslySetInnerHTML` di Frontend; rendering teks dinamis menggunakan metode React yang aman.
+- **XSS Guard:** Larangan penggunaan `dangerouslySetInnerHTML` di Frontend; rendering teks dinamis menggunakan metode React yang aman (Dashboard Activity Fix).
 - **Sanctum Expiry:** Implementasi `SANCTUM_TOKEN_EXPIRATION` untuk membatasi masa aktif session token.
 
 ---
@@ -58,10 +60,10 @@
 ---
 
 ## 5. LATEST PROGRESS (MARCH 2, 2026)
-- **Security Audit (Completed):** Penutupan celah IDOR, RCE via upload, dan bypass registrasi admin.
-- **UI/UX Polish (Completed):** Implementasi SweetAlert2 di Web dan sinkronisasi timeout API 60 detik di seluruh platform.
-- **Storage Optimization (Completed):** Penambahan logika auto-delete file sampah dan kompresi gambar selfie.
-- **Role Standardization (Completed):** Penyatuan konstanta role di Backend (Role Model) dan Frontend (Config Store).
+- **Security Audit (Phase 2 Completed):** Penutupan celah CSV Injection, pembersihan log sensitif, dan pengamanan rendering Dashboard.
+- **UI/UX Polish:** Implementasi SweetAlert2 di Web dan sinkronisasi timeout API 60 detik.
+- **Storage Optimization:** Logika auto-delete file sampah dan kompresi gambar selfie sudah aktif.
+- **Role Standardization:** Penyatuan konstanta role di Backend (Role Model) dan Frontend (Config Store).
 
 ---
 
@@ -89,4 +91,4 @@ flutter build appbundle --release --dart-define=ENV=prod
 ```
 
 ---
-*Last Updated: 2026-03-02 by Giaa (Your Dedicated Assistant) 🌸*
+*Last Updated: 2026-03-02 by Giaa (Your AI Bodyguard) 🌸🛡️*
