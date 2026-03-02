@@ -1,17 +1,16 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'storage_service.dart';
 import '../config/dio_factory.dart';
 
 class RequestService {
   late final Dio _dio;
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   RequestService() {
     _dio = DioFactory.create();
   }
 
   Future<void> _addAuthHeader() async {
-    final token = await _storage.read(key: 'auth_token');
+    final token = await StorageService.getToken();
     if (token != null) {
       _dio.options.headers['Authorization'] = 'Bearer $token';
     }

@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/api_config.dart';
@@ -289,7 +290,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         radius: 45,
                         backgroundColor: Colors.white.withValues(alpha: 0.1),
                         backgroundImage: (user?.avatar != null)
-                            ? NetworkImage(
+                            ? CachedNetworkImageProvider(
                                 ApiConfig.getStorageUrl(user!.avatar) ?? '',
                               )
                             : null,

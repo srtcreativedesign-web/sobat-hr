@@ -106,6 +106,18 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   }
 
   Future<void> _checkPermissionsAndLocate() async {
+    // 1. Check if GPS hardware is actually ON
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        _showErrorSnackBar('GPS tidak aktif. Harap nyalakan Lokasi Anda.');
+      }
+      return;
+    }
+
     final status = await Permission.locationWhenInUse.request();
 
     if (status.isGranted) {
@@ -185,6 +197,13 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
   Future<void> _handleCheckIn() async {
     // 1. Validation
+    if (_currentPosition == null) {
+      _showErrorSnackBar(
+        'Lokasi tidak ditemukan. Pastikan GPS aktif dan sinyal stabil.',
+      );
+      return;
+    }
+
     if (_attendanceType == 'office' && !_isWithinRange) {
       _showErrorSnackBar('Anda harus berada di area kantor untuk absen!');
       return;
@@ -246,6 +265,14 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   }
 
   Future<void> _handleCheckOut() async {
+    // 0. Null checks
+    if (_currentPosition == null) {
+      _showErrorSnackBar(
+        'Lokasi tidak ditemukan. Pastikan GPS aktif dan sinyal stabil.',
+      );
+      return;
+    }
+
     // Check if original check-in was field type
     bool isFieldAttendance = _todayAttendance?['attendance_type'] == 'field';
 

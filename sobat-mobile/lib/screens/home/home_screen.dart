@@ -1,6 +1,7 @@
 import 'package:sobat_hr/config/api_config.dart';
 import 'dart:async';
 import 'dart:ui';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
@@ -130,15 +131,15 @@ class _HomeScreenState extends State<HomeScreen> {
                               borderRadius: const BorderRadius.vertical(
                                 top: Radius.circular(16),
                               ),
-                              child: Image.network(
-                                ApiConfig.getStorageUrl(banner['image_path']) ??
+                              child: CachedNetworkImage(
+                                imageUrl:
+                                    ApiConfig.getStorageUrl(
+                                      banner['image_path'],
+                                    ) ??
                                     '',
                                 fit: BoxFit.cover,
                                 width: double.infinity,
-                                errorBuilder: (ctx, err, stack) {
-                                  // debugPrint(
-                                  // 'Error loading banner image: $err',
-                                  // );
+                                errorWidget: (ctx, url, error) {
                                   return Container(
                                     height: 150,
                                     color: Colors.grey[200],
@@ -151,19 +152,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   );
                                 },
-                                loadingBuilder: (ctx, child, progress) {
-                                  if (progress == null) return child;
+                                progressIndicatorBuilder: (ctx, url, progress) {
                                   return SizedBox(
                                     height: 200,
                                     width: double.infinity,
                                     child: Center(
                                       child: CircularProgressIndicator(
                                         color: AppTheme.colorEggplant,
-                                        value:
-                                            progress.expectedTotalBytes != null
-                                            ? progress.cumulativeBytesLoaded /
-                                                  progress.expectedTotalBytes!
-                                            : null,
+                                        value: progress.progress,
                                       ),
                                     ),
                                   );
@@ -955,7 +951,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           backgroundColor: AppTheme.colorCyan.withAlpha(50),
                           backgroundImage:
                               (user?.avatar != null && user!.avatar!.isNotEmpty)
-                              ? NetworkImage(
+                              ? CachedNetworkImageProvider(
                                   ApiConfig.getStorageUrl(user.avatar!) ?? '',
                                 )
                               : null,
@@ -2090,7 +2086,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             : null,
                         image: imageUrl != null
                             ? DecorationImage(
-                                image: NetworkImage(imageUrl),
+                                image: CachedNetworkImageProvider(imageUrl),
                                 fit: BoxFit.cover,
                                 colorFilter: ColorFilter.mode(
                                   Colors.black.withValues(alpha: 0.3),
