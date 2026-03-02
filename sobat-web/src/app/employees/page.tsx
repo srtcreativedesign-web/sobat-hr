@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
+import Swal from 'sweetalert2';
 
 interface Employee {
   id: number;
@@ -140,13 +141,25 @@ export default function EmployeesPage() {
       const response = await apiClient.post('/employees/import-master', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      alert(`Import Berhasil! \nCreated: ${response.data.created}\nSkipped: ${response.data.skipped}`);
+      
+      Swal.fire({
+        title: 'Import Berhasil!',
+        text: `Created: ${response.data.created}\nSkipped: ${response.data.skipped}`,
+        icon: 'success',
+        confirmButtonColor: '#1C3ECA',
+      });
+
       setShowImportModal(false);
       setImportFile(null);
       fetchEmployees();
     } catch (error: any) {
       console.error('Import Error:', error);
-      alert(error.response?.data?.message || 'Gagal mengimport data.');
+      Swal.fire({
+        title: 'Error!',
+        text: error.response?.data?.message || 'Gagal mengimport data.',
+        icon: 'error',
+        confirmButtonColor: '#1C3ECA',
+      });
     } finally {
       setUploading(false);
     }
@@ -268,7 +281,12 @@ export default function EmployeesPage() {
       link.parentNode?.removeChild(link);
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Gagal mengexport data karyawan.');
+      Swal.fire({
+        title: 'Ekspor Gagal',
+        text: 'Gagal mengexport data karyawan.',
+        icon: 'error',
+        confirmButtonColor: '#1C3ECA',
+      });
     }
   };
 

@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/auth-store';
 import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
 import { API_URL } from '@/lib/config';
+import Swal from 'sweetalert2';
 
 interface Attendance {
     id: number;
@@ -107,7 +108,12 @@ export default function AttendancePage() {
             link.parentNode?.removeChild(link);
         } catch (error) {
             console.error('Failed to export:', error);
-            alert('Gagal mengexport data.');
+            Swal.fire({
+                title: 'Ekspor Gagal',
+                text: 'Gagal mengexport data.',
+                icon: 'error',
+                confirmButtonColor: '#60A5FA',
+            });
         }
     };
 
@@ -121,12 +127,24 @@ export default function AttendancePage() {
                 admin_note: note
             });
 
+            Swal.fire({
+                title: 'Berhasil!',
+                text: 'Status kehadiran berhasil diperbarui.',
+                icon: 'success',
+                confirmButtonColor: '#60A5FA',
+            });
+
             // Refresh data
             fetchAttendances();
             setSelectedAttendance(null);
         } catch (error) {
             console.error('Failed to approve attendance:', error);
-            alert('Gagal memproses approval.');
+            Swal.fire({
+                title: 'Gagal!',
+                text: 'Gagal memproses approval.',
+                icon: 'error',
+                confirmButtonColor: '#60A5FA',
+            });
         }
     };
 

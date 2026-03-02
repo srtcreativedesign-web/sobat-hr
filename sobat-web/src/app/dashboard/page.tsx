@@ -376,10 +376,14 @@ export default function DashboardPage() {
                       <div className={`w-2 h-2 rounded-full mt-2 shadow-[0_0_8px] ${activity.type === 'employee_onboarding' ? 'bg-[#93C5FD] shadow-[#93C5FD]' : 'bg-orange-400 shadow-orange-400'
                         }`}></div>
                       <div>
-                        <p className="text-sm text-gray-800" dangerouslySetInnerHTML={{
-                          // Bold the user name if present in message
-                          __html: activity.message.replace(activity.user, `<strong>${activity.user}</strong>`)
-                        }}></p>
+                        <p className="text-sm text-gray-800">
+                          {activity.message.split(activity.user).map((part, i, arr) => (
+                            <span key={i}>
+                              {part}
+                              {i < arr.length - 1 && <strong>{activity.user}</strong>}
+                            </span>
+                          ))}
+                        </p>
                         <p className="text-xs text-gray-400 mt-1">
                           {new Date(activity.timestamp).toLocaleDateString()} {new Date(activity.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           {/* We could use a TimeAgo library if available, but simple date/time is fine for now */}

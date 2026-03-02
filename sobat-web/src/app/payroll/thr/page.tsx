@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/auth-store';
 import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
 import SignatureCanvas from 'react-signature-canvas';
+import Swal from 'sweetalert2';
 
 interface Thr {
     id: number;
@@ -104,7 +105,12 @@ export default function ThrPage() {
                 setUploadProgress(100);
             }
         } catch (error: any) {
-            alert(error.response?.data?.message || 'Import failed');
+            Swal.fire({
+                title: 'Import Gagal',
+                text: error.response?.data?.message || 'Import failed',
+                icon: 'error',
+                confirmButtonColor: '#06B6D4',
+            });
         }
     };
 
@@ -116,13 +122,23 @@ export default function ThrPage() {
                 division: selectedDivision
             });
 
-            alert(response.data.message);
+            Swal.fire({
+                title: 'Berhasil!',
+                text: response.data.message,
+                icon: 'success',
+                confirmButtonColor: '#06B6D4',
+            });
             setShowUploadModal(false);
             setSelectedFile(null);
             setParsedRows([]);
             fetchThrs();
         } catch (error: any) {
-            alert(error.response?.data?.message || 'Failed to save data');
+            Swal.fire({
+                title: 'Gagal Menyimpan',
+                text: error.response?.data?.message || 'Failed to save data',
+                icon: 'error',
+                confirmButtonColor: '#06B6D4',
+            });
         } finally {
             setLoading(false);
         }
@@ -144,7 +160,12 @@ export default function ThrPage() {
             : thrs.filter(t => t.status === 'draft').length;
 
         if (draftCount === 0) {
-            alert('Tidak ada THR draft untuk di-approve');
+            Swal.fire({
+                title: 'Informasi',
+                text: 'Tidak ada THR draft untuk di-approve',
+                icon: 'info',
+                confirmButtonColor: '#06B6D4',
+            });
             return;
         }
 
@@ -158,12 +179,12 @@ export default function ThrPage() {
     // Execute approval after signature
     const executeApproval = async () => {
         if (!signerName.trim()) {
-            alert('Nama penandatangan harus diisi');
+            Swal.fire('Perhatian', 'Nama penandatangan harus diisi', 'warning');
             return;
         }
 
         if (sigCanvasRef.current?.isEmpty()) {
-            alert('Tanda tangan harus diisi');
+            Swal.fire('Perhatian', 'Tanda tangan harus diisi', 'warning');
             return;
         }
 
@@ -189,13 +210,13 @@ export default function ThrPage() {
                     payload.division = selectedViewDivision;
                 }
                 const response = await apiClient.post('/thrs/bulk-approve', payload);
-                alert(response.data.message);
+                Swal.fire('Berhasil!', response.data.message, 'success');
             }
 
             setShowApprovalModal(false);
             fetchThrs();
         } catch (error: any) {
-            alert(error.response?.data?.message || 'Gagal approve');
+            Swal.fire('Gagal!', error.response?.data?.message || 'Gagal approve', 'error');
         } finally {
             setLoading(false);
         }
@@ -214,7 +235,7 @@ export default function ThrPage() {
             link.click();
             link.remove();
         } catch (error) {
-            alert('Gagal download slip');
+            Swal.fire('Error', 'Gagal download slip', 'error');
         }
     };
 
