@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 
 use App\Models\PayrollHans;
 use App\Models\Employee;
+use App\Models\Role;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\GroqAiService;
@@ -24,7 +25,7 @@ class PayrollHansController extends Controller
         
         // SECURITY CHECK: Scope query to authenticated user
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        if (!in_array($roleName, ['admin', 'super_admin', 'hr'])) {
+        if (!in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR])) {
             $employeeId = $user->employee ? $user->employee->id : null;
             if ($employeeId) {
                 $query->where('employee_id', $employeeId);
@@ -270,7 +271,7 @@ class PayrollHansController extends Controller
         // Security check
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        if (!in_array($roleName, ['super_admin', 'admin', 'hr'])) {
+        if (!in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN, Role::HR])) {
              if (!$user->employee || $user->employee->id !== $payroll->employee_id) {
                  return response()->json(['message' => 'Unauthorized'], 403);
              }
@@ -322,7 +323,7 @@ class PayrollHansController extends Controller
             // Security check
             $user = auth()->user();
             $roleName = $user->role ? strtolower($user->role->name) : '';
-            if (!in_array($roleName, ['super_admin', 'admin', 'hr'])) {
+            if (!in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN, Role::HR])) {
                  if (!$user->employee || $user->employee->id !== $payroll->employee_id) {
                      return response()->json(['message' => 'Unauthorized'], 403);
                  }
