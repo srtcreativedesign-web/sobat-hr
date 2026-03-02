@@ -58,7 +58,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Register new user
+     * Register new user (Strict Employee Only)
      */
     public function register(Request $request)
     {
@@ -66,21 +66,27 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'role_id' => 'required|exists:roles,id',
         ]);
+
+        // Solve 1: Hardcode role to 'employee' to prevent role escalation
+        $employeeRole = \App\Models\Role::where('name', \App\Models\Role::EMPLOYEE)->first();
+        
+        if (!$employeeRole) {
+            return response()->json(['message' => 'System configuration error: Employee role not found.'], 500);
+        }
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role_id' => $request->role_id,
+            'role_id' => $employeeRole->id, // FORCE EMPLOYEE ROLE
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
+            'success' => true,
             'access_token' => $token,
-            'token_type' => 'Bearer',
             'token_type' => 'Bearer',
             'user' => new \App\Http\Resources\UserResource($user),
         ], 201);
