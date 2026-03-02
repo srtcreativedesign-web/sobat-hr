@@ -21,6 +21,7 @@ class PayrollHansController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
+        // EAGER LOADING: employee
         $query = PayrollHans::with('employee');
         
         // SECURITY CHECK: Scope query to authenticated user

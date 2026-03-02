@@ -14,7 +14,8 @@ class AttendanceController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Attendance::with(['employee']);
+        // EAGER LOADING: employee
+        $query = Attendance::with(['employee.organization']);
 
         if ($request->has('employee_id')) {
             $query->where('employee_id', $request->employee_id);

@@ -17,6 +17,7 @@ class RequestController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        // EAGER LOADING: employee and approvals
         $query = RequestModel::with(['employee.organization', 'approvals']);
         
         // Check Role
