@@ -118,9 +118,25 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       return;
     }
 
-    final status = await Permission.locationWhenInUse.request();
+    // Request both permissions
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.locationWhenInUse,
+      Permission.camera,
+    ].request();
 
-    if (status.isGranted) {
+    final locationStatus = statuses[Permission.locationWhenInUse];
+    final cameraStatus = statuses[Permission.camera];
+
+    if (locationStatus == PermissionStatus.permanentlyDenied ||
+        cameraStatus == PermissionStatus.permanentlyDenied) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showPermissionHelpDialog();
+      }
+      return;
+    }
+
+    if (locationStatus!.isGranted && cameraStatus!.isGranted) {
       try {
         Position position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high,
@@ -167,8 +183,43 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         setState(() {
           _isLoading = false;
         });
+        _showErrorSnackBar('Akses Lokasi & Kamera dibutuhkan untuk absensi.');
       }
     }
+  }
+
+  void _showPermissionHelpDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Izin Akses Terblokir'),
+        content: const Text(
+          'SOBAT HR membutuhkan akses Lokasi (GPS) dan Kamera untuk melakukan proses absensi.\n\n'
+          'Karena izin ini diblokir secara permanen sebelumnya, silakan aktifkan secara manual melalui Pengaturan Aplikasi.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAppSettings();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.colorCyan,
+            ),
+            child: const Text(
+              'Buka Pengaturan',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _checkDistance(Position userPos) {

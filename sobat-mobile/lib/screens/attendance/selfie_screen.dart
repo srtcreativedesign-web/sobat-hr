@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import '../../config/theme.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart'; // [NEW] Image Compression
 
 import 'package:device_info_plus/device_info_plus.dart'; // [NEW]
 
@@ -320,8 +321,18 @@ class _SelfieScreenState extends State<SelfieScreen>
         image = await _controller!.takePicture();
       }
 
+      // Compress Image (Reduce >5MB size to <500KB)
+      final targetPath = '${image.path}_compressed.jpg';
+      final compressedFile = await FlutterImageCompress.compressAndGetFile(
+        image.path,
+        targetPath,
+        quality: 35,
+      );
+
+      final finalPath = compressedFile?.path ?? image.path;
+
       if (!mounted) return;
-      Navigator.pop(context, image.path);
+      Navigator.pop(context, finalPath);
     } catch (e) {
       // debugPrint("Error auto-capturing: $e");
       setState(() {
@@ -359,8 +370,18 @@ class _SelfieScreenState extends State<SelfieScreen>
         image = await _controller!.takePicture();
       }
 
+      // Compress Image (Reduce >5MB size to <500KB)
+      final targetPath = '${image.path}_compressed.jpg';
+      final compressedFile = await FlutterImageCompress.compressAndGetFile(
+        image.path,
+        targetPath,
+        quality: 35,
+      );
+
+      final finalPath = compressedFile?.path ?? image.path;
+
       if (!mounted) return;
-      Navigator.pop(context, image.path);
+      Navigator.pop(context, finalPath);
     } catch (e) {
       // debugPrint("Error manual capture: $e");
       setState(() {

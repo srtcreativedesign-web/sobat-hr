@@ -81,8 +81,8 @@ class ApiConfig {
   static const String payroll = 'payrolls';
 
   // Timeout configuration
-  static const Duration connectTimeout = Duration(seconds: 15);
-  static const Duration receiveTimeout = Duration(seconds: 15);
+  static const Duration connectTimeout = Duration(seconds: 60);
+  static const Duration receiveTimeout = Duration(seconds: 60);
 
   /// Helper to construct storage URL safely
   /// Handles null, full URLs, path normalization

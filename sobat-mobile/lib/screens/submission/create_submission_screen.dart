@@ -789,7 +789,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
         source: source,
         maxWidth: 1024,
         maxHeight: 1024,
-        imageQuality: 50, // Optimize image size
+        imageQuality: 30, // Aggressive compression to save bandwidth
       );
       if (picked != null) {
         setState(() {
