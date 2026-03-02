@@ -144,18 +144,11 @@ class RequestController extends Controller
                 // 2. Create Detail based on Type
                 switch ($validated['type']) {
                     case 'leave':
-                        // 1. Check Eligibility (1 Year Service) - ALLOW ADMINISTRATIVE OVERRIDE
-                        $isEligible = $user->employee->join_date && $user->employee->join_date->diffInYears(now()) >= 1;
-                        
-                        if (!$isEligible && !$isAdmin) {
+                        // 1. Check Eligibility (1 Year Service)
+                        if (!$user->employee->join_date || $user->employee->join_date->diffInYears(now()) < 1) {
                             throw new \Illuminate\Validation\ValidationException(\Illuminate\Support\Facades\Validator::make([], [
                                 'type' => 'Anda belum bekerja selama 1 tahun, belum berhak mengajukan cuti tahunan.',
                             ]));
-                        }
-
-                        if (!$isEligible && $isAdmin) {
-                            \Illuminate\Support\Facades\Log::warning("Exceptional Leave: Admin {$user->name} created a leave request for employee {$user->employee->full_name} with < 1 year of service.");
-                            $validated['reason'] = "[EXCEPTIONAL LEAVE] " . ($validated['reason'] ?? $validated['description']);
                         }
 
                         // 2. Calculate Duration
