@@ -19,9 +19,10 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['throttle:login'])->group(function () {
     Route::post('/auth/login', [App\Http\Controllers\Api\AuthController::class, 'login'])->name('login');
     Route::post('/auth/register', [App\Http\Controllers\Api\AuthController::class, 'register']);
+    Route::post('/auth/forgot-password', [App\Http\Controllers\Api\PasswordResetController::class, 'request']); // Added to throttle:login
 });
 Route::get('/announcements/active', [App\Http\Controllers\Api\AnnouncementController::class, 'getActive']);
-Route::post('/auth/forgot-password', [App\Http\Controllers\Api\PasswordResetController::class, 'request']); // Public Forgot Password
+// Route::post('/auth/forgot-password', [App\Http\Controllers\Api\PasswordResetController::class, 'request']); // Moved above to group
 // Route::get('/divisions', [App\Http\Controllers\Api\DivisionController::class, 'index']); // Moved to protected resources
 Route::get('/public/divisions', [App\Http\Controllers\Api\DivisionController::class, 'index']); // Public access for registration
 Route::get('/organizations', [App\Http\Controllers\Api\OrganizationController::class, 'index']); // Public Organizations List
