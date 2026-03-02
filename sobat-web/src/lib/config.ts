@@ -4,6 +4,23 @@
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'SOBAT HR';
 
+// Role Constants (Single Source of Truth) - Matches Backend Role Model
+export const ROLES = {
+  SUPER_ADMIN: 'super_admin',
+  ADMIN: 'admin',
+  ADMIN_CABANG: 'admin_cabang',
+  HRD: 'hrd',
+  HR: 'hr',
+  MANAGER: 'manager',
+  MANAGER_DIVISI: 'manager_divisi',
+  DEPUTY_MANAGER: 'deputy_manager',
+  EMPLOYEE: 'employee',
+  CREW: 'crew',
+  STAFF: 'staff',
+  TEAM_LEADER: 'team_leader',
+  DEVELOPER: 'developer',
+} as const;
+
 // API Endpoints
 export const API_ENDPOINTS = {
   AUTH: {

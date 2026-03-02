@@ -52,6 +52,8 @@ interface RecentActivity {
   status: string;
 }
 
+import { ROLES } from '@/lib/config';
+
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated, isInitialized, checkAuth, logout } = useAuthStore();
@@ -112,7 +114,7 @@ export default function DashboardPage() {
     // Role Check
     if (isInitialized && isAuthenticated) {
       const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name;
-      if (roleName === 'staff') {
+      if (roleName === ROLES.STAFF || roleName === ROLES.CREW || roleName === ROLES.EMPLOYEE) {
         router.push('/attendance');
       } else {
         fetchData();

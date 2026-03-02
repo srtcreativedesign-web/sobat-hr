@@ -146,13 +146,14 @@ export default function AttendancePage() {
         // If path is already a full URL, return it
         if (path.startsWith('http')) return path;
 
-        // Clean path if it starts with 'public/' (stored in db) or just appending to base
-        // API_URL usually ends with /api. We need the base URL (without /api) for storage
-        // Fix: Use regex to replace only the trailing /api to avoid replacing 'api' in subdomain
-        const baseUrl = API_URL.replace(/\/api$/, '');
+        // Ensure we have a valid base URL for storage
+        // API_URL usually ends with /api. We need the base URL (without /api)
+        const baseUrl = API_URL.replace(/\/api\/?$/, '');
 
-        // Remove leading slash if exists to prevent double slash
-        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+        // Remove leading slash or 'public/' from path if present (Laravel storage standard)
+        let cleanPath = path;
+        if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
+        if (cleanPath.startsWith('public/')) cleanPath = cleanPath.substring(7);
 
         return `${baseUrl}/storage/${cleanPath}`;
     };

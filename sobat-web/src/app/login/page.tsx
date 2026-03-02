@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
 import { motion, AnimatePresence } from 'motion/react';
+import { ROLES } from '@/lib/config';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -39,7 +40,7 @@ export default function LoginPage() {
       const user = useAuthStore.getState().user;
       const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name;
 
-      if (roleName === 'staff') {
+      if (roleName === ROLES.STAFF || roleName === ROLES.CREW || roleName === ROLES.EMPLOYEE) {
         router.push('/attendance');
       } else {
         router.push('/dashboard');
