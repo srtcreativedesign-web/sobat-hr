@@ -348,12 +348,21 @@ class AttendanceController extends Controller
             'check_out' => 'nullable',
             'status' => 'sometimes|in:present,late,absent,leave,sick',
             'notes' => 'nullable|string',
-            'photo' => 'nullable|image|max:5120', // Add validation for checkout photo
+            'photo' => 'required_with:check_out|image|max:5120', // PHOTO MANDATORY ON CHECKOUT
         ]);
 
-        // Handle Checkout Photo Upload
+        // Handle Checkout Photo Upload (with compression)
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('attendance_photos', 'public');
+            $photo = $request->file('photo');
+            
+            // Generate filename unique
+            $filename = 'out_' . uniqid() . '_' . time() . '.jpg';
+            $path = 'attendance_photos/' . $filename;
+            $fullPath = storage_path('app/public/' . $path);
+
+            // Compress and Resize Image (Consistent with check-in)
+            $this->resizeAndSaveImage($photo->getPathname(), $fullPath, 800, 80);
+            
             $validated['checkout_photo_path'] = $path;
         }
 
@@ -397,6 +406,15 @@ class AttendanceController extends Controller
     public function destroy(string $id)
     {
         $attendance = Attendance::findOrFail($id);
+
+        // Cleanup: Delete associated photos from storage before deleting the record
+        if ($attendance->photo_path) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($attendance->photo_path);
+        }
+        if ($attendance->checkout_photo_path) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($attendance->checkout_photo_path);
+        }
+
         $attendance->delete();
 
         return response()->json(['message' => 'Attendance deleted successfully']);
