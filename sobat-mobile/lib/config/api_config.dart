@@ -13,7 +13,12 @@ class ApiConfig {
   //   Terminal: ifconfig | grep "inet " | grep -v 127.0.0.1
   // ==========================================================================
 
-  static const String _env = String.fromEnvironment('ENV', defaultValue: 'dev');
+  static const String _env = String.fromEnvironment(
+    'ENV',
+    defaultValue: 'unknown',
+  );
+  static bool get _isProd =>
+      _env == 'prod' || (_env == 'unknown' && kReleaseMode);
   static const String _hostIp = '192.168.1.11';
   static const String _port = '8000';
 
@@ -22,7 +27,7 @@ class ApiConfig {
 
   // Base URL Logic
   static String get baseUrl {
-    if (_env == 'prod') {
+    if (_isProd) {
       // debugPrint('🚀 Environment: PRODUCTION');
       return _prodUrl;
     }
@@ -53,7 +58,7 @@ class ApiConfig {
   }
 
   /// Check if running in production
-  static bool get isProduction => _env == 'prod';
+  static bool get isProduction => _isProd;
 
   // ==========================================================================
   // 🔌 ENDPOINTS

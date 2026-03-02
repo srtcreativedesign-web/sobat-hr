@@ -2,7 +2,7 @@ name: sobat_hr
 description: "SOBAT HR - Human Resource Management System Mobile App"
 publish_to: 'none'
 
-version: 1.0.0+10
+version: 1.0.0+13
 
 environment:
   sdk: ^3.10.0

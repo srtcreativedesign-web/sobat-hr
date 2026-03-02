@@ -3,7 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 class StorageService {
-  static const _secureStorage = FlutterSecureStorage();
+  static const _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
 
   // Keys
   static const String _tokenKey = 'auth_token';
@@ -11,22 +13,32 @@ class StorageService {
 
   // Token Management (Secure Storage)
   static Future<void> saveToken(String token) async {
-    // print('StorageService: Saving token...');
     try {
       await _secureStorage.write(key: _tokenKey, value: token);
-      // print('StorageService: Token save complete');
     } catch (e) {
-      // print('StorageService: Error saving token: $e');
-      rethrow;
+      // If keystore is deeply corrupted, clear all secure storage and try again
+      await _secureStorage.deleteAll();
+      await _secureStorage.write(key: _tokenKey, value: token);
     }
   }
 
   static Future<String?> getToken() async {
-    return await _secureStorage.read(key: _tokenKey);
+    try {
+      return await _secureStorage.read(key: _tokenKey);
+    } catch (e) {
+      // Handle PlatformException containing BadPaddingException
+      // This happens when the Android Keystore changes or encryptedSharedPreferences flag is toggled
+      await _secureStorage.deleteAll();
+      return null;
+    }
   }
 
   static Future<void> deleteToken() async {
-    await _secureStorage.delete(key: _tokenKey);
+    try {
+      await _secureStorage.delete(key: _tokenKey);
+    } catch (e) {
+      // Ignore if cannot delete
+    }
   }
 
   // User Data Management (Shared Preferences)

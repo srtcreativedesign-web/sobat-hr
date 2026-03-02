@@ -52,6 +52,12 @@ class DioFactory {
   static void _configureSslTrust(Dio dio) {
     (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
       final client = HttpClient();
+
+      // Crucial: apply connection timeout because custom HttpClient ignores Dio's timeout
+      if (dio.options.connectTimeout != null) {
+        client.connectionTimeout = dio.options.connectTimeout;
+      }
+
       // Trust the server's certificate for our production domain
       client.badCertificateCallback =
           (X509Certificate cert, String host, int port) {
