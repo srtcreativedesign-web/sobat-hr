@@ -272,7 +272,7 @@ class RequestController extends Controller
                 if (empty($approverIds)) {
                      // Fallback 1: Super Admin
                      $superAdmins = \App\Models\User::whereHas('role', function($q){
-                         $q->where('name', 'super_admin');
+                         $q->where('name', Role::SUPER_ADMIN);
                      })->with('employee')->get()->pluck('employee.id')->filter()->toArray();
                      
                      if (!empty($superAdmins)) {
@@ -343,13 +343,57 @@ class RequestController extends Controller
 
     public function destroy(string $id)
     {
-        $requestModel = RequestModel::findOrFail($id);
+        $requestModel = RequestModel::with([
+            'leaveDetail', 'sickLeaveDetail', 'overtimeDetail', 
+            'businessTripDetail', 'reimbursementDetail', 'assetDetail'
+        ])->findOrFail($id);
         
         // Only allow deletion if status is draft or rejected
         if (!in_array($requestModel->status, ['draft', 'rejected'])) {
             return response()->json([
                 'message' => 'Cannot delete request in current status'
             ], 422);
+        }
+
+        // Cleanup: Delete attachments from storage if they exist
+        $attachments = [];
+
+        // Check main request attachments field
+        if ($requestModel->attachments) {
+            $decoded = json_decode($requestModel->attachments, true);
+            if (is_array($decoded)) $attachments = array_merge($attachments, $decoded);
+        }
+
+        // Check specific detail attachments
+        if ($requestModel->sickLeaveDetail && $requestModel->sickLeaveDetail->attachment) {
+            if (is_array($requestModel->sickLeaveDetail->attachment)) {
+                $attachments = array_merge($attachments, $requestModel->sickLeaveDetail->attachment);
+            } else {
+                $attachments[] = $requestModel->sickLeaveDetail->attachment;
+            }
+        }
+        
+        if ($requestModel->reimbursementDetail && $requestModel->reimbursementDetail->attachment) {
+            if (is_array($requestModel->reimbursementDetail->attachment)) {
+                $attachments = array_merge($attachments, $requestModel->reimbursementDetail->attachment);
+            } else {
+                $attachments[] = $requestModel->reimbursementDetail->attachment;
+            }
+        }
+
+        if ($requestModel->assetDetail && $requestModel->assetDetail->attachment) {
+            if (is_array($requestModel->assetDetail->attachment)) {
+                $attachments = array_merge($attachments, $requestModel->assetDetail->attachment);
+            } else {
+                $attachments[] = $requestModel->assetDetail->attachment;
+            }
+        }
+
+        // Physically delete each file
+        foreach (array_unique($attachments) as $filePath) {
+            if ($filePath) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($filePath);
+            }
         }
 
         $requestModel->delete();
