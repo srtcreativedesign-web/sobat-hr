@@ -15,46 +15,53 @@
 
 ## 2. MODERN UI/UX DESIGN SYSTEM
 **Design Philosophy:** "Premium, Clean, & Dynamic" (Vercel/Linear Style).
-- **Primary:** Forest Green `#1A4D2E` (Solid, Trustworthy).
-- **Secondary/UI:** Mint Theme `#a9eae2` (Primary Light).
-- **Accent/Neon:** Neon Mint `#49FFB8` (Highlights, Glow Effects).
-- **Glassmorphism:** `bg-white/95` or `bg-black/50` with `backdrop-blur-md`.
+- **Primary:** Forest Green `#1A4D2E`.
+- **Accent:** Neon Mint `#49FFB8`.
+- **Components:** Glassmorphism, Framer Motion, GSAP.
+- **Feedback:** SweetAlert2 (Web) & Modern Snackbars (Mobile).
 
 ---
 
 ## 3. SECURITY & RELIABILITY PROTOCOL (CRITICAL)
 
-### **A. Secure Storage Protocol (Mobile)**
-- **Standard:** Semua data sensitif (Token, User Data) wajib diakses melalui `StorageService`.
-- **Encryption:** Menggunakan `FlutterSecureStorage` dengan opsi `encryptedSharedPreferences: true` di Android.
-- **Error Handling:** Implementasi `try-catch` (BadPaddingException guard) di `StorageService.getToken()` untuk mencegah crash akibat Keystore mismatch.
-- **Single Source of Truth:** Semua Service (Attendance, Notification, Request) **DILARANG** menggunakan instance `FlutterSecureStorage` lokal; wajib memanggil `StorageService.getToken()`.
+### **A. Backend Hardening**
+- **Role Constants:** Menggunakan `App\Models\Role` sebagai *Single Source of Truth* untuk pengecekan hak akses (Anti-Hardcoded String).
+- **IDOR Protection:** Pengecekan kepemilikan data pada endpoint `show()` dan `update()` untuk Absensi, Payroll, dan Employee (User hanya bisa melihat data milik sendiri).
+- **Rate Limiting:** `throttle:login` (5/min) diterapkan pada Login, Register, PIN, dan Forgot Password untuk mencegah Bruteforce & Bot Spamming.
+- **MIME Validation:** Validasi ketat `mimes:jpg,jpeg,png` pada semua fitur upload file untuk mencegah Remote Code Execution (RCE).
+- **Mass Assignment Guard:** Kolom sensitif seperti `role_id` dilindungi dari pengisian masal via request user.
 
-### **B. Production Guard**
-- **Environment Logic:** Menggunakan `ApiConfig` yang ketat. Release build **WAJIB** menggunakan `--dart-define=ENV=prod`.
-- **ProGuard:** Implementasi `proguard-rules.pro` untuk menjaga integritas model data (mencegah field name obfuscation pada JSON parsing).
-- **Null-Safety:** Parsing JSON pada model (`User.dart`) menggunakan metode `.toString()` dan pengecekan null eksplisit untuk mencegah NPE.
+### **B. Data & Storage Integrity**
+- **Auto-Cleanup:** Menghapus file fisik (Foto/Lampiran) secara otomatis dari storage saat record database dihapus (Absensi/Request).
+- **Rounding Logic:** Sinkronisasi pembulatan angka (`round($val, 0)`) antara database dan tampilan PDF untuk mencegah selisih nominal.
+- **Geofencing Tolerance:** Penambahan buffer **10 meter** pada koordinat GPS untuk mengakomodasi ketidakteraturan sinyal perangkat mobile.
+
+### **C. Mobile & Web Security**
+- **Secure Storage:** Menggunakan `encryptedSharedPreferences` (Android) dengan satu pintu akses via `StorageService`.
+- **XSS Guard:** Larangan penggunaan `dangerouslySetInnerHTML` di Frontend; rendering teks dinamis menggunakan metode React yang aman.
+- **Sanctum Expiry:** Implementasi `SANCTUM_TOKEN_EXPIRATION` untuk membatasi masa aktif session token.
 
 ---
 
 ## 4. SYSTEM ARCHITECTURE
 
-### **A. Super Admin (Web Dashboard - Next.js)**
-- **Payroll Engine:** STRICT Passive Storage. Data diimpor dari Excel 100% dipercaya (Zero Logic Calculation di System).
-- **Organization:** Dynamic Parent-Child Hierarchy (CEO -> Holdings -> Departments).
+### **A. Super Admin (Web Dashboard)**
+- **Dashboard:** Real-time analytics dengan proteksi XSS pada Recent Activity.
+- **THR Management:** Digital Signature (Locked after first sign) & Bulk Approval.
+- **Import Engine:** Optimasi pembacaan file Excel (`readDataOnly`) untuk performa server.
 
-### **B. User / Staff (Mobile App - Flutter)**
-- **Attendance:** GPS Geofencing (Office vs Field Mode). Memerlukan koordinat Lat/Long dan Foto Selfie.
-- **ESS Module:** Sick Leave (Camera), Asset Request, Overtime, Download Payslip (PDF).
-- **Security:** PIN Screen, Biometric (Face/Fingerprint), FCM Push Notifications.
+### **B. User / Staff (Mobile App)**
+- **Attendance:** GPS Geofencing + Mandatory Selfie (Check-in & Check-out).
+- **GPS Safety:** Null-check pada data koordinat sebelum eksekusi API untuk mencegah crash (NPE).
+- **Permission UX:** Penanganan status `permanentlyDenied` dengan direct link ke Settings HP.
 
 ---
 
-## 5. LATEST PROGRESS (MARCH 2026)
-- **Security Hardening (Completed):** Refactoring `NotificationService`, `AttendanceService`, dan `RequestService` untuk standardisasi Secure Storage.
-- **NPE Guard (Completed):** Perbaikan parsing model `User.dart` dan penambahan pengecekan null pada GPS `AttendanceScreen`.
-- **Deployment Ready:** Build commands untuk APK & AAB sudah diverifikasi menggunakan flag `ENV=prod`.
-- **Next To-Do:** Implementasi `cached_network_image` untuk optimasi loading gambar dan Finalize Permission/Role Granularity.
+## 5. LATEST PROGRESS (MARCH 2, 2026)
+- **Security Audit (Completed):** Penutupan celah IDOR, RCE via upload, dan bypass registrasi admin.
+- **UI/UX Polish (Completed):** Implementasi SweetAlert2 di Web dan sinkronisasi timeout API 60 detik di seluruh platform.
+- **Storage Optimization (Completed):** Penambahan logika auto-delete file sampah dan kompresi gambar selfie.
+- **Role Standardization (Completed):** Penyatuan konstanta role di Backend (Role Model) dan Frontend (Config Store).
 
 ---
 
@@ -68,19 +75,18 @@ npm run build && pm2 restart sobat-web
 # Permissions (API)
 sudo chown -R www-data:www-data storage bootstrap/cache
 sudo chmod -R 775 storage bootstrap/cache
+php artisan storage:link
 ```
 
 ### **Mobile Build (Production)**
 ```bash
-# Run Production
-flutter run --release --dart-define=ENV=prod
+# Production Flag (Mandatory)
+--dart-define=ENV=prod
 
-# Build APK
+# Build Targets
 flutter build apk --release --dart-define=ENV=prod
-
-# Build AAB (Play Store)
 flutter build appbundle --release --dart-define=ENV=prod
 ```
 
 ---
-*Last Updated: 2026-03-02 by Giaa 🌸*
+*Last Updated: 2026-03-02 by Giaa (Your Dedicated Assistant) 🌸*
