@@ -1,158 +1,86 @@
 # PROJECT BLUEPRINT: SOBAT (Smart Operations & Business Administrative Tool)
 
 ## 1. PROJECT OVERVIEW
-**Goal:** Membangun sistem HRIS End-to-End dengan UI/UX Modern & Interaktif dalam 3 bulan.
+**Goal:** Membangun sistem HRIS End-to-End dengan UI/UX Modern & Interaktif.
 **Developer Mode:** Solo Developer (Speed Run).
 
 ### Tech Stack (Confirmed):
 - **Backend API:** Laravel 11 (PHP) - Mature, Secure (Sanctum), Robust Payroll & Queue.
 - **Web Admin Frontend:** Next.js 15 (App Router) + TypeScript.
-- **Mobile Apps:** Flutter.
-- **Database:** MySQL (Laragon).
-- **Integration:** Fingerprint SDK/API & PDF Generator.
+- **Mobile Apps:** Flutter (v3.10+).
+- **Database:** MySQL.
+- **Integration:** Firebase (FCM), GPS Geofencing, Biometric, PDF Generator.
 
 ---
 
-## 1.1 MODERN UI/UX DESIGN SYSTEM (CRITICAL)
-**Design Philosophy:** "Premium, Clean, & Dynamic".  
-Aplikasi tidak boleh terlihat kaku seperti dashboard admin konvensional. Harus terasa seperti aplikasi SaaS modern (e.g., Linear, Vercel style).
-
-### **Color Palette (Premium & Trust):**
-- **Primary:** Forest Green `#1A4D2E` (Solid, Trustworthy)
-- **Deep Gradient:** `#0d2618` to `#1A4D2E` (Backgrounds, Sidebars)
-- **Accent/Neon:** Neon Mint `#49FFB8` (Highlights, Active States, Glow Effects)
-- **Glassmorphism:** `bg-white/95` or `bg-black/50` with `backdrop-blur-md`
-- **Error/Danger:** `#EF4444` (Soft Red)
-- **Success:** `#22C55E` (Emerald)
-
-### **Interactive Elements (The "Wow" Factor):**
-1.  **Micro-interactions:** 
-    -   Button hover effects (scale, glow).
-    -   Card hover effects (lift up, subtle border glow).
-    -   Active menu items with animated background indicators.
-2.  **Transitions:** 
-    -   Page transitions (fade-in, slide-up).
-    -   Modal open/close animations (no instant pops).
-    -   Smooth loading skeletons (shimmer effects), **never** raw loading text.
-3.  **Data Visualization:**
-    -   Animated charts (Recharts/Chart.js) that grow on load.
-    -   Progress bars with smooth filling animation.
-4.  **Feedback:**
-    -   Instant feedback on actions (Toasts with animations).
-    -   Ripple effects on clicks.
-
-### **Typography:**
--   **Font:** Inter or Plus Jakarta Sans.
--   **Headings:** Bold, often with gradients (`bg-clip-text`).
--   **Readability:** High contrast, ample whitespace, strict hierarchy.
-
-
-## 2. SYSTEM ARCHITECTURE & ACCESS LEVEL
-
-### A. Super Admin (Web Dashboard - Next.js)
-**Scope:** Global Corporate Management.
--   **Dashboard:** Visualisasi real-time (Turnover, Heat-map Absensi).
--   **Employee DB:** Master limits, Contracts, Document mgmt.
--   **Payroll Engine:** 
-    -   **STRICT:** Import Excel -> Display Raw Data -> Generate Payslip. 
-    -   **NO AUTO-CALCULATION:** System trusts Excel data 100%.
--   **Organization:** Dynamic structure (HQ, Branch, Dept) with Parent-Child hierarchy.
--   **Integration:** Fingerprint sync.
-
-### Latest Progress (Jan 2026):
--   **Authentication:** Fully implemented (Sanctum + NextAuth).
--   **Employee:** CRUD + Invite System (Excel Import) implemented.
--   **Payroll:** Excel Import & Payslip Logic implemented.
--   **UI:** Updated to "Mint Theme" (`#a9eae2` Primary).
--   **Organization:** Hierarchical structure implemented (CEO -> Holdings -> Departments).
--   **Mobile App:**
-    -   Navigation fixed (iOS/Android).
-    -   Profile Sync: `job_level`, `track`, `organization` synced from registration.
-    -   Supervisor Auto-fill: API endpoint (`/employees/supervisor-candidate`) implemented to auto-suggest supervisor based on hierarchy.
-    -   Submission Module: Sick Leave (Camera), Asset Request, Overtime.
--   **Next To-Do:** Finalize Permission/Role Granularity.
-
-### B. Admin Cabang / Manager (Web Dashboard - Next.js)
-**Scope:** Branch Operations.
--   **Shift Mgmt:** Roster scheduling.
--   **Approval Tier 1:** Verify Leave/Overtime/Reimburse.
--   **Monitoring:** Branch-specific attendance.
-
-### C. User / Staff (Mobile App - Flutter)
-**Scope:** Employee Self-Service (ESS).
--   **Submission:** Cuti, Reimburse, Lembar, Resign.
--   **Tracking:** Real-time approval status.
--   **Documents:** Download Payslip (PDF).
--   **Profile:** Edit personal data.
+## 2. MODERN UI/UX DESIGN SYSTEM
+**Design Philosophy:** "Premium, Clean, & Dynamic" (Vercel/Linear Style).
+- **Primary:** Forest Green `#1A4D2E` (Solid, Trustworthy).
+- **Secondary/UI:** Mint Theme `#a9eae2` (Primary Light).
+- **Accent/Neon:** Neon Mint `#49FFB8` (Highlights, Glow Effects).
+- **Glassmorphism:** `bg-white/95` or `bg-black/50` with `backdrop-blur-md`.
 
 ---
 
-## 3. CORE DATA STRUCTURE (Simplified)
--   **Users & Roles:** RBAC (Super Admin, Admin Cabang, Staff).
--   **Employees:** Linked to Users. Stores generic salary info.
--   **Attendance:** Raw logs + Processed status (Hadir/Telat/Alpha).
--   **Payroll:** 
-    -   Columns: `basic_salary`, `allowances`, `deductions`, `take_home_pay`, etc.
-    -   Logic: **Passive Storage**. Data comes directly from Imported Excel.
--   **Workflows:** Requests (Leave, Overtime) with status history.
+## 3. SECURITY & RELIABILITY PROTOCOL (CRITICAL)
+
+### **A. Secure Storage Protocol (Mobile)**
+- **Standard:** Semua data sensitif (Token, User Data) wajib diakses melalui `StorageService`.
+- **Encryption:** Menggunakan `FlutterSecureStorage` dengan opsi `encryptedSharedPreferences: true` di Android.
+- **Error Handling:** Implementasi `try-catch` (BadPaddingException guard) di `StorageService.getToken()` untuk mencegah crash akibat Keystore mismatch.
+- **Single Source of Truth:** Semua Service (Attendance, Notification, Request) **DILARANG** menggunakan instance `FlutterSecureStorage` lokal; wajib memanggil `StorageService.getToken()`.
+
+### **B. Production Guard**
+- **Environment Logic:** Menggunakan `ApiConfig` yang ketat. Release build **WAJIB** menggunakan `--dart-define=ENV=prod`.
+- **ProGuard:** Implementasi `proguard-rules.pro` untuk menjaga integritas model data (mencegah field name obfuscation pada JSON parsing).
+- **Null-Safety:** Parsing JSON pada model (`User.dart`) menggunakan metode `.toString()` dan pengecekan null eksplisit untuk mencegah NPE.
 
 ---
 
-## 4. DEVELOPMENT RULES FOR AI AGENT
-1.  **Aesthetics First:** Before writing functional code, ensure the UI structure supports a premium look (Tailwind classes for glassmorphism, gradients, shadows).
-2.  **Interactive:** Always implement `hover:`, `active:`, and `focus:` states. Use `framer-motion` for complex animations if needed, or standard CSS transitions for simple ones.
-3.  **Clean Code:** Repository Pattern in Laravel. Component-based architecture in Next.js.
-4.  **Strict Payroll:** The Payroll module is a **Viewer & Generator**, not a Calculator.
+## 4. SYSTEM ARCHITECTURE
+
+### **A. Super Admin (Web Dashboard - Next.js)**
+- **Payroll Engine:** STRICT Passive Storage. Data diimpor dari Excel 100% dipercaya (Zero Logic Calculation di System).
+- **Organization:** Dynamic Parent-Child Hierarchy (CEO -> Holdings -> Departments).
+
+### **B. User / Staff (Mobile App - Flutter)**
+- **Attendance:** GPS Geofencing (Office vs Field Mode). Memerlukan koordinat Lat/Long dan Foto Selfie.
+- **ESS Module:** Sick Leave (Camera), Asset Request, Overtime, Download Payslip (PDF).
+- **Security:** PIN Screen, Biometric (Face/Fingerprint), FCM Push Notifications.
 
 ---
 
-## 5. MILESTONES (RESTARTED)
--   **Phase 1:** Foundation & UI System (Next.js Modern Setup + Laravel API).
--   **Phase 2:** Master Data with Interactive Tables (Employees, Shifts).
--   **Phase 3:** Payroll Import Feature (Excel -> UI -> PDF) with **Zero Calculation Logic**.
--   **Phase 4:** Mobile App Integration.
+## 5. LATEST PROGRESS (MARCH 2026)
+- **Security Hardening (Completed):** Refactoring `NotificationService`, `AttendanceService`, dan `RequestService` untuk standardisasi Secure Storage.
+- **NPE Guard (Completed):** Perbaikan parsing model `User.dart` dan penambahan pengecekan null pada GPS `AttendanceScreen`.
+- **Deployment Ready:** Build commands untuk APK & AAB sudah diverifikasi menggunakan flag `ENV=prod`.
+- **Next To-Do:** Implementasi `cached_network_image` untuk optimasi loading gambar dan Finalize Permission/Role Granularity.
 
+---
 
+## 6. INFRASTRUCTURE & BUILD COMMANDS
 
-/Applications/XAMPP/xamppfiles/bin/php artisan serve --host 0.0.0.0 --port 8000
+### **Server Side (Production)**
+```bash
+# Location: /var/www/sobat-hr/sobat-web
+npm run build && pm2 restart sobat-web
 
-/Applications/XAMPP/xamppfiles/bin/php artisan serve
+# Permissions (API)
+sudo chown -R www-data:www-data storage bootstrap/cache
+sudo chmod -R 775 storage bootstrap/cache
+```
 
-flutter run -d C6F066BB-39CC-4E0E-A581-B08203675EB0
+### **Mobile Build (Production)**
+```bash
+# Run Production
+flutter run --release --dart-define=ENV=prod
 
-6,13755° S, 106,62293° E
-6,13778° S, 106,62295° E
+# Build APK
+flutter build apk --release --dart-define=ENV=prod
 
-open ios/Runner.xcworkspace
+# Build AAB (Play Store)
+flutter build appbundle --release --dart-define=ENV=prod
+```
 
-
-
-
-# Di server production - sobat-web
-cd /var/www/sobat-hr/sobat-web
-
-# Rebuild Next.js
-npm run build
-
-# Restart PM2
-pm2 restart sobat-web
-
-
-
-# Fix permissions untuk cache dan storage
-sudo chown -R www-data:www-data /var/www/sobat-hr/sobat-api/storage
-sudo chown -R www-data:www-data /var/www/sobat-hr/sobat-api/bootstrap/cache
-sudo chmod -R 775 /var/www/sobat-hr/sobat-api/storage
-sudo chmod -R 775 /var/www/sobat-hr/sobat-api/bootstrap/cache
-
-# Pull changes terbaru
-cd /var/www/sobat-hr
-sudo git pull origin main
-
-# Jalankan seeder untuk roles
-cd sobat-api
-sudo -u www-data php artisan db:seed --class=RoleSeeder
-
-# Clear cache dengan user yang benar
-sudo -u www-data php artisan config:clear
-sudo -u www-data php artisan cache:clear
+---
+*Last Updated: 2026-03-02 by Giaa 🌸*
