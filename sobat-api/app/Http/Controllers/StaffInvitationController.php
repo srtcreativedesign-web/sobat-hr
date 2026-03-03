@@ -384,11 +384,6 @@ class StaffInvitationController extends Controller
                 'status' => 'active',
             ];
 
-            // Only add organization_id if it actually exists in the database table schema
-            if (\Illuminate\Support\Facades\Schema::hasColumn('employees', 'organization_id')) {
-                $employeeData['organization_id'] = $finalOrgId;
-            }
-
             \App\Models\Employee::create($employeeData);
 
             // 4. Update Invitation
