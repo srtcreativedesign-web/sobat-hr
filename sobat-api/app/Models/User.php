@@ -23,6 +23,7 @@ class User extends Authenticatable
         'email',
         'division',
         'password',
+        'role_id',
         'fcm_token',
     ];
 
