@@ -242,9 +242,16 @@ class EmployeeController extends Controller
             $data['join_date'] = now()->toDateString();
         }
 
-        // Check if employee with same full_name already exists
-        // If yes, update existing record instead of creating duplicate
-        $existingEmployee = Employee::where('full_name', $data['full_name'])->first();
+        // Check if employee with same email or employee_code already exists
+        // Use identity-based check instead of full_name to avoid collisions
+        $existingEmployee = null;
+        if (!empty($data['email'])) {
+            $existingEmployee = Employee::where('email', $data['email'])->first();
+        }
+        
+        if (!$existingEmployee && !empty($data['employee_code'])) {
+            $existingEmployee = Employee::where('employee_code', $data['employee_code'])->first();
+        }
 
         if ($existingEmployee) {
             // Update existing employee
@@ -454,9 +461,9 @@ class EmployeeController extends Controller
             // URL will be storage/avatars/FILENAME
             $path = $file->store('avatars', 'public');
             
-            // If replacing, maybe delete old? (Optional for now)
+            // Cleanup: Delete old avatar file if it exists
             if ($employee->photo_path) {
-                // \Illuminate\Support\Facades\Storage::disk('public')->delete($employee->photo_path);
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($employee->photo_path);
             }
 
             $data['photo_path'] = $path;

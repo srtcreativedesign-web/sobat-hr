@@ -44,7 +44,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/fcm-token', [App\Http\Controllers\Api\AuthController::class, 'updateFcmToken']);
 
     // Security PIN
-    Route::middleware(['throttle:pin'])->group(function () {
+    Route::middleware(['throttle:6,1'])->group(function () {
         Route::post('/security/pin/setup', [App\Http\Controllers\Api\SecurityController::class, 'setupPin']);
         Route::post('/security/pin/verify', [App\Http\Controllers\Api\SecurityController::class, 'verifyPin']);
     });

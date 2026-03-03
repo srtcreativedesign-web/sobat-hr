@@ -359,6 +359,11 @@ class AttendanceController extends Controller
             $path = 'attendance_photos/' . $filename;
             $fullPath = storage_path('app/public/' . $path);
 
+            // Cleanup: Delete old checkout photo if exists
+            if ($attendance->checkout_photo_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($attendance->checkout_photo_path);
+            }
+
             // Compress and Resize Image (Consistent with check-in)
             $this->resizeAndSaveImage($photo->getPathname(), $fullPath, 800, 80);
             
