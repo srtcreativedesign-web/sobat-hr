@@ -366,9 +366,8 @@ class StaffInvitationController extends Controller
                  $role = \App\Models\Role::where('name', 'staff')->first();
             }
 
-            \App\Models\Employee::create([
+            $employeeData = [
                 'user_id' => $user->id,
-                'organization_id' => $finalOrgId,
                 'employee_code' => 'EMP-' . str_pad($user->id, 4, '0', STR_PAD_LEFT),
                 'full_name' => $user->name,
                 'email' => $user->email,
@@ -383,7 +382,14 @@ class StaffInvitationController extends Controller
                 'birth_date' => '1990-01-01',
                 'basic_salary' => 0,
                 'status' => 'active',
-            ]);
+            ];
+
+            // Only add organization_id if it exists in the model/table
+            if ((new \App\Models\Employee)->isFillable('organization_id')) {
+                $employeeData['organization_id'] = $finalOrgId;
+            }
+
+            \App\Models\Employee::create($employeeData);
 
             // 4. Update Invitation
             $invitation->update([
