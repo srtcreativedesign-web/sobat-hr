@@ -384,8 +384,8 @@ class StaffInvitationController extends Controller
                 'status' => 'active',
             ];
 
-            // Only add organization_id if it exists in the model/table
-            if ((new \App\Models\Employee)->isFillable('organization_id')) {
+            // Only add organization_id if it actually exists in the database table schema
+            if (\Illuminate\Support\Facades\Schema::hasColumn('employees', 'organization_id')) {
                 $employeeData['organization_id'] = $finalOrgId;
             }
 
