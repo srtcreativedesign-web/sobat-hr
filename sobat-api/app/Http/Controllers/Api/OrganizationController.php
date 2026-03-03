@@ -76,6 +76,16 @@ class OrganizationController extends Controller
     {
         $organization = Organization::with(['parentOrganization', 'childOrganizations', 'employees'])
             ->findOrFail($id);
+        
+        // --- IDOR GUARD ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::ADMIN_CABANG]);
+
+        // Non-admin can only see their own organization
+        if (!$isAdmin && $organization->id !== $user->employee?->organization_id) {
+            return response()->json(['message' => 'Anda tidak memiliki akses ke data organisasi ini.'], 403);
+        }
 
         return response()->json($organization);
     }

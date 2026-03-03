@@ -55,6 +55,18 @@ class JobPositionController extends Controller
     public function show($id)
     {
         $jobPosition = JobPosition::with(['division', 'parentPosition', 'childPositions'])->findOrFail($id);
+
+        // --- SECURITY GUARD ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::ADMIN_CABANG]);
+
+        // Non-admin check (simplified: only allow self-position or if they are supervisor)
+        if (!$isAdmin && $jobPosition->id !== $user->employee?->job_position_id) {
+            // We could add more complex logic for supervisors here later
+            return response()->json(['message' => 'Anda tidak memiliki akses ke data jabatan ini.'], 403);
+        }
+
         return response()->json($jobPosition);
     }
 

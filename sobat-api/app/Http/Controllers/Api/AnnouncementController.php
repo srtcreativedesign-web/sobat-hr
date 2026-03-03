@@ -19,6 +19,15 @@ class AnnouncementController extends Controller
         }
 
         $announcements = $query->get();
+
+        // Append base URL if path exists
+        $announcements->transform(function ($item) {
+            if ($item->image_path) {
+                $item->image_url = url('storage/' . $item->image_path);
+            }
+            return $item;
+        });
+
         return response()->json([
             'success' => true,
             'data' => $announcements
@@ -180,6 +189,11 @@ class AnnouncementController extends Controller
             })
             ->latest()
             ->first();
+
+        // Append base URL if path exists
+        if ($announcement && $announcement->image_path) {
+            $announcement->image_url = url('storage/' . $announcement->image_path);
+        }
 
         return response()->json([
             'success' => true,
