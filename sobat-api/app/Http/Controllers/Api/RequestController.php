@@ -41,13 +41,11 @@ class RequestController extends Controller
             $query->where('type', $request->type);
         }
 
-        if ($request->has('organization_id')) {
-            $orgName = \App\Models\Organization::find($request->organization_id)?->name;
-            if ($orgName) {
-                $query->whereHas('employee', function($q) use ($orgName) {
-                    $q->where('department', $orgName);
-                });
-            }
+        if ($request->has('department')) {
+            $dept = $request->department;
+            $query->whereHas('employee', function($q) use ($dept) {
+                $q->where('department', $dept);
+            });
         }
 
         if ($request->has('search')) {
@@ -300,6 +298,8 @@ class RequestController extends Controller
 
                 return response()->json($requestModel->load('approvals'), 201);
             });
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal mengirim pengajuan: ' . $e->getMessage()], 500);
         } finally {
             $lock->release();
         }

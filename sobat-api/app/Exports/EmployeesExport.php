@@ -24,13 +24,10 @@ class EmployeesExport implements FromQuery, WithHeadings, WithMapping, WithStyle
 
     public function query()
     {
-        $query = Employee::with(['organization', 'user']);
+        $query = Employee::with(['user']);
 
-        if ($this->request->has('organization_id') && $this->request->organization_id) {
-            $orgName = \App\Models\Organization::find($this->request->organization_id)?->name;
-            if ($orgName) {
-                $query->where('department', $orgName);
-            }
+        if ($this->request->has('department') && $this->request->department) {
+            $query->where('department', $this->request->department);
         }
 
         // Status Filter
@@ -105,7 +102,7 @@ class EmployeesExport implements FromQuery, WithHeadings, WithMapping, WithStyle
             $employee->religion ?? '-',
             $employee->marital_status ?? '-',
             $education ?? '-',
-            $employee->organization->name ?? '-',
+            $employee->department ?? '-',
             $employee->position ?? '-',
             $employee->status === 'active' ? 'Aktif' : ($employee->status === 'inactive' ? 'Non-Aktif' : ($employee->status === 'resigned' ? 'Resign' : $employee->status ?? '-')),
             $employee->employment_status === 'permanent' ? 'Tetap' : ($employee->employment_status === 'contract' ? 'Kontrak' : ($employee->employment_status === 'probation' ? 'Probation' : $employee->employment_status ?? '-')),

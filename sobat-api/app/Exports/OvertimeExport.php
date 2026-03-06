@@ -24,17 +24,15 @@ class OvertimeExport implements FromQuery, WithHeadings, WithMapping
     public function query()
     {
         $query = RequestModel::query()
-            ->with(['employee.organization', 'overtimeDetail'])
+            ->with(['employee', 'overtimeDetail'])
             ->where('type', 'overtime')
             ->where('status', 'approved');
 
-        if ($this->request->has('organization_id') && $this->request->organization_id) {
-            $orgName = \App\Models\Organization::find($this->request->organization_id)?->name;
-            if ($orgName) {
-                $query->whereHas('employee', function($q) use ($orgName) {
-                    $q->where('department', $orgName);
-                });
-            }
+        if ($this->request->has('department') && $this->request->department) {
+            $dept = $this->request->department;
+            $query->whereHas('employee', function($q) use ($dept) {
+                $q->where('department', $dept);
+            });
         }
 
         if ($this->request->has('search') && $this->request->search) {
@@ -66,7 +64,7 @@ class OvertimeExport implements FromQuery, WithHeadings, WithMapping
     {
         return $this->sanitizeArray([
             $request->employee ? $request->employee->full_name : '-',
-            $request->employee && $request->employee->organization ? $request->employee->organization->name : '-',
+            $request->employee ? $request->employee->department : '-',
             $request->start_date ? $request->start_date->format('Y-m-d') : '-',
             $request->overtimeDetail ? $request->overtimeDetail->start_time : '-',
             $request->overtimeDetail ? $request->overtimeDetail->end_time : '-',

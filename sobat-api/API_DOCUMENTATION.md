@@ -75,7 +75,8 @@ Accept: application/json
 *Requires authentication*
 
 **Query Parameters:**
-- `organization_id` (optional): Filter by organization
+- `division_id` (optional): Filter by division
+- `department` (optional): Filter by department name
 - `status` (optional): Filter by status (active, inactive, resigned)
 - `search` (optional): Search by name or employee number
 
@@ -91,7 +92,7 @@ Accept: application/json
 ```json
 {
   "user_id": 1,
-  "organization_id": 1,
+  "division_id": 1,
   "role_id": 4,
   "employee_number": "EMP006",
   "full_name": "New Employee",
@@ -128,11 +129,11 @@ Accept: application/json
 
 ## Organization Endpoints
 
-### 1. List Organizations
-**GET** `/organizations`
+### 1. List Divisions
+**GET** `/organizations?type=division`
 *Requires authentication*
 
-### 2. Get Organization Details
+### 2. Get Division Details
 **GET** `/organizations/{id}`
 *Requires authentication*
 
@@ -225,7 +226,7 @@ Example: `/attendances/report/1/2026`
 ## Shift Endpoints
 
 ### 1. List Shifts
-**GET** `/shifts?organization_id=1`
+**GET** `/shifts?division_id=1`
 *Requires authentication*
 
 ### 2. Create Shift
@@ -236,7 +237,7 @@ Example: `/attendances/report/1/2026`
 ```json
 {
   "name": "Morning Shift",
-  "organization_id": 1,
+  "division_id": 1,
   "start_time": "08:00:00",
   "end_time": "17:00:00",
   "days": ["monday", "tuesday", "wednesday", "thursday", "friday"]

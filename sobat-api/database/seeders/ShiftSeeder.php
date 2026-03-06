@@ -24,7 +24,6 @@ class ShiftSeeder extends Seeder
         // Regular Shift (Holding)
         Shift::create([
             'name' => 'Regular Shift',
-            'organization_id' => $org1,
             'start_time' => '09:00:00',
             'end_time' => '18:00:00',
         ]);
@@ -32,7 +31,6 @@ class ShiftSeeder extends Seeder
         // Night Shift (Holding)
         Shift::create([
             'name' => 'Night Shift',
-            'organization_id' => $org1,
             'start_time' => '21:00:00',
             'end_time' => '06:00:00',
         ]);
@@ -40,7 +38,6 @@ class ShiftSeeder extends Seeder
         // Regular Shift (Project)
         Shift::create([
             'name' => 'Regular Shift',
-            'organization_id' => $org2,
             'start_time' => '08:00:00',
             'end_time' => '17:00:00',
         ]);

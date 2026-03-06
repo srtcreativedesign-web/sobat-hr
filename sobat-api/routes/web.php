@@ -77,7 +77,7 @@ Route::get('/seed-users', function () {
             'full_name' => 'Chief Operating Officer',
              'employee_code' => 'COO001',
              'email' => 'coo@sobat.com',
-             'organization_id' => $org->id,
+             'division_id' => $org->id,
              'position' => 'COO',
              'department' => 'Executive',
              'basic_salary' => 0,

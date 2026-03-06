@@ -224,10 +224,10 @@ class ApprovalService
         // Get requester's approval level from their user's role
         $userRoleLevel = $requester->user?->role?->approval_level ?? 0;
         
-        // Get requester's organization for finding same-org approvers
-        $organizationId = $requester->organization_id;
+        // Get requester's division for finding same-unit approvers
+        $divisionId = $requester->division_id;
         
-        Log::info("Determining approvers for Employee ID: {$requester->id} ({$requester->full_name}), Role Level: {$userRoleLevel}, Org ID: {$organizationId}, Request Type: " . ($request ? $request->type : 'null'));
+        Log::info("Determining approvers for Employee ID: {$requester->id} ({$requester->full_name}), Role Level: {$userRoleLevel}, Division ID: {$divisionId}, Request Type: " . ($request ? $request->type : 'null'));
         
         // ... (rest of the existing logic)
 
@@ -269,15 +269,15 @@ class ApprovalService
             // SPV level -> Manager Divisi + HRD
             Log::info("SPV Level Request -> Manager Divisi + HRD");
 
-            $managerDivisi = $this->findApproverByRoleName('manager_divisi', $organizationId);
+            $managerDivisi = $this->findApproverByRoleName('manager_divisi', $divisionId);
             $hrd = $this->findApproverByRoleName('hrd');
             
             if ($managerDivisi) {
                 $approvers[] = $managerDivisi->id;
             } else {
                  // Fallback to generic manager if manager_divisi not found?
-                 Log::warning("Manager Divisi not found in Org {$organizationId}, trying generic 'manager'");
-                 $manager = $this->findApproverByRoleName('manager', $organizationId);
+                 Log::warning("Manager Divisi not found in Division {$divisionId}, trying generic 'manager'");
+                 $manager = $this->findApproverByRoleName('manager', $divisionId);
                  if ($manager) $approvers[] = $manager->id;
             }
 
@@ -286,8 +286,8 @@ class ApprovalService
             // Staff/Crew/Leader level -> SPV + Manager Divisi + HRD
             Log::info("Staff Level Request -> SPV + Manager + HRD");
 
-            $spv = $this->findApproverByRoleName('spv', $organizationId);
-            $managerDivisi = $this->findApproverByRoleName('manager_divisi', $organizationId);
+            $spv = $this->findApproverByRoleName('spv', $divisionId);
+            $managerDivisi = $this->findApproverByRoleName('manager_divisi', $divisionId);
             $hrd = $this->findApproverByRoleName('hrd');
             
             if ($spv) $approvers[] = $spv->id;
@@ -296,7 +296,7 @@ class ApprovalService
                 $approvers[] = $managerDivisi->id;
             } else {
                 // Fallback
-                 $manager = $this->findApproverByRoleName('manager', $organizationId);
+                 $manager = $this->findApproverByRoleName('manager', $divisionId);
                  if ($manager) $approvers[] = $manager->id;
             }
 
@@ -309,11 +309,11 @@ class ApprovalService
     }
     
     /**
-     * Find an approver by role name, optionally filtered by organization
+     * Find an approver by role name, optionally filtered by division
      */
-    private function findApproverByRoleName(string $roleName, ?int $organizationId = null): ?Employee
+    private function findApproverByRoleName(string $roleName, ?int $divisionId = null): ?Employee
     {
-        Log::info("Searching for approver with role: {$roleName}" . ($organizationId ? " in Org {$organizationId}" : ""));
+        Log::info("Searching for approver with role: {$roleName}" . ($divisionId ? " in Division {$divisionId}" : ""));
 
         // HRD function is handled by Super Admin
         // When looking for 'hrd', also match 'super_admin'
@@ -326,14 +326,14 @@ class ApprovalService
         $count = (clone $query)->count();
         Log::info("Found {$count} employees with role(s) " . implode('/', $roleNames) . " (globally)");
 
-        // For SPV and Manager Divisi, try to find someone in the same organization first
-        if ($organizationId && in_array($roleName, ['spv', 'manager_divisi', 'manager'])) {
-            $sameOrgApprover = (clone $query)->where('organization_id', $organizationId)->first();
-            if ($sameOrgApprover) {
-                Log::info("Found same-org approver: {$sameOrgApprover->id} - {$sameOrgApprover->full_name}");
-                return $sameOrgApprover;
+        // For SPV and Manager Divisi, try to find someone in the same division first
+        if ($divisionId && in_array($roleName, ['spv', 'manager_divisi', 'manager'])) {
+            $sameUnitApprover = (clone $query)->where('division_id', $divisionId)->first();
+            if ($sameUnitApprover) {
+                Log::info("Found same-unit approver: {$sameUnitApprover->id} - {$sameUnitApprover->full_name}");
+                return $sameUnitApprover;
             }
-            Log::info("No same-org approver found for {$roleName} in Org {$organizationId}");
+            Log::info("No same-unit approver found for {$roleName} in Division {$divisionId}");
         }
         
         // Fallback: get any employee with that role?

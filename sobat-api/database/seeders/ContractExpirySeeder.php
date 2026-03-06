@@ -29,7 +29,7 @@ class ContractExpirySeeder extends Seeder
             ['email' => 'expiring@example.com'],
             [
                 'user_id' => $user->id,
-                'organization_id' => Organization::first()->id ?? 1,
+                'division_id' => Organization::first()->id ?? 1,
                 'employee_code' => 'EXP001',
                 'full_name' => 'John Expiring',
                 'position' => 'Staff',

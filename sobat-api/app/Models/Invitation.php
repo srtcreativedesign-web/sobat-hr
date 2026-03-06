@@ -17,7 +17,6 @@ class Invitation extends Model
         'password_generated_at',
         'password_encrypted',
         'role',
-        'organization_id',
         'division_id',
     ];
 
@@ -26,11 +25,6 @@ class Invitation extends Model
         'expires_at' => 'datetime',
         'password_generated_at' => 'datetime',
     ];
-
-    public function organization()
-    {
-        return $this->belongsTo(Organization::class);
-    }
 
     public function division()
     {

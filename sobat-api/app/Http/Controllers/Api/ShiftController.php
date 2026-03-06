@@ -13,8 +13,10 @@ class ShiftController extends Controller
     {
         $query = Shift::query();
 
-        if ($request->has('organization_id')) {
-            $query->where('organization_id', $request->organization_id);
+        if ($request->has('division_id')) {
+            $query->whereHas('employees', function($q) use ($request) {
+                $q->where('division_id', $request->division_id);
+            });
         }
 
         $shifts = $query->paginate(20);
@@ -26,7 +28,6 @@ class ShiftController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'organization_id' => 'required|exists:organizations,id',
             'start_time' => 'required',
             'end_time' => 'required',
             'days' => 'required|array',
@@ -64,7 +65,6 @@ class ShiftController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'organization_id' => 'sometimes|exists:organizations,id',
             'start_time' => 'sometimes',
             'end_time' => 'sometimes',
             'days' => 'sometimes|array',

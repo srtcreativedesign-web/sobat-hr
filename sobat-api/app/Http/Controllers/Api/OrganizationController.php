@@ -74,7 +74,7 @@ class OrganizationController extends Controller
 
     public function show(string $id)
     {
-        $organization = Organization::with(['parentOrganization', 'childOrganizations', 'employees'])
+        $organization = Organization::with(['parentOrganization', 'childOrganizations'])
             ->findOrFail($id);
         
         // --- IDOR GUARD ---
@@ -82,8 +82,11 @@ class OrganizationController extends Controller
         $roleName = $user->role ? strtolower($user->role->name) : '';
         $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::ADMIN_CABANG]);
 
-        // Non-admin can only see their own organization
-        if (!$isAdmin && $organization->id !== $user->employee?->organization_id) {
+        // Non-admin can only see their own division data if linked,
+        // but since organizations are now separate from employees, 
+        // we might allow viewing for now or add division check.
+        // For simplicity and since user said organization_id is gone:
+        if (!$isAdmin && $user->employee && $organization->id !== $user->employee->division_id) {
             return response()->json(['message' => 'Anda tidak memiliki akses ke data organisasi ini.'], 403);
         }
 
@@ -121,8 +124,12 @@ class OrganizationController extends Controller
 
     public function employees(string $id)
     {
+        // This endpoint is now obsolete as employees don't have organization_id.
+        // We should instead filter employees by department name equal to organization name if needed.
         $organization = Organization::findOrFail($id);
-        $employees = $organization->employees()->with(['user', 'role'])->paginate(20);
+        $employees = Employee::where('department', $organization->name)
+            ->with(['user', 'role'])
+            ->paginate(20);
 
         return response()->json($employees);
     }

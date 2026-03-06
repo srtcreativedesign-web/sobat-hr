@@ -13,7 +13,7 @@ class EmployeeController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Employee::with(['user', 'role', 'division', 'organization', 'assignedJobPosition']);
+        $query = Employee::with(['user', 'role', 'division', 'assignedJobPosition']);
 
         // Filter by organization
         if ($request->has('division_id')) {
@@ -257,12 +257,12 @@ class EmployeeController extends Controller
             // Update existing employee
             $existingEmployee->update($data);
             $existingEmployee->refresh();
-            $existingEmployee->load(['division', 'role', 'organization']);
+            $existingEmployee->load(['division', 'role']);
             return response()->json(new \App\Http\Resources\EmployeeResource($existingEmployee), 200);
         } else {
             // Create new employee
             $employee = Employee::create($data);
-            $employee->load(['division', 'role', 'organization']);
+            $employee->load(['division', 'role']);
             return response()->json(new \App\Http\Resources\EmployeeResource($employee), 201);
         }
     }
@@ -272,7 +272,7 @@ class EmployeeController extends Controller
      */
     public function show(string $id)
     {
-        $employee = Employee::with(['user', 'division', 'organization', 'role', 'attendances', 'payrolls'])
+        $employee = Employee::with(['user', 'division', 'role', 'attendances', 'payrolls'])
             ->findOrFail($id);
 
         // --- IDOR GUARD ---
@@ -473,7 +473,7 @@ class EmployeeController extends Controller
 
         // Reload fresh data with relations
         $employee->refresh();
-        $employee->load(['division', 'role', 'organization']);
+        $employee->load(['division', 'role']);
 
         return response()->json(new \App\Http\Resources\EmployeeResource($employee));
     }
@@ -528,14 +528,14 @@ class EmployeeController extends Controller
      */
     public function getSupervisorCandidate(Request $request)
     {
-        $organizationId = $request->query('organization_id');
+        $divisionId = $request->query('division_id');
         $jobLevel = $request->query('job_level');
         $track = $request->query('track');
 
-        if (!$organizationId || !$jobLevel) {
+        if (!$divisionId || !$jobLevel) {
             return response()->json([
                 'success' => false,
-                'message' => 'Organization ID and Job Level are required'
+                'message' => 'Division ID and Job Level are required'
             ], 400);
         }
 
@@ -571,8 +571,8 @@ class EmployeeController extends Controller
             ]);
         }
 
-        // Find employee in the same organization with the target level
-        $supervisor = Employee::where('organization_id', $organizationId)
+        // Find employee in the same division with the target level
+        $supervisor = Employee::where('division_id', $divisionId)
             ->where('job_level', $targetLevel)
             ->where('status', 'active') // Ensure active
             ->first();
@@ -663,10 +663,10 @@ class EmployeeController extends Controller
         $filename = 'Data_Karyawan_' . date('Y-m-d_His') . '.xlsx';
         
         // Add division name to filename if filtered
-        if ($request->has('organization_id') && $request->organization_id) {
-            $org = \App\Models\Organization::find($request->organization_id);
-            if ($org) {
-                $filename = 'Data_Karyawan_' . str_replace(' ', '_', $org->name) . '_' . date('Y-m-d_His') . '.xlsx';
+        if ($request->has('division_id') && $request->division_id) {
+            $div = \App\Models\Division::find($request->division_id);
+            if ($div) {
+                $filename = 'Data_Karyawan_' . str_replace(' ', '_', $div->name) . '_' . date('Y-m-d_His') . '.xlsx';
             }
         }
 

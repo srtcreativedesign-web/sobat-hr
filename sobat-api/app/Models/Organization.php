@@ -37,16 +37,6 @@ class Organization extends Model
         return $this->hasMany(Organization::class, 'parent_id');
     }
 
-    public function employees()
-    {
-        return $this->hasMany(Employee::class);
-    }
-
-    public function shifts()
-    {
-        return $this->hasMany(Shift::class);
-    }
-
     /**
      * Get effective coordinates (traverse up to parent if null)
      */

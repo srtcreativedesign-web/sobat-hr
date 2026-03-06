@@ -22,7 +22,7 @@ class StaffInvitationController extends Controller
     public function index(Request $request)
     {
         $invitations = Invitation::where('status', 'pending')
-            ->with('organization')
+            ->with('division')
             ->orderBy('created_at', 'desc')
             ->paginate(100);
 
@@ -78,9 +78,8 @@ class StaffInvitationController extends Controller
                     'track' => trim($track),
                     'track' => trim($track),
                     'division_id' => $matchedDiv ? $matchedDiv->id : null,
-                    'organization_name' => $matchedDiv ? $matchedDiv->name : null,
-                    // Legacy support
-                    'organization_id' => null, 
+                    'division_name' => $matchedDiv ? $matchedDiv->name : null,
+                    // Legacy support removed
                     'valid' => true,
                     'errors' => [],
                     'temporary_password' => null,
@@ -199,7 +198,6 @@ class StaffInvitationController extends Controller
             'rows.*.job_level' => 'nullable|string',
             'rows.*.track' => 'nullable|in:operational,office',
             'rows.*.division_id' => 'nullable|exists:divisions,id',
-            'rows.*.organization_id' => 'nullable|exists:organizations,id',
         ]);
 
         $rows = $request->input('rows');
@@ -233,7 +231,6 @@ class StaffInvitationController extends Controller
                     'name' => $row['name'],
                     'role' => $row['role'] ?? 'staff',
                     'division_id' => $row['division_id'] ?? null,
-                    'organization_id' => $row['organization_id'] ?? null,
                     'token' => Str::random(32),
                     'status' => 'pending',
                     'payload' => json_encode($row),
@@ -261,7 +258,7 @@ class StaffInvitationController extends Controller
     public function verifyToken($token)
     {
         $token = trim($token);
-        $anyInvite = Invitation::where('token', $token)->with(['organization', 'division'])->first();
+        $anyInvite = Invitation::where('token', $token)->with('division')->first();
 
         if (!$anyInvite) {
             return response()->json(['valid' => false, 'message' => 'Token not found in database.'], 404);
@@ -278,9 +275,8 @@ class StaffInvitationController extends Controller
             'valid' => true,
             'name' => $anyInvite->name,
             'email' => $anyInvite->email,
-            'organization' => $anyInvite->organization ? $anyInvite->organization->name : ($anyInvite->division ? $anyInvite->division->name : null),
+            'division' => $anyInvite->division ? $anyInvite->division->name : null,
             'division_id' => $anyInvite->division_id,
-            'organization_id' => $anyInvite->organization_id,
             'job_level' => $payload['job_level'] ?? null,
             'track' => $payload['track'] ?? null,
             'role' => $anyInvite->role,
@@ -294,7 +290,6 @@ class StaffInvitationController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'job_level' => 'nullable|string',
             'track' => 'nullable|in:operational,office',
-            'organization_id' => 'nullable|exists:organizations,id',
             'division_id' => 'nullable|exists:divisions,id', // Added
             'division' => 'nullable|string',
             'role' => 'nullable|string',
@@ -317,8 +312,7 @@ class StaffInvitationController extends Controller
                 $role = \App\Models\Role::where('name', 'staff')->first();
             }
 
-            // Organization fallback (Try to match division name to organization, or use ID 1)
-            $orgId = $invitation->organization_id;
+            // Division fallback
             $divId = $invitation->division_id;
             
             // If user selected a division (string), try to find matching Division model
@@ -335,10 +329,10 @@ class StaffInvitationController extends Controller
                 $divisionModel = Division::with('department')->find($divId);
             }
 
-            if (!$orgId) {
+            if (!$divId) {
                 // Determine sensible default or fallback
-                $org = Organization::first();
-                $orgId = $org ? $org->id : 1;
+                $div = Division::first();
+                $divId = $div ? $div->id : 1;
             }
 
             // 2. Create User
@@ -356,7 +350,6 @@ class StaffInvitationController extends Controller
             // Allow override from Request if provided, otherwise fallback to Payload, then Defaults
             $jobLevel = $request->has('job_level') ? $request->job_level : ($payload['job_level'] ?? null);
             $track = $request->has('track') ? $request->track : ($payload['track'] ?? null);
-            $finalOrgId = $request->has('organization_id') && $request->organization_id ? $request->organization_id : $orgId;
             $finalDivId = $request->has('division_id') && $request->division_id ? $request->division_id : $divId;
             $roleName = $request->has('role') ? $request->role : ($invitation->role ?: 'staff');
 

@@ -20,13 +20,10 @@ class EmployeeRepository
      */
     public function getAll(array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
-        $query = $this->model->with(['user', 'organization', 'role']);
+        $query = $this->model->with(['user', 'role']);
 
-        if (isset($filters['organization_id'])) {
-            $orgName = \App\Models\Organization::find($filters['organization_id'])?->name;
-            if ($orgName) {
-                $query->where('department', $orgName);
-            }
+        if (isset($filters['department'])) {
+            $query->where('department', $filters['department']);
         }
 
         if (isset($filters['status'])) {
@@ -49,7 +46,7 @@ class EmployeeRepository
      */
     public function findById(int $id)
     {
-        return $this->model->with(['user', 'organization', 'role', 'attendances', 'payrolls'])
+        return $this->model->with(['user', 'role', 'attendances', 'payrolls'])
             ->findOrFail($id);
     }
 

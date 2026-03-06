@@ -40,7 +40,7 @@ class EmployeeSeeder extends Seeder
                 ['email' => 'admin@sobat.co.id'],
                 [
                     'user_id' => $superAdminUser->id,
-                    'organization_id' => $ceoOrg ? $ceoOrg->id : $defaultOrg->id,
+                    'division_id' => $ceoOrg ? $ceoOrg->id : $defaultOrg->id,
                     'employee_code' => 'EMP001',
                     'full_name' => 'Super Admin',
                     'job_level' => 'director', 
@@ -58,7 +58,7 @@ class EmployeeSeeder extends Seeder
                 ['email' => 'admin.jakarta@sobat.co.id'],
                 [
                     'user_id' => $adminJakartaUser->id,
-                    'organization_id' => $holding1 ? $holding1->id : $defaultOrg->id,
+                    'division_id' => $holding1 ? $holding1->id : $defaultOrg->id,
                     'employee_code' => 'EMP002',
                     'full_name' => 'Admin Jakarta',
                     'job_level' => 'manager_ops',
@@ -76,7 +76,7 @@ class EmployeeSeeder extends Seeder
                 ['email' => 'john.doe@sobat.co.id'],
                 [
                     'user_id' => $johnUser->id,
-                    'organization_id' => $itDiv ? $itDiv->id : $defaultOrg->id,
+                    'division_id' => $itDiv ? $itDiv->id : $defaultOrg->id,
                     'employee_code' => 'EMP004',
                     'full_name' => 'John Doe',
                     'job_level' => 'staff',
@@ -94,7 +94,7 @@ class EmployeeSeeder extends Seeder
                 ['email' => 'jane.smith@sobat.co.id'],
                 [
                     'user_id' => $janeUser->id,
-                    'organization_id' => $hrDiv ? $hrDiv->id : $defaultOrg->id,
+                    'division_id' => $hrDiv ? $hrDiv->id : $defaultOrg->id,
                     'employee_code' => 'EMP005',
                     'full_name' => 'Jane Smith',
                     'job_level' => 'staff',
@@ -121,7 +121,7 @@ class EmployeeSeeder extends Seeder
                 ['email' => 'michael.johnson@sobat.co.id'],
                 [
                     'user_id' => $michaelUser->id,
-                    'organization_id' => $miniDiv ? $miniDiv->id : $defaultOrg->id,
+                    'division_id' => $miniDiv ? $miniDiv->id : $defaultOrg->id,
                     'employee_code' => 'EMP006',
                     'full_name' => 'Michael Johnson',
                     'job_level' => 'crew',

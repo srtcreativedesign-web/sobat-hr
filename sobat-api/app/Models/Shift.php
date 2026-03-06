@@ -11,7 +11,6 @@ class Shift extends Model
 
     protected $fillable = [
         'name',
-        'organization_id',
         'start_time',
         'end_time',
         'days',
@@ -25,11 +24,6 @@ class Shift extends Model
     /**
      * Relationships
      */
-    public function organization()
-    {
-        return $this->belongsTo(Organization::class);
-    }
-
     public function employees()
     {
         return $this->hasMany(Employee::class);
