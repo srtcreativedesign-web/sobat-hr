@@ -27,6 +27,8 @@ import 'screens/attendance/attendance_history_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'services/notification_service.dart';
 import 'services/update_service.dart';
+import 'utils/error_handler.dart';
+import 'dart:ui';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,6 +51,24 @@ void main() async {
   // Check for in-app updates (non-blocking)
   UpdateService().checkForUpdate();
 
+  // --- GLOBAL ERROR HANDLING ---
+  // 1. Capture errors during build phase (The Red Screen)
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return ErrorHandler.errorWidget;
+  };
+
+  // 2. Capture errors outside build phase (Framework Errors)
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details); // Still log to console
+    ErrorHandler.showInternalError(details.exception, details.stack);
+  };
+
+  // 3. Capture errors from asynchronous gaps (Platform Errors)
+  PlatformDispatcher.instance.onError = (error, stack) {
+    ErrorHandler.showInternalError(error, stack);
+    return true; // Mark as handled
+  };
+
   runApp(MyApp(prefs: prefs));
 }
 
@@ -69,6 +89,7 @@ class MyApp extends StatelessWidget {
           return MaterialApp(
             title: 'SOBAT HR',
             debugShowCheckedModeBanner: false,
+            navigatorKey: ErrorHandler.navigatorKey,
             theme: AppTheme.lightTheme,
             locale: localeProvider.locale,
             localizationsDelegates: [
