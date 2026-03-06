@@ -35,7 +35,7 @@ class AuthController extends Controller
             $user->tokens()->delete();
 
             // Load relationships for UserResource
-            $user->load(['role', 'employee.organization', 'employee.jobPosition']);
+            $user->load(['role', 'employee.division', 'employee.jobPosition']);
 
             // Create new token
             $token = $user->createToken('auth_token')->plainTextToken;
@@ -110,7 +110,7 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         $user = $request->user();
-        $user->load(['role', 'employee.organization', 'employee.jobPosition']);
+        $user->load(['role', 'employee.division', 'employee.jobPosition']);
 
         return response()->json([
             'success' => true,

@@ -15,7 +15,7 @@ class AttendanceController extends Controller
     public function index(Request $request)
     {
         // EAGER LOADING: employee
-        $query = Attendance::with(['employee.organization']);
+        $query = Attendance::with(['employee.division']);
 
         if ($request->has('employee_id')) {
             $query->where('employee_id', $request->employee_id);
@@ -70,16 +70,19 @@ class AttendanceController extends Controller
             'field_notes' => 'nullable|string|required_if:attendance_type,field', // Mandatory for field
         ]);
 
-        $employee = Employee::with('organization')->find($validated['employee_id']);
+        $employee = Employee::find($validated['employee_id']);
+        
+        // Find organization metadata by department name (since organization_id is gone)
+        $organization = \App\Models\Organization::where('name', $employee->department)->first();
         
         // Set default attendance type to 'office' if not specified
         $attendanceType = $validated['attendance_type'] ?? 'office';
 
         // Geolocation Validation (Skip for field attendance)
-        if ($attendanceType === 'office' && isset($validated['latitude']) && isset($validated['longitude']) && $employee && $employee->organization && $employee->organization->latitude) {
-            $orgLat = $employee->organization->latitude;
-            $orgLng = $employee->organization->longitude;
-            $radius = $employee->organization->radius_meters ?? 50;
+        if ($attendanceType === 'office' && isset($validated['latitude']) && isset($validated['longitude']) && $employee && $organization && $organization->latitude) {
+            $orgLat = $organization->latitude;
+            $orgLng = $organization->longitude;
+            $radius = $organization->radius_meters ?? 50;
             
             // Add 10 meter tolerance buffer for GPS inaccuracy
             $tolerance = 10;

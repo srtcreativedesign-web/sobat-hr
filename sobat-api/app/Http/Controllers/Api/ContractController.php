@@ -19,7 +19,7 @@ class ContractController extends Controller
         $startDate = Carbon::today();
         $endDate = Carbon::today()->addDays($days);
 
-        $employees = Employee::with(['user', 'organization'])
+        $employees = Employee::with(['user', 'division'])
             ->whereBetween('contract_end_date', [$startDate, $endDate])
             ->orderBy('contract_end_date', 'asc')
             ->get()
@@ -28,7 +28,7 @@ class ContractController extends Controller
                     'id' => $employee->id,
                     'name' => $employee->full_name,
                     'position' => $employee->position,
-                    'department' => $employee->organization ? $employee->organization->name : '-',
+                    'department' => $employee->division ? $employee->division->name : '-',
                     'contract_end_date' => $employee->contract_end_date,
                     'days_remaining' => Carbon::parse($employee->contract_end_date)->diffInDays(Carbon::now()),
                 ];
@@ -46,7 +46,7 @@ class ContractController extends Controller
      */
     public function generatePdf($id)
     {
-        $employee = Employee::with('organization')->findOrFail($id);
+        $employee = Employee::with('division')->findOrFail($id);
         
         // Logic for dates (default 1 year renewal)
         $currentContractEnd = $employee->contract_end_date ? Carbon::parse($employee->contract_end_date) : Carbon::today();
@@ -74,7 +74,7 @@ class ContractController extends Controller
             '[EMPLOYEE_CODE]' => $employee->employee_code ?? '-',
             '[EMPLOYEE_POSITION]' => $employee->position,
             '[EMPLOYEE_ADDRESS]' => $employee->ktp_address ?? '-',
-            '[DEPARTMENT_NAME]' => $employee->organization->name ?? '-',
+            '[DEPARTMENT_NAME]' => $employee->division->name ?? '-',
             '[DURATION_MONTHS]' => '12', // Currently hardcoded/default
             '[START_DATE]' => $newStartDate->isoFormat('D MMMM Y'),
             '[END_DATE]' => $newEndDate->isoFormat('D MMMM Y'),

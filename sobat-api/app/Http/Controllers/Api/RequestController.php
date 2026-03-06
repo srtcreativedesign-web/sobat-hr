@@ -18,7 +18,7 @@ class RequestController extends Controller
     {
         $user = $request->user();
         // EAGER LOADING: employee and approvals
-        $query = RequestModel::with(['employee.organization', 'approvals']);
+        $query = RequestModel::with(['employee.division', 'approvals']);
         
         // Check Role
         $roleName = $user->role ? $user->role->name : '';

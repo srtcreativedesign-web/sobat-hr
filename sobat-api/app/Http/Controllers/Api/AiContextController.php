@@ -18,14 +18,14 @@ class AiContextController extends Controller
     {
         // 1. Employee Data (Tenure & Basic Info)
         // Limit to 50 for performance context
-        $employees = Employee::with('organization')->latest()->take(50)->get()->map(function ($emp) {
+        $employees = Employee::with('division')->latest()->take(50)->get()->map(function ($emp) {
             $joinDate = $emp->join_date ? Carbon::parse($emp->join_date) : null;
             $tenure = $joinDate ? $joinDate->diffForHumans(null, true) : 'Unknown';
 
             return [
                 'name' => $emp->name,
                 'position' => $emp->job_position,
-                'division' => $emp->organization ? $emp->organization->name : 'N/A',
+                'division' => $emp->division ? $emp->division->name : 'N/A',
                 'join_date' => $joinDate ? $joinDate->format('Y-m-d') : null,
                 'tenure' => $tenure,
                 'status' => $emp->status,

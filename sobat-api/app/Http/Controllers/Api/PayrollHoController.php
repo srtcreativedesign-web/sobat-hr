@@ -19,7 +19,7 @@ class PayrollHoController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-        $query = Payroll::with(['employee', 'employee.organization']);
+        $query = Payroll::with(['employee', 'employee.division']);
 
         // Scope access
         $roleName = $user->role ? strtolower($user->role->name) : '';
@@ -62,7 +62,7 @@ class PayrollHoController extends Controller
      */
     public function show($id)
     {
-        $payroll = Payroll::with(['employee', 'employee.organization'])->findOrFail($id);
+        $payroll = Payroll::with(['employee', 'employee.division'])->findOrFail($id);
         return response()->json($this->formatPayroll($payroll));
     }
 

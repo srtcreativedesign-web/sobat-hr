@@ -24,7 +24,7 @@ class RequestPrintController extends Controller
     public function printForApproval(Request $request, string $id)
     {
         $requestModel = RequestModel::with([
-            'employee.organization',
+            'employee.division',
             'employee.user.role',
             'approvals.approver',
             'leaveDetail',

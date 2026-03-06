@@ -164,7 +164,7 @@ class DashboardController extends Controller
             ->whereNotNull('contract_end_date')
             ->whereDate('contract_end_date', '<=', $now->copy()->addDays($days))
             ->whereDate('contract_end_date', '>=', $now)
-            ->with(['user', 'organization'])
+            ->with(['user', 'division'])
             ->orderBy('contract_end_date', 'asc')
             ->get()
             ->map(function ($employee) use ($now) {
@@ -178,7 +178,7 @@ class DashboardController extends Controller
                     ],
                     'position' => $employee->position,
                     'organization' => [
-                        'name' => $employee->organization->name ?? 'N/A',
+                        'name' => $employee->division->name ?? 'N/A',
                     ],
                     'contract_end_date' => $employee->contract_end_date,
                     'days_remaining' => $daysRemaining,

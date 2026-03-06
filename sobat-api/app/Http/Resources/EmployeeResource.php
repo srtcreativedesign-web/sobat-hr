@@ -34,15 +34,7 @@ class EmployeeResource extends JsonResource
             'track' => $this->track, // 'office' or 'operational'
             'contract_type' => $this->employment_status,
             'contract_end_date' => $this->contract_end_date?->format('Y-m-d'),
-            'organization' => $this->whenLoaded('organization', function() {
-                return [
-                    'id' => $this->organization->id,
-                    'name' => $this->organization->name,
-                    'latitude' => $this->organization->latitude,
-                    'longitude' => $this->organization->longitude,
-                    'radius_meters' => $this->organization->radius_meters,
-                ];
-            }),
+
             'division' => $this->whenLoaded('division', function() {
                 return [
                     'id' => $this->division->id,
