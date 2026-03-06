@@ -11,6 +11,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\GroqAiService;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Log;
+use App\Jobs\ProcessPayrollImport;
 
 class PayrollController extends Controller
 {
@@ -137,6 +138,15 @@ class PayrollController extends Controller
     {
         $payroll = Payroll::findOrFail($id);
 
+        // --- IDOR GUARD ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR]);
+
+        if (!$isAdmin) {
+            return response()->json(['message' => 'Hanya Admin/HR yang dapat mengubah data payroll.'], 403);
+        }
+
         $validated = $request->validate([
             'base_salary' => 'sometimes|numeric|min:0',
             'allowances' => 'nullable|numeric|min:0',
@@ -157,6 +167,16 @@ class PayrollController extends Controller
     public function destroy(string $id)
     {
         $payroll = Payroll::findOrFail($id);
+
+        // --- IDOR GUARD ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR]);
+
+        if (!$isAdmin) {
+            return response()->json(['message' => 'Hanya Admin/HR yang dapat menghapus data payroll.'], 403);
+        }
+
         $payroll->delete();
 
         return response()->json(['message' => 'Payroll deleted successfully']);
@@ -167,7 +187,16 @@ class PayrollController extends Controller
      */
     public function generateSlip(string $id)
     {
-        $payroll = Payroll::with(['employee', 'employee.organization'])->findOrFail($id);
+        $payroll = Payroll::with(['employee', 'employee.division'])->findOrFail($id);
+
+        // --- IDOR GUARD ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR]);
+
+        if (!$isAdmin && $payroll->employee_id !== $user->employee?->id) {
+            return response()->json(['message' => 'Anda tidak memiliki akses ke slip gaji ini.'], 403);
+        }
 
         // Generate AI-powered personalized message
         $groqService = new GroqAiService();
@@ -560,117 +589,27 @@ class PayrollController extends Controller
             'rows' => 'required|array',
             'rows.*.employee_name' => 'required|string',
             'rows.*.basic_salary' => 'required|numeric',
-            'rows.*.period' => 'nullable|string', // Period can be defaulted
+            'rows.*.period' => 'nullable|string',
             'rows.*.allowances' => 'nullable|numeric',
             'rows.*.overtime' => 'nullable|numeric',
             'rows.*.total_deductions' => 'nullable|numeric',
             'rows.*.net_salary' => 'required|numeric',
-            'rows.*.details' => 'nullable|array', // For JSON column
+            'rows.*.details' => 'nullable|array',
         ]);
 
         $rows = $request->input('rows');
-        Log::info("GENERIC Payroll Import Save Hit. Rows: " . count($rows));
-        $saved = [];
-        $failed = [];
+        $adminId = auth()->id();
 
-        foreach ($rows as $index => $row) {
-            try {
-                // Find employee by name (case insensitive)
-                $employee = Employee::whereRaw('LOWER(full_name) = ?', [strtolower($row['employee_name'])])->first();
-
-                if (!$employee) {
-                    $failed[] = [
-                        'row' => $index + 1,
-                        'employee_name' => $row['employee_name'],
-                        'reason' => 'Employee not found in database',
-                    ];
-                    continue;
-                }
-
-                // Parse period
-                $period = $row['period'] ?? date('Y-m'); // Fallback
-                $periodParsed = $this->parsePeriod($period);
-                if (!$periodParsed) $periodParsed = ['year' => (int)date('Y'), 'month' => (int)date('m')];
-                $periodString = sprintf('%04d-%02d', $periodParsed['year'], $periodParsed['month']);
-
-                $basicSalary = $row['basic_salary'];
-                $allowances = $row['allowances'] ?? 0;
-                $overtime = $row['overtime'] ?? 0;
-                $totalDeductions = $row['total_deductions'] ?? 0;
-                $netSalary = $row['net_salary'];
-                
-                // Gross = Basic + Allowances + Overtime
-                $grossSalary = $basicSalary + $allowances + $overtime;
-                
-                $details = $row['details'] ?? [];
-
-                // Calculate known deductions from details to separate them from 'other_deductions'
-                $deductions = $details['deductions'] ?? [];
-                
-                $bpjsTK = (float) ($deductions['bpjs_tk'] ?? 0);
-                $absen = (float) ($deductions['absent'] ?? 0);
-                $terlambat = (float) ($deductions['late'] ?? 0);
-                $selisih = (float) ($deductions['shortage'] ?? 0);
-                $pinjaman = (float) ($deductions['loan'] ?? 0);
-                $admBank = (float) ($deductions['bank_fee'] ?? 0);
-                
-                $knownDeductions = $bpjsTK + $absen + $terlambat + $selisih + $pinjaman + $admBank;
-                $otherDeductions = $totalDeductions - $knownDeductions;
-                
-                // Ensure no negative other deductions (floating point safety)
-                if ($otherDeductions < 0) $otherDeductions = 0;
-
-                // Enforce Net Salary Consistency
-                // Net Salary = Gross - Total Deductions
-                // We use the calculated value to ensure the Slip PDF math matches the Database value
-                $calculatedNetSalary = $grossSalary - $totalDeductions;
-
-                // Check update or create
-                $payroll = Payroll::updateOrCreate(
-                    [
-                        'employee_id' => $employee->id,
-                        'period' => $periodString,
-                    ],
-                    [
-                        'basic_salary' => $basicSalary,
-                        'allowances' => $allowances,
-                        'overtime_pay' => $overtime,
-                        'gross_salary' => $grossSalary,
-                        'total_deductions' => $totalDeductions,
-                        'net_salary' => $calculatedNetSalary, // Use consistent calculated value
-                        'details' => $details, // Save JSON
-                        'status' => 'draft',
-                        'bpjs_kesehatan' => 0, 
-                        'bpjs_ketenagakerjaan' => $bpjsTK,
-                        'pph21' => 0,
-                        'other_deductions' => $otherDeductions,
-                    ]
-                );
-
-                $saved[] = [
-                    'row' => $index + 1,
-                    'employee_name' => $row['employee_name'],
-                    'action' => $payroll->wasRecentlyCreated ? 'created' : 'updated',
-                ];
-
-            } catch (\Exception $e) {
-                $failed[] = [
-                    'row' => $index + 1,
-                    'employee_name' => $row['employee_name'] ?? 'Unknown',
-                    'reason' => $e->getMessage(),
-                ];
-            }
-        }
+        Log::info("Dispatching Payroll Import Job. Rows: " . count($rows));
+        
+        // Dispatch Background Job
+        ProcessPayrollImport::dispatch($rows, $adminId);
 
         return response()->json([
-            'message' => 'Import updated successfully',
+            'message' => 'Proses simpan data sedang berjalan di latar belakang. Silakan tunggu beberapa saat.',
             'summary' => [
                 'total' => count($rows),
-                'saved' => count($saved),
-                'failed' => count($failed),
             ],
-            'saved' => $saved,
-            'failed' => $failed,
         ]);
     }
 

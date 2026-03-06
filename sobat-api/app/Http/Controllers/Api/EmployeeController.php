@@ -34,7 +34,18 @@ class EmployeeController extends Controller
             });
         }
 
+        // Efficiently fetch used leave for all employees in one go (Avoid N+1)
+        $currentYear = now()->year;
         $employees = $query->paginate(20);
+        
+        $employeeIds = $employees->pluck('id');
+        $usedLeaveMap = \App\Models\RequestModel::whereIn('employee_id', $employeeIds)
+            ->where('type', 'leave')
+            ->where('status', 'approved')
+            ->whereYear('start_date', $currentYear)
+            ->select('employee_id', \DB::raw('SUM(CASE WHEN amount > 0 THEN amount ELSE DATEDIFF(end_date, start_date) + 1 END) as total_used'))
+            ->groupBy('employee_id')
+            ->pluck('total_used', 'employee_id');
 
         // Calculate Leave Balance for each employee
         foreach ($employees as $employee) {
@@ -45,21 +56,7 @@ class EmployeeController extends Controller
 
                 if ($yearsOfService >= 1) {
                     $quota = 12;
-
-                    // Calculate used leave
-                    $used = \App\Models\RequestModel::where('employee_id', $employee->id)
-                        ->where('type', 'leave')
-                        ->where('status', 'approved')
-                        ->whereYear('start_date', now()->year)
-                        ->get()
-                        ->sum(function ($req) {
-                            if ($req->amount > 0) return $req->amount;
-                            if ($req->start_date && $req->end_date) {
-                                return $req->start_date->diffInDays($req->end_date) + 1;
-                            }
-                            return 0; // fallback
-                        });
-
+                    $used = $usedLeaveMap->get($employee->id, 0);
                     $employee->leave_balance = max(0, $quota - $used) . ' / ' . $quota;
                 }
             }
@@ -294,6 +291,15 @@ class EmployeeController extends Controller
     {
         $employee = Employee::findOrFail($id);
 
+        // --- IDOR GUARD ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::ADMIN_CABANG]);
+
+        if (!$isAdmin && $employee->id !== $user->employee?->id) {
+            return response()->json(['message' => 'Anda tidak memiliki akses untuk mengubah data karyawan ini.'], 403);
+        }
+
         // Fix for frontend sending existing photo_path string
         if ($request->has('photo_path') && !$request->hasFile('photo_path')) {
             $request->merge(['photo_path' => null]);
@@ -484,6 +490,16 @@ class EmployeeController extends Controller
     public function destroy(string $id)
     {
         $employee = Employee::findOrFail($id);
+
+        // --- IDOR GUARD ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::ADMIN_CABANG]);
+
+        if (!$isAdmin) {
+            return response()->json(['message' => 'Hanya Admin yang dapat menghapus data karyawan.'], 403);
+        }
+
         $employee->delete();
 
         return response()->json(['message' => 'Employee deleted successfully']);

@@ -308,12 +308,28 @@ class RequestController extends Controller
     public function show(string $id)
     {
         $requestModel = RequestModel::with(['employee', 'approvals.approver'])->findOrFail($id);
+        
+        // --- IDOR GUARD ---
+        $user = auth()->user();
+        $roleName = $user->role ? $user->role->name : '';
+        $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD, Role::ADMIN]);
+
+        if (!$isAdmin && $requestModel->employee_id !== $user->employee?->id) {
+            return response()->json(['message' => 'Anda tidak memiliki akses ke data pengajuan ini.'], 403);
+        }
+
         return response()->json($requestModel);
     }
 
     public function update(Request $request, string $id)
     {
         $requestModel = RequestModel::findOrFail($id);
+
+        // --- IDOR GUARD ---
+        $user = auth()->user();
+        if ($requestModel->employee_id !== $user->employee?->id) {
+            return response()->json(['message' => 'Hanya pemilik pengajuan yang dapat mengubah data ini.'], 403);
+        }
 
         // Only allow updates if status is draft
         if ($requestModel->status !== 'draft') {
@@ -343,6 +359,15 @@ class RequestController extends Controller
             'businessTripDetail', 'reimbursementDetail', 'assetDetail'
         ])->findOrFail($id);
         
+        // --- IDOR GUARD ---
+        $user = auth()->user();
+        $roleName = $user->role ? $user->role->name : '';
+        $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD, Role::ADMIN]);
+
+        if (!$isAdmin && $requestModel->employee_id !== $user->employee?->id) {
+             return response()->json(['message' => 'Anda tidak memiliki akses untuk menghapus pengajuan ini.'], 403);
+        }
+
         // Only allow deletion if status is draft or rejected
         if (!in_array($requestModel->status, ['draft', 'rejected'])) {
             return response()->json([
@@ -400,6 +425,15 @@ class RequestController extends Controller
     {
         $requestModel = RequestModel::with(['employee', 'approvals.approver', 'businessTripDetail', 'leaveDetail', 'reimbursementDetail', 'assetDetail', 'overtimeDetail'])->findOrFail($id);
         
+        // --- IDOR GUARD ---
+        $user = auth()->user();
+        $roleName = $user->role ? $user->role->name : '';
+        $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD, Role::ADMIN]);
+
+        if (!$isAdmin && $requestModel->employee_id !== $user->employee?->id) {
+             return response()->json(['message' => 'Anda tidak memiliki akses ke dokumen ini.'], 403);
+        }
+
         if ($requestModel->type == 'asset') {
             $pdf = Pdf::loadView('pdf.approval_proof_asset', ['request' => $requestModel]);
         } elseif ($requestModel->type == 'reimbursement') {
@@ -417,7 +451,13 @@ class RequestController extends Controller
      */
     public function submit(string $id, \App\Services\ApprovalService $approvalService)
     {
-        $requestModel = RequestModel::with('employee.organization')->findOrFail($id);
+        $requestModel = RequestModel::with('employee.division')->findOrFail($id);
+
+        // --- IDOR GUARD ---
+        $user = auth()->user();
+        if ($requestModel->employee_id !== $user->employee?->id) {
+            return response()->json(['message' => 'Hanya pemilik pengajuan yang dapat mengirim pengajuan ini.'], 403);
+        }
 
         if ($requestModel->status !== 'draft') {
             return response()->json([

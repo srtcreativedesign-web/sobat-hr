@@ -56,7 +56,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('employees', App\Http\Controllers\Api\EmployeeController::class);
     Route::get('/employees/{id}/attendances', [App\Http\Controllers\Api\EmployeeController::class, 'attendances']);
     Route::get('/employees/{id}/payrolls', [App\Http\Controllers\Api\EmployeeController::class, 'payrolls']);
-    Route::post('/employees/enroll-face', [App\Http\Controllers\Api\EmployeeController::class, 'enrollFace']);
+    Route::middleware(['throttle:6,1'])->group(function () {
+        Route::post('/employees/enroll-face', [App\Http\Controllers\Api\EmployeeController::class, 'enrollFace']);
+    });
 
     // Organization routes
     Route::delete('/organizations/reset', [App\Http\Controllers\Api\OrganizationController::class, 'reset']);
@@ -171,13 +173,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/payrolls/template/download', [App\Http\Controllers\Api\PayrollController::class, 'downloadTemplate']);
     Route::post('/payrolls/approve-all', [App\Http\Controllers\Api\PayrollController::class, 'approveAll']);
     Route::post('/payrolls/bulk-approve', [App\Http\Controllers\Api\PayrollController::class, 'bulkApprove']);
-    Route::post('/payrolls/import', [App\Http\Controllers\Api\PayrollController::class, 'import']);
-    Route::post('/payrolls/import/save', [App\Http\Controllers\Api\PayrollController::class, 'saveImport']);
+    Route::middleware(['throttle:10,1'])->group(function () {
+        Route::post('/payrolls/import', [App\Http\Controllers\Api\PayrollController::class, 'import']);
+        Route::post('/payrolls/import/save', [App\Http\Controllers\Api\PayrollController::class, 'saveImport']);
+    });
     Route::post('/payrolls/calculate', [App\Http\Controllers\Api\PayrollController::class, 'calculate']);
     Route::patch('/payrolls/{id}/status', [App\Http\Controllers\Api\PayrollController::class, 'updateStatus']);
-    Route::get('/payrolls/{id}/payslip', [App\Http\Controllers\Api\PayrollController::class, 'generatePayslip']);
-    Route::get('/payrolls/{id}/slip', [App\Http\Controllers\Api\PayrollController::class, 'generateSlip']);
-    Route::get('/payrolls/period/{month}/{year}', [App\Http\Controllers\Api\PayrollController::class, 'periodPayrolls']);
+    Route::middleware(['throttle:30,1'])->group(function () {
+        Route::get('/payrolls/{id}/payslip', [App\Http\Controllers\Api\PayrollController::class, 'generatePayslip']);
+        Route::get('/payrolls/{id}/slip', [App\Http\Controllers\Api\PayrollController::class, 'generateSlip']);
+        Route::get('/payrolls/period/{month}/{year}', [App\Http\Controllers\Api\PayrollController::class, 'periodPayrolls']);
+    });
     Route::post('/payrolls/bulk-download', [App\Http\Controllers\Api\PayrollController::class, 'bulkDownload']);
 
     // THR (Holiday Bonus) routes

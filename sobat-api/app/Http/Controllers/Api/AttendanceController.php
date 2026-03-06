@@ -342,6 +342,15 @@ class AttendanceController extends Controller
     {
         $attendance = Attendance::findOrFail($id);
 
+        // --- IDOR GUARD ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR]);
+
+        if (!$isAdmin && $attendance->employee_id !== $user->employee?->id) {
+            return response()->json(['message' => 'Anda tidak memiliki akses untuk mengubah data absensi ini.'], 403);
+        }
+
         $validated = $request->validate([
             'check_in' => 'sometimes',
             'check_out' => 'nullable',
@@ -410,6 +419,15 @@ class AttendanceController extends Controller
     public function destroy(string $id)
     {
         $attendance = Attendance::findOrFail($id);
+
+        // --- IDOR GUARD ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR]);
+
+        if (!$isAdmin) {
+             return response()->json(['message' => 'Hanya Admin/HR yang dapat menghapus data absensi.'], 403);
+        }
 
         // Cleanup: Delete associated photos from storage before deleting the record
         if ($attendance->photo_path) {
