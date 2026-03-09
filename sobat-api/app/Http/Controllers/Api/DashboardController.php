@@ -85,27 +85,41 @@ class DashboardController extends Controller
     {
         $year = $request->get('year', Carbon::now()->year);
 
+        // OPTIMIZATION: Get all resigned counts in one query instead of a loop (Resolves N+1)
+        $resignedData = Employee::where('status', 'resigned')
+            ->whereYear('updated_at', $year)
+            ->select(DB::raw('MONTH(updated_at) as month'), DB::raw('count(*) as total'))
+            ->groupBy('month')
+            ->pluck('total', 'month');
+
+        // OPTIMIZATION: Get base active count before the year starts
+        $baseActiveCount = Employee::where('status', 'active')
+            ->where('join_date', '<', Carbon::create($year, 1, 1))
+            ->count();
+
+        // OPTIMIZATION: Get all join counts for the target year in one query
+        $joinedData = Employee::where('status', 'active')
+            ->whereYear('join_date', $year)
+            ->select(DB::raw('MONTH(join_date) as month'), DB::raw('count(*) as total'))
+            ->groupBy('month')
+            ->pluck('total', 'month');
+
         $monthlyData = [];
+        $runningActiveTotal = $baseActiveCount;
         
         for ($month = 1; $month <= 12; $month++) {
-            $startOfMonth = Carbon::create($year, $month, 1)->startOfMonth();
-            $endOfMonth = Carbon::create($year, $month, 1)->endOfMonth();
+            // Count active for this month (previous month's total + this month's joins)
+            $newJoins = $joinedData->get($month, 0);
+            $runningActiveTotal += $newJoins;
 
-            $activeStart = Employee::where('status', 'active')
-                ->where('join_date', '<=', $endOfMonth)
-                ->count();
+            $resigned = $resignedData->get($month, 0);
 
-            $resigned = Employee::where('status', 'resigned')
-                ->whereMonth('updated_at', $month)
-                ->whereYear('updated_at', $year)
-                ->count();
-
-            $turnoverRate = $activeStart > 0 ? ($resigned / $activeStart) * 100 : 0;
+            $turnoverRate = $runningActiveTotal > 0 ? ($resigned / $runningActiveTotal) * 100 : 0;
 
             $monthlyData[] = [
                 'month' => $month,
                 'month_name' => Carbon::create()->month($month)->format('F'),
-                'active_employees' => $activeStart,
+                'active_employees' => $runningActiveTotal,
                 'resigned' => $resigned,
                 'turnover_rate' => round($turnoverRate, 2),
             ];
