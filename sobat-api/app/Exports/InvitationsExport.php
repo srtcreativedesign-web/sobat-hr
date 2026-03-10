@@ -30,8 +30,8 @@ class InvitationsExport implements FromCollection, WithHeadings, WithMapping
 
     public function map($invitation): array
     {
-        // Hardcoded frontend URL based on user environment
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+        // Use sobat-hr.com as default if FRONTEND_URL is not set in .env
+        $frontendUrl = env('FRONTEND_URL', 'https://sobat-hr.com');
         $link = "{$frontendUrl}/register?token={$invitation->token}";
 
         return $this->sanitizeArray([
