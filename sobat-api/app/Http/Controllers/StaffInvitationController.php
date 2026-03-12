@@ -264,8 +264,12 @@ class StaffInvitationController extends Controller
             return response()->json(['valid' => false, 'message' => 'Token not found in database.'], 404);
         }
 
+        if ($anyInvite->status === 'accepted') {
+            return response()->json(['valid' => false, 'message' => 'Tautan undangan ini sudah digunakan. Akun Anda telah aktif, silakan login melalui aplikasi Sobat Mobile.'], 400);
+        }
+
         if ($anyInvite->status !== 'pending') {
-            return response()->json(['valid' => false, 'message' => "Token found but status is '{$anyInvite->status}'."], 400);
+            return response()->json(['valid' => false, 'message' => "Tautan undangan tidak valid (Status: {$anyInvite->status})."], 400);
         }
 
         // Parse payload for extra details if any

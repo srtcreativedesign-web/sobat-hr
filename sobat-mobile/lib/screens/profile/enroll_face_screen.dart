@@ -10,6 +10,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import '../../config/theme.dart';
 import '../../config/api_config.dart';
 import '../../services/auth_service.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 class EnrollFaceScreen extends StatefulWidget {
   final bool isFirstTime;
@@ -353,6 +354,15 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
         _statusText = 'UPLOADING...';
       });
 
+      // Compress image before upload
+      final targetPath = '${imagePath}_compressed.jpg';
+      final compressedFile = await FlutterImageCompress.compressAndGetFile(
+        imagePath,
+        targetPath,
+        quality: 60,
+      );
+      final finalPath = compressedFile?.path ?? imagePath;
+
       final token = await _authService.getToken();
 
       var request = http.MultipartRequest(
@@ -365,7 +375,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
         'Accept': 'application/json',
       });
 
-      request.files.add(await http.MultipartFile.fromPath('photo', imagePath));
+      request.files.add(await http.MultipartFile.fromPath('photo', finalPath));
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
@@ -378,9 +388,15 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
         _showSuccessDialog();
       } else {
         // debugPrint('Enroll Face Error: ${response.body}');
+        String errorMsg = response.body;
+        if (errorMsg.contains('<html') ||
+            errorMsg.contains('<!DOCTYPE html>')) {
+          errorMsg =
+              'Foto terlalu besar atau gangguan server (${response.statusCode}).';
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal: ${response.body}'),
+            content: Text('Gagal: $errorMsg'),
             backgroundColor: Colors.red,
           ),
         );
