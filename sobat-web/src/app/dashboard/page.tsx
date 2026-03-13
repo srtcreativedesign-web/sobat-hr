@@ -26,6 +26,10 @@ interface DashboardStats {
     period_month: number;
     period_year: number;
   };
+  leaderboards?: {
+    top_late: any[];
+    top_on_time: any[];
+  };
 }
 
 interface ContractExpiringEmployee {
@@ -256,6 +260,67 @@ export default function DashboardPage() {
 
             {/* Lateness Chart */}
             <LatenessChart data={latenessData} loading={loading} />
+
+            {/* Leaderboards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Top Late */}
+              <div className="glass-card p-6 bg-white/50 border border-red-100/50">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="w-2 h-6 bg-red-500 rounded-full"></span>
+                  <h3 className="text-lg font-bold text-gray-800">Top 5 Sering Telat</h3>
+                  <span className="ml-auto text-xs bg-red-100 text-red-600 px-2 py-1 rounded-md font-semibold mb-1">Bulan Ini</span>
+                </div>
+                {loading ? (
+                   <div className="animate-pulse space-y-3"><div className="h-12 bg-gray-100 rounded-lg"></div><div className="h-12 bg-gray-100 rounded-lg"></div></div>
+                ) : stats?.leaderboards?.top_late?.length === 0 ? (
+                   <div className="py-6 text-center border border-dashed border-gray-200 rounded-lg"><p className="text-sm text-gray-400">Belum ada data telat bulan ini 🎉</p></div>
+                ) : (
+                  <div className="space-y-3">
+                    {stats?.leaderboards?.top_late?.map((item, idx) => (
+                      <div key={`late-${item.employee_id}`} className="flex justify-between items-center p-3 bg-red-50/50 rounded-lg border border-red-100 hover:bg-red-50 transition-colors">
+                        <div className="flex items-center gap-3">
+                           <span className="text-lg font-bold text-red-300 w-4">{idx + 1}</span>
+                           <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold text-xs">{item.employee?.user?.name?.charAt(0) || '?'}</div>
+                           <div>
+                             <p className="text-sm font-semibold text-gray-800">{item.employee?.user?.name || 'Unknown'}</p>
+                             <p className="text-xs text-red-500 font-medium">{item.total} kali terlambat</p>
+                           </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Top Paling Rajin (On-Time) */}
+              <div className="glass-card p-6 bg-white/50 border border-green-100/50">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="w-2 h-6 bg-green-500 rounded-full"></span>
+                  <h3 className="text-lg font-bold text-gray-800">Top 5 Paling Rajin</h3>
+                  <span className="ml-auto text-xs bg-green-100 text-green-600 px-2 py-1 rounded-md font-semibold mb-1">Bulan Ini</span>
+                </div>
+                {loading ? (
+                   <div className="animate-pulse space-y-3"><div className="h-12 bg-gray-100 rounded-lg"></div><div className="h-12 bg-gray-100 rounded-lg"></div></div>
+                ) : stats?.leaderboards?.top_on_time?.length === 0 ? (
+                   <div className="py-6 text-center border border-dashed border-gray-200 rounded-lg"><p className="text-sm text-gray-400">Belum ada data kehadirans.</p></div>
+                ) : (
+                  <div className="space-y-3">
+                    {stats?.leaderboards?.top_on_time?.map((item, idx) => (
+                      <div key={`early-${item.employee_id}`} className="flex justify-between items-center p-3 bg-green-50/50 rounded-lg border border-green-100 hover:bg-green-50 transition-colors">
+                        <div className="flex items-center gap-3">
+                           <span className="text-lg font-bold text-green-300 w-4">{idx + 1}</span>
+                           <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-bold text-xs">{item.employee?.user?.name?.charAt(0) || '?'}</div>
+                           <div>
+                             <p className="text-sm font-semibold text-gray-800">{item.employee?.user?.name || 'Unknown'}</p>
+                             <p className="text-xs text-green-600 font-medium">{item.total} kali tepat waktu</p>
+                           </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
 
             <div className="glass-card p-6 bg-white/50">
               <div className="flex justify-between items-center mb-6">

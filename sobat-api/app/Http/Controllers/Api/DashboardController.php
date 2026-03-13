@@ -61,6 +61,27 @@ class DashboardController extends Controller
             $payrollTotal = 0;
         }
 
+        // Leaderboards (Top Late & Top On-Time)
+        $topLate = \App\Models\Attendance::whereMonth('date', $currentMonth)
+            ->whereYear('date', $currentYear)
+            ->where('status', 'late')
+            ->select('employee_id', DB::raw('count(*) as total'))
+            ->groupBy('employee_id')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->with(['employee' => function($q) { $q->select('id', 'user_id', 'employee_code')->with('user:id,name'); }])
+            ->get();
+
+        $topOnTime = \App\Models\Attendance::whereMonth('date', $currentMonth)
+            ->whereYear('date', $currentYear)
+            ->where('status', 'present')
+            ->select('employee_id', DB::raw('count(*) as total'))
+            ->groupBy('employee_id')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->with(['employee' => function($q) { $q->select('id', 'user_id', 'employee_code')->with('user:id,name'); }])
+            ->get();
+
         return response()->json([
             'employees' => $employeeStats,
             'attendance' => $attendanceStats,
@@ -74,6 +95,10 @@ class DashboardController extends Controller
             'period' => [
                 'month' => $currentMonth,
                 'year' => $currentYear,
+            ],
+            'leaderboards' => [
+                'top_late' => $topLate,
+                'top_on_time' => $topOnTime,
             ],
         ]);
     }
