@@ -32,7 +32,8 @@ dependencies:
   # Storage
   flutter_secure_storage: ^9.2.2
   shared_preferences: ^2.5.4
-  
+  sqflite: ^2.3.0
+
   # Utils
   intl: ^0.20.2
   open_file: ^3.5.11
@@ -53,6 +54,15 @@ dependencies:
   device_info_plus: ^12.3.0
   local_auth: ^3.0.0
   screen_protector: ^1.5.1
+
+  # QR Scanner
+  mobile_scanner: ^3.4.0
+
+  # Background Sync
+  workmanager: ^0.9.0
+
+  # Connectivity
+  connectivity_plus: ^5.0.2
   
   http: ^1.2.0
   http_parser: ^4.0.2
@@ -114,3 +124,6 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+dependency_overrides:
+  workmanager: ^0.9.0

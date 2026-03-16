@@ -49,11 +49,15 @@ export interface Organization {
   id: number;
   name: string;
   code: string;
-  type: 'headquarters' | 'branch' | 'department';
+  type: 'headquarters' | 'branch' | 'division' | 'department';
   parent_id?: number;
   address?: string;
   phone?: string;
   email?: string;
+  latitude?: number;
+  longitude?: number;
+  radius_meters?: number;
+  description?: string;
   parent_organization?: Organization;
   child_organizations?: Organization[];
   created_at?: string;

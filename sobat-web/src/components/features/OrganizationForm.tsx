@@ -16,7 +16,7 @@ interface Organization {
     description?: string;
     latitude?: number | null;
     longitude?: number | null;
-    radius?: number | null;
+    radius_meters?: number | null;
 }
 
 interface OrganizationFormProps {
@@ -60,7 +60,7 @@ export default function OrganizationForm({ isOpen, onClose, onSuccess, initialDa
                 description: initialData.description || '',
                 latitude: initialData.latitude?.toString() || '',
                 longitude: initialData.longitude?.toString() || '',
-                radius: initialData.radius?.toString() || '100',
+                radius: initialData.radius_meters?.toString() || '100',
             });
         } else {
             setFormData({

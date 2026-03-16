@@ -16,11 +16,11 @@ class ApiConfig {
   static const String _env = String.fromEnvironment('ENV', defaultValue: 'dev');
   static const String _devHost = String.fromEnvironment(
     'DEV_HOST',
-    defaultValue: '192.168.1.11',
+    defaultValue: '192.168.0.105',
   );
 
-  // If we are in release mode, IT IS production, regardless of ENV flags.
-  static bool get _isProd => kReleaseMode || _env == 'prod';
+  // Return true if ENV is 'prod', otherwise false.
+  static bool get _isProd => _env == 'prod';
 
   static const String _port = '8000';
 

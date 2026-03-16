@@ -105,6 +105,12 @@ flutter build ios --release --dart-define=ENV=prod
 - Cek firewall settings
 - Pastikan backend API accessible dari browser: `http://YOUR_IP:8000/api/auth/login`
 
+### "Failed host lookup" (OS error code 7)
+Error ini sering terjadi pada **Android Emulator** yang kehilangan sinkronisasi DNS dengan komputer host (Mac/Windows).
+- **Solusi 1 (Tercepat):** Buka aplikasi *Settings* di dalam emulator -> *Network & internet* -> Matikan Wi-Fi, diamkan 5 detik, lalu nyalakan kembali.
+- **Solusi 2:** Tutup (Matikan) emulator, buka *Device Manager* di Android Studio, klik titik tiga pada emulator, pilih **Cold Boot Now**.
+- **Solusi 3:** Coba buka browser `google.com` di dalam emulator untuk memastikan emulator memiliki akses internet.
+
 ## 📋 Checklist Development
 
 - [ ] Dapatkan IP address komputer

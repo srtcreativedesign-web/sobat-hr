@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../config/api_config.dart';
 import '../models/user.dart';
@@ -8,6 +10,13 @@ import 'base_service.dart';
 class AuthService extends BaseService {
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
+      // Debug logging
+      debugPrint('=== LOGIN DEBUG ===');
+      debugPrint('Base URL: ${ApiConfig.baseUrl}');
+      debugPrint('Is Production: ${ApiConfig.isProduction}');
+      debugPrint('Login endpoint: ${ApiConfig.login}');
+      debugPrint('Full URL: ${ApiConfig.baseUrl}${ApiConfig.login}');
+      
       final response = await dio.post(
         ApiConfig.login,
         data: {'email': email, 'password': password},
@@ -34,8 +43,23 @@ class AuthService extends BaseService {
         throw Exception(AppErrorHandler.getErrorMessage(response.data));
       }
     } on DioException catch (e) {
+      // Detailed error logging
+      debugPrint('=== DIO ERROR ===');
+      debugPrint('Error type: ${e.type}');
+      debugPrint('Error message: ${e.message}');
+      debugPrint('URI: ${e.requestOptions.uri}');
+      debugPrint('Method: ${e.requestOptions.method}');
+      debugPrint('Status code: ${e.response?.statusCode}');
+      debugPrint('Response data: ${e.response?.data}');
+      if (e.error is SocketException) {
+        debugPrint('Socket error: ${(e.error as SocketException).message}');
+        debugPrint('OS error code: ${(e.error as SocketException).osError?.errorCode}');
+        debugPrint('OS error message: ${(e.error as SocketException).osError?.message}');
+      }
       throw Exception(AppErrorHandler.getErrorMessage(e));
     } catch (e) {
+      debugPrint('=== GENERAL ERROR ===');
+      debugPrint('Error: $e');
       throw Exception(AppErrorHandler.getErrorMessage(e));
     }
   }

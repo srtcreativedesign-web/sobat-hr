@@ -32,3 +32,6 @@ context.md
 # Firebase / Sensitive
 sobat-mobile/android/app/google-services.json
 sobat-api/storage/app/firebase/service-account.json
+
+# Large Dump Files
+*.hprof

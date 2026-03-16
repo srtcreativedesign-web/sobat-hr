@@ -23,6 +23,7 @@ import '../profile/enroll_face_screen.dart'; // Added
 import '../approval/approval_list_screen.dart'; // Added
 import '../../services/approval_service.dart'; // Added for badge
 import '../../services/notification_service.dart'; // Added for notif badge
+import '../attendance/offline_attendance_handler.dart'; // Added for operational track
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -860,9 +861,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 28),
                       // Attendance Card
-                      // Attendance Card (hidden for operational staff)
-                      if (user?.track != 'operational')
-                        _buildAttendanceCard(user),
+                      _buildAttendanceCard(user),
                       const SizedBox(height: 24),
 
                       // Horizontal Cards (Carousel)
@@ -1422,10 +1421,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: isButtonDisabled
                         ? null
                         : () {
-                            Navigator.pushNamed(
-                              context,
-                              '/attendance',
-                            ).then((_) => _loadTodayAttendance());
+                            // If operational track, use offline/QR handler even if online
+                            // as requested: "langsung scan barcode"
+                            if (user.track == 'operational') {
+                              OfflineAttendanceHandler(context: context)
+                                  .startOfflineAttendance();
+                            } else {
+                              Navigator.pushNamed(
+                                context,
+                                '/attendance',
+                              ).then((_) => _loadTodayAttendance());
+                            }
                           },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,

@@ -30,7 +30,7 @@ class DashboardController extends Controller
         ];
 
         // Attendance stats for TODAY
-        $attendanceStats = Attendance::whereDate('date', $now)
+        $attendanceStats = Attendance::where('date', $now->toDateString())
             ->select('status', DB::raw('count(*) as count'))
             ->groupBy('status')
             ->pluck('count', 'status')
@@ -44,11 +44,13 @@ class DashboardController extends Controller
         ];
 
         // Contract expiring soon (within 3 months)
+        $threeMonthsFromNow = $now->copy()->addMonths(3)->toDateString();
+        $todayStr = $now->toDateString();
+        
         $contractExpiringSoon = Employee::where('status', 'active')
             ->where('employment_status', 'contract')
             ->whereNotNull('contract_end_date')
-            ->whereDate('contract_end_date', '<=', $now->copy()->addMonths(3))
-            ->whereDate('contract_end_date', '>=', $now)
+            ->whereBetween('contract_end_date', [$todayStr, $threeMonthsFromNow])
             ->count();
 
         // Payroll Stats (Current Month)
@@ -62,8 +64,10 @@ class DashboardController extends Controller
         }
 
         // Leaderboards (Top Late & Top On-Time)
-        $topLate = \App\Models\Attendance::whereMonth('date', $currentMonth)
-            ->whereYear('date', $currentYear)
+        $startOfMonth = $now->copy()->startOfMonth()->toDateString();
+        $endOfMonth = $now->copy()->endOfMonth()->toDateString();
+
+        $topLate = \App\Models\Attendance::whereBetween('date', [$startOfMonth, $endOfMonth])
             ->where('status', 'late')
             ->select('employee_id', DB::raw('count(*) as total'))
             ->groupBy('employee_id')
@@ -72,8 +76,7 @@ class DashboardController extends Controller
             ->with(['employee' => function($q) { $q->select('id', 'user_id', 'employee_code')->with('user:id,name'); }])
             ->get();
 
-        $topOnTime = \App\Models\Attendance::whereMonth('date', $currentMonth)
-            ->whereYear('date', $currentYear)
+        $topOnTime = \App\Models\Attendance::whereBetween('date', [$startOfMonth, $endOfMonth])
             ->where('status', 'present')
             ->select('employee_id', DB::raw('count(*) as total'))
             ->groupBy('employee_id')
@@ -201,8 +204,7 @@ class DashboardController extends Controller
         $employees = Employee::where('status', 'active')
             ->whereIn('employment_status', ['contract', 'probation'])
             ->whereNotNull('contract_end_date')
-            ->whereDate('contract_end_date', '<=', $now->copy()->addDays($days))
-            ->whereDate('contract_end_date', '>=', $now)
+            ->whereBetween('contract_end_date', [$now->toDateString(), $now->copy()->addDays($days)->toDateString()])
             ->with(['user', 'division'])
             ->orderBy('contract_end_date', 'asc')
             ->get()
@@ -238,29 +240,29 @@ class DashboardController extends Controller
     {
         $months = 6;
         $data = [];
+        
+        $sixMonthsAgo = Carbon::now()->subMonths($months - 1)->startOfMonth();
+        
+        // Single optimized query for 6 months of data
+        $trends = Attendance::where('date', '>=', $sixMonthsAgo->toDateString())
+            ->select(
+                DB::raw("DATE_FORMAT(date, '%b') as month_name"),
+                DB::raw("YEAR(date) as year"),
+                DB::raw("DATE_FORMAT(date, '%Y-%m') as period"),
+                DB::raw('count(*) as total'),
+                DB::raw("SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late_count")
+            )
+            ->groupBy('period', 'month_name', 'year')
+            ->orderBy('period', 'asc')
+            ->get();
 
-        // Loop last 6 months
-        for ($i = $months - 1; $i >= 0; $i--) {
-            $date = Carbon::now()->subMonths($i);
-            $month = $date->month;
-            $year = $date->year;
-
-            $totalAttendance = Attendance::whereMonth('date', $month)
-                ->whereYear('date', $year)
-                ->count();
-
-            $lateCount = Attendance::whereMonth('date', $month)
-                ->whereYear('date', $year)
-                ->where('status', 'late')
-                ->count();
-
-            $lateRate = $totalAttendance > 0 ? ($lateCount / $totalAttendance) * 100 : 0;
-
+        foreach ($trends as $trend) {
+            $lateRate = $trend->total > 0 ? ($trend->late_count / $trend->total) * 100 : 0;
             $data[] = [
-                'month' => $date->format('M'), // Jan, Feb
-                'year' => $year,
-                'total' => $totalAttendance,
-                'late' => $lateCount,
+                'month' => $trend->month_name,
+                'year' => (int)$trend->year,
+                'total' => (int)$trend->total,
+                'late' => (int)$trend->late_count,
                 'rate' => round($lateRate, 1)
             ];
         }

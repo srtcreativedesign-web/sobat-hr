@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
-import OrganizationTree from './components/OrganizationTree';
-import OrganizationForm from './components/OrganizationForm';
+import OrganizationTree from '@/components/features/OrganizationTree';
+import OrganizationForm from '@/components/features/OrganizationForm';
+import QrManagement from '@/components/features/QrManagement';
+import { LayoutGrid, QrCode } from 'lucide-react';
 
 interface Organization {
     id: number;
@@ -28,6 +30,7 @@ export default function OrganizationPage() {
     const [targetChildId, setTargetChildId] = useState<number | null>(null);
 
     const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
+    const [activeTab, setActiveTab] = useState<'structure' | 'qr'>('structure');
 
     useEffect(() => {
         fetchOrganizations();
@@ -132,8 +135,31 @@ export default function OrganizationPage() {
         <DashboardLayout>
             <div className="flex justify-between items-center p-8 pb-0 animate-fade-in-up">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#1C3ECA]">Organization Structure</h1>
-                    <p className="text-gray-500 mt-1">Manage hierarchical company structure</p>
+                    <h1 className="text-2xl font-bold text-[#1C3ECA]">Organizations</h1>
+                    <div className="flex gap-4 mt-2">
+                        <button 
+                            onClick={() => setActiveTab('structure')}
+                            className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium transition-all border-b-2 ${
+                                activeTab === 'structure' 
+                                ? 'border-[#1C3ECA] text-[#1C3ECA]' 
+                                : 'border-transparent text-gray-400 hover:text-gray-600'
+                            }`}
+                        >
+                            <LayoutGrid className="w-4 h-4" />
+                            Structure
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('qr')}
+                            className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium transition-all border-b-2 ${
+                                activeTab === 'qr' 
+                                ? 'border-[#1C3ECA] text-[#1C3ECA]' 
+                                : 'border-transparent text-gray-400 hover:text-gray-600'
+                            }`}
+                        >
+                            <QrCode className="w-4 h-4" />
+                            QR Management
+                        </button>
+                    </div>
                 </div>
                 <div className="flex gap-3">
                     <button
@@ -158,7 +184,7 @@ export default function OrganizationPage() {
                     <div className="flex items-center justify-center py-12">
                         <div className="w-8 h-8 border-4 border-[#60A5FA] border-t-transparent rounded-full animate-spin"></div>
                     </div>
-                ) : (
+                ) : activeTab === 'structure' ? (
                     <>
                         {/* Organization Chart */}
                         <OrganizationTree
@@ -227,6 +253,8 @@ export default function OrganizationPage() {
                             </div>
                         </div>
                     </>
+                ) : (
+                    <QrManagement />
                 )}
             </div>
 

@@ -28,6 +28,8 @@ import 'screens/attendance/attendance_history_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'services/notification_service.dart';
 import 'services/update_service.dart';
+import 'services/connectivity_service.dart';
+import 'services/background_sync_service.dart';
 import 'utils/error_handler.dart';
 import 'dart:ui';
 
@@ -45,6 +47,12 @@ void main() async {
       'If this is Android, please perform a FULL app stop and re-run.',
     );
   }
+
+  // Initialize connectivity monitoring
+  await ConnectivityService().initialize();
+
+  // Initialize background sync for offline attendance
+  initializeBackgroundSync();
 
   await initializeDateFormatting('id_ID', null);
   final prefs = await SharedPreferences.getInstance();

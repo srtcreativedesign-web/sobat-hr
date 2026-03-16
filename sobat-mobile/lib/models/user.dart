@@ -209,6 +209,9 @@ class User {
     };
   }
 
+  // New helper for track selection (HO vs Operational)
+  String get trackType => track ?? 'head_office';
+
   // Helper method untuk check role
   bool get isAdmin => role == 'admin';
   bool get isManager => role == 'manager';

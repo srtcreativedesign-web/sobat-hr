@@ -9,6 +9,9 @@ import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 import '../../config/theme.dart';
 import '../../services/attendance_service.dart';
+import '../../services/connectivity_service.dart';
+import '../../services/offline_attendance_service.dart';
+import 'offline_attendance_handler.dart';
 
 import 'dart:io';
 import 'package:intl/intl.dart';
@@ -25,11 +28,14 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     with SingleTickerProviderStateMixin {
   // Services
   final AttendanceService _attendanceService = AttendanceService();
+  final ConnectivityService _connectivity = ConnectivityService();
+  final OfflineAttendanceService _offlineService = OfflineAttendanceService();
 
   // State
   final MapController _mapController = MapController();
   Position? _currentPosition;
   bool _isLoading = true;
+  bool _isOnline = true;
 
   String? _currentAddress;
   bool _isWithinRange = false;
@@ -53,6 +59,16 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     _initOfficeLocation();
     _checkPermissionsAndLocate();
     _fetchTodayAttendance();
+    _checkConnectivity();
+    
+    // Listen for connectivity changes
+    _connectivity.onlineStatusStream.listen((isOnline) {
+      if (mounted) {
+        setState(() {
+          _isOnline = isOnline;
+        });
+      }
+    });
 
     // Pulse Animation for User Location
     _pulseController = AnimationController(
@@ -102,6 +118,15 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       }
     } catch (e) {
       // Silent fail - error already handled by AppErrorHandler
+    }
+  }
+
+  Future<void> _checkConnectivity() async {
+    final isOnline = await _connectivity.checkConnectivity();
+    if (mounted) {
+      setState(() {
+        _isOnline = isOnline;
+      });
     }
   }
 
@@ -581,69 +606,161 @@ class _AttendanceScreenState extends State<AttendanceScreen>
             left: 0,
             right: 0,
             child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
+              child: Column(
+                children: [
+                  // Offline Banner
+                  if (!_isOnline)
                     Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
+                        color: AppTheme.colorCyan.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(12),
                         boxShadow: [
-                          BoxShadow(color: Colors.black12, blurRadius: 10),
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 8,
+                          ),
                         ],
                       ),
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_back),
-                        color: AppTheme.textDark,
-                        onPressed: () => Navigator.pop(context),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.wifi_off,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Mode Offline Aktif',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Absensi akan disimpan lokal dan terkirim otomatis saat online',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Show unsynced count
+                              FutureBuilder<int>(
+                                future: _offlineService.getUnsyncedCount(),
+                                builder: (context, snapshot) {
+                                  if (!snapshot.hasData || snapshot.data! == 0) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      '${snapshot.data} tertunda',
+                                      style: TextStyle(
+                                        color: AppTheme.colorCyan,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                    if (!_isLoading)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                  
+                  // Original Top Bar
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(color: Colors.black12, blurRadius: 10),
+                            ],
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_back),
+                            color: AppTheme.textDark,
+                            onPressed: () => Navigator.pop(context),
+                          ),
                         ),
-                        decoration: BoxDecoration(
-                          color: _isWithinRange
-                              ? Colors.green.withValues(alpha: 0.9)
-                              : Colors.red.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black12, blurRadius: 10),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _isWithinRange
-                                  ? Icons.verified
-                                  : Icons.location_off,
-                              color: Colors.white,
-                              size: 16,
+                        if (!_isLoading)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _isWithinRange
-                                  ? 'Di dalam Area Kantor'
-                                  : 'Di Luar Area Kantor',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
+                            decoration: BoxDecoration(
+                              color: _isWithinRange
+                                  ? Colors.green.withValues(alpha: 0.9)
+                                  : Colors.red.withValues(alpha: 0.9),
+                              borderRadius: BorderRadius.circular(30),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black12, blurRadius: 10),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _isWithinRange
+                                      ? Icons.verified
+                                      : Icons.location_off,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _isWithinRange
+                                      ? 'Di dalam Area Kantor'
+                                      : 'Di Luar Area Kantor',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -924,81 +1041,123 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
                         const SizedBox(height: 24),
 
-                        // Action Buttons
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed:
-                                    (canCheckIn &&
-                                        !_isLoading &&
-                                        (_attendanceType == 'field' ||
-                                            _isWithinRange))
-                                    ? _handleCheckIn
-                                    : null,
-                                icon: Icon(Icons.login, color: buttonTextColor),
-                                label: Text('Masuk'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: buttonTextColor,
-                                  disabledBackgroundColor: Colors.white,
-                                  disabledForegroundColor: Colors.grey,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  elevation: 0,
-                                  textStyle: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                        // Offline Attendance Button (when no internet)
+                        if (!_isOnline && canCheckIn) ...[
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                // Start offline attendance flow
+                                OfflineAttendanceHandler(context: context)
+                                    .startOfflineAttendance();
+                              },
+                              icon: const Icon(Icons.offline_pin),
+                              label: const Text('Absen Offline'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.colorCyan,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 4,
+                                textStyle: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed:
-                                    (canCheckOut &&
-                                        _isWithinRange &&
-                                        !_isLoading)
-                                    ? _handleCheckOut
-                                    : null,
-                                icon: Icon(
-                                  Icons.logout,
-                                  color: canCheckOut
-                                      ? buttonTextColor
-                                      : Colors.grey,
-                                ),
-                                label: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  child: Text(
-                                    isLateRestricted
-                                        ? 'Menunggu Approval'
-                                        : 'Pulang',
-                                  ),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: buttonTextColor,
-                                  disabledBackgroundColor: Colors.white,
-                                  disabledForegroundColor: Colors.grey,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  elevation: 0,
-                                  textStyle: const TextStyle(
-                                    fontWeight: FontWeight.bold,
+                          ),
+                          const Text(
+                            '• QR Code untuk operasional / GPS untuk kantor',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+
+                        // Action Buttons (Online mode)
+                        if (_isOnline)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed:
+                                      (canCheckIn &&
+                                          !_isLoading &&
+                                          (_attendanceType == 'field' ||
+                                              _isWithinRange))
+                                      ? _handleCheckIn
+                                      : null,
+                                  icon: Icon(Icons.login, color: buttonTextColor),
+                                  label: Text('Masuk'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: buttonTextColor,
+                                    disabledBackgroundColor: Colors.white,
+                                    disabledForegroundColor: Colors.grey,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    elevation: 0,
+                                    textStyle: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed:
+                                      (canCheckOut &&
+                                          _isWithinRange &&
+                                          !_isLoading)
+                                      ? _handleCheckOut
+                                      : null,
+                                  icon: Icon(
+                                    Icons.logout,
+                                    color: canCheckOut
+                                        ? buttonTextColor
+                                        : Colors.grey,
+                                  ),
+                                  label: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      isLateRestricted
+                                          ? 'Menunggu Approval'
+                                          : 'Pulang',
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: buttonTextColor,
+                                    disabledBackgroundColor: Colors.white,
+                                    disabledForegroundColor: Colors.grey,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    elevation: 0,
+                                    textStyle: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                       ],
                     ),
                   ),

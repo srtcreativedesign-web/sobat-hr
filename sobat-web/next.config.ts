@@ -28,6 +28,10 @@ const nextConfig: NextConfig = {
         hostname: '192.168.1.19',
       },
       {
+        protocol: 'http',
+        hostname: '192.168.0.105',
+      },
+      {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
@@ -42,6 +46,24 @@ const nextConfig: NextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
+  },
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.module.rules.push({
+        test: /\.mjs$/,
+        enforce: 'pre',
+        use: [
+          {
+            loader: 'string-replace-loader',
+            options: {
+              search: /\/\/# sourceMappingURL=(.*)\.map/g,
+              replace: '',
+            },
+          },
+        ],
+      });
+    }
+    return config;
   },
 };
 

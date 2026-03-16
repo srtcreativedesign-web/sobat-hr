@@ -76,6 +76,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/attendances/{id}', [App\Http\Controllers\Api\AttendanceController::class, 'update']); // Checkout Route
     Route::post('/attendances/sync', [App\Http\Controllers\Api\AttendanceController::class, 'syncFingerprint']);
     Route::get('/attendances/report/{month}/{year}', [App\Http\Controllers\Api\AttendanceController::class, 'monthlyReport']);
+    
+    // Offline Attendance Sync
+    Route::post('/attendance/offline-sync', [App\Http\Controllers\Api\OfflineSyncController::class, 'sync']);
+    
+    // Offline Attendance Admin Routes
+    Route::middleware('role:super_admin,admin_cabang,hr')->group(function () {
+        Route::get('/attendance/offline-submissions', [App\Http\Controllers\Api\OfflineSyncController::class, 'getOfflineSubmissions']);
+        Route::post('/attendance/offline-submissions/{id}/review', [App\Http\Controllers\Api\OfflineSyncController::class, 'reviewSubmission']);
+        Route::get('/attendance/offline-statistics', [App\Http\Controllers\Api\OfflineSyncController::class, 'getStatistics']);
+        Route::post('/attendance/generate-qr-codes', [App\Http\Controllers\Api\OfflineSyncController::class, 'generateQrCodes']);
+        Route::get('/attendance/qr-codes', [App\Http\Controllers\Api\OfflineSyncController::class, 'getQrCodes']);
+        Route::post('/attendance/qr-codes/generate-single', [App\Http\Controllers\Api\OfflineSyncController::class, 'generateSingleQrCode']);
+    });
 
     // Shift routes
     Route::apiResource('shifts', App\Http\Controllers\Api\ShiftController::class);
