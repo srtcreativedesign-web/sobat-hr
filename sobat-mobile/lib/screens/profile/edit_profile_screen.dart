@@ -55,7 +55,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         });
       }
     } catch (e) {
-      // debugPrint('Error picking image: $e');
+      // Silent fail - error already handled by AppErrorHandler
     }
   }
 
@@ -153,7 +153,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         }
       }
     } catch (e) {
-      // debugPrint('Error fetching divisions: $e');
+      // Silent fail - error already handled by AppErrorHandler
     } finally {
       if (mounted) setState(() => _isLoadingDivisions = false);
     }
@@ -187,7 +187,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         }
       }
     } catch (e) {
-      // debugPrint('Error fetching job positions: $e');
+      // Silent fail - error already handled by AppErrorHandler
     } finally {
       if (mounted) setState(() => _isLoadingJobPositions = false);
     }
@@ -199,7 +199,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final current = await _authService.getCurrentUser();
 
     // DEBUG: Inspect raw data
-    // debugPrint('EDIT PROFILE RAW USER: $current');
 
     if (current != null) {
       // top-level user fields
@@ -215,7 +214,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           current['employee_data'] ??
           current['employee_record'];
 
-      // debugPrint('EDIT PROFILE EMP DATA: $emp');
 
       if (emp != null && emp is Map<String, dynamic>) {
         if (_nameCtrl.text.isEmpty) {
@@ -343,24 +341,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             // Fetch positions for this division
             await _fetchJobPositions(_selectedDivisionId);
 
-            // debugPrint('DEBUG: _position from API/EMP: "$_position"');
-            // debugPrint('DEBUG: _jobPositions count: ${_jobPositions.length}');
 
             // Then match position
             if (_position != null && _jobPositions.isNotEmpty) {
               final matchedPos = _jobPositions.firstWhere((pos) {
                 final posName = pos['name']?.toString().trim().toLowerCase();
                 final targetPos = _position!.trim().toLowerCase();
-                // debugPrint('DEBUG: Compare pos "$posName" vs "$targetPos"');
                 return posName == targetPos;
               }, orElse: () => {});
               if (matchedPos.isNotEmpty) {
                 _selectedJobPositionId = matchedPos['id'] as int;
-                // debugPrint(
                 //   'DEBUG: Matched Job Position ID: $_selectedJobPositionId',
                 // );
               } else {
-                // debugPrint('DEBUG: No matching job position found.');
               }
             }
           }
@@ -389,7 +382,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               });
             }
           } catch (e) {
-            // print('Supervisor lookup failed: $e');
+      // Silent fail - error already handled by AppErrorHandler
           }
         }
       }
@@ -588,7 +581,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
 
     // Debug: print payload and target id to console
-    // print(
     // 'EditProfile: saving employeeRecordId=$_employeeRecordId payload=${payload.toString()}',
     // );
 
@@ -605,9 +597,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         Navigator.of(context).pop(true);
       }
     } catch (e) {
+      // Silent fail - error already handled by AppErrorHandler
       // Log full error and stacktrace for debugging
-      // print('EditProfile: save failed -> $e');
-      // print('EditProfile: stacktrace -> $st');
       if (mounted) {
         ScaffoldMessenger.of(
           context,

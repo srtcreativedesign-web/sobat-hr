@@ -1,75 +1,49 @@
 import 'package:dio/dio.dart';
-import 'storage_service.dart';
-import '../config/dio_factory.dart';
+import '../utils/error_handler.dart';
+import 'base_service.dart';
 
-class RequestService {
-  late final Dio _dio;
-
-  RequestService() {
-    _dio = DioFactory.create();
-  }
-
-  Future<void> _addAuthHeader() async {
-    final token = await StorageService.getToken();
-    if (token != null) {
-      _dio.options.headers['Authorization'] = 'Bearer $token';
-    }
-    _dio.options.headers['Accept'] = 'application/json';
-  }
-
-  // Get Leave Balance & Eligibility
+class RequestService extends BaseService {
   Future<Map<String, dynamic>> getLeaveBalance() async {
-    await _addAuthHeader();
     try {
-      final response = await _dio.get(
-        'requests/leave-balance',
-      ); // Removed leading slash
+      final response = await dio.get('requests/leave-balance');
       return response.data;
     } on DioException catch (e) {
-      throw e.response?.data['message'] ?? 'Gagal mengambil data saldo cuti';
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     } catch (e) {
-      throw 'Terjadi kesalahan: $e';
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     }
   }
 
-  // Submit Request
   Future<Map<String, dynamic>> createRequest(Map<String, dynamic> data) async {
-    await _addAuthHeader();
+    
     try {
-      final response = await _dio.post(
-        'requests',
-        data: data,
-      ); // Removed leading slash
+      final response = await dio.post('requests', data: data);
       return response.data;
     } on DioException catch (e) {
-      // debugPrint(
-      // '❌ Create Request Error: ${e.response?.statusCode} - ${e.response?.data}',
-      // );
-      throw e.response?.data['message'] ?? 'Gagal mengirim pengajuan';
+      if (e.response?.statusCode == 422) {
+        throw Exception('Data pengajuan tidak valid');
+      }
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     } catch (e) {
-      // debugPrint('❌ General Error: $e');
-      throw 'Terjadi kesalahan: $e';
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     }
   }
 
-  // Get Requests List
   Future<List<dynamic>> getRequests({String? type, String? status}) async {
-    await _addAuthHeader();
+    
     try {
-      final response = await _dio.get(
-        'requests', // Removed leading slash
+      final response = await dio.get(
+        'requests',
         queryParameters: {
           if (type != null) 'type': type,
           if (status != null && status != 'Semua') 'status': status,
         },
       );
-      // Assuming paginated response or list?
-      // Controller returns paginate(20). So data is in 'data'.
       return response.data['data'];
     } on DioException catch (e) {
-      throw e.response?.data['message'] ?? 'Gagal mengambil data pengajuan';
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     } catch (e) {
-      throw 'Terjadi kesalahan: $e';
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     }
   }
 }

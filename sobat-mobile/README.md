@@ -63,23 +63,40 @@ flutter pub get
 ```
 
 2. Run the app
+
+**Development (dengan IP komputer Anda):**
 ```bash
-flutter run
+# Cari IP Anda terlebih dahulu:
+# macOS/Linux: ifconfig | grep "inet " | grep -v 127.0.0.1
+# Windows: ipconfig | findstr /i "IPv4"
+
+flutter run --dart-define=DEV_HOST=192.168.1.11
 ```
+
+**Production:**
+```bash
+flutter run --dart-define=ENV=prod
+```
+
+📖 Lihat [ENV_CONFIG.md](ENV_CONFIG.md) untuk panduan lengkap environment configuration.
 
 ### Build
 
 ```bash
 # Android APK
-flutter build apk --release
+flutter build apk --release --dart-define=ENV=prod
+
+# Android App Bundle
+flutter build appbundle --release --dart-define=ENV=prod
 
 # iOS
-flutter build ios --release
+flutter build ios --release --dart-define=ENV=prod
 ```
 
 ## API Integration
 
-Backend API: `http://localhost:8000/api` (Development)
+- **Development:** `http://YOUR_IP:8000/api` (configure with `--dart-define=DEV_HOST=YOUR_IP`)
+- **Production:** `https://api.sobat-hr.com/api`
 
 ## Features Roadmap
 

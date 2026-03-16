@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../services/auth_service.dart';
+import '../utils/error_handler.dart';
 
 class AnnouncementService {
   final AuthService _authService = AuthService();
@@ -10,42 +11,50 @@ class AnnouncementService {
     String? category,
   }) async {
     final token = await _authService.getToken();
-    if (token == null) throw Exception('No auth token found');
+    if (token == null) throw Exception('Silakan login terlebih dahulu');
 
     var url = '${ApiConfig.baseUrl}${ApiConfig.announcements}';
     if (category != null) {
       url += '?category=$category';
     }
 
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
-    );
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+      );
 
-    if (response.statusCode == 200) {
-      final jsonResponse = json.decode(response.body);
-      if (jsonResponse is Map && jsonResponse.containsKey('data')) {
-        return List<Map<String, dynamic>>.from(jsonResponse['data']);
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse is Map && jsonResponse.containsKey('data')) {
+          return List<Map<String, dynamic>>.from(jsonResponse['data']);
+        }
+        return List<Map<String, dynamic>>.from(jsonResponse);
+      } else {
+        throw Exception('Gagal memuat pengumuman');
       }
-      return List<Map<String, dynamic>>.from(jsonResponse);
-    } else {
-      throw Exception('Failed to load announcements: ${response.statusCode}');
+    } catch (e) {
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     }
   }
 
   Future<Map<String, dynamic>> getAnnouncement(int id) async {
     final token = await _authService.getToken();
-    if (token == null) throw Exception('No auth token found');
+    if (token == null) throw Exception('Silakan login terlebih dahulu');
 
-    final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}${ApiConfig.announcements}/$id'),
-      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
-    );
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.announcements}/$id'),
+        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+      );
 
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      throw Exception('Failed to load announcement details');
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Gagal memuat detail pengumuman');
+      }
+    } catch (e) {
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     }
   }
 
@@ -69,7 +78,7 @@ class AnnouncementService {
         }
       }
     } catch (e) {
-      // print('Error fetching active announcement: $e');
+      // Silent fail for active announcement (non-critical)
     }
     return null;
   }

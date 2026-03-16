@@ -7,17 +7,21 @@ class ApiConfig {
   // Cara pakai:
   //   Development : flutter run
   //   Production  : flutter run --dart-define=ENV=prod
+  //   Custom IP   : flutter run --dart-define=DEV_HOST=192.168.1.X
   //
-  // ⚠️ Untuk Development, ganti _hostIp sesuai IP WiFi Anda:
+  // ⚠️ Untuk Development, cari IP WiFi Anda:
   //   Terminal: ifconfig | grep "inet " | grep -v 127.0.0.1
   // ==========================================================================
 
   static const String _env = String.fromEnvironment('ENV', defaultValue: 'dev');
+  static const String _devHost = String.fromEnvironment(
+    'DEV_HOST',
+    defaultValue: '192.168.1.11',
+  );
 
   // If we are in release mode, IT IS production, regardless of ENV flags.
   static bool get _isProd => kReleaseMode || _env == 'prod';
 
-  static const String _hostIp = '192.168.1.11';
   static const String _port = '8000';
 
   // Production URL
@@ -35,8 +39,8 @@ class ApiConfig {
       return 'http://127.0.0.1:$_port/api/';
     }
 
-    // Android/iOS fallback to standard local IP
-    return 'http://$_hostIp:$_port/api/';
+    // Android/iOS use configurable dev host
+    return 'http://$_devHost:$_port/api/';
   }
 
   /// Check if running in production

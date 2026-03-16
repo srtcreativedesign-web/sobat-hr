@@ -75,7 +75,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
         }
       }
     } catch (e) {
-      // print('Error loading leave balance: $e');
+      // Error handled by AppErrorHandler in service
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -798,6 +798,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
         });
       }
     } catch (e) {
+      // Error handled by AppErrorHandler in service
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -821,6 +822,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
         });
       }
     } catch (e) {
+      // Error handled by AppErrorHandler in service
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -1209,7 +1211,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
           Navigator.pop(context);
         }
       } catch (e) {
-        // debugPrint('❌ Submission Failed: $e');
+      // Error handled by AppErrorHandler in service
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),

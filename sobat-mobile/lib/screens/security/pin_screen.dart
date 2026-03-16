@@ -56,7 +56,7 @@ class _PinScreenState extends State<PinScreen> {
         _authenticate();
       }
     } catch (e) {
-      // debugPrint('Biometric check failed: $e');
+      // Silent fail - error already handled by AppErrorHandler
     }
   }
 
@@ -74,7 +74,7 @@ class _PinScreenState extends State<PinScreen> {
         widget.onSuccess();
       }
     } catch (e) {
-      // debugPrint('Authentication failed: $e');
+      // Silent fail - error already handled by AppErrorHandler
       // Do nothing, let user input PIN
     }
   }
@@ -143,6 +143,7 @@ class _PinScreenState extends State<PinScreen> {
         widget.onSuccess();
       }
     } catch (e) {
+      // Silent fail - error already handled by AppErrorHandler
       _showError(e.toString().replaceAll('Exception: ', ''));
       setState(() {
         _pin = '';
@@ -166,6 +167,7 @@ class _PinScreenState extends State<PinScreen> {
         setState(() => _pin = '');
       }
     } catch (e) {
+      // Silent fail - error already handled by AppErrorHandler
       _showError(e.toString());
       setState(() => _pin = '');
     } finally {

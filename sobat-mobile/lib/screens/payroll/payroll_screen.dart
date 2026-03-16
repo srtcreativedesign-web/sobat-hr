@@ -36,6 +36,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      // Error handled by AppErrorHandler in service
       setState(() => _isLoading = false);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -57,7 +58,6 @@ class _PayrollScreenState extends State<PayrollScreen> {
       );
 
       final filename = 'Slip_Gaji_$period.pdf';
-      // debugPrint('Downloading slip: $filename, division: $division');
 
       await _payrollService.downloadSlip(id, filename, division: division);
 
@@ -71,6 +71,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
         ),
       );
     } catch (e) {
+      // Error handled by AppErrorHandler in service
       if (!mounted) return;
       Navigator.pop(context); // Close loading
 

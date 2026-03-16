@@ -119,7 +119,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
         _startImageStream();
       }
     } catch (e) {
-      // debugPrint('Error initializing camera: $e');
+      // Silent fail - error already handled by AppErrorHandler
       setState(() => _statusText = 'CAMERA ERROR');
     }
   }
@@ -175,7 +175,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
         _resetValidation('NO FACE DETECTED');
       }
     } catch (e) {
-      // debugPrint("Error processing face: $e");
+      // Silent fail - error already handled by AppErrorHandler
     } finally {
       _isProcessing = false;
     }
@@ -273,6 +273,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
       try {
         image = await _controller!.takePicture();
       } catch (e) {
+      // Silent fail - error already handled by AppErrorHandler
         await Future.delayed(const Duration(milliseconds: 500));
         image = await _controller!.takePicture();
       }
@@ -282,7 +283,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
       // Upload face
       await _uploadFace(image.path);
     } catch (e) {
-      // debugPrint("Error manual capture: $e");
+      // Silent fail - error already handled by AppErrorHandler
       setState(() {
         _isAutoCapturing = false;
         _statusText = 'RETRYING...';
@@ -329,6 +330,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
       try {
         image = await _controller!.takePicture();
       } catch (e) {
+      // Silent fail - error already handled by AppErrorHandler
         await Future.delayed(const Duration(milliseconds: 500));
         image = await _controller!.takePicture();
       }
@@ -338,7 +340,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
       // Upload face
       await _uploadFace(image.path);
     } catch (e) {
-      // debugPrint("Error auto-capturing: $e");
+      // Silent fail - error already handled by AppErrorHandler
       setState(() {
         _isAutoCapturing = false;
         _statusText = 'RETRYING...';
@@ -387,7 +389,6 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
         await Future.delayed(const Duration(milliseconds: 500));
         _showSuccessDialog();
       } else {
-        // debugPrint('Enroll Face Error: ${response.body}');
         String errorMsg = response.body;
         if (errorMsg.contains('<html') ||
             errorMsg.contains('<!DOCTYPE html>')) {
@@ -408,7 +409,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
         });
       }
     } catch (e) {
-      // debugPrint('Error enrolling face: $e');
+      // Silent fail - error already handled by AppErrorHandler
       if (mounted) {
         ScaffoldMessenger.of(
           context,

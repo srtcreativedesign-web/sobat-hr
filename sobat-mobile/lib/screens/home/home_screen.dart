@@ -250,7 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     } catch (e) {
-      // debugPrint('Error checking announcement: $e');
+      // Silent fail - error already handled by AppErrorHandler
     }
   }
 
@@ -266,7 +266,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      // debugPrint('Error loading recent activity: $e');
+      // Silent fail - error already handled by AppErrorHandler
     }
   }
 
@@ -280,7 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      // print('Error loading pending approvals: $e');
+      // Silent fail - error already handled by AppErrorHandler
     }
   }
 
@@ -296,7 +296,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      // print('Error loading leave: $e');
+      // Silent fail - error already handled by AppErrorHandler
       if (mounted) setState(() => _isLoadingLeave = false);
     }
   }
@@ -311,7 +311,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      // print('Error loading attendance: $e');
+      // Silent fail - error already handled by AppErrorHandler
       if (mounted) setState(() => _isLoadingAttendance = false);
     }
   }
@@ -366,7 +366,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _startAutoScroll();
       }
     } catch (e) {
-      // debugPrint('Error loading announcements: $e');
+      // Silent fail - error already handled by AppErrorHandler
       if (mounted) setState(() => _isLoadingAnnouncements = false);
     }
   }
@@ -383,7 +383,7 @@ class _HomeScreenState extends State<HomeScreen> {
             return bStr.compareTo(aStr);
           });
         } catch (e) {
-          // debugPrint('Failed to sort payrolls in home: $e');
+      // Silent fail - error already handled by AppErrorHandler
         }
 
         setState(() {
@@ -394,7 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() => _isLoadingPayroll = false);
       }
     } catch (e) {
-      // debugPrint('Error loading last payroll: $e');
+      // Silent fail - error already handled by AppErrorHandler
       if (mounted) setState(() => _isLoadingPayroll = false);
     }
   }
@@ -434,7 +434,7 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         }
       } catch (e) {
-        // debugPrint('Error loading attendance history: $e');
+      // Silent fail - error already handled by AppErrorHandler
       }
 
       // 2. Fetch Requests (Leave/Permit)
@@ -469,7 +469,7 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         }
       } catch (e) {
-        // debugPrint('Error loading requests: $e');
+      // Silent fail - error already handled by AppErrorHandler
       }
 
       // 3. Fetch Payrolls
@@ -497,7 +497,7 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         }
       } catch (e) {
-        // debugPrint('Error loading payrolls activity: $e');
+      // Silent fail - error already handled by AppErrorHandler
       }
 
       // Sort by Date Descending
@@ -513,7 +513,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      // debugPrint('Error consolidating activities: $e');
+      // Silent fail - error already handled by AppErrorHandler
       if (mounted) setState(() => _isLoadingRecentActivities = false);
     }
   }
@@ -1125,7 +1125,7 @@ class _HomeScreenState extends State<HomeScreen> {
             }
           }
         } catch (e) {
-          // debugPrint('Error parsing check_in time: $e');
+      // Silent fail - error already handled by AppErrorHandler
         }
 
         if (statusStr == 'pending') {

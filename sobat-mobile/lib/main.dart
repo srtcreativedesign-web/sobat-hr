@@ -55,18 +55,18 @@ void main() async {
   // --- GLOBAL ERROR HANDLING ---
   // 1. Capture errors during build phase (The Red Screen)
   ErrorWidget.builder = (FlutterErrorDetails details) {
-    return ErrorHandler.errorWidget;
+    return AppErrorHandler.errorWidget;
   };
 
   // 2. Capture errors outside build phase (Framework Errors)
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details); // Still log to console
-    ErrorHandler.showInternalError(details.exception, details.stack);
+    AppErrorHandler.showInternalError(details.exception, details.stack);
   };
 
   // 3. Capture errors from asynchronous gaps (Platform Errors)
   PlatformDispatcher.instance.onError = (error, stack) {
-    ErrorHandler.showInternalError(error, stack);
+    AppErrorHandler.showInternalError(error, stack);
     return true; // Mark as handled
   };
 
@@ -95,7 +95,7 @@ class MyApp extends StatelessWidget {
           return MaterialApp(
             title: 'SOBAT HR',
             debugShowCheckedModeBanner: false,
-            navigatorKey: ErrorHandler.navigatorKey,
+            navigatorKey: AppErrorHandler.navigatorKey,
             theme: AppTheme.lightTheme,
             locale: localeProvider.locale,
             localizationsDelegates: [

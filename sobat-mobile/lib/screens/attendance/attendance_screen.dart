@@ -101,7 +101,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         });
       }
     } catch (e) {
-      // debugPrint('Error fetching attendance: $e');
+      // Silent fail - error already handled by AppErrorHandler
     }
   }
 
@@ -154,7 +154,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 '${place.street}, ${place.subLocality}, ${place.locality}';
           }
         } catch (e) {
-          // debugPrint('Error getting address: $e');
+      // Silent fail - error already handled by AppErrorHandler
           _currentAddress = 'Lokasi tidak diketahui';
         }
 
@@ -172,6 +172,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           18.0,
         );
       } catch (e) {
+      // Silent fail - error already handled by AppErrorHandler
         if (mounted) {
           setState(() {
             _isLoading = false;
@@ -308,6 +309,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           _showSuccessSnackBar('Check In Berhasil!');
         }
       } catch (e) {
+      // Silent fail - error already handled by AppErrorHandler
         if (!mounted) return;
         Navigator.pop(context); // Pop loading
         _showErrorSnackBar(e.toString());
@@ -364,6 +366,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       Navigator.pop(context); // Pop loading
       _showSuccessSnackBar('Check Out Berhasil!');
     } catch (e) {
+      // Silent fail - error already handled by AppErrorHandler
       if (!mounted) return;
       Navigator.pop(context); // Pop loading
       _showErrorSnackBar(e.toString());

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../config/dio_factory.dart';
 import 'auth_service.dart';
+import '../utils/error_handler.dart';
 
 class ApprovalService {
   late final Dio _dio;
@@ -24,7 +25,6 @@ class ApprovalService {
       );
 
       if (response.statusCode == 200) {
-        // Handle pagination or direct list
         final data = response.data;
         if (data is Map && data.containsKey('data')) {
           return data['data'];
@@ -33,10 +33,12 @@ class ApprovalService {
         }
         return [];
       } else {
-        throw Exception('Failed to load approvals');
+        throw Exception('Gagal memuat data persetujuan');
       }
+    } on DioException catch (e) {
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     } catch (e) {
-      throw Exception('Error loading approvals: $e');
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     }
   }
 
@@ -58,13 +60,10 @@ class ApprovalService {
       );
 
       return response.data;
+    } on DioException catch (e) {
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     } catch (e) {
-      if (e is DioException) {
-        throw Exception(
-          e.response?.data['message'] ?? 'Failed to approve request',
-        );
-      }
-      throw Exception('Error approving request: $e');
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     }
   }
 
@@ -86,13 +85,10 @@ class ApprovalService {
       );
 
       return response.data;
+    } on DioException catch (e) {
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     } catch (e) {
-      if (e is DioException) {
-        throw Exception(
-          e.response?.data['message'] ?? 'Failed to reject request',
-        );
-      }
-      throw Exception('Error rejecting request: $e');
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     }
   }
 }

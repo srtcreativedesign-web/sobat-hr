@@ -1,58 +1,20 @@
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../config/api_config.dart';
-import '../config/dio_factory.dart';
 import '../models/user.dart';
 import 'storage_service.dart';
+import '../utils/error_handler.dart';
+import 'base_service.dart';
 
-class AuthService {
-  late final Dio _dio;
-
-  AuthService() {
-    _dio = DioFactory.create();
-
-    // Add interceptor untuk attach token
-    _dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          final token = await StorageService.getToken();
-          if (token != null) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
-          return handler.next(options);
-        },
-        onError: (error, handler) async {
-          // Auto logout jika 401
-          if (error.response?.statusCode == 401) {
-            await StorageService.clearAll();
-          }
-          return handler.next(error);
-        },
-      ),
-    );
-  }
-
+class AuthService extends BaseService {
   Future<Map<String, dynamic>> login(String email, String password) async {
-    // print(
-    // 'AuthService: Starting login request to ${ApiConfig.baseUrl}${ApiConfig.login}',
-    // );
     try {
-      final response = await _dio.post(
+      final response = await dio.post(
         ApiConfig.login,
         data: {'email': email, 'password': password},
       );
-      // print('AuthService: Received response ${response.statusCode}');
 
-      // Check if response data is Map (JSON)
       if (response.data is! Map) {
-        // print(
-        // 'AuthService: Response data is not a Map: ${response.data.runtimeType}',
-        // );
-        // If not Map (likely HTML or String), throw error with preview
-        final raw = response.data.toString();
-        final preview = raw.length > 50 ? '${raw.substring(0, 50)}...' : raw;
-        throw Exception('Server Error (Not JSON): $preview');
+        throw Exception('Terjadi kesalahan pada server');
       }
 
       if (response.statusCode == 200 && response.data['success'] == true) {
@@ -60,17 +22,6 @@ class AuthService {
         final token = data['access_token'] as String;
         final userData = data['user'] as Map<String, dynamic>;
 
-        // DEBUG: Print full user data
-        // print('=== LOGIN API RESPONSE ===');
-        // print('Full userData: $userData');
-        if (userData['employee'] != null) {
-          // print('Employee data: ${userData['employee']}');
-          // print('Track: ${userData['employee']['track']}');
-          // print('Position: ${userData['employee']['position']}');
-        }
-        // print('========================');
-
-        // Save token dan user data
         await StorageService.saveToken(token);
         await StorageService.saveUser(userData);
 
@@ -80,37 +31,18 @@ class AuthService {
           'token': token,
         };
       } else {
-        throw Exception(response.data['message'] ?? 'Login gagal');
+        throw Exception(AppErrorHandler.getErrorMessage(response.data));
       }
     } on DioException catch (e) {
-      // print('AuthService: DioError -> ${e.type} | ${e.message}');
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.sendTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
-        throw Exception(
-          'Koneksi timeout. Pastikan internet stabil atau server sedang tidak sibuk.',
-        );
-      }
-
-      if (e.response != null) {
-        // print('AuthService: DioError Response -> ${e.response?.data}');
-        throw Exception(
-          e.response?.data['message'] ?? 'Login gagal: ${e.message}',
-        );
-      } else {
-        throw Exception(
-          'Koneksi gagal. Periksa internet Anda atau firewall HP.',
-        );
-      }
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     } catch (e) {
-      // print('AuthService: Unexpected Error -> $e');
-      throw Exception('Terjadi kesalahan: $e');
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     }
   }
 
   Future<User?> getProfile() async {
     try {
-      final response = await _dio.get(ApiConfig.profile);
+      final response = await dio.get(ApiConfig.profile);
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         final userData = response.data['data'] as Map<String, dynamic>;
@@ -125,7 +57,7 @@ class AuthService {
 
   Future<void> logout() async {
     try {
-      await _dio.post(ApiConfig.logout);
+      await dio.post(ApiConfig.logout);
     } catch (e) {
       // Ignore error, tetap clear local storage
     } finally {
@@ -137,7 +69,6 @@ class AuthService {
     final token = await StorageService.getToken();
     if (token == null) return false;
 
-    // Verify token dengan get profile
     final user = await getProfile();
     return user != null;
   }
@@ -155,74 +86,39 @@ class AuthService {
     try {
       final isFormData = payload is FormData;
       final response = await (isFormData
-          ? _dio.post('${ApiConfig.employees}/$id', data: payload)
-          : _dio.put('${ApiConfig.employees}/$id', data: payload));
+          ? dio.post('${ApiConfig.employees}/$id', data: payload)
+          : dio.put('${ApiConfig.employees}/$id', data: payload));
+
       if (response.statusCode == 200) {
-        // Optionally refresh stored user/profile
         await getProfile();
         return;
       }
       throw Exception('Gagal memperbarui data karyawan');
     } on DioException catch (e) {
-      // Handle validation errors (422) from Laravel
-      final status = e.response?.statusCode;
-      if (status == 422) {
-        final data = e.response?.data;
-        // Debug: print raw response body for easier inspection
-        // print(
-        // 'AuthService.updateEmployee 422 response raw: ${jsonEncode(data)}',
-        // );
-        final errors = data != null && data['errors'] != null
-            ? data['errors'] as Map<String, dynamic>
-            : null;
-        if (errors != null) {
-          final msgs = errors.values
-              .expand((v) => (v as List).map((i) => i.toString()))
-              .join(' | ');
-          // include raw data for debugging
-          throw Exception('$msgs | raw:${jsonEncode(data)}');
-        }
-        final msg = data != null && data['message'] != null
-            ? data['message'].toString()
-            : 'Validasi gagal';
-        throw Exception('$msg | raw:${jsonEncode(data)}');
+      if (e.response?.statusCode == 422) {
+        throw Exception('Data yang dimasukkan tidak valid');
       }
-      throw Exception(e.response?.data['message'] ?? e.message);
+      throw Exception(AppErrorHandler.getErrorMessage(e));
+    } catch (e) {
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     }
   }
 
   Future<void> createEmployee(Object payload) async {
     try {
-      final response = await _dio.post(ApiConfig.employees, data: payload);
+      final response = await dio.post(ApiConfig.employees, data: payload);
       if (response.statusCode == 201 || response.statusCode == 200) {
         await getProfile();
         return;
       }
       throw Exception('Gagal membuat data karyawan');
     } on DioException catch (e) {
-      final status = e.response?.statusCode;
-      if (status == 422) {
-        final data = e.response?.data;
-        // Debug: print raw response body for easier inspection
-        // print(
-        // 'AuthService.createEmployee 422 response raw: ${jsonEncode(data)}',
-        // );
-        final errors = data != null && data['errors'] != null
-            ? data['errors'] as Map<String, dynamic>
-            : null;
-        if (errors != null) {
-          final msgs = errors.values
-              .expand((v) => (v as List).map((i) => i.toString()))
-              .join(' | ');
-          // include raw data for debugging
-          throw Exception('$msgs | raw:${jsonEncode(data)}');
-        }
-        final msg = data != null && data['message'] != null
-            ? data['message'].toString()
-            : 'Validasi gagal';
-        throw Exception('$msg | raw:${jsonEncode(data)}');
+      if (e.response?.statusCode == 422) {
+        throw Exception('Data yang dimasukkan tidak valid');
       }
-      throw Exception(e.response?.data['message'] ?? e.message);
+      throw Exception(AppErrorHandler.getErrorMessage(e));
+    } catch (e) {
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     }
   }
 
@@ -232,7 +128,7 @@ class AuthService {
     required String track,
   }) async {
     try {
-      final response = await _dio.get(
+      final response = await dio.get(
         '${ApiConfig.employees}/supervisor-candidate',
         queryParameters: {
           'organization_id': organizationId,
@@ -256,8 +152,8 @@ class AuthService {
     String confirmPassword,
   ) async {
     try {
-      final response = await _dio.put(
-        'auth/password', // Removed leading slash
+      final response = await dio.put(
+        'auth/password',
         data: {
           'current_password': currentPassword,
           'new_password': newPassword,
@@ -270,15 +166,12 @@ class AuthService {
       }
       throw Exception('Gagal mengubah password');
     } on DioException catch (e) {
-      final status = e.response?.statusCode;
-      if (status == 422) {
-        final data = e.response?.data;
-        final msg = data != null && data['message'] != null
-            ? data['message'].toString()
-            : 'Validasi gagal';
-        throw Exception(msg);
+      if (e.response?.statusCode == 422) {
+        throw Exception('Password tidak valid');
       }
-      throw Exception(e.response?.data['message'] ?? e.message);
+      throw Exception(AppErrorHandler.getErrorMessage(e));
+    } catch (e) {
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     }
   }
 
@@ -288,30 +181,26 @@ class AuthService {
 
   Future<void> forgotPassword(String phone) async {
     try {
-      final response = await _dio.post(
-        'auth/forgot-password', // Removed leading slash
+      final response = await dio.post(
+        'auth/forgot-password',
         data: {'phone': phone},
       );
       if (response.statusCode == 200) {
         return;
       }
-      throw Exception(response.data['message'] ?? 'Gagal mengirim permintaan');
+      throw Exception('Gagal mengirim permintaan');
     } on DioException catch (e) {
-      throw Exception(e.response?.data['message'] ?? e.message);
+      throw Exception(AppErrorHandler.getErrorMessage(e));
+    } catch (e) {
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     }
   }
 
   Future<void> updateFcmToken(String token) async {
     try {
-      if (kDebugMode) {
-        print('Updating FCM token...');
-      }
-      await _dio.post(ApiConfig.fcmToken, data: {'fcm_token': token});
+      await dio.post(ApiConfig.fcmToken, data: {'fcm_token': token});
     } catch (e) {
       // Silently fail, not critical for app usage
-      if (kDebugMode) {
-        print('Error updating FCM token: $e');
-      }
     }
   }
 }

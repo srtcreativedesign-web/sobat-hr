@@ -10,7 +10,6 @@ class EmployeeService {
     _dio = DioFactory.create();
   }
 
-  // Search employees by name or code
   Future<List<Map<String, dynamic>>> searchEmployees(String query) async {
     try {
       final token = await _authService.getToken();
@@ -19,13 +18,12 @@ class EmployeeService {
       }
 
       final response = await _dio.get(
-        'employees', // Use relative path
-        queryParameters: {'search': query, 'per_page': 10}, // Limit results
+        'employees',
+        queryParameters: {'search': query, 'per_page': 10},
       );
 
       if (response.statusCode == 200) {
         final body = response.data;
-        // Handle pagination structure
         if (body is Map && body.containsKey('data')) {
           final list = body['data'] as List;
           return list.map((e) => e as Map<String, dynamic>).toList();
@@ -36,7 +34,6 @@ class EmployeeService {
       }
       return [];
     } catch (e) {
-      // debugPrint('Error searching employees: $e');
       return [];
     }
   }

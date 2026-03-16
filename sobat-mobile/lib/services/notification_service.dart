@@ -140,21 +140,12 @@ class NotificationService {
 
   Future<String?> getToken() async {
     if (!_isInitialized) {
-      if (kDebugMode) {
-        print('getToken called but NotificationService not initialized');
-      }
       return null;
     }
     try {
       String? token = await _fcm.getToken();
-      if (kDebugMode) {
-        print('FCM Token: $token');
-      }
       return token;
     } catch (e) {
-      if (kDebugMode) {
-        print('Error getting FCM token: $e');
-      }
       return null;
     }
   }

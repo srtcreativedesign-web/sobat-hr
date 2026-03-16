@@ -143,7 +143,7 @@ class _SelfieScreenState extends State<SelfieScreen>
         _startImageStream();
       }
     } catch (e) {
-      // debugPrint('Error initializing camera: $e');
+      // Silent fail - error already handled by AppErrorHandler
       setState(() => _statusText = 'CAMERA ERROR');
     }
   }
@@ -199,7 +199,7 @@ class _SelfieScreenState extends State<SelfieScreen>
         _resetValidation('NO FACE DETECTED');
       }
     } catch (e) {
-      // debugPrint("Error processing face: $e");
+      // Silent fail - error already handled by AppErrorHandler
     } finally {
       _isProcessing = false;
     }
@@ -317,6 +317,7 @@ class _SelfieScreenState extends State<SelfieScreen>
       try {
         image = await _controller!.takePicture();
       } catch (e) {
+      // Silent fail - error already handled by AppErrorHandler
         await Future.delayed(const Duration(milliseconds: 500));
         image = await _controller!.takePicture();
       }
@@ -334,7 +335,7 @@ class _SelfieScreenState extends State<SelfieScreen>
       if (!mounted) return;
       Navigator.pop(context, finalPath);
     } catch (e) {
-      // debugPrint("Error auto-capturing: $e");
+      // Silent fail - error already handled by AppErrorHandler
       setState(() {
         _isAutoCapturing = false;
         _statusText = 'RETRYING...';
@@ -366,6 +367,7 @@ class _SelfieScreenState extends State<SelfieScreen>
       try {
         image = await _controller!.takePicture();
       } catch (e) {
+      // Silent fail - error already handled by AppErrorHandler
         await Future.delayed(const Duration(milliseconds: 500));
         image = await _controller!.takePicture();
       }
@@ -383,7 +385,7 @@ class _SelfieScreenState extends State<SelfieScreen>
       if (!mounted) return;
       Navigator.pop(context, finalPath);
     } catch (e) {
-      // debugPrint("Error manual capture: $e");
+      // Silent fail - error already handled by AppErrorHandler
       setState(() {
         _isAutoCapturing = false;
         _statusText = 'RETRYING...';

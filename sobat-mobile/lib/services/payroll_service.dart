@@ -1,204 +1,48 @@
 import 'package:dio/dio.dart';
-import '../config/dio_factory.dart';
 import 'storage_service.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import '../utils/error_handler.dart';
+import '../config/divisions_config.dart';
+import 'base_service.dart';
 
-class PayrollService {
-  late final Dio _dio;
-
-  PayrollService() {
-    _dio = DioFactory.create();
-
-    // Add interceptor untuk attach token
-    _dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          final token = await StorageService.getToken();
-          if (token != null) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
-          return handler.next(options);
-        },
-      ),
-    );
-  }
-
+class PayrollService extends BaseService {
   Future<List<dynamic>> getPayrolls({int? year}) async {
     List<dynamic> allPayrolls = [];
 
-    // Try to fetch from HO endpoint
-    try {
-      final response = await _dio.get(
-        'payrolls/ho', // Removed leading slash
-        queryParameters: {if (year != null) 'year': year},
-      );
+    for (var division in DivisionsConfig.allDivisions) {
+      try {
+        final endpoint = DivisionsConfig.getBaseEndpoint(division);
+        if (endpoint == null) continue;
 
-      if (response.statusCode == 200 && response.data['data'] != null) {
-        final hoData = response.data['data'];
-        if (hoData is List) {
-          // Mark HO payrolls with division type
-          for (var item in hoData) {
+        final response = await dio.get(
+          endpoint,
+          queryParameters: {if (year != null) 'year': year},
+        );
+
+        if (response.statusCode == 200 && response.data['data'] != null) {
+          final data = response.data['data'] as List;
+          for (var item in data) {
             if (item is Map<String, dynamic>) {
-              item['division'] = 'office';
+              item['division'] = division;
             }
           }
-          allPayrolls.addAll(hoData);
+          allPayrolls.addAll(data);
         }
+      } on DioException {
+        // Silently skip divisions that don't have data
+      } catch (_) {
+        // Continue fetching other divisions
       }
-    } catch (e) {
-      // debugPrint('Failed to fetch HO payrolls: $e');
-    }
-
-    // Try to fetch from FnB endpoint
-    try {
-      final response = await _dio.get(
-        'payrolls/fnb', // Removed leading slash
-        queryParameters: {if (year != null) 'year': year},
-      );
-
-      if (response.statusCode == 200 && response.data['data'] != null) {
-        final fnbData = response.data['data'];
-        if (fnbData is List) {
-          // Mark FnB payrolls with division type
-          for (var item in fnbData) {
-            if (item is Map<String, dynamic>) {
-              item['division'] = 'fnb';
-            }
-          }
-          allPayrolls.addAll(fnbData);
-        }
-      }
-    } catch (e) {
-      // debugPrint('Failed to fetch FnB payrolls: $e');
-    }
-
-    // Try to fetch from Minimarket endpoint
-    try {
-      final response = await _dio.get(
-        'payrolls/mm', // Removed leading slash
-        queryParameters: {if (year != null) 'year': year},
-      );
-
-      if (response.statusCode == 200 && response.data['data'] != null) {
-        final mmData = response.data['data'];
-        if (mmData is List) {
-          // Mark MM payrolls with division type
-          for (var item in mmData) {
-            if (item is Map<String, dynamic>) {
-              item['division'] = 'minimarket';
-            }
-          }
-          allPayrolls.addAll(mmData);
-        }
-      }
-    } catch (e) {
-      // debugPrint('Failed to fetch MM payrolls: $e');
-    }
-
-    // Try to fetch from Reflexiology endpoint
-    try {
-      final response = await _dio.get(
-        'payrolls/ref', // Removed leading slash
-        queryParameters: {if (year != null) 'year': year},
-      );
-
-      if (response.statusCode == 200 && response.data['data'] != null) {
-        final refData = response.data['data'];
-        if (refData is List) {
-          // Mark Ref payrolls with division type
-          for (var item in refData) {
-            if (item is Map<String, dynamic>) {
-              item['division'] = 'reflexiology';
-            }
-          }
-          allPayrolls.addAll(refData);
-        }
-      }
-    } catch (e) {
-      // debugPrint('Failed to fetch Ref payrolls: $e');
-    }
-
-    // Try to fetch from Wrapping endpoint
-    try {
-      final response = await _dio.get(
-        'payrolls/wrapping', // Removed leading slash
-        queryParameters: {if (year != null) 'year': year},
-      );
-
-      if (response.statusCode == 200 && response.data['data'] != null) {
-        final wraData = response.data['data'];
-        if (wraData is List) {
-          // Mark Wra payrolls with division type
-          for (var item in wraData) {
-            if (item is Map<String, dynamic>) {
-              item['division'] = 'wrapping';
-            }
-          }
-          allPayrolls.addAll(wraData);
-        }
-      }
-    } catch (e) {
-      // debugPrint('Failed to fetch Wrapping payrolls: $e');
-    }
-
-    // Try to fetch from Hans endpoint
-    try {
-      final response = await _dio.get(
-        'payrolls/hans', // Removed leading slash
-        queryParameters: {if (year != null) 'year': year},
-      );
-
-      if (response.statusCode == 200 && response.data['data'] != null) {
-        final hansData = response.data['data'];
-        if (hansData is List) {
-          // Mark Hans payrolls with division type
-          for (var item in hansData) {
-            if (item is Map<String, dynamic>) {
-              item['division'] = 'hans';
-            }
-          }
-          allPayrolls.addAll(hansData);
-        }
-      }
-    } catch (e) {
-      // debugPrint('Failed to fetch Hans payrolls: $e');
-    }
-
-    // Try to fetch from Celluller endpoint
-    try {
-      final response = await _dio.get(
-        'payroll-cellullers', // Removed leading slash
-        queryParameters: {if (year != null) 'year': year},
-      );
-
-      if (response.statusCode == 200 && response.data['data'] != null) {
-        final cellData = response.data['data'];
-        if (cellData is List) {
-          // Mark Cell payrolls with division type
-          for (var item in cellData) {
-            if (item is Map<String, dynamic>) {
-              item['division'] = 'celluller';
-            }
-          }
-          allPayrolls.addAll(cellData);
-        }
-      }
-    } catch (e) {
-      // debugPrint('Failed to fetch Celluller payrolls: $e');
     }
 
     // Sort by period descending (latest first)
-    try {
-      allPayrolls.sort((a, b) {
-        final aStr = a['period'] ?? a['period_start'] ?? '';
-        final bStr = b['period'] ?? b['period_start'] ?? '';
-        return bStr.toString().compareTo(aStr.toString());
-      });
-    } catch (e) {
-      // debugPrint('Failed to sort payrolls: $e');
-    }
+    allPayrolls.sort((a, b) {
+      final aStr = a['period'] ?? a['period_start'] ?? '';
+      final bStr = b['period'] ?? b['period_start'] ?? '';
+      return bStr.toString().compareTo(aStr.toString());
+    });
 
     return allPayrolls;
   }
@@ -210,31 +54,9 @@ class PayrollService {
   }) async {
     try {
       final token = await StorageService.getToken();
+      final endpoint = DivisionsConfig.getSlipEndpoint(division!, payrollId);
 
-      // Use division-specific endpoint
-      String endpoint;
-      if (division == 'minimarket') {
-        endpoint = 'payrolls/mm/$payrollId/slip';
-      } else if (division == 'fnb') {
-        endpoint = 'payrolls/fnb/$payrollId/slip';
-      } else if (division == 'reflexiology') {
-        endpoint = 'payrolls/ref/$payrollId/slip';
-      } else if (division == 'wrapping') {
-        endpoint = 'payrolls/wrapping/$payrollId/slip';
-      } else if (division == 'hans') {
-        endpoint = 'payrolls/hans/$payrollId/slip';
-      } else if (division == 'celluller') {
-        endpoint = 'payroll-cellullers/$payrollId/slip';
-      } else if (division == 'office') {
-        endpoint = 'payrolls/ho/$payrollId/slip';
-      } else {
-        // Fallback or Error? Since generic is removed, we should probably throw error or default to one
-        throw Exception('Unknown Division for download');
-      }
-
-      // debugPrint('Downloading slip from: $endpoint');
-
-      final response = await _dio.get(
+      final response = await dio.get(
         endpoint,
         options: Options(
           responseType: ResponseType.bytes,
@@ -242,27 +64,26 @@ class PayrollService {
         ),
       );
 
-      // debugPrint('Response status: ${response.statusCode}');
-
       if (response.statusCode == 200) {
         final directory = await getApplicationDocumentsDirectory();
         final file = File('${directory.path}/$filename');
         await file.writeAsBytes(response.data);
 
-        // debugPrint('File saved to: ${file.path}');
-
         final result = await OpenFile.open(file.path);
-        // debugPrint('OpenFile result: ${result.message}');
 
         if (result.type != ResultType.done) {
-          throw Exception('Gagal membuka file: ${result.message}');
+          throw Exception('Gagal membuka file PDF');
         }
       } else {
-        throw Exception('Server error: ${response.statusCode}');
+        throw Exception('Gagal mengunduh slip gaji');
       }
+    } on DioException catch (e) {
+      throw Exception(AppErrorHandler.getErrorMessage(e));
     } catch (e) {
-      // debugPrint('Download error: $e');
-      throw Exception('Gagal download slip: $e');
+      if (e is! Exception) {
+        throw Exception(AppErrorHandler.getErrorMessage(e));
+      }
+      rethrow;
     }
   }
 }

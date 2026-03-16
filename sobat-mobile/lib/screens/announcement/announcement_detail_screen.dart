@@ -52,7 +52,6 @@ class AnnouncementDetailScreen extends StatelessWidget {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       // Handle error
-      // debugPrint('Could not launch $downloadUrl');
     }
   }
 

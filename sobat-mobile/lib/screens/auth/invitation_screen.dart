@@ -15,6 +15,12 @@ class _InvitationScreenState extends State<InvitationScreen> {
   late final WebViewController controller;
   bool _isLoading = true;
 
+  // Get dev host from --dart-define or fallback to default
+  static const String _devHost = String.fromEnvironment(
+    'DEV_HOST',
+    defaultValue: '192.168.1.11',
+  );
+
   @override
   void initState() {
     super.initState();
@@ -24,8 +30,8 @@ class _InvitationScreenState extends State<InvitationScreen> {
     if (finalUrl.contains('localhost') || finalUrl.contains('127.0.0.1')) {
       // Replace with machine's LAN IP (matches ApiConfig)
       finalUrl = finalUrl
-          .replaceAll('localhost', '192.168.1.19')
-          .replaceAll('127.0.0.1', '192.168.1.19');
+          .replaceAll('localhost', _devHost)
+          .replaceAll('127.0.0.1', _devHost);
     }
 
     controller = WebViewController()

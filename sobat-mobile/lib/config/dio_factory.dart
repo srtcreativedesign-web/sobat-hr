@@ -3,15 +3,12 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import '../config/api_config.dart';
 
-/// Centralized Dio factory that configures SSL trust for release builds.
+/// Centralized Dio factory that configures HTTP client properly.
 ///
-/// Flutter release builds use Dart's own embedded CA bundle which may not
-/// include all intermediate certificates from the server's SSL chain.
-/// This factory configures Dio to trust the platform's (Android/iOS)
-/// certificate store instead, fixing "Connection failed" errors in
-/// release builds while keeping SSL verification active.
+/// This factory configures Dio with proper SSL certificate validation
+/// using the platform's certificate store for secure connections.
 class DioFactory {
-  /// Creates a pre-configured Dio instance with SSL trust fix.
+  /// Creates a pre-configured Dio instance with proper SSL validation.
   static Dio create({
     String? baseUrl,
     Duration? connectTimeout,
@@ -29,9 +26,9 @@ class DioFactory {
       ),
     );
 
-    // Fix SSL for release builds on mobile platforms
+    // Configure HTTP client with proper SSL validation for mobile platforms
     if (!_isWeb) {
-      _configureSslTrust(dio);
+      _configureHttpClient(dio);
     }
 
     return dio;
@@ -39,34 +36,25 @@ class DioFactory {
 
   static bool get _isWeb {
     try {
-      // This will throw in web environment
       return false;
     } catch (_) {
       return true;
     }
   }
 
-  /// Configure Dio to trust the platform's certificate store.
-  /// This fixes the issue where Dart's embedded CA bundle doesn't
-  /// include the server's certificate chain in release builds.
-  static void _configureSslTrust(Dio dio) {
+  /// Configure HTTP client with proper SSL certificate validation.
+  /// Uses platform's certificate store for secure connections.
+  static void _configureHttpClient(Dio dio) {
     (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
       final client = HttpClient();
 
-      // Crucial: apply connection timeout because custom HttpClient ignores Dio's timeout
+      // Apply connection timeout
       if (dio.options.connectTimeout != null) {
         client.connectionTimeout = dio.options.connectTimeout;
       }
 
-      // Trust the server's certificate for our production domain
-      client.badCertificateCallback =
-          (X509Certificate cert, String host, int port) {
-            // Only trust our own production domain
-            if (host == 'api.sobat-hr.com') {
-              return true;
-            }
-            return false;
-          };
+      // ✅ SECURE: Use platform's default SSL certificate validation
+      // No custom badCertificateCallback - let platform handle validation
       return client;
     };
   }
