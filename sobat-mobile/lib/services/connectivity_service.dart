@@ -9,7 +9,7 @@ class ConnectivityService {
   ConnectivityService._internal();
 
   final Connectivity _connectivity = Connectivity();
-  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   
   bool _isOnline = true;
   final StreamController<bool> _onlineStatusController = StreamController<bool>.broadcast();
@@ -34,12 +34,14 @@ class ConnectivityService {
   /// Check current connectivity status
   Future<bool> checkConnectivity() async {
     try {
-      final result = await _connectivity.checkConnectivity();
+      final results = await _connectivity.checkConnectivity();
       
-      _isOnline = result != ConnectivityResult.none;
+      _isOnline = results.isNotEmpty && !results.contains(ConnectivityResult.none);
 
       debugPrint('Connectivity check: ${_isOnline ? "ONLINE" : "OFFLINE"}');
-      debugPrint('Connection type: ${result.name}');
+      if (results.isNotEmpty) {
+        debugPrint('Connection type: ${results.first.name}');
+      }
       
       _onlineStatusController.add(_isOnline);
       return _isOnline;
@@ -52,10 +54,10 @@ class ConnectivityService {
   }
 
   /// Update connection status from stream
-  void _updateConnectionStatus(ConnectivityResult result) {
+  void _updateConnectionStatus(List<ConnectivityResult> results) {
     final wasOnline = _isOnline;
     
-    _isOnline = result != ConnectivityResult.none;
+    _isOnline = results.isNotEmpty && !results.contains(ConnectivityResult.none);
 
     if (wasOnline != _isOnline) {
       debugPrint('Connectivity changed: ${wasOnline ? "ONLINE" : "OFFLINE"} -> ${_isOnline ? "ONLINE" : "OFFLINE"}');
@@ -68,8 +70,8 @@ class ConnectivityService {
     if (!_isOnline) return false;
 
     try {
-      final result = await _connectivity.checkConnectivity();
-      return result != ConnectivityResult.none;
+      final results = await _connectivity.checkConnectivity();
+      return results.isNotEmpty && !results.contains(ConnectivityResult.none);
     } catch (e) {
       debugPrint('Error checking internet access: $e');
       return false;
@@ -79,7 +81,8 @@ class ConnectivityService {
   /// Get current connection type
   Future<ConnectivityResult> getConnectionType() async {
     try {
-      return await _connectivity.checkConnectivity();
+      final results = await _connectivity.checkConnectivity();
+      return results.isNotEmpty ? results.first : ConnectivityResult.none;
     } catch (e) {
       debugPrint('Error getting connection type: $e');
       return ConnectivityResult.none;

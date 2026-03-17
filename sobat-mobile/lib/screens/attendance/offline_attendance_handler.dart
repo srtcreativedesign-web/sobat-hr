@@ -1,10 +1,12 @@
+import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/offline_attendance_service.dart';
-import 'offline_qr_scanner_screen.dart';
+import 'attendance_qr_scanner_screen.dart';
 import 'offline_selfie_screen.dart';
 import '../../services/connectivity_service.dart';
 
@@ -159,16 +161,39 @@ class OfflineAttendanceHandler {
         context,
         MaterialPageRoute(
           builder: (context) =>
-              OfflineQrScannerScreen(onScanSuccess: (data) => data),
+              AttendanceQrScannerScreen(onScanSuccess: (data) => data),
         ),
       );
 
       if (qrCodeData != null && qrCodeData.isNotEmpty) {
-        // QR scan successful, proceed to selfie
-        await _proceedToSelfie(
+        // Try to get GPS coordinates as metadata (even for QR)
+        double? lat;
+        double? lng;
+        
+        try {
+          final position = await Geolocator.getCurrentPosition(
+            locationSettings: Platform.isIOS
+                ? AppleSettings(
+                    accuracy: LocationAccuracy.medium,
+                    timeLimit: const Duration(seconds: 5),
+                  )
+                : const LocationSettings(
+                    accuracy: LocationAccuracy.medium,
+                    timeLimit: Duration(seconds: 5),
+                  ),
+          );
+          lat = position.latitude;
+          lng = position.longitude;
+        } catch (e) {
+          debugPrint('Optional GPS capture failed for QR track: $e');
+          // Proceed with null GPS, which is now allowed by DB schema
+        }
+
+        // Show confirmation popup with outlet data
+        _showOutletConfirmation(
           qrCodeData: qrCodeData,
-          gpsLatitude: null,
-          gpsLongitude: null,
+          gpsLatitude: lat,
+          gpsLongitude: lng,
         );
       }
     } catch (e) {
@@ -184,8 +209,16 @@ class OfflineAttendanceHandler {
       _showLoading('Mengambil lokasi GPS...');
 
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 30),
+        locationSettings: Platform.isIOS
+            ? AppleSettings(
+                accuracy: LocationAccuracy.high,
+                timeLimit: const Duration(seconds: 30),
+                distanceFilter: 10,
+              )
+            : const LocationSettings(
+                accuracy: LocationAccuracy.high,
+                timeLimit: Duration(seconds: 30),
+              ),
       );
 
       if (!context.mounted) return;
@@ -309,6 +342,104 @@ class OfflineAttendanceHandler {
       debugPrint('Background sync error: $e');
       // Silent fail - sync will retry later
     }
+  }
+
+  /// Show confirmation dialog for operational track
+  void _showOutletConfirmation({
+    required String qrCodeData,
+    double? gpsLatitude,
+    double? gpsLongitude,
+  }) {
+    String outletName = 'Outlet Tidak Diketahui';
+    String outletCode = '-';
+
+    try {
+      // Simple parsing logic (supports JSON or simple string)
+      if (qrCodeData.startsWith('{')) {
+        final data = jsonDecode(qrCodeData);
+        outletName = data['name'] ?? data['outlet_name'] ?? qrCodeData;
+        outletCode = data['code'] ?? data['outlet_code'] ?? '-';
+      } else if (qrCodeData.contains('|')) {
+        final parts = qrCodeData.split('|');
+        for (var p in parts) {
+          if (p.toLowerCase().contains('name:')) {
+            outletName = p.split(':')[1].trim();
+          }
+          if (p.toLowerCase().contains('code:')) {
+            outletCode = p.split(':')[1].trim();
+          }
+        }
+      } else {
+        outletName = qrCodeData;
+      }
+    } catch (e) {
+      outletName = qrCodeData;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.store, color: AppTheme.colorCyan),
+            SizedBox(width: 12),
+            Text('Konfirmasi Outlet'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'QR Code berhasil dipindai:',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              outletName,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            Text(
+              'Kode: $outletCode',
+              style: const TextStyle(color: Colors.grey, fontSize: 13),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Silakan verifikasi kehadiran dengan mengambil foto area outlet (kamera depan wide angle).',
+              style: TextStyle(fontSize: 13),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _proceedToSelfie(
+                qrCodeData: qrCodeData,
+                gpsLatitude: gpsLatitude,
+                gpsLongitude: gpsLongitude,
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.colorCyan,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Verifikasi Foto',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // Helper methods

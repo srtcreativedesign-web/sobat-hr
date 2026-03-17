@@ -70,7 +70,7 @@ class NotificationService {
           );
 
       await _localNotifications.initialize(
-        initializationSettings,
+        settings: initializationSettings,
         onDidReceiveNotificationResponse: (details) {
           // Handle notification tap
           if (kDebugMode) {
@@ -101,20 +101,27 @@ class NotificationService {
         AndroidNotification? android = message.notification?.android;
 
         // Show local notification if it contains a notification object
-        if (notification != null && android != null) {
+        if (notification != null) {
           _localNotifications.show(
-            notification.hashCode,
-            notification.title,
-            notification.body,
-            NotificationDetails(
-              android: AndroidNotificationDetails(
-                _channel.id,
-                _channel.name,
-                channelDescription: _channel.description,
-                icon: android.smallIcon,
-                importance: Importance.max,
-                priority: Priority.high,
-                ticker: 'ticker',
+            id: notification.hashCode,
+            title: notification.title,
+            body: notification.body,
+            notificationDetails: NotificationDetails(
+              android: android != null
+                  ? AndroidNotificationDetails(
+                      _channel.id,
+                      _channel.name,
+                      channelDescription: _channel.description,
+                      icon: android.smallIcon,
+                      importance: Importance.max,
+                      priority: Priority.high,
+                      ticker: 'ticker',
+                    )
+                  : null,
+              iOS: const DarwinNotificationDetails(
+                presentAlert: true,
+                presentBadge: true,
+                presentSound: true,
               ),
             ),
             payload: message.data.toString(),

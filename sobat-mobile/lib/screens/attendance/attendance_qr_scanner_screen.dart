@@ -4,16 +4,16 @@ import 'package:flutter/services.dart';
 import '../../config/theme.dart';
 
 /// QR Code Scanner Screen for Operational Track Offline Attendance
-class OfflineQrScannerScreen extends StatefulWidget {
+class AttendanceQrScannerScreen extends StatefulWidget {
   final Function(String qrCodeData) onScanSuccess;
 
-  const OfflineQrScannerScreen({super.key, required this.onScanSuccess});
+  const AttendanceQrScannerScreen({super.key, required this.onScanSuccess});
 
   @override
-  State<OfflineQrScannerScreen> createState() => _OfflineQrScannerScreenState();
+  State<AttendanceQrScannerScreen> createState() => _AttendanceQrScannerScreenState();
 }
 
-class _OfflineQrScannerScreenState extends State<OfflineQrScannerScreen>
+class _AttendanceQrScannerScreenState extends State<AttendanceQrScannerScreen>
     with WidgetsBindingObserver, TickerProviderStateMixin {
   MobileScannerController? _controller;
   bool _isProcessing = false;
@@ -184,7 +184,6 @@ class _OfflineQrScannerScreenState extends State<OfflineQrScannerScreen>
     _controller ??= MobileScannerController(
       detectionSpeed: DetectionSpeed.normal,
       facing: CameraFacing.back,
-      torchEnabled: false,
       formats: [BarcodeFormat.qrCode],
     );
     return _controller!;

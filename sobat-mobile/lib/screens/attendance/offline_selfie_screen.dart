@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
@@ -279,8 +280,7 @@ class _OfflineSelfieScreenState extends State<OfflineSelfieScreen> {
 
       // Read as base64
       final bytes = await savedFile.readAsBytes();
-      final base64String =
-          'data:image/jpeg;base64,${bytes.map((b) => String.fromCharCode(b)).join()}';
+      final base64String = 'data:image/jpeg;base64,${base64Encode(bytes)}';
 
       if (mounted) {
         // Return photo path and base64

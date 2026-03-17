@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import '../../config/theme.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart'; // [NEW] Image Compression
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 import 'package:device_info_plus/device_info_plus.dart'; // [NEW]
 
@@ -211,8 +213,8 @@ class _SelfieScreenState extends State<SelfieScreen>
     double rotY = face.headEulerAngleY ?? 0;
     double rotZ = face.headEulerAngleZ ?? 0;
 
-    bool isFacingForward = rotY.abs() < 35; // Previously 15
-    bool isStraight = rotZ.abs() < 35; // Previously 15
+    bool isFacingForward = rotY.abs() < 45; // Relaxed from 35/15
+    bool isStraight = rotZ.abs() < 45; // Relaxed from 35/15
 
     final Rect box = face.boundingBox;
     final double centerX = imageSize.width / 2;
@@ -230,8 +232,8 @@ class _SelfieScreenState extends State<SelfieScreen>
     // double faceHeightPercent = box.height / imageSize.height;
 
     // Thresholds
-    bool isCentered = offsetX < 0.35 && offsetY < 0.35; // Previously 0.25
-    bool isCloseEnough = faceWidthPercent > 0.15;
+    bool isCentered = offsetX < 0.45 && offsetY < 0.45; // Relaxed from 0.35/0.25
+    bool isCloseEnough = faceWidthPercent > 0.10; // Relaxed from 0.15
 
     if (isFacingForward && isStraight && isCentered && isCloseEnough) {
       if (!_isFaceGood) {
@@ -243,7 +245,7 @@ class _SelfieScreenState extends State<SelfieScreen>
         });
 
         _captureDebounce ??= Timer(
-          const Duration(seconds: 2),
+          const Duration(seconds: 4), // Increased from 2s
           _triggerAutoCapture,
         );
       }
@@ -267,8 +269,8 @@ class _SelfieScreenState extends State<SelfieScreen>
   void _startProgressTimer() {
     _progressTimer?.cancel();
     _progressValue = 0.0;
-    // Animate progress to 100% over 2 seconds
-    _progressTimer = Timer.periodic(const Duration(milliseconds: 20), (timer) {
+    // Animate progress to 100% over 4 seconds
+    _progressTimer = Timer.periodic(const Duration(milliseconds: 40), (timer) {
       setState(() {
         _progressValue += 0.01;
         if (_progressValue >= 1.0) {
@@ -323,7 +325,10 @@ class _SelfieScreenState extends State<SelfieScreen>
       }
 
       // Compress Image (Reduce >5MB size to <500KB)
-      final targetPath = '${image.path}_compressed.jpg';
+      // Use temporary directory for stable file path on iOS
+      final tempDir = await getTemporaryDirectory();
+      final targetPath = p.join(tempDir.path, 'selfie_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      
       final compressedFile = await FlutterImageCompress.compressAndGetFile(
         image.path,
         targetPath,
@@ -373,7 +378,10 @@ class _SelfieScreenState extends State<SelfieScreen>
       }
 
       // Compress Image (Reduce >5MB size to <500KB)
-      final targetPath = '${image.path}_compressed.jpg';
+      // Use temporary directory for stable file path on iOS
+      final tempDir = await getTemporaryDirectory();
+      final targetPath = p.join(tempDir.path, 'manual_selfie_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      
       final compressedFile = await FlutterImageCompress.compressAndGetFile(
         image.path,
         targetPath,

@@ -11,6 +11,8 @@ import '../../config/theme.dart';
 import '../../config/api_config.dart';
 import '../../services/auth_service.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 class EnrollFaceScreen extends StatefulWidget {
   final bool isFirstTime;
@@ -187,8 +189,8 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
     double rotY = face.headEulerAngleY ?? 0;
     double rotZ = face.headEulerAngleZ ?? 0;
 
-    bool isFacingForward = rotY.abs() < 35; // Previously 15
-    bool isStraight = rotZ.abs() < 35; // Previously 15
+    bool isFacingForward = rotY.abs() < 45; // Relaxed from 35/15
+    bool isStraight = rotZ.abs() < 45; // Relaxed from 35/15
 
     final Rect box = face.boundingBox;
     final double centerX = imageSize.width / 2;
@@ -202,8 +204,8 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
 
     double faceWidthPercent = box.width / imageSize.width;
 
-    bool isCentered = offsetX < 0.35 && offsetY < 0.35; // Previously 0.25
-    bool isCloseEnough = faceWidthPercent > 0.15;
+    bool isCentered = offsetX < 0.45 && offsetY < 0.45; // Relaxed from 0.35/0.25
+    bool isCloseEnough = faceWidthPercent > 0.10; // Relaxed from 0.15
 
     if (isFacingForward && isStraight && isCentered && isCloseEnough) {
       if (!_isFaceGood) {
@@ -215,7 +217,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
         });
 
         _captureDebounce ??= Timer(
-          const Duration(seconds: 2),
+          const Duration(seconds: 4), // Increased from 2s
           _triggerAutoCapture,
         );
       }
@@ -239,7 +241,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
   void _startProgressTimer() {
     _progressTimer?.cancel();
     _progressValue = 0.0;
-    _progressTimer = Timer.periodic(const Duration(milliseconds: 20), (timer) {
+    _progressTimer = Timer.periodic(const Duration(milliseconds: 40), (timer) {
       setState(() {
         _progressValue += 0.01;
         if (_progressValue >= 1.0) {
@@ -357,11 +359,14 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
       });
 
       // Compress image before upload
-      final targetPath = '${imagePath}_compressed.jpg';
+      // Use temporary directory for stable file path on iOS
+      final tempDir = await getTemporaryDirectory();
+      final targetPath = p.join(tempDir.path, 'face_enroll_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      
       final compressedFile = await FlutterImageCompress.compressAndGetFile(
         imagePath,
         targetPath,
-        quality: 60,
+        quality: 40, // Reduced quality for faster upload/smaller size
       );
       final finalPath = compressedFile?.path ?? imagePath;
 

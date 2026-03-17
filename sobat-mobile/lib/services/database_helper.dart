@@ -20,30 +20,35 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _createDB(Database db, int version) async {
+    await _createTables(db);
+  }
+
+  Future<void> _createTables(DatabaseExecutor db) async {
     const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
     const textType = 'TEXT NOT NULL';
     const textTypeNullable = 'TEXT';
     const intType = 'INTEGER NOT NULL';
     const intTypeNullable = 'INTEGER';
-    const realType = 'REAL NOT NULL';
+    const realTypeNullable = 'REAL';
 
     // Offline attendance queue table
     await db.execute('''
-      CREATE TABLE offline_attendances (
+      CREATE TABLE IF NOT EXISTS offline_attendances (
         id $idType,
         user_id $intType,
         employee_id $intType,
         track_type $textType,
         validation_method $textType,
         qr_code_data $textTypeNullable,
-        gps_latitude $realType,
-        gps_longitude $realType,
+        gps_latitude $realTypeNullable,
+        gps_longitude $realTypeNullable,
         timestamp $textType,
         device_timestamp $textType,
         photo_path $textType,
@@ -63,14 +68,50 @@ class DatabaseHelper {
 
     // Create index for faster queries
     await db.execute('''
-      CREATE INDEX idx_sync_status 
+      CREATE INDEX IF NOT EXISTS idx_sync_status 
       ON offline_attendances(is_synced, created_at)
     ''');
 
     await db.execute('''
-      CREATE INDEX idx_employee 
+      CREATE INDEX IF NOT EXISTS idx_employee 
       ON offline_attendances(employee_id)
     ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Migrate offline_attendances to allow NULL GPS coordinates
+      await db.transaction((txn) async {
+        // 1. Rename old table
+        await txn.execute('ALTER TABLE offline_attendances RENAME TO offline_attendances_old');
+
+        // 2. Create new table with nullable GPS
+        await _createTables(txn);
+
+        // 3. Copy data from old to new
+        await txn.execute('''
+          INSERT INTO offline_attendances (
+            id, user_id, employee_id, track_type, validation_method, 
+            qr_code_data, gps_latitude, gps_longitude, timestamp, 
+            device_timestamp, photo_path, photo_base64, location_address, 
+            attendance_type, field_notes, is_synced, sync_attempts, 
+            last_sync_attempt_at, device_id, device_uptime_seconds, 
+            created_at, updated_at
+          )
+          SELECT 
+            id, user_id, employee_id, track_type, validation_method, 
+            qr_code_data, gps_latitude, gps_longitude, timestamp, 
+            device_timestamp, photo_path, photo_base64, location_address, 
+            attendance_type, field_notes, is_synced, sync_attempts, 
+            last_sync_attempt_at, device_id, device_uptime_seconds, 
+            created_at, updated_at
+          FROM offline_attendances_old
+        ''');
+
+        // 4. Drop old table
+        await txn.execute('DROP TABLE offline_attendances_old');
+      });
+    }
   }
 
   /// Insert new offline attendance record

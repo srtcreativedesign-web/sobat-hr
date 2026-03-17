@@ -12,6 +12,8 @@ import '../../services/attendance_service.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/offline_attendance_service.dart';
 import 'offline_attendance_handler.dart';
+import 'attendance_qr_scanner_screen.dart';
+import 'dart:convert';
 
 import 'dart:io';
 import 'package:intl/intl.dart';
@@ -60,7 +62,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     _checkPermissionsAndLocate();
     _fetchTodayAttendance();
     _checkConnectivity();
-    
+
     // Listen for connectivity changes
     _connectivity.onlineStatusStream.listen((isOnline) {
       if (mounted) {
@@ -164,7 +166,15 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     if (locationStatus!.isGranted && cameraStatus!.isGranted) {
       try {
         Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high,
+          locationSettings: Platform.isIOS
+              ? AppleSettings(
+                  accuracy: LocationAccuracy.high,
+                  distanceFilter: 10,
+                  pauseLocationUpdatesAutomatically: true,
+                )
+              : const LocationSettings(
+                  accuracy: LocationAccuracy.high,
+                ),
         );
 
         // Get Address
@@ -179,7 +189,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 '${place.street}, ${place.subLocality}, ${place.locality}';
           }
         } catch (e) {
-      // Silent fail - error already handled by AppErrorHandler
+          // Silent fail - error already handled by AppErrorHandler
           _currentAddress = 'Lokasi tidak diketahui';
         }
 
@@ -197,7 +207,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           18.0,
         );
       } catch (e) {
-      // Silent fail - error already handled by AppErrorHandler
+        // Silent fail - error already handled by AppErrorHandler
         if (mounted) {
           setState(() {
             _isLoading = false;
@@ -292,7 +302,14 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       return;
     }
 
-    // Navigate to SelfieScreen
+    // Navigate based on track type
+    final user = context.read<AuthProvider>().user;
+    if (user?.trackType == 'operational') {
+      _startOperationalOnlineAttendance();
+      return;
+    }
+
+    // Default HO Selfie flow
     final String? photoPath = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -301,44 +318,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     );
 
     if (photoPath != null) {
-      _showLoading();
-
-      try {
-        if (!mounted) return;
-        final user = context.read<AuthProvider>().user;
-        if (user?.employeeRecordId == null) {
-          throw 'Data Karyawan tidak valid. Silakan login ulang.';
-        }
-
-        await _attendanceService.checkIn(
-          employeeId: user!.employeeRecordId!,
-          latitude: _currentPosition!.latitude,
-          longitude: _currentPosition!.longitude,
-          photo: File(photoPath),
-          status: 'present',
-          address: _currentAddress,
-          attendanceType: _attendanceType,
-          fieldNotes: _attendanceType == 'field'
-              ? _fieldNotesController.text
-              : null,
-        );
-
-        await _fetchTodayAttendance(); // Refresh status
-
-        if (!mounted) return;
-        Navigator.pop(context); // Pop loading
-
-        if (_attendanceType == 'field') {
-          _showSuccessSnackBar('Check In Berhasil! Menunggu approval admin.');
-        } else {
-          _showSuccessSnackBar('Check In Berhasil!');
-        }
-      } catch (e) {
-      // Silent fail - error already handled by AppErrorHandler
-        if (!mounted) return;
-        Navigator.pop(context); // Pop loading
-        _showErrorSnackBar(e.toString());
-      }
+      _submitAttendance(photoPath);
     }
   }
 
@@ -416,6 +396,165 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.green),
     );
+  }
+
+  Future<void> _startOperationalOnlineAttendance() async {
+    try {
+      final qrCodeData = await Navigator.push<String>(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              AttendanceQrScannerScreen(onScanSuccess: (data) => data),
+        ),
+      );
+
+      if (qrCodeData != null && qrCodeData.isNotEmpty) {
+        if (!mounted) return;
+        _showOutletConfirmation(qrCodeData);
+      }
+    } catch (e) {
+      _showErrorSnackBar('Gagal scan QR Code: $e');
+    }
+  }
+
+  void _showOutletConfirmation(String qrCodeData) {
+    String outletName = 'Outlet Tidak Diketahui';
+    String outletCode = '-';
+
+    try {
+      if (qrCodeData.startsWith('{')) {
+        final data = jsonDecode(qrCodeData);
+        outletName = data['name'] ?? data['outlet_name'] ?? qrCodeData;
+        outletCode = data['code'] ?? data['outlet_code'] ?? '-';
+      } else if (qrCodeData.contains('|')) {
+        final parts = qrCodeData.split('|');
+        for (var p in parts) {
+          if (p.toLowerCase().contains('name:')) {
+            outletName = p.split(':')[1].trim();
+          }
+          if (p.toLowerCase().contains('code:')) {
+            outletCode = p.split(':')[1].trim();
+          }
+        }
+      } else {
+        outletName = qrCodeData;
+      }
+    } catch (e) {
+      outletName = qrCodeData;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.store, color: AppTheme.colorCyan),
+            SizedBox(width: 12),
+            Text('Konfirmasi Outlet'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'QR Code berhasil dipindai:',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              outletName,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            Text(
+              'Kode: $outletCode',
+              style: const TextStyle(color: Colors.grey, fontSize: 13),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Silakan verifikasi kehadiran dengan mengambil foto area outlet (kamera depan wide angle).',
+              style: TextStyle(fontSize: 13),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _proceedToOnlineSelfie(qrCodeData);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.colorCyan,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Verifikasi Foto',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _proceedToOnlineSelfie(String qrCodeData) async {
+    final String? photoPath = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SelfieScreen(address: _currentAddress),
+      ),
+    );
+
+    if (photoPath != null) {
+      _submitAttendance(photoPath, qrCodeData);
+    }
+  }
+
+  Future<void> _submitAttendance(String photoPath, [String? qrCodeData]) async {
+    _showLoading();
+
+    try {
+      if (!mounted) return;
+      final user = context.read<AuthProvider>().user;
+      if (user?.employeeRecordId == null) {
+        throw 'Data Karyawan tidak valid. Silakan login ulang.';
+      }
+
+      await _attendanceService.checkIn(
+        employeeId: user!.employeeRecordId!,
+        latitude: _currentPosition!.latitude,
+        longitude: _currentPosition!.longitude,
+        photo: File(photoPath),
+        status: 'present',
+        address: _currentAddress,
+        attendanceType: _attendanceType,
+        fieldNotes: _attendanceType == 'field' ? _fieldNotesController.text : null,
+        notes: qrCodeData, // Include QR data in notes for operational
+      );
+
+      await _fetchTodayAttendance(); // Refresh status
+
+      if (!mounted) return;
+      Navigator.pop(context); // Pop loading
+
+      if (_attendanceType == 'field') {
+        _showSuccessSnackBar('Check In Berhasil! Menunggu approval admin.');
+      } else {
+        _showSuccessSnackBar('Check In Berhasil!');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // Pop loading
+      _showErrorSnackBar(e.toString());
+    }
   }
 
   @override
@@ -621,13 +760,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: AppTheme.colorCyan.withOpacity(0.9),
+                        color: AppTheme.colorCyan.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 8,
-                          ),
+                          BoxShadow(color: Colors.black26, blurRadius: 8),
                         ],
                       ),
                       child: Column(
@@ -655,7 +791,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                     Text(
                                       'Absensi akan disimpan lokal dan terkirim otomatis saat online',
                                       style: TextStyle(
-                                        color: Colors.white.withOpacity(0.9),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.9,
+                                        ),
                                         fontSize: 11,
                                       ),
                                     ),
@@ -666,7 +804,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               FutureBuilder<int>(
                                 future: _offlineService.getUnsyncedCount(),
                                 builder: (context, snapshot) {
-                                  if (!snapshot.hasData || snapshot.data! == 0) {
+                                  if (!snapshot.hasData ||
+                                      snapshot.data! == 0) {
                                     return const SizedBox.shrink();
                                   }
                                   return Container(
@@ -694,7 +833,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                         ],
                       ),
                     ),
-                  
+
                   // Original Top Bar
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -730,7 +869,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                   : Colors.red.withValues(alpha: 0.9),
                               borderRadius: BorderRadius.circular(30),
                               boxShadow: [
-                                BoxShadow(color: Colors.black12, blurRadius: 10),
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 10,
+                                ),
                               ],
                             ),
                             child: Row(
@@ -1049,8 +1191,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                             child: ElevatedButton.icon(
                               onPressed: () {
                                 // Start offline attendance flow
-                                OfflineAttendanceHandler(context: context)
-                                    .startOfflineAttendance();
+                                OfflineAttendanceHandler(
+                                  context: context,
+                                ).startOfflineAttendance();
                               },
                               icon: const Icon(Icons.offline_pin),
                               label: const Text('Absen Offline'),
@@ -1095,7 +1238,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                               _isWithinRange))
                                       ? _handleCheckIn
                                       : null,
-                                  icon: Icon(Icons.login, color: buttonTextColor),
+                                  icon: Icon(
+                                    Icons.login,
+                                    color: buttonTextColor,
+                                  ),
                                   label: Text('Masuk'),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.white,
