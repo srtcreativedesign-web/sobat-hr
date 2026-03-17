@@ -25,6 +25,7 @@ class User extends Authenticatable
         'password',
         'role_id',
         'fcm_token',
+        'track_type',
     ];
 
     /**

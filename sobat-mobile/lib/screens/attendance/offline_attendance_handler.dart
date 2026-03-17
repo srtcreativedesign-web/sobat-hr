@@ -9,12 +9,15 @@ import '../../services/offline_attendance_service.dart';
 import 'attendance_qr_scanner_screen.dart';
 import 'offline_selfie_screen.dart';
 import '../../services/connectivity_service.dart';
+import '../../services/attendance_service.dart';
 
 /// Handler for offline attendance operations
 /// This is called from the main AttendanceScreen when internet is not available
 class OfflineAttendanceHandler {
   final BuildContext context;
   final OfflineAttendanceService _offlineService = OfflineAttendanceService();
+  final AttendanceService _attendanceService = AttendanceService();
+  final ConnectivityService _connectivity = ConnectivityService();
 
   OfflineAttendanceHandler({required this.context});
 
@@ -47,15 +50,13 @@ class OfflineAttendanceHandler {
 
   /// Show instructions based on track type
   void _showTrackInstructions(String trackType, [bool isDirect = false]) {
-    final connectivity = ConnectivityService();
-    
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => FutureBuilder<bool>(
-        future: connectivity.checkConnectivity(),
+        future: _connectivity.checkConnectivity(),
         builder: (context, snapshot) {
-          final isOnline = snapshot.data ?? true;
+          final isOnline = snapshot.data ?? _connectivity.isOnline;
           final String modePrefix = isOnline ? '' : 'Mode Offline - ';
           
           return AlertDialog(
@@ -103,8 +104,29 @@ class OfflineAttendanceHandler {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        '📝 Catatan:',
+                        '📝 Status:',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            isOnline ? Icons.wifi : Icons.wifi_off,
+                            size: 14,
+                            color: isOnline ? Colors.green : Colors.orange,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            isOnline
+                                ? 'Terhubung (Lansung ke Server)'
+                                : 'Offline (Simpan di Perangkat)',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isOnline ? Colors.green : Colors.orange,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -113,13 +135,6 @@ class OfflineAttendanceHandler {
                             : '• Data akan disimpan di perangkat dan otomatis terkirim saat ada internet',
                         style: const TextStyle(fontSize: 12),
                       ),
-                      if (!isOnline) ...[
-                        const SizedBox(height: 4),
-                        const Text(
-                          '• Waktu absen dicatat saat tombol ditekan, bukan saat terkirim',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -262,8 +277,8 @@ class OfflineAttendanceHandler {
       );
 
       if (result != null && result['photoBase64'] != null) {
-        // Save offline attendance
-        await _saveOfflineAttendance(
+        // Process attendance (Smart logic: online first, then offline)
+        await _processAttendance(
           userId: user!.id,
           employeeId: user.employeeRecordId!,
           trackType: trackType,
@@ -282,8 +297,8 @@ class OfflineAttendanceHandler {
     }
   }
 
-  /// Save offline attendance to local database
-  Future<void> _saveOfflineAttendance({
+  /// Process attendance with Smart Logic: Online first, then Local DB if failed
+  Future<void> _processAttendance({
     required int userId,
     required int employeeId,
     required String trackType,
@@ -296,10 +311,38 @@ class OfflineAttendanceHandler {
     String? locationAddress,
   }) async {
     try {
-      _showLoading('Menyimpan absensi...');
+      _showLoading('Memproses absensi...');
 
-      final attendanceType = 'office'; // Default for offline
+      // 1. Check Internet Status
+      final isOnline = await _connectivity.checkConnectivity();
+      
+      if (isOnline) {
+        try {
+          debugPrint('Online detected, trying direct submission...');
+          await _attendanceService.checkIn(
+            employeeId: employeeId,
+            latitude: gpsLatitude ?? 0,
+            longitude: gpsLongitude ?? 0,
+            photo: File(photoPath),
+            status: 'present',
+            address: locationAddress,
+            notes: qrCodeData,
+            attendanceType: 'office',
+          );
 
+          if (!context.mounted) return;
+          Navigator.pop(context); // Close loading
+
+          _showSuccess('✅ Absensi Berhasil terkirim ke server!');
+          return;
+        } catch (e) {
+          debugPrint('Online submission failed, falling back to offline: $e');
+          // Fall through to offline save
+        }
+      }
+
+      // 2. Offline / Fallback Path
+      debugPrint('Saving to local database...');
       await _offlineService.storeOfflineAttendance(
         userId: userId,
         employeeId: employeeId,
@@ -311,25 +354,24 @@ class OfflineAttendanceHandler {
         photoPath: photoPath,
         photoBase64: photoBase64,
         locationAddress: locationAddress,
-        attendanceType: attendanceType,
+        attendanceType: 'office',
       );
 
       if (!context.mounted) return;
       Navigator.pop(context); // Close loading
 
-      // Show success
       _showSuccess(
-        '✅ Absensi berhasil disimpan!\nData akan otomatis terkirim saat ada internet.',
+        '✅ Tersimpan secara Lokal (Mode Offline)\nData akan otomatis terkirim saat ada internet.',
       );
 
-      // Trigger sync check
+      // Trigger sync in background if online but first try failed
       _triggerBackgroundSync();
     } catch (e) {
       if (!context.mounted) return;
       Navigator.pop(context); // Close loading
 
-      debugPrint('Save error: $e');
-      _showError('Gagal menyimpan absensi: $e');
+      debugPrint('Process error: $e');
+      _showError('Gagal memproses absensi: $e');
     }
   }
 

@@ -12,8 +12,6 @@ import '../../services/attendance_service.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/offline_attendance_service.dart';
 import 'offline_attendance_handler.dart';
-import 'attendance_qr_scanner_screen.dart';
-import 'dart:convert';
 
 import 'dart:io';
 import 'package:intl/intl.dart';
@@ -305,7 +303,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     // Navigate based on track type
     final user = context.read<AuthProvider>().user;
     if (user?.trackType == 'operational') {
-      _startOperationalOnlineAttendance();
+      OfflineAttendanceHandler(context: context).startOfflineAttendance();
       return;
     }
 
@@ -398,125 +396,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     );
   }
 
-  Future<void> _startOperationalOnlineAttendance() async {
-    try {
-      final qrCodeData = await Navigator.push<String>(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              AttendanceQrScannerScreen(onScanSuccess: (data) => data),
-        ),
-      );
-
-      if (qrCodeData != null && qrCodeData.isNotEmpty) {
-        if (!mounted) return;
-        _showOutletConfirmation(qrCodeData);
-      }
-    } catch (e) {
-      _showErrorSnackBar('Gagal scan QR Code: $e');
-    }
-  }
-
-  void _showOutletConfirmation(String qrCodeData) {
-    String outletName = 'Outlet Tidak Diketahui';
-    String outletCode = '-';
-
-    try {
-      if (qrCodeData.startsWith('{')) {
-        final data = jsonDecode(qrCodeData);
-        outletName = data['name'] ?? data['outlet_name'] ?? qrCodeData;
-        outletCode = data['code'] ?? data['outlet_code'] ?? '-';
-      } else if (qrCodeData.contains('|')) {
-        final parts = qrCodeData.split('|');
-        for (var p in parts) {
-          if (p.toLowerCase().contains('name:')) {
-            outletName = p.split(':')[1].trim();
-          }
-          if (p.toLowerCase().contains('code:')) {
-            outletCode = p.split(':')[1].trim();
-          }
-        }
-      } else {
-        outletName = qrCodeData;
-      }
-    } catch (e) {
-      outletName = qrCodeData;
-    }
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.store, color: AppTheme.colorCyan),
-            SizedBox(width: 12),
-            Text('Konfirmasi Outlet'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'QR Code berhasil dipindai:',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              outletName,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            Text(
-              'Kode: $outletCode',
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Silakan verifikasi kehadiran dengan mengambil foto area outlet (kamera depan wide angle).',
-              style: TextStyle(fontSize: 13),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _proceedToOnlineSelfie(qrCodeData);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.colorCyan,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Verifikasi Foto',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _proceedToOnlineSelfie(String qrCodeData) async {
-    final String? photoPath = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SelfieScreen(address: _currentAddress),
-      ),
-    );
-
-    if (photoPath != null) {
-      _submitAttendance(photoPath, qrCodeData);
-    }
-  }
 
   Future<void> _submitAttendance(String photoPath, [String? qrCodeData]) async {
     _showLoading();

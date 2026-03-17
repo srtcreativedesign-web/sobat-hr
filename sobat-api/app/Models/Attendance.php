@@ -22,11 +22,26 @@ class Attendance extends Model
         'photo_path',
         'checkout_photo_path',
         'location_address',
-        'attendance_type',   // office or field
-        'field_notes',       // Notes for field attendance
-        'late_duration',     // Minutes late
-        'overtime_duration', // Minutes overtime
-        'face_verified',     // Boolean: true if face matched
+        'attendance_type',
+        'field_notes',
+        'late_duration',
+        'overtime_duration',
+        'face_verified',
+        
+        // Offline & Advanced Validation Fields
+        'track_type',
+        'validation_method',
+        'is_offline',
+        'qr_code_data',
+        'outlet_id',
+        'floor_number',
+        'device_timestamp',
+        'server_timestamp',
+        'time_discrepancy_seconds',
+        'device_id',
+        'device_uptime_seconds',
+        'review_status',
+        'review_notes',
     ];
 
     protected $casts = [
@@ -40,5 +55,10 @@ class Attendance extends Model
     public function employee()
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function outlet()
+    {
+        return $this->belongsTo(Organization::class, 'outlet_id');
     }
 }
