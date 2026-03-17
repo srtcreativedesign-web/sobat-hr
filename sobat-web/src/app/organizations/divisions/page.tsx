@@ -3,8 +3,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
-import OrganizationTree from '../components/OrganizationTree';
-import OrganizationForm from '../components/OrganizationForm';
+import OrganizationTree from '@/components/features/OrganizationTree';
+import OrganizationForm from '@/components/features/OrganizationForm';
 
 interface Organization {
     id: number;
