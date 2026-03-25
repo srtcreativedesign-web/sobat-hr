@@ -11,7 +11,7 @@ class OfflineAttendance {
   final String timestamp;
   final String deviceTimestamp;
   final String photoPath;
-  final String photoBase64;
+  final String? photoBase64;
   final String? locationAddress;
   final String? attendanceType;
   final String? fieldNotes;
@@ -35,7 +35,7 @@ class OfflineAttendance {
     required this.timestamp,
     required this.deviceTimestamp,
     required this.photoPath,
-    required this.photoBase64,
+    this.photoBase64,
     this.locationAddress,
     this.attendanceType,
     this.fieldNotes,
@@ -62,7 +62,7 @@ class OfflineAttendance {
       timestamp: map['timestamp'] as String,
       deviceTimestamp: map['device_timestamp'] as String,
       photoPath: map['photo_path'] as String,
-      photoBase64: map['photo_base64'] as String,
+      photoBase64: map['photo_base64'] as String?,
       locationAddress: map['location_address'] as String?,
       attendanceType: map['attendance_type'] as String?,
       fieldNotes: map['field_notes'] as String?,

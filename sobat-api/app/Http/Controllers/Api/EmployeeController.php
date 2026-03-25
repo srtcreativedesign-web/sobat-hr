@@ -644,10 +644,13 @@ class EmployeeController extends Controller
         if (!$result || (isset($result['status']) && $result['status'] === 'error')) {
             // Delete the file if validation fails
             \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+            \Illuminate\Support\Facades\Log::error('Face validation script failure', [
+                'output' => $output,
+                'employee_id' => $user->employee?->id,
+            ]);
             return response()->json([
                 'message' => 'Gagal memproses validasi wajah.',
                 'error' => $result['message'] ?? 'Script Failure',
-                'debug_output' => $output // Debug Info for User
             ], 500);
         }
 

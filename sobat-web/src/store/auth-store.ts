@@ -44,33 +44,16 @@ export const useAuthStore = create<AuthState>()(
 
       setUser: (user: User | null) => {
         set({ user });
-        if (user) {
-          localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-        } else {
-          localStorage.removeItem(STORAGE_KEYS.USER);
-        }
       },
 
       initAuth: () => {
-        // Initialize auth from localStorage on app start
-        const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
-        const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
-
-        if (token && storedUser) {
-          try {
-            const user = JSON.parse(storedUser);
-            set({
-              user,
-              token,
-              isAuthenticated: true,
-              isInitialized: true,
-            });
-          } catch (e) {
-            console.error('Failed to parse stored user:', e);
-            set({ isInitialized: true });
-          }
-        } else {
+        // zustand/persist rehydrates state automatically;
+        // just mark as initialized and validate what we have
+        const state = get();
+        if (state.token && state.user) {
           set({ isInitialized: true });
+        } else {
+          set({ isAuthenticated: false, user: null, token: null, isInitialized: true });
         }
       },
 
@@ -92,10 +75,7 @@ export const useAuthStore = create<AuthState>()(
             throw new Error('Invalid response from server');
           }
 
-          // Save authentication data
-          localStorage.setItem(STORAGE_KEYS.TOKEN, access_token);
-          localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-
+          // State is persisted automatically by zustand/persist
           set({
             user,
             token: access_token,
@@ -118,10 +98,7 @@ export const useAuthStore = create<AuthState>()(
             console.error('Logout error:', error);
           }
         } finally {
-          // Clear storage
-          localStorage.removeItem(STORAGE_KEYS.TOKEN);
-          localStorage.removeItem(STORAGE_KEYS.USER);
-
+          // zustand/persist handles storage cleanup on state change
           set({
             user: null,
             token: null,
@@ -140,7 +117,7 @@ export const useAuthStore = create<AuthState>()(
           return;
         }
 
-        const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+        const { token } = get();
 
         if (!token) {
           set({ isAuthenticated: false, user: null, token: null });
@@ -158,12 +135,9 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             lastChecked: now,
           });
-          localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
         } catch (error) {
           // Only logout if explicitly 401 Unauthorized
           if ((error as any)?.response?.status === 401) {
-            localStorage.removeItem(STORAGE_KEYS.TOKEN);
-            localStorage.removeItem(STORAGE_KEYS.USER);
             set({
               user: null,
               token: null,
@@ -189,3 +163,14 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+// Sync token to legacy localStorage key for pages that use raw fetch() with STORAGE_KEYS.TOKEN
+if (typeof window !== 'undefined') {
+  useAuthStore.subscribe((state) => {
+    if (state.token) {
+      localStorage.setItem(STORAGE_KEYS.TOKEN, state.token);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.TOKEN);
+    }
+  });
+}

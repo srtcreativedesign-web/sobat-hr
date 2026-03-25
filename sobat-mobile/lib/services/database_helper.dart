@@ -52,7 +52,7 @@ class DatabaseHelper {
         timestamp $textType,
         device_timestamp $textType,
         photo_path $textType,
-        photo_base64 $textType,
+        photo_base64 $textTypeNullable,
         location_address $textTypeNullable,
         attendance_type $textTypeNullable,
         field_notes $textTypeNullable,
@@ -120,13 +120,13 @@ class DatabaseHelper {
     return await db.insert('offline_attendances', row);
   }
 
-  /// Get all unsynced attendance records
-  Future<List<Map<String, dynamic>>> getUnsyncedAttendances() async {
+  /// Get all unsynced attendance records (excludes permanently failed ones)
+  Future<List<Map<String, dynamic>>> getUnsyncedAttendances({int maxAttempts = 10}) async {
     final db = await database;
     return await db.query(
       'offline_attendances',
-      where: 'is_synced = ?',
-      whereArgs: [0],
+      where: 'is_synced = 0 AND sync_attempts < ?',
+      whereArgs: [maxAttempts],
       orderBy: 'created_at ASC',
     );
   }
@@ -189,6 +189,21 @@ class DatabaseHelper {
     );
     if (result.isEmpty) return 0;
     return result.first['sync_attempts'] as int? ?? 0;
+  }
+
+  /// Mark a record as permanently failed (sets sync_attempts to max so it won't be retried)
+  Future<int> markAsPermanentlyFailed(int id, String reason) async {
+    final db = await database;
+    return await db.update(
+      'offline_attendances',
+      {
+        'sync_attempts': 999,
+        'last_sync_attempt_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   /// Delete synced records (cleanup old data)

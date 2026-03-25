@@ -10,6 +10,17 @@ import '../services/database_helper.dart';
 import '../services/connectivity_service.dart';
 import '../services/storage_service.dart';
 
+/// Max number of sync retry attempts before a record is considered permanently failed
+const int maxSyncAttempts = 10;
+
+/// Thrown when the photo file referenced by an offline attendance record no longer exists on disk
+class PhotoFileNotFoundException implements Exception {
+  final String message;
+  PhotoFileNotFoundException(this.message);
+  @override
+  String toString() => message;
+}
+
 /// Service to handle offline attendance operations
 class OfflineAttendanceService {
   static final OfflineAttendanceService _instance = OfflineAttendanceService._internal();
@@ -50,7 +61,7 @@ class OfflineAttendanceService {
         timestamp: now.toIso8601String(),
         deviceTimestamp: now.toIso8601String(),
         photoPath: photoPath,
-        photoBase64: photoBase64,
+        photoBase64: null, // Don't store large base64 strings in SQLite
         locationAddress: locationAddress,
         attendanceType: attendanceType,
         fieldNotes: fieldNotes,
@@ -104,11 +115,26 @@ class OfflineAttendanceService {
     final errors = <String>[];
 
     for (final attendance in unsynced) {
+      // Skip records that have exceeded max retry attempts
+      if (attendance.syncAttempts >= maxSyncAttempts) {
+        debugPrint('Skipping attendance ID ${attendance.id}: exceeded max sync attempts ($maxSyncAttempts)');
+        failed++;
+        errors.add('ID ${attendance.id}: exceeded max retry limit');
+        continue;
+      }
+
       try {
         await _syncSingleAttendance(attendance);
         await _db.markAsSynced(attendance.id!);
         synced++;
         debugPrint('Successfully synced attendance ID: ${attendance.id}');
+      } on PhotoFileNotFoundException catch (e) {
+        // Photo file was deleted/cleared — mark as permanently failed (max attempts)
+        // so it won't be retried endlessly
+        failed++;
+        await _db.markAsPermanentlyFailed(attendance.id!, e.toString());
+        errors.add('ID ${attendance.id}: $e (permanent failure)');
+        debugPrint('Permanently failed attendance ID ${attendance.id}: photo missing');
       } catch (e) {
         failed++;
         await _db.incrementSyncAttempts(attendance.id!);
@@ -139,7 +165,7 @@ class OfflineAttendanceService {
       'employee_id': attendance.employeeId,
       'track_type': attendance.trackType,
       'validation_method': attendance.validationMethod,
-      'photo_base64': attendance.photoBase64,
+      'photo_base64': await _getPhotoBase64(attendance.photoPath),
       'device_timestamp': attendance.deviceTimestamp,
       'device_id': attendance.deviceId ?? 'unknown',
       'device_uptime_seconds': attendance.deviceUptimeSeconds,
@@ -193,6 +219,16 @@ class OfflineAttendanceService {
     }
   }
 
+  /// Read photo file and convert to base64 on-the-fly
+  Future<String> _getPhotoBase64(String photoPath) async {
+    final file = File(photoPath);
+    if (await file.exists()) {
+      final bytes = await file.readAsBytes();
+      return base64Encode(bytes);
+    }
+    throw PhotoFileNotFoundException('Photo file not found: $photoPath');
+  }
+
   /// Get device unique ID
   Future<String> _getDeviceInfo() async {
     try {
@@ -213,18 +249,61 @@ class OfflineAttendanceService {
     }
   }
 
-  /// Get device uptime in seconds (approximate)
+  /// Get device uptime in seconds using system clock elapsed time.
+  /// Uses the difference between DateTime.now() and the system boot time
+  /// approximated via ProcessInfo on supported platforms.
   Future<int?> _getDeviceUptime() async {
     try {
-      // Note: Getting actual device uptime requires native code
-      // For now, we'll use a workaround with process start time
-      // This is an approximation and may not be accurate across app restarts
-      
-      // In production, you'd use a platform channel to get actual uptime
-      // For now, return null (server will still validate timestamp)
+      // Stopwatch-based elapsed time since the process started is not the same
+      // as device uptime, but Platform.operatingSystemVersion + currentRss are
+      // unreliable. The most portable Dart-only approach is to read /proc/uptime
+      // on Android (Linux-based) which gives actual device uptime.
+      if (Platform.isAndroid) {
+        final uptimeFile = File('/proc/uptime');
+        if (await uptimeFile.exists()) {
+          final contents = await uptimeFile.readAsString();
+          // Format: "12345.67 11234.56" — first value is uptime in seconds
+          final uptimeSeconds = double.tryParse(contents.split(' ').first);
+          if (uptimeSeconds != null) {
+            return uptimeSeconds.round();
+          }
+        }
+      }
+      // iOS doesn't expose /proc/uptime; return null and let the server
+      // rely on timestamp comparison alone for tampering detection.
       return null;
     } catch (e) {
       debugPrint('Error getting device uptime: $e');
+      return null;
+    }
+  }
+
+  /// Get today's offline attendance for a specific employee
+  Future<Map<String, dynamic>?> getTodayOfflineAttendance(int employeeId) async {
+    try {
+      final now = DateTime.now();
+      final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      
+      final records = await _db.getAllAttendances();
+      
+      // Look for any record from today for this employee
+      for (var record in records) {
+        final createdAt = record['created_at'] as String;
+        if (createdAt.startsWith(todayStr) && record['employee_id'] == employeeId) {
+          // Map to a format similar to what the API returns for TodayAttendance
+          return {
+            'id': record['id'],
+            'date': todayStr,
+            'check_in': record['timestamp'] != null ? DateTime.parse(record['timestamp']).toLocal().toString().split(' ')[1].substring(0, 8) : null,
+            'status': 'present', // Offline is always present initially
+            'is_offline_local': true,
+            'is_synced': record['is_synced'] == 1,
+          };
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error getting today offline attendance: $e');
       return null;
     }
   }

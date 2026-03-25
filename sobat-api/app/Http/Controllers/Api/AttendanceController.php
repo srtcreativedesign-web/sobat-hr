@@ -14,10 +14,21 @@ class AttendanceController extends Controller
 {
     public function index(Request $request)
     {
+        // --- IDOR GUARD: Non-admin users can only see their own attendance ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::HRD, \App\Models\Role::ADMIN_CABANG]);
+
         // EAGER LOADING: employee
         $query = Attendance::with(['employee.division']);
 
-        if ($request->has('employee_id')) {
+        if (!$isAdmin) {
+            // Non-admin: force filter to own employee_id only
+            if (!$user->employee) {
+                return response()->json(['message' => 'Employee record not found'], 404);
+            }
+            $query->where('employee_id', $user->employee->id);
+        } elseif ($request->has('employee_id')) {
             $query->where('employee_id', $request->employee_id);
         }
 
@@ -62,8 +73,8 @@ class AttendanceController extends Controller
             'check_out' => 'nullable',
             'status' => 'required|in:present,late,absent,leave,sick,pending', // Added pending
             'notes' => 'nullable|string',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:5120', // ADDED MIMES VALIDATION
             'location_address' => 'nullable|string',
             'attendance_type' => 'nullable|in:office,field', // New: attendance type
@@ -155,7 +166,6 @@ class AttendanceController extends Controller
                     \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
                     return response()->json([
                         'message' => 'Sistem verifikasi wajah sedang mengalami kendala teknis. Harap hubungi IT Support.',
-                        'debug_hint' => 'Check PHP/Python bridge logs.'
                     ], 500);
                 }
 

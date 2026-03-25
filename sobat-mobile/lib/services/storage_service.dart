@@ -1,5 +1,4 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 class StorageService {
@@ -39,24 +38,35 @@ class StorageService {
     }
   }
 
-  // User Data Management (Shared Preferences)
+  // User Data Management (Secure Storage — contains PII)
   static Future<void> saveUser(Map<String, dynamic> user) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_userKey, json.encode(user));
+    try {
+      await _secureStorage.write(key: _userKey, value: json.encode(user));
+    } catch (e) {
+      await _secureStorage.deleteAll();
+      await _secureStorage.write(key: _userKey, value: json.encode(user));
+    }
   }
 
   static Future<Map<String, dynamic>?> getUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userString = prefs.getString(_userKey);
-    if (userString != null) {
-      return json.decode(userString) as Map<String, dynamic>;
+    try {
+      final userString = await _secureStorage.read(key: _userKey);
+      if (userString != null) {
+        return json.decode(userString) as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      await _secureStorage.deleteAll();
+      return null;
     }
-    return null;
   }
 
   static Future<void> deleteUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_userKey);
+    try {
+      await _secureStorage.delete(key: _userKey);
+    } catch (e) {
+      // Ignore if cannot delete
+    }
   }
 
   // Clear all data

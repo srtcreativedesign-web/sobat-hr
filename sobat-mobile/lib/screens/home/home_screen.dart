@@ -24,6 +24,7 @@ import '../approval/approval_list_screen.dart'; // Added
 import '../../services/approval_service.dart'; // Added for badge
 import '../../services/notification_service.dart'; // Added for notif badge
 import '../attendance/offline_attendance_handler.dart'; // Added for operational track
+import '../../services/offline_attendance_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -91,6 +92,8 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadNotifications();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAnnouncement();
+      // Auto-sync offline attendance when app opens
+      OfflineAttendanceService().syncAllUnsyncedAttendances();
     });
   }
 
@@ -701,6 +704,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _loadRecentActivities(),
       _loadPendingApprovals(),
       _loadNotifications(),
+      OfflineAttendanceService().syncAllUnsyncedAttendances(),
     ]);
   }
 

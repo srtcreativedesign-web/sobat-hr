@@ -11,15 +11,26 @@ const apiClient = axios.create({
   timeout: 60000, // 60 seconds timeout (Consistent with Mobile)
 });
 
+// Helper to read token from zustand persisted state
+function getPersistedToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem('auth-storage');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.state?.token ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    // Attach Bearer token if available
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
+    // Attach Bearer token from zustand persisted state
+    const token = getPersistedToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },

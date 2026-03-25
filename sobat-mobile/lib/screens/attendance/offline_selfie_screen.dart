@@ -34,6 +34,10 @@ class _OfflineSelfieScreenState extends State<OfflineSelfieScreen> {
   bool _cameraInitialized = false;
   List<CameraDescription>? _cameras;
   int _currentCameraIndex = 0;
+  double _minZoom = 1.0;
+  double _maxZoom = 1.0;
+  double _currentZoom = 1.0;
+  bool _supportsZoom = false;
 
   @override
   void initState() {
@@ -80,6 +84,24 @@ class _OfflineSelfieScreenState extends State<OfflineSelfieScreen> {
 
     try {
       await _controller!.initialize();
+      
+      // Get zoom capabilities
+      _minZoom = await _controller!.getMinZoomLevel();
+      _maxZoom = await _controller!.getMaxZoomLevel();
+      _supportsZoom = _maxZoom > _minZoom;
+      
+      // Auto-set to wide (minimum zoom) for operational track
+      if (widget.trackType == 'operational' && _supportsZoom) {
+        _currentZoom = _minZoom;
+        await _controller!.setZoomLevel(_currentZoom);
+      } else {
+        _currentZoom = 1.0;
+        // Ensure 1.0 is within bounds
+        if (_currentZoom < _minZoom) _currentZoom = _minZoom;
+        if (_currentZoom > _maxZoom) _currentZoom = _maxZoom;
+        if (_supportsZoom) await _controller!.setZoomLevel(_currentZoom);
+      }
+
       if (mounted) {
         setState(() {
           _cameraInitialized = true;
@@ -183,10 +205,29 @@ class _OfflineSelfieScreenState extends State<OfflineSelfieScreen> {
             Positioned(
               top: 20,
               right: 20,
-              child: FloatingActionButton.small(
-                onPressed: _isProcessing ? null : _toggleCamera,
-                backgroundColor: Colors.black.withValues(alpha: 0.5),
-                child: const Icon(Icons.flip_camera_ios, color: Colors.white),
+              child: Column(
+                children: [
+                  FloatingActionButton.small(
+                    onPressed: _isProcessing ? null : _toggleCamera,
+                    backgroundColor: Colors.black.withValues(alpha: 0.5),
+                    heroTag: 'toggle_camera',
+                    child: const Icon(Icons.flip_camera_ios, color: Colors.white),
+                  ),
+                  if (_supportsZoom) ...[
+                    const SizedBox(height: 12),
+                    FloatingActionButton.small(
+                      onPressed: _isProcessing ? null : _toggleZoom,
+                      backgroundColor: _currentZoom == _minZoom 
+                          ? AppTheme.colorCyan.withValues(alpha: 0.7) 
+                          : Colors.black.withValues(alpha: 0.5),
+                      heroTag: 'toggle_zoom',
+                      child: Icon(
+                        _currentZoom == _minZoom ? Icons.zoom_in : Icons.zoom_out,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
 
@@ -256,6 +297,20 @@ class _OfflineSelfieScreenState extends State<OfflineSelfieScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _toggleZoom() async {
+    if (!_supportsZoom || _controller == null) return;
+
+    setState(() {
+      if (_currentZoom == _minZoom) {
+        _currentZoom = 1.0 > _maxZoom ? _maxZoom : 1.0;
+      } else {
+        _currentZoom = _minZoom;
+      }
+    });
+
+    await _controller!.setZoomLevel(_currentZoom);
   }
 
   Future<void> _capturePhoto() async {

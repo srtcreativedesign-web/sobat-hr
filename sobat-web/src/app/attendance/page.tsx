@@ -25,7 +25,12 @@ interface Attendance {
     work_hours: number | null;
     location_address: string | null;
     attendance_type?: 'office' | 'field';
-    field_notes?: string | null;
+    field_notes?: 'string' | null;
+    is_offline?: boolean;
+    validation_method?: 'qr_code' | 'gps';
+    device_id?: string;
+    device_timestamp?: string;
+    time_discrepancy_seconds?: number;
 }
 
 export default function AttendancePage() {
@@ -38,6 +43,7 @@ export default function AttendancePage() {
     const [filterEndDate, setFilterEndDate] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
     const [filterDivision, setFilterDivision] = useState('');
+    const [filterOffline, setFilterOffline] = useState('');
     const [selectedAttendance, setSelectedAttendance] = useState<Attendance | null>(null);
 
     useEffect(() => {
@@ -68,6 +74,7 @@ export default function AttendancePage() {
             if (filterEndDate) params.append('end_date', filterEndDate);
             if (filterStatus) params.append('status', filterStatus);
             if (filterDivision) params.append('division_id', filterDivision);
+            if (filterOffline) params.append('is_offline', filterOffline);
 
             const response = await apiClient.get(`/attendances?${params.toString()}`);
             // Pagination handling might be needed, assuming API returns paginated data structure
@@ -254,6 +261,18 @@ export default function AttendancePage() {
                                 <option value="pending">Menunggu Approval</option>
                             </select>
                         </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Sumber</label>
+                            <select
+                                value={filterOffline}
+                                onChange={(e) => setFilterOffline(e.target.value)}
+                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:border-transparent"
+                            >
+                                <option value="">Semua Sumber</option>
+                                <option value="0">Online (Langsung)</option>
+                                <option value="1">Offline (Ter-sync)</option>
+                            </select>
+                        </div>
                         <button
                             type="submit"
                             className="px-6 py-2 bg-[#60A5FA] text-[#1C3ECA] rounded-lg hover:bg-[#93C5FD] transition-colors font-medium"
@@ -290,7 +309,7 @@ export default function AttendancePage() {
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Masuk</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Keluar</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe/Mode</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lokasi</th>
                                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
@@ -313,9 +332,16 @@ export default function AttendancePage() {
                                                 {att.check_out ? att.check_out.substring(0, 5) : '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${att.attendance_type === 'field' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
-                                                    {att.attendance_type === 'field' ? 'DINAS LUAR' : 'KANTOR'}
-                                                </span>
+                                                <div className="flex flex-col gap-1">
+                                                    <span className={`px-2 py-0.5 inline-flex text-[10px] leading-4 font-bold rounded-full w-fit ${att.attendance_type === 'field' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
+                                                        {att.attendance_type === 'field' ? 'DINAS LUAR' : 'KANTOR'}
+                                                    </span>
+                                                    {att.is_offline && (
+                                                        <span className="px-2 py-0.5 inline-flex text-[10px] leading-4 font-bold rounded-full bg-orange-100 text-orange-800 w-fit ring-1 ring-orange-200">
+                                                            OFFLINE
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(att.status)}`}>
@@ -444,11 +470,45 @@ export default function AttendancePage() {
                                                 </div>
                                                 <div>
                                                     <p className="font-medium text-gray-500">Tipe Absensi</p>
-                                                    <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full mt-1 ${selectedAttendance.attendance_type === 'field' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
-                                                        {selectedAttendance.attendance_type === 'field' ? 'DINAS LUAR' : 'KANTOR'}
-                                                    </span>
+                                                    <div className="flex gap-2">
+                                                        <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full mt-1 ${selectedAttendance.attendance_type === 'field' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
+                                                            {selectedAttendance.attendance_type === 'field' ? 'DINAS LUAR' : 'KANTOR'}
+                                                        </span>
+                                                        {selectedAttendance.is_offline && (
+                                                            <span className="px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full mt-1 bg-orange-100 text-orange-800 ring-1 ring-orange-200">
+                                                                MODE OFFLINE
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
+
+                                            {/* Offline Metadata */}
+                                            {selectedAttendance.is_offline && (
+                                                <div className="bg-orange-50 border border-orange-100 rounded-lg p-3 text-xs">
+                                                    <p className="font-bold text-orange-800 mb-2 uppercase tracking-wider">Detail Sinkronisasi Offline</p>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <div>
+                                                            <p className="text-orange-600 font-medium">Metode Validasi</p>
+                                                            <p className="text-gray-900">{selectedAttendance.validation_method === 'qr_code' ? 'Scan QR Code' : 'Lokasi GPS'}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-orange-600 font-medium">ID Perangkat</p>
+                                                            <p className="text-gray-900 font-mono">{selectedAttendance.device_id}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-orange-600 font-medium">Waktu Perangkat</p>
+                                                            <p className="text-gray-900">{selectedAttendance.device_timestamp}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-orange-600 font-medium">Selisih Waktu</p>
+                                                            <p className={`${Math.abs(selectedAttendance.time_discrepancy_seconds || 0) > 60 ? 'text-red-600 font-bold' : 'text-gray-900'}`}>
+                                                                {selectedAttendance.time_discrepancy_seconds} detik
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
 
                                             {/* Full Width Items */}
                                             <div>

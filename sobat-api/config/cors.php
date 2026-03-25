@@ -17,17 +17,17 @@ return [
 
     'paths' => ['api/*', 'api', 'sanctum/csrf-cookie'],
 
-    'allowed_methods' => ['*'],
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
     'allowed_origins' => ['http://localhost:3000', 'http://localhost:8000', 'https://sobat-hr.com', 'https://www.sobat-hr.com'],
 
     'allowed_origins_patterns' => [],
 
-    'allowed_headers' => ['*'],
+    'allowed_headers' => ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'X-XSRF-TOKEN'],
 
     'exposed_headers' => [],
 
-    'max_age' => 0,
+    'max_age' => 3600,
 
     'supports_credentials' => true,
 

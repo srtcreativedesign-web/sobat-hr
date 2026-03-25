@@ -117,7 +117,23 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         });
       }
     } catch (e) {
-      // Silent fail - error already handled by AppErrorHandler
+      debugPrint('Server fetch failed, checking local database: $e');
+      if (!mounted) return;
+      
+      // If server fails (offline), check local SQLite for today's record
+      try {
+        final user = context.read<AuthProvider>().user;
+        if (user?.employeeRecordId != null) {
+          final localAttendance = await _offlineService.getTodayOfflineAttendance(user!.employeeRecordId!);
+          if (localAttendance != null && mounted) {
+            setState(() {
+              _todayAttendance = localAttendance;
+            });
+          }
+        }
+      } catch (localErr) {
+        debugPrint('Local fetch also failed: $localErr');
+      }
     }
   }
 
@@ -436,6 +452,31 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     }
   }
 
+  Future<void> _manualSync() async {
+    _showLoading();
+    try {
+      final result = await _offlineService.syncAllUnsyncedAttendances();
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      if (result['success'] == true && result['synced'] > 0) {
+        _showSuccessSnackBar('Berhasil menyinkronkan ${result['synced']} data!');
+        _fetchTodayAttendance(); // Refresh status
+      } else if (result['synced'] == 0 && result['failed'] == 0) {
+        _showSuccessSnackBar('Semua data sudah tersinkronisasi.');
+      } else if (result['failed'] > 0) {
+        _showErrorSnackBar('Gagal menyinkronkan ${result['failed']} data. Cek koneksi Anda.');
+      }
+      
+      // Force UI refresh for the unsynced count
+      setState(() {}); 
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      _showErrorSnackBar('Gagal sinkronisasi: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // ... (Keep existing var declarations)
@@ -678,6 +719,12 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                     ),
                                   ],
                                 ),
+                              ),
+                              // Manual Sync Button
+                              IconButton(
+                                icon: const Icon(Icons.sync, color: Colors.white),
+                                onPressed: () => _manualSync(),
+                                tooltip: 'Sinkronisasi Sekarang',
                               ),
                               // Show unsynced count
                               FutureBuilder<int>(
@@ -1001,6 +1048,27 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                     color: textColor,
                                   ),
                                 ),
+                                if (_todayAttendance?['is_offline_local'] == true) ...[
+                                  const Spacer(),
+                                  Icon(
+                                    _todayAttendance?['is_synced'] == true
+                                        ? Icons.cloud_done
+                                        : Icons.cloud_off,
+                                    size: 14,
+                                    color: textColor.withValues(alpha: 0.8),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    _todayAttendance?['is_synced'] == true
+                                        ? 'Ter-sync'
+                                        : 'Lokal',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: textColor.withValues(alpha: 0.8),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),

@@ -68,6 +68,10 @@ class AttendanceExport implements FromQuery, WithHeadings, WithMapping, WithStyl
             $query->whereYear('date', $this->request->year);
         }
 
+        if ($this->request->has('is_offline') && $this->request->is_offline !== '') {
+            $query->where('is_offline', $this->request->is_offline);
+        }
+
         return $query->orderBy('date', 'desc');
     }
 
@@ -84,7 +88,9 @@ class AttendanceExport implements FromQuery, WithHeadings, WithMapping, WithStyl
             'Total Jam Kerja',
             'Terlambat (Menit)',
             'Status',
-            'Lokasi',
+            'Sumber',
+            'Metode',
+            'Lokasi/Outlet',
             'Catatan',
         ];
     }
@@ -102,7 +108,9 @@ class AttendanceExport implements FromQuery, WithHeadings, WithMapping, WithStyl
             $attendance->work_hours,
             $attendance->late_duration,
             strtoupper($attendance->status),
-            $attendance->location_address,
+            $attendance->is_offline ? 'OFFLINE' : 'ONLINE',
+            $attendance->validation_method === 'qr_code' ? 'SCAN QR' : ($attendance->validation_method === 'gps' ? 'GPS' : '-'),
+            $attendance->location_address ?: ($attendance->outlet?->name ?: '-'),
             $attendance->notes,
         ]);
     }

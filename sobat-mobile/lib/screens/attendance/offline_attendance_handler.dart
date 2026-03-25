@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
@@ -181,6 +182,12 @@ class OfflineAttendanceHandler {
       );
 
       if (qrCodeData != null && qrCodeData.isNotEmpty) {
+        // Validate QR format before proceeding (catches invalid/expired QR codes immediately)
+        if (!_isValidQrFormat(qrCodeData)) {
+          _showError('QR Code tidak valid. Format yang diharapkan: OUTLET-{ID}-LT{LANTAI}-{TIMESTAMP}-{KODE}');
+          return;
+        }
+
         // Try to get GPS coordinates as metadata (even for QR)
         double? lat;
         double? lng;
@@ -313,12 +320,20 @@ class OfflineAttendanceHandler {
     try {
       _showLoading('Memproses absensi...');
 
-      // 1. Check Internet Status
-      final isOnline = await _connectivity.checkConnectivity();
+      // 1. Check Internet Status with short timeout
+      bool isOnline = false;
+      try {
+        isOnline = await _connectivity.checkConnectivity().timeout(
+          const Duration(seconds: 4),
+        );
+      } catch (e) {
+        debugPrint('Connectivity check timed out or failed, assuming offline: $e');
+        isOnline = false;
+      }
       
       if (isOnline) {
         try {
-          debugPrint('Online detected, trying direct submission...');
+          debugPrint('Online detected, trying direct submission with 7s timeout...');
           await _attendanceService.checkIn(
             employeeId: employeeId,
             latitude: gpsLatitude ?? 0,
@@ -328,7 +343,7 @@ class OfflineAttendanceHandler {
             address: locationAddress,
             notes: qrCodeData,
             attendanceType: 'office',
-          );
+          ).timeout(const Duration(seconds: 7));
 
           if (!context.mounted) return;
           Navigator.pop(context); // Close loading
@@ -482,6 +497,29 @@ class OfflineAttendanceHandler {
         ],
       ),
     );
+  }
+
+  /// Validate QR code format matches expected pattern: OUTLET-{ORG_ID}-LT{FLOOR}-{TIMESTAMP}-{RANDOM}
+  /// Also accepts JSON or pipe-delimited formats used by some outlets.
+  bool _isValidQrFormat(String qrData) {
+    // Primary format: OUTLET-123-LT1-1234567890-ABC123
+    final outletPattern = RegExp(r'^OUTLET-\d+-LT\d+-\d+-[A-Za-z0-9]+$');
+    if (outletPattern.hasMatch(qrData)) return true;
+
+    // Also accept JSON format (some outlets use this)
+    if (qrData.startsWith('{') && qrData.endsWith('}')) {
+      try {
+        jsonDecode(qrData);
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    // Also accept pipe-delimited format
+    if (qrData.contains('|') && qrData.contains('code:')) return true;
+
+    return false;
   }
 
   // Helper methods

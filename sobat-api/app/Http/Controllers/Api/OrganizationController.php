@@ -56,6 +56,13 @@ class OrganizationController extends Controller
 
     public function store(Request $request)
     {
+        // --- Authorization: Only admins can create organizations ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        if (!in_array($roleName, [\App\Models\Role::SUPER_ADMIN, \App\Models\Role::ADMIN, \App\Models\Role::ADMIN_CABANG])) {
+            return response()->json(['message' => 'Anda tidak memiliki akses untuk membuat organisasi.'], 403);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|unique:organizations',
@@ -96,6 +103,13 @@ class OrganizationController extends Controller
 
     public function update(Request $request, string $id)
     {
+        // --- Authorization: Only admins can update organizations ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        if (!in_array($roleName, [\App\Models\Role::SUPER_ADMIN, \App\Models\Role::ADMIN, \App\Models\Role::ADMIN_CABANG])) {
+            return response()->json(['message' => 'Anda tidak memiliki akses untuk mengubah organisasi.'], 403);
+        }
+
         $organization = Organization::findOrFail($id);
 
         $validated = $request->validate([
@@ -117,6 +131,13 @@ class OrganizationController extends Controller
 
     public function destroy(string $id)
     {
+        // --- Authorization: Only super_admin can delete organizations ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        if (!in_array($roleName, [\App\Models\Role::SUPER_ADMIN, \App\Models\Role::ADMIN])) {
+            return response()->json(['message' => 'Anda tidak memiliki akses untuk menghapus organisasi.'], 403);
+        }
+
         $organization = Organization::findOrFail($id);
         $organization->delete();
 
@@ -137,6 +158,13 @@ class OrganizationController extends Controller
 
     public function reset()
     {
+        // --- Authorization: Only super_admin can reset all organizations ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        if ($roleName !== \App\Models\Role::SUPER_ADMIN) {
+            return response()->json(['message' => 'Hanya Super Admin yang dapat mereset seluruh organisasi.'], 403);
+        }
+
         Organization::query()->delete();
         return response()->json(['message' => 'All organizations reset successfully']);
     }

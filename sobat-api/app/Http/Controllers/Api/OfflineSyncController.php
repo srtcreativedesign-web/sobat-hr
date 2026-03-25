@@ -120,6 +120,16 @@ class OfflineSyncController extends Controller
                     ], 422);
                 }
 
+                // Validate GPS coordinate ranges
+                if ($gpsCoords['latitude'] < -90 || $gpsCoords['latitude'] > 90 ||
+                    $gpsCoords['longitude'] < -180 || $gpsCoords['longitude'] > 180) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'GPS coordinates out of valid range',
+                    ], 422);
+                }
+
                 // Get office coordinates (from employee's organization or default)
                 $officeCoords = $this->getOfficeCoordinates($employee);
                 
@@ -293,7 +303,7 @@ class OfflineSyncController extends Controller
         }
 
         $checkIn = Carbon::parse($checkInTime);
-        $workStart = Carbon::parse($checkInTime->format('Y-m-d') . ' 08:00:00');
+        $workStart = Carbon::parse($checkIn->format('Y-m-d') . ' 08:00:00');
 
         if ($checkIn->gt($workStart)) {
             $lateMinutes = abs($checkIn->diffInMinutes($workStart));
