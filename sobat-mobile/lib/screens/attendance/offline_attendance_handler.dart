@@ -579,14 +579,23 @@ class OfflineAttendanceHandler {
     return msg;
   }
 
-  /// Validate QR code format matches expected pattern: OUTLET-{ORG_ID}-LT{FLOOR}-{TIMESTAMP}-{RANDOM}
-  /// Also accepts JSON or pipe-delimited formats used by some outlets.
+  /// Validate QR code format.
+  /// Accepts:
+  ///   - Named format: KINGTECH-T3F-CGK-LT1-A3B2  ({CODE}-LT{FLOOR}-{RANDOM})
+  ///   - Legacy format: OUTLET-123-LT1-1234567890-ABC123
+  ///   - JSON format: {"code": "...", "name": "..."}
+  ///   - Pipe-delimited: code:XXX|name:YYY
   bool _isValidQrFormat(String qrData) {
-    // Primary format: OUTLET-123-LT1-1234567890-ABC123
-    final outletPattern = RegExp(r'^OUTLET-\d+-LT\d+-\d+-[A-Za-z0-9]+$');
-    if (outletPattern.hasMatch(qrData)) return true;
+    // Named format: {CODE}-LT{FLOOR}-{RANDOM} (e.g. KINGTECH-T3F-CGK-LT1-A3B2)
+    // Must contain -LT followed by a digit
+    final namedPattern = RegExp(r'^[A-Za-z0-9\-]+-LT\d+-[A-Za-z0-9]+$');
+    if (namedPattern.hasMatch(qrData)) return true;
 
-    // Also accept JSON format (some outlets use this)
+    // Legacy format: OUTLET-123-LT1-1234567890-ABC123
+    final legacyPattern = RegExp(r'^OUTLET-\d+-LT\d+-\d+-[A-Za-z0-9]+$');
+    if (legacyPattern.hasMatch(qrData)) return true;
+
+    // JSON format
     if (qrData.startsWith('{') && qrData.endsWith('}')) {
       try {
         jsonDecode(qrData);
@@ -596,7 +605,7 @@ class OfflineAttendanceHandler {
       }
     }
 
-    // Also accept pipe-delimited format
+    // Pipe-delimited format
     if (qrData.contains('|') && qrData.contains('code:')) return true;
 
     return false;

@@ -51,17 +51,23 @@ class QrCodeValidationService
 
     /**
      * Generate unique QR code string for an outlet/floor
-     * 
-     * @param int $organizationId
-     * @param int $floorNumber
-     * @return string Format: OUTLET-{ORG_ID}-LT{FLOOR}-{TIMESTAMP}-{RANDOM}
+     *
+     * Format: {ORG_CODE}-LT{FLOOR}-{RANDOM}
+     * Example: KINGTECH-T3F-CGK-LT1-A3B2
+     *
+     * Falls back to OUTLET-{ORG_ID}-LT{FLOOR}-{RANDOM} if org has no code
      */
     public function generateQrCode(int $organizationId, int $floorNumber = 1): string
     {
-        $timestamp = now()->timestamp;
         $random = strtoupper(substr(uniqid(), -4));
-        
-        return "OUTLET-{$organizationId}-LT{$floorNumber}-{$timestamp}-{$random}";
+
+        $org = \App\Models\Organization::find($organizationId);
+        if ($org && !empty($org->code)) {
+            $code = strtoupper(preg_replace('/[^A-Za-z0-9\-]/', '', $org->code));
+            return "{$code}-LT{$floorNumber}-{$random}";
+        }
+
+        return "OUTLET-{$organizationId}-LT{$floorNumber}-{$random}";
     }
 
     /**
