@@ -376,6 +376,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     }
 
     // 1. Photo Confirmation (Selfie)
+    if (!mounted) return;
     final String? photoPath = await Navigator.push(
       context,
       MaterialPageRoute(
