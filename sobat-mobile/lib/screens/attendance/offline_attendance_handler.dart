@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:dio/dio.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/offline_attendance_service.dart';
@@ -320,20 +321,21 @@ class OfflineAttendanceHandler {
     try {
       _showLoading('Memproses absensi...');
 
-      // 1. Check Internet Status with short timeout
+      // 1. Check if server is actually reachable (not just WiFi connected)
       bool isOnline = false;
       try {
-        isOnline = await _connectivity.checkConnectivity().timeout(
-          const Duration(seconds: 4),
+        isOnline = await _connectivity.hasInternetAccess().timeout(
+          const Duration(seconds: 6),
         );
+        debugPrint('Server reachability check: ${isOnline ? "REACHABLE" : "UNREACHABLE"}');
       } catch (e) {
-        debugPrint('Connectivity check timed out or failed, assuming offline: $e');
+        debugPrint('Server reachability check failed, assuming offline: $e');
         isOnline = false;
       }
       
       if (isOnline) {
         try {
-          debugPrint('Online detected, trying direct submission with 7s timeout...');
+          debugPrint('Server reachable, trying direct submission with 30s timeout...');
           await _attendanceService.checkIn(
             employeeId: employeeId,
             latitude: gpsLatitude ?? 0,
@@ -343,16 +345,43 @@ class OfflineAttendanceHandler {
             address: locationAddress,
             notes: qrCodeData,
             attendanceType: 'office',
-          ).timeout(const Duration(seconds: 7));
+            trackType: trackType,
+          ).timeout(const Duration(seconds: 30));
 
           if (!context.mounted) return;
           Navigator.pop(context); // Close loading
 
           _showSuccess('✅ Absensi Berhasil terkirim ke server!');
           return;
+        } on DioException catch (e) {
+          // DioException propagated from AttendanceService — check type
+          final isNetwork = _isNetworkError(e);
+          debugPrint('checkIn DioException: type=${e.type}, statusCode=${e.response?.statusCode}, isNetwork=$isNetwork');
+          debugPrint('Response body: ${e.response?.data}');
+
+          if (isNetwork) {
+            debugPrint('→ Network error, falling back to offline save');
+            // Fall through to offline save below
+          } else {
+            // Server responded (4xx/5xx) — show actual error, do NOT save offline
+            debugPrint('→ Server error, showing to user');
+            if (!context.mounted) return;
+            Navigator.pop(context); // Close loading
+            _showError('Gagal absensi: ${_extractErrorMessage(e)}');
+            return;
+          }
         } catch (e) {
-          debugPrint('Online submission failed, falling back to offline: $e');
-          // Fall through to offline save
+          // Non-Dio error (e.g. TimeoutException from .timeout())
+          if (_isNetworkError(e)) {
+            debugPrint('Non-Dio network error (${e.runtimeType}), falling back to offline: $e');
+            // Fall through to offline save below
+          } else {
+            debugPrint('Non-Dio non-network error (${e.runtimeType}): $e');
+            if (!context.mounted) return;
+            Navigator.pop(context); // Close loading
+            _showError('Gagal absensi: ${_extractErrorMessage(e)}');
+            return;
+          }
         }
       }
 
@@ -497,6 +526,57 @@ class OfflineAttendanceHandler {
         ],
       ),
     );
+  }
+
+  /// Check if an error is a network/connectivity issue (should fall back to offline)
+  /// vs a server-side rejection (should show error to user)
+  bool _isNetworkError(Object e) {
+    // TimeoutException from .timeout()
+    if (e is TimeoutException) return true;
+
+    // SocketException (connection refused, no route to host, etc.)
+    if (e is SocketException) return true;
+
+    // DioException — check the type directly (AttendanceService now rethrows these)
+    if (e is DioException) {
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+        case DioExceptionType.connectionError:
+          return true;
+        case DioExceptionType.badResponse:
+          // Server responded with 4xx/5xx — NOT a network error
+          return false;
+        default:
+          // Unknown Dio error with no response — likely network
+          return e.response == null;
+      }
+    }
+
+    // Everything else (including wrapped Exception) — NOT a network error
+    return false;
+  }
+
+  /// Extract a user-friendly error message from an exception
+  String _extractErrorMessage(Object e) {
+    // DioException with server response — extract the message from response body
+    if (e is DioException && e.response?.data != null) {
+      final data = e.response!.data;
+      if (data is Map) {
+        // Server returns { "message": "..." }
+        return data['message']?.toString() ?? 'Terjadi kesalahan pada server';
+      }
+    }
+
+    // DioException without response body
+    if (e is DioException) {
+      return e.message ?? 'Terjadi kesalahan jaringan';
+    }
+
+    final msg = e.toString();
+    if (msg.startsWith('Exception: ')) return msg.substring(11);
+    return msg;
   }
 
   /// Validate QR code format matches expected pattern: OUTLET-{ORG_ID}-LT{FLOOR}-{TIMESTAMP}-{RANDOM}

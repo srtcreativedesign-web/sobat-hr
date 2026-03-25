@@ -17,7 +17,6 @@ class _AttendanceQrScannerScreenState extends State<AttendanceQrScannerScreen>
     with WidgetsBindingObserver, TickerProviderStateMixin {
   MobileScannerController? _controller;
   bool _isProcessing = false;
-  bool _torchEnabled = false;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
@@ -41,8 +40,7 @@ class _AttendanceQrScannerScreenState extends State<AttendanceQrScannerScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
-    // Resume camera when app comes back to foreground
-    if (_controller == null) return;
+    if (_controller == null || !_controller!.value.isInitialized) return;
 
     switch (state) {
       case AppLifecycleState.resumed:
@@ -73,12 +71,18 @@ class _AttendanceQrScannerScreenState extends State<AttendanceQrScannerScreen>
         foregroundColor: Colors.white,
         title: const Text('Scan QR Code Absensi'),
         actions: [
-          IconButton(
-            icon: Icon(
-              _torchEnabled ? Icons.flash_on : Icons.flash_off,
-              color: _torchEnabled ? Colors.yellow : Colors.white,
-            ),
-            onPressed: _toggleTorch,
+          ValueListenableBuilder<MobileScannerState>(
+            valueListenable: _getController(),
+            builder: (context, state, child) {
+              final isTorchOn = state.torchState == TorchState.on;
+              return IconButton(
+                icon: Icon(
+                  isTorchOn ? Icons.flash_on : Icons.flash_off,
+                  color: isTorchOn ? Colors.yellow : Colors.white,
+                ),
+                onPressed: _toggleTorch,
+              );
+            },
           ),
         ],
       ),
@@ -190,11 +194,14 @@ class _AttendanceQrScannerScreenState extends State<AttendanceQrScannerScreen>
   }
 
   void _toggleTorch() async {
+    final controller = _getController();
+    if (!controller.value.isInitialized) {
+      debugPrint('Scanner controller not initialized yet');
+      return;
+    }
+
     try {
-      await _controller?.toggleTorch();
-      setState(() {
-        _torchEnabled = !_torchEnabled;
-      });
+      await controller.toggleTorch();
     } catch (e) {
       debugPrint('Error toggling torch: $e');
     }

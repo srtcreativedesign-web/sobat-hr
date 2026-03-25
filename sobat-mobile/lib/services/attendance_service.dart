@@ -17,6 +17,7 @@ class AttendanceService extends BaseService {
     String? notes,
     String? attendanceType,
     String? fieldNotes,
+    String? trackType,
   }) async {
     
 
@@ -40,6 +41,7 @@ class AttendanceService extends BaseService {
 
       if (notes != null && notes.isNotEmpty) map['notes'] = notes;
       if (attendanceType != null) map['attendance_type'] = attendanceType;
+      if (trackType != null) map['track_type'] = trackType;
       if (fieldNotes != null && fieldNotes.isNotEmpty) {
         map['field_notes'] = fieldNotes;
       }
@@ -49,8 +51,8 @@ class AttendanceService extends BaseService {
       final response = await dio.post(ApiConfig.attendance, data: formData);
 
       return response.data;
-    } on DioException catch (e) {
-      throw Exception(AppErrorHandler.getErrorMessage(e));
+    } on DioException {
+      rethrow; // Let caller distinguish network vs server errors
     } catch (e) {
       throw Exception(AppErrorHandler.getErrorMessage(e));
     }

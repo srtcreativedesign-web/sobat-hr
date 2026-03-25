@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import '../../config/theme.dart';
 
 /// Universal Selfie Camera Screen for Offline Attendance
@@ -330,17 +331,48 @@ class _OfflineSelfieScreenState extends State<OfflineSelfieScreen> {
       final filename = 'offline_selfie_$timestamp.jpg';
       final savedPath = path.join(directory.path, filename);
 
-      // Save photo
-      final savedFile = await File(photo.path).copy(savedPath);
+      // Compress image before saving (reduce ~5MB to ~200-400KB)
+      final compressedPath = path.join(directory.path, 'compressed_$filename');
+      final compressedFile = await FlutterImageCompress.compressAndGetFile(
+        photo.path,
+        compressedPath,
+        quality: 60,
+        minWidth: 800,
+        minHeight: 800,
+      );
 
-      // Read as base64
-      final bytes = await savedFile.readAsBytes();
+      // Use compressed file if available, otherwise use original
+      final String finalPath;
+      if (compressedFile != null) {
+        // Move compressed file to final path
+        await File(compressedFile.path).copy(savedPath);
+        await File(compressedFile.path).delete();
+        finalPath = savedPath;
+
+        // Log compression results
+        final originalSize = await File(photo.path).length();
+        final compressedSize = await File(savedPath).length();
+        debugPrint('Photo compressed: ${(originalSize / 1024).toStringAsFixed(0)}KB → ${(compressedSize / 1024).toStringAsFixed(0)}KB');
+      } else {
+        // Fallback: save original
+        await File(photo.path).copy(savedPath);
+        finalPath = savedPath;
+        debugPrint('Compression failed, using original photo');
+      }
+
+      // Clean up original photo
+      try {
+        await File(photo.path).delete();
+      } catch (_) {}
+
+      // Read compressed file as base64
+      final bytes = await File(finalPath).readAsBytes();
       final base64String = 'data:image/jpeg;base64,${base64Encode(bytes)}';
 
       if (mounted) {
         // Return photo path and base64
         Navigator.pop(context, {
-          'photoPath': savedPath,
+          'photoPath': finalPath,
           'photoBase64': base64String,
           'address': widget.address,
           'trackType': widget.trackType,

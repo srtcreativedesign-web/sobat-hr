@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import '../config/api_config.dart';
 
 /// Service to monitor internet connectivity status
 class ConnectivityService {
@@ -65,15 +67,37 @@ class ConnectivityService {
     }
   }
 
-  /// Check if internet is actually reachable (not just connected to WiFi)
+  /// Check if internet is actually reachable by pinging the API server
   Future<bool> hasInternetAccess() async {
-    if (!_isOnline) return false;
-
     try {
+      // First check network interface
       final results = await _connectivity.checkConnectivity();
-      return results.isNotEmpty && !results.contains(ConnectivityResult.none);
+      if (results.isEmpty || results.contains(ConnectivityResult.none)) {
+        debugPrint('hasInternetAccess: no network interface');
+        return false;
+      }
+
+      // Ping the server using Dio (same HTTP stack as actual API calls)
+      // Use a lightweight GET to a known endpoint instead of HEAD
+      final dio = Dio(BaseOptions(
+        baseUrl: ApiConfig.baseUrl,
+        connectTimeout: const Duration(seconds: 5),
+        receiveTimeout: const Duration(seconds: 5),
+      ));
+
+      final response = await dio.get('auth/me',
+        options: Options(
+          // We don't need a valid response — just need to know the server is reachable
+          // Even a 401 means the server IS reachable
+          validateStatus: (_) => true,
+        ),
+      );
+      dio.close();
+
+      debugPrint('Server ping result: ${response.statusCode}');
+      return response.statusCode != null && response.statusCode! < 500;
     } catch (e) {
-      debugPrint('Error checking internet access: $e');
+      debugPrint('Server unreachable: $e');
       return false;
     }
   }

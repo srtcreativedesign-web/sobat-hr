@@ -79,6 +79,7 @@ class AttendanceController extends Controller
             'location_address' => 'nullable|string',
             'attendance_type' => 'nullable|in:office,field', // New: attendance type
             'field_notes' => 'nullable|string|required_if:attendance_type,field', // Mandatory for field
+            'track_type' => 'nullable|in:operational,head_office', // operational = QR scan, head_office = GPS + face
         ]);
 
         $employee = Employee::find($validated['employee_id']);
@@ -89,8 +90,9 @@ class AttendanceController extends Controller
         // Set default attendance type to 'office' if not specified
         $attendanceType = $validated['attendance_type'] ?? 'office';
 
-        // Geolocation Validation (Skip for field attendance)
-        if ($attendanceType === 'office' && isset($validated['latitude']) && isset($validated['longitude']) && $employee && $organization && $organization->latitude) {
+        // Geolocation Validation (Skip for field attendance and operational track — QR code is the location proof)
+        $trackType = $validated['track_type'] ?? null;
+        if ($trackType !== 'operational' && $attendanceType === 'office' && isset($validated['latitude']) && isset($validated['longitude']) && $employee && $organization && $organization->latitude) {
             $orgLat = $organization->latitude;
             $orgLng = $organization->longitude;
             $radius = $organization->radius_meters ?? 50;
@@ -138,7 +140,11 @@ class AttendanceController extends Controller
             $validated['photo_path'] = $path;
 
             // Face Verification Logic
-            if ($employee->face_photo_path) {
+            // Skip for operational track (QR scan + wide selfie is the verification)
+            $trackType = $validated['track_type'] ?? null;
+            $isOperational = $trackType === 'operational';
+
+            if (!$isOperational && $employee->face_photo_path) {
                 // Determine full paths
                 $checkInPhotoPath = storage_path('app/public/' . $path);
                 $referencePhotoPath = storage_path('app/public/' . $employee->face_photo_path);
@@ -191,8 +197,8 @@ class AttendanceController extends Controller
                 // Success: Face matched
                 $validated['face_verified'] = true;
                 \Illuminate\Support\Facades\Log::info('Face Verified Successfully', ['distance' => $result['distance']]);
-            } else {
-                // Employee has no registered face - BLOCK attendance
+            } else if (!$isOperational) {
+                // Employee has no registered face - BLOCK attendance (head_office only)
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
                 return response()->json([
                     'message' => 'Anda belum mendaftarkan wajah. Silakan daftarkan wajah terlebih dahulu di menu Profil.',
