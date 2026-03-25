@@ -376,7 +376,49 @@ class AttendanceController extends Controller
             'status' => 'sometimes|in:present,late,absent,leave,sick',
             'notes' => 'nullable|string',
             'photo' => 'required_with:check_out|image|mimes:jpg,jpeg,png|max:5120', // ADDED MIMES VALIDATION
+            'qr_code_data' => 'nullable|string', // QR code for operational checkout validation
         ]);
+
+        // Operational track: validate checkout QR matches check-in location
+        if ($attendance->track_type === 'operational' && isset($validated['check_out'])) {
+            if (empty($validated['qr_code_data'])) {
+                return response()->json([
+                    'message' => 'Scan QR Code diperlukan untuk checkout di outlet. Silakan scan QR Code yang sama dengan saat check-in.',
+                ], 422);
+            }
+
+            // Match against check-in QR code or outlet
+            $checkInQr = $attendance->qr_code_data;
+            $checkInOutletId = $attendance->outlet_id;
+            $checkoutQr = $validated['qr_code_data'];
+
+            // Validate checkout QR exists and is active
+            $checkoutQrLocation = \App\Models\QrCodeLocation::where('qr_code', $checkoutQr)
+                ->where('is_active', true)
+                ->first();
+
+            if (!$checkoutQrLocation) {
+                return response()->json([
+                    'message' => 'QR Code checkout tidak valid atau sudah tidak aktif.',
+                ], 422);
+            }
+
+            // Compare: checkout outlet must match check-in outlet
+            $isSameLocation = false;
+
+            if ($checkInQr && $checkInQr === $checkoutQr) {
+                $isSameLocation = true;
+            } elseif ($checkInOutletId && $checkoutQrLocation->organization_id == $checkInOutletId) {
+                // Same outlet even if QR code string differs (e.g. regenerated QR)
+                $isSameLocation = true;
+            }
+
+            if (!$isSameLocation) {
+                return response()->json([
+                    'message' => 'Lokasi checkout tidak sesuai dengan lokasi check-in. Anda harus checkout di outlet yang sama.',
+                ], 422);
+            }
+        }
 
         // Handle Checkout Photo Upload (with compression)
         if ($request->hasFile('photo')) {

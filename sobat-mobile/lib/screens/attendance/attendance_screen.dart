@@ -16,6 +16,7 @@ import 'offline_attendance_handler.dart';
 import 'dart:io';
 import 'package:intl/intl.dart';
 import 'selfie_screen.dart';
+import 'attendance_qr_scanner_screen.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -345,13 +346,33 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       return;
     }
 
-    // Check if original check-in was field type
-    bool isFieldAttendance = _todayAttendance?['attendance_type'] == 'field';
-
-    // Skip range check if field attendance
-    if (!isFieldAttendance && !_isWithinRange) {
-      _showErrorSnackBar('Anda harus berada di area kantor untuk absen!');
+    if (_todayAttendance == null) {
+      _showErrorSnackBar('Data absensi hari ini tidak ditemukan.');
       return;
+    }
+
+    // Check if this is an operational track checkout — requires QR scan
+    final bool isOperational = _todayAttendance!['track_type'] == 'operational';
+    String? checkoutQrData;
+
+    if (isOperational) {
+      // Operational track: scan QR at checkout (must match check-in outlet)
+      checkoutQrData = await Navigator.push<String>(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              AttendanceQrScannerScreen(onScanSuccess: (data) => data),
+        ),
+      );
+
+      if (checkoutQrData == null || checkoutQrData.isEmpty) return; // User cancelled
+    } else {
+      // Head office / field: check range
+      bool isFieldAttendance = _todayAttendance?['attendance_type'] == 'field';
+      if (!isFieldAttendance && !_isWithinRange) {
+        _showErrorSnackBar('Anda harus berada di area kantor untuk absen!');
+        return;
+      }
     }
 
     // 1. Photo Confirmation (Selfie)
@@ -368,15 +389,12 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     _showLoading();
 
     try {
-      if (_todayAttendance == null) {
-        throw 'Data absensi hari ini tidak ditemukan.';
-      }
-
       await _attendanceService.checkOut(
         attendanceId: _todayAttendance!['id'],
         checkOutTime: DateFormat('HH:mm:ss').format(DateTime.now()),
         photo: File(photoPath),
         status: 'present',
+        qrCodeData: checkoutQrData,
       );
 
       await _fetchTodayAttendance(); // Refresh status
@@ -385,7 +403,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       Navigator.pop(context); // Pop loading
       _showSuccessSnackBar('Check Out Berhasil!');
     } catch (e) {
-      // Silent fail - error already handled by AppErrorHandler
       if (!mounted) return;
       Navigator.pop(context); // Pop loading
       _showErrorSnackBar(e.toString());

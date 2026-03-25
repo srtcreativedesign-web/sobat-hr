@@ -104,8 +104,9 @@ class AttendanceService extends BaseService {
     required File photo,
     String? status,
     String? notes,
+    String? qrCodeData,
   }) async {
-    
+
     try {
       String fileName = photo.path.split('/').last;
 
@@ -114,6 +115,7 @@ class AttendanceService extends BaseService {
         'check_out': checkOutTime,
         if (status != null) 'status': status,
         if (notes != null) 'notes': notes,
+        if (qrCodeData != null) 'qr_code_data': qrCodeData,
         'photo': await MultipartFile.fromFile(
           photo.path,
           filename: fileName,
