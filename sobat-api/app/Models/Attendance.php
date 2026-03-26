@@ -27,7 +27,8 @@ class Attendance extends Model
         'late_duration',
         'overtime_duration',
         'face_verified',
-        
+        'face_verification_status',
+
         // Offline & Advanced Validation Fields
         'track_type',
         'validation_method',

@@ -4,8 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Attendance;
 use App\Models\Employee;
+use App\Jobs\VerifyAttendanceFace;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\AttendanceExport;
@@ -71,33 +75,28 @@ class AttendanceController extends Controller
             'date' => 'required|date',
             'check_in' => 'required',
             'check_out' => 'nullable',
-            'status' => 'required|in:present,late,absent,leave,sick,pending', // Added pending
+            'status' => 'required|in:present,late,absent,leave,sick,pending',
             'notes' => 'nullable|string',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
-            'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:5120', // ADDED MIMES VALIDATION
+            'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'location_address' => 'nullable|string',
-            'attendance_type' => 'nullable|in:office,field', // New: attendance type
-            'field_notes' => 'nullable|string|required_if:attendance_type,field', // Mandatory for field
-            'track_type' => 'nullable|in:operational,head_office', // operational = QR scan, head_office = GPS + face
+            'attendance_type' => 'nullable|in:office,field',
+            'field_notes' => 'nullable|string|required_if:attendance_type,field',
+            'track_type' => 'nullable|in:operational,head_office',
         ]);
 
         $employee = Employee::find($validated['employee_id']);
-        
-        // Find organization metadata by department name (since organization_id is gone)
         $organization = \App\Models\Organization::where('name', $employee->department)->first();
-        
-        // Set default attendance type to 'office' if not specified
         $attendanceType = $validated['attendance_type'] ?? 'office';
-
-        // Geolocation Validation (Skip for field attendance and operational track — QR code is the location proof)
         $trackType = $validated['track_type'] ?? null;
+        $isOperational = $trackType === 'operational';
+
+        // Geolocation Validation (Skip for field attendance and operational track)
         if ($trackType !== 'operational' && $attendanceType === 'office' && isset($validated['latitude']) && isset($validated['longitude']) && $employee && $organization && $organization->latitude) {
             $orgLat = $organization->latitude;
             $orgLng = $organization->longitude;
             $radius = $organization->radius_meters ?? 50;
-            
-            // Add 10 meter tolerance buffer for GPS inaccuracy
             $tolerance = 10;
             $maxDistance = $radius + $tolerance;
 
@@ -113,10 +112,10 @@ class AttendanceController extends Controller
                     'message' => 'Anda berada di luar jangkauan kantor.',
                     'distance' => round($distance, 2) . ' meter',
                     'radius' => $radius . ' meter (dengan toleransi ' . $tolerance . ' meter)'
-                ], 422); // Unprocessable Entity
+                ], 422);
             }
         }
-        
+
         // For field attendance: Auto-set status to pending (requires approval)
         if ($attendanceType === 'field') {
             $validated['status'] = 'pending';
@@ -126,143 +125,74 @@ class AttendanceController extends Controller
         }
 
         // Handle Photo Upload
+        $needsFaceVerification = false;
         if ($request->hasFile('photo')) {
             $photo = $request->file('photo');
-            
-            // Generate filename unique
             $filename = uniqid() . '_' . time() . '.jpg';
             $path = 'attendance_photos/' . $filename;
             $fullPath = storage_path('app/public/' . $path);
 
-            // Compress and Resize Image
-            $this->resizeAndSaveImage($photo->getPathname(), $fullPath, 800, 80); // Width 800px, Quality 80
-            
+            $this->resizeAndSaveImage($photo->getPathname(), $fullPath, 800, 80);
             $validated['photo_path'] = $path;
 
-            // Face Verification Logic
-            // Skip for operational track (QR scan + wide selfie is the verification)
-            $trackType = $validated['track_type'] ?? null;
-            $isOperational = $trackType === 'operational';
-
+            // Determine if face verification is needed (head_office track only)
             if (!$isOperational && $employee->face_photo_path) {
-                // Determine full paths
-                $checkInPhotoPath = storage_path('app/public/' . $path);
-                $referencePhotoPath = storage_path('app/public/' . $employee->face_photo_path);
-                $scriptPath = base_path('python_scripts/compare_faces.py');
-
-                // Platform-aware Python command
-                if (PHP_OS_FAMILY === 'Darwin') {
-                    // macOS (Development) - Use arch for Apple Silicon compatibility
-                    $command = "/usr/bin/arch -arm64 /usr/bin/python3 " . escapeshellarg($scriptPath) . " " . escapeshellarg($referencePhotoPath) . " " . escapeshellarg($checkInPhotoPath) . " 2>&1";
-                } else {
-                    // Linux (Production) - Standard python3
-                    $command = "/usr/bin/python3 " . escapeshellarg($scriptPath) . " " . escapeshellarg($referencePhotoPath) . " " . escapeshellarg($checkInPhotoPath) . " 2>&1";
-                }
-                
-                $output = shell_exec($command);
-                $result = json_decode($output, true);
-
-                // FAIL-SECURE: If verification fails for ANY reason, BLOCK attendance
-                if (!$result) {
-                    \Illuminate\Support\Facades\Log::error('Face Verification Critical Failure: Script response empty or malformed.', [
-                        'raw_output' => $output,
-                        'employee_id' => $employee->id,
-                        'check_in_photo' => $path
-                    ]);
-                    \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
-                    return response()->json([
-                        'message' => 'Sistem verifikasi wajah sedang mengalami kendala teknis. Harap hubungi IT Support.',
-                    ], 500);
-                }
-
-                if ($result['status'] === 'error') {
-                    \Illuminate\Support\Facades\Log::error('Face Verification Error: ' . ($result['message'] ?? 'Unknown script error'), [
-                        'details' => $result,
-                        'employee_id' => $employee->id
-                    ]);
-                    \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
-                    return response()->json([
-                        'message' => 'Verifikasi wajah gagal: ' . ($result['message'] ?? 'Kesalahan internal script.'),
-                    ], 422);
-                }
-
-                if ($result['status'] === 'success' && !$result['match']) {
-                    \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
-                    return response()->json([
-                        'message' => 'Verifikasi Wajah Gagal. Wajah tidak cocok dengan data pendaftaran.',
-                        'distance' => $result['distance']
-                    ], 422);
-                }
-
-                // Success: Face matched
-                $validated['face_verified'] = true;
-                \Illuminate\Support\Facades\Log::info('Face Verified Successfully', ['distance' => $result['distance']]);
-            } else if (!$isOperational) {
-                // Employee has no registered face - BLOCK attendance (head_office only)
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+                $needsFaceVerification = true;
+                $validated['face_verification_status'] = 'pending';
+            } else if (!$isOperational && !$employee->face_photo_path) {
+                Storage::disk('public')->delete($path);
                 return response()->json([
                     'message' => 'Anda belum mendaftarkan wajah. Silakan daftarkan wajah terlebih dahulu di menu Profil.',
                 ], 403);
             }
         }
 
-        // Check for Late (after 08:00) - Skip if already pending (field attendance)
+        // Late/Status calculation (skip if already pending from field attendance)
         if ($validated['status'] !== 'pending') {
             $workStartTime = Carbon::parse($validated['date'] . ' 08:00:00');
             $clockInTime = Carbon::parse($validated['date'] . ' ' . $validated['check_in']);
-            
-            \Illuminate\Support\Facades\Log::info('Attendance Logic:', [
-                'date' => $validated['date'],
-                'check_in_input' => $validated['check_in'],
-                'work_start' => $workStartTime->toDateTimeString(),
-                'clock_in_parsed' => $clockInTime->toDateTimeString(),
-                'is_gt' => $clockInTime->gt($workStartTime) ? 'YES' : 'NO'
-            ]);
 
-            // Late Logic
-            // Late Logic
             if ($clockInTime->gt($workStartTime)) {
-                // Use abs() because diffInMinutes is returning negative values on this environment
                 $lateDuration = abs($clockInTime->diffInMinutes($workStartTime));
                 $validated['late_duration'] = $lateDuration;
-                
-                \Illuminate\Support\Facades\Log::info('Late Duration Check (Fixed):', ['duration' => $lateDuration]);
 
-                // If late more than 5 minutes (> 08:05), need approval
                 if ($lateDuration > 5) {
                     $validated['status'] = 'pending';
-                    \Illuminate\Support\Facades\Log::info('Status set to pending');
                 } else {
                     $validated['status'] = 'late';
-                    \Illuminate\Support\Facades\Log::info('Status set to late');
                 }
             } else {
-                 // On time
-                 $validated['status'] = 'present';
-                 \Illuminate\Support\Facades\Log::info('Status set to present');
+                $validated['status'] = 'present';
             }
         }
 
-        // Calculate work hours if check_out exists (e.g., manual full day input)
+        // Calculate work hours if check_out exists
         if (isset($validated['check_out'])) {
             $checkIn = Carbon::parse($validated['check_in']);
             $checkOut = Carbon::parse($validated['check_out']);
             $validated['work_hours'] = $checkIn->floatDiffInHours($checkOut);
 
-            // Check for Overtime (after 17:00)
             $workEndTime = Carbon::parse($validated['date'] . ' 17:00:00');
             $clockOutTime = Carbon::parse($validated['date'] . ' ' . $validated['check_out']);
-            
+
             if ($clockOutTime->gt($workEndTime)) {
                 $validated['overtime_duration'] = $clockOutTime->diffInMinutes($workEndTime);
-                 // Note: Status might remain 'present' or 'late', overtime is an attribute. 
-                 // If we want status to be 'overtime', we can change it, but usually 'overtime' is just extra hours on top of present.
-                 // The enum has 'overtime', but usually that means "Full Overtime Day" or similar. 
-                 // Let's keep status as calculated (late or present) and just store duration.
             }
         }
 
-        $attendance = Attendance::create($validated);
+        // Wrap in transaction for data consistency under concurrent writes
+        $attendance = DB::transaction(function () use ($validated) {
+            return Attendance::create($validated);
+        });
+
+        // Dispatch face verification as background job (non-blocking)
+        if ($needsFaceVerification) {
+            VerifyAttendanceFace::dispatch(
+                $attendance->id,
+                $employee->id,
+                $validated['photo_path']
+            );
+        }
 
         return response()->json($attendance, 201);
     }
@@ -472,7 +402,9 @@ class AttendanceController extends Controller
             }
         }
 
-        $attendance->update($validated);
+        DB::transaction(function () use ($attendance, $validated) {
+            $attendance->update($validated);
+        });
 
         return response()->json($attendance);
     }

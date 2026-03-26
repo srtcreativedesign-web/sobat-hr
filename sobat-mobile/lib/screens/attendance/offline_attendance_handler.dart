@@ -36,140 +36,227 @@ class OfflineAttendanceHandler {
 
     debugPrint('Starting offline attendance for track: $trackType');
 
-    // Show track-specific instructions
+    // Show track-specific instructions (has its own "Mulai Absen" button)
     _showTrackInstructions(trackType, user.track == 'operational');
-
-    // Wait a bit for user to read instructions
-    await Future.delayed(const Duration(seconds: 2));
-
-    // Start validation based on track
-    if (trackType == 'operational') {
-      _navigateToQrScanner();
-    } else {
-      _captureGpsAndSelfie();
-    }
   }
+
 
   /// Show instructions based on track type
   void _showTrackInstructions(String trackType, [bool isDirect = false]) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      isDismissible: false,
       builder: (ctx) => FutureBuilder<bool>(
         future: _connectivity.checkConnectivity(),
         builder: (context, snapshot) {
           final isOnline = snapshot.data ?? _connectivity.isOnline;
-          final String modePrefix = isOnline ? '' : 'Mode Offline - ';
-          
-          return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Row(
+
+          return Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  trackType == 'operational'
-                      ? Icons.qr_code_scanner
-                      : Icons.gps_fixed,
-                  color: AppTheme.colorCyan,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    trackType == 'operational'
-                        ? '${modePrefix}Outlet'
-                        : '${modePrefix}Kantor',
+                // Handle bar
+                Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  trackType == 'operational'
-                      ? (isOnline 
-                          ? 'Silakan scan QR Code (kamera belakang), lalu ambil foto verifikasi (kamera depan wide angle).'
-                          : 'Karena tidak ada koneksi internet, silakan scan QR Code (kamera belakang), lalu ambil foto verifikasi (kamera depan wide angle).')
-                      : (isOnline
-                          ? 'Sistem akan merekam lokasi GPS Anda dan foto selfie sebagai bukti kehadiran.'
-                          : 'Karena tidak ada koneksi internet, sistem akan merekam lokasi GPS Anda dan foto selfie sebagai bukti kehadiran.'),
-                  style: const TextStyle(fontSize: 14),
+                const SizedBox(height: 20),
+
+                // Icon badge
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: trackType == 'operational'
+                          ? [AppTheme.colorCyan, const Color(0xFF0D47A1)]
+                          : [AppTheme.colorEggplant, const Color(0xFF6A1B9A)],
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    trackType == 'operational'
+                        ? Icons.qr_code_scanner_rounded
+                        : Icons.gps_fixed_rounded,
+                    color: Colors.white, size: 32,
+                  ),
                 ),
                 const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.colorCyan.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+
+                // Title
+                Text(
+                  trackType == 'operational'
+                      ? 'Absen Outlet'
+                      : 'Absen Kantor',
+                  style: const TextStyle(
+                    fontSize: 20, fontWeight: FontWeight.w800,
+                    color: AppTheme.textDark,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+                const SizedBox(height: 8),
+
+                // Connection badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isOnline
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isOnline ? Colors.green : Colors.orange,
+                      width: 0.5,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        '📝 Status:',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      Icon(
+                        isOnline ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
+                        size: 14,
+                        color: isOnline ? Colors.green : Colors.orange,
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(
-                            isOnline ? Icons.wifi : Icons.wifi_off,
-                            size: 14,
-                            color: isOnline ? Colors.green : Colors.orange,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            isOnline
-                                ? 'Terhubung (Lansung ke Server)'
-                                : 'Offline (Simpan di Perangkat)',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: isOnline ? Colors.green : Colors.orange,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
+                      const SizedBox(width: 6),
                       Text(
-                        isOnline
-                            ? '• Data akan langsung terkirim ke server'
-                            : '• Data akan disimpan di perangkat dan otomatis terkirim saat ada internet',
-                        style: const TextStyle(fontSize: 12),
+                        isOnline ? 'Online — Langsung ke Server' : 'Offline — Simpan di Perangkat',
+                        style: TextStyle(
+                          fontSize: 11, fontWeight: FontWeight.w700,
+                          color: isOnline ? Colors.green[700] : Colors.orange[800],
+                        ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 24),
+
+                // Steps
+                ..._buildSteps(trackType),
+
+                const SizedBox(height: 24),
+
+                // Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: BorderSide(color: Colors.grey[300]!),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          if (trackType == 'operational') {
+                            _navigateToQrScanner();
+                          } else {
+                            _captureGpsAndSelfie();
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: trackType == 'operational'
+                              ? AppTheme.colorCyan : AppTheme.colorEggplant,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.play_arrow_rounded, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text('Mulai Absen',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Batal'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  if (trackType == 'operational') {
-                    _navigateToQrScanner();
-                  } else {
-                    _captureGpsAndSelfie();
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.colorCyan,
-                ),
-                child: const Text(
-                  'Mulai Absen',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ],
           );
         },
       ),
     );
   }
+
+  /// Build step indicators for instructions
+  List<Widget> _buildSteps(String trackType) {
+    final steps = trackType == 'operational'
+        ? [
+            {'icon': Icons.qr_code_scanner_rounded, 'title': 'Scan QR Code', 'desc': 'Arahkan kamera belakang ke QR yang ditempel di outlet'},
+            {'icon': Icons.camera_front_rounded, 'title': 'Foto Selfie', 'desc': 'Ambil foto verifikasi dengan kamera depan (wide angle)'},
+            {'icon': Icons.cloud_upload_rounded, 'title': 'Kirim Data', 'desc': 'Data akan dikirim ke server atau disimpan lokal'},
+          ]
+        : [
+            {'icon': Icons.gps_fixed_rounded, 'title': 'Rekam GPS', 'desc': 'Sistem akan merekam lokasi GPS Anda secara otomatis'},
+            {'icon': Icons.camera_front_rounded, 'title': 'Foto Selfie', 'desc': 'Ambil foto wajah sebagai bukti kehadiran'},
+            {'icon': Icons.cloud_upload_rounded, 'title': 'Kirim Data', 'desc': 'Data akan dikirim ke server atau disimpan lokal'},
+          ];
+
+    return steps.asMap().entries.map((entry) {
+      final i = entry.key;
+      final step = entry.value;
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: AppTheme.colorCyan.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(step['icon'] as IconData, color: AppTheme.colorCyan, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Langkah ${i + 1}: ${step['title']}',
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                  ),
+                  Text(
+                    step['desc'] as String,
+                    style: TextStyle(fontSize: 11.5, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }).toList();
+  }
+
 
   /// Navigate to QR scanner for operational track
   void _navigateToQrScanner() async {
@@ -462,68 +549,182 @@ class OfflineAttendanceHandler {
       outletName = qrCodeData;
     }
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.store, color: AppTheme.colorCyan),
-            SizedBox(width: 12),
-            Text('Konfirmasi Outlet'),
-          ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      isDismissible: false,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        content: Column(
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'QR Code berhasil dipindai:',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              outletName,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            Text(
-              'Kode: $outletCode',
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Silakan verifikasi kehadiran dengan mengambil foto area outlet (kamera depan wide angle).',
-              style: TextStyle(fontSize: 13),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _proceedToSelfie(
-                qrCodeData: qrCodeData,
-                gpsLatitude: gpsLatitude,
-                gpsLongitude: gpsLongitude,
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.colorCyan,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+            // Handle bar
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-            child: const Text(
-              'Verifikasi Foto',
-              style: TextStyle(color: Colors.white),
+            const SizedBox(height: 20),
+
+            // Success icon
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+                ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.green.withValues(alpha: 0.3),
+                    blurRadius: 12, offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 28),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+
+            const Text(
+              'QR Code Berhasil Dipindai!',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.textDark),
+            ),
+            const SizedBox(height: 20),
+
+            // Outlet card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.colorCyan.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.store_rounded, color: AppTheme.colorCyan, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              outletName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 16,
+                                color: AppTheme.textDark,
+                              ),
+                            ),
+                            if (outletCode != '-')
+                              Text(
+                                'Kode: $outletCode',
+                                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Instruction text
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline_rounded, size: 18, color: Colors.blue[600]),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Selanjutnya, ambil foto selfie untuk verifikasi kehadiran.',
+                      style: TextStyle(fontSize: 12, color: Colors.blue[700], fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: BorderSide(color: Colors.grey[300]!),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _proceedToSelfie(
+                        qrCodeData: qrCodeData,
+                        gpsLatitude: gpsLatitude,
+                        gpsLongitude: gpsLongitude,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.colorCyan,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.camera_front_rounded, color: Colors.white, size: 20),
+                        SizedBox(width: 8),
+                        Text('Ambil Foto',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -616,26 +817,57 @@ class OfflineAttendanceHandler {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => Center(
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.8),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+      builder: (ctx) => PopScope(
+        canPop: false,
+        child: Center(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 60),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF1A237E), Color(0xFF0D47A1)],
               ),
-              const SizedBox(height: 16),
-              Text(
-                message,
-                style: const TextStyle(color: Colors.white),
-                textAlign: TextAlign.center,
-              ),
-            ],
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 20, offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 40, height: 40,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  message,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Mohon tunggu sebentar...',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    fontSize: 11,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -644,13 +876,63 @@ class OfflineAttendanceHandler {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
+      SnackBar(
+        content: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.error_outline_rounded, color: Colors.white, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFFD32F2F),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
+      ),
     );
   }
 
   void _showSuccess(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.green),
+      SnackBar(
+        content: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF2E7D32),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
+      ),
     );
   }
 }

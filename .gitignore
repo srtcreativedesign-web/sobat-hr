@@ -18,6 +18,9 @@ sobat-web/out/
 sobat-web/build/
 sobat-web/.env*.local
 
+# MCP config (contains API keys)
+.mcp.json
+
 # General
 .DS_Store
 *.log

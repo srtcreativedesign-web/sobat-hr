@@ -13,6 +13,9 @@ import '../services/storage_service.dart';
 /// Max number of sync retry attempts before a record is considered permanently failed
 const int maxSyncAttempts = 10;
 
+/// Max number of concurrent sync requests to avoid overwhelming the server
+const int maxConcurrentSyncs = 5;
+
 /// Thrown when the photo file referenced by an offline attendance record no longer exists on disk
 class PhotoFileNotFoundException implements Exception {
   final String message;
@@ -95,10 +98,11 @@ class OfflineAttendanceService {
     }
   }
 
-  /// Sync all unsynced attendance records to server
+  /// Sync all unsynced attendance records to server.
+  /// Processes records in parallel batches of [maxConcurrentSyncs] for performance.
   Future<Map<String, dynamic>> syncAllUnsyncedAttendances() async {
     final unsynced = await getUnsyncedAttendances();
-    
+
     if (unsynced.isEmpty) {
       return {
         'success': true,
@@ -108,38 +112,40 @@ class OfflineAttendanceService {
       };
     }
 
-    debugPrint('Starting sync of ${unsynced.length} offline attendance records');
+    debugPrint('Starting sync of ${unsynced.length} offline attendance records (batch size: $maxConcurrentSyncs)');
 
     int synced = 0;
     int failed = 0;
     final errors = <String>[];
 
+    // Filter out records that have exceeded max retry attempts
+    final eligible = <OfflineAttendance>[];
     for (final attendance in unsynced) {
-      // Skip records that have exceeded max retry attempts
       if (attendance.syncAttempts >= maxSyncAttempts) {
         debugPrint('Skipping attendance ID ${attendance.id}: exceeded max sync attempts ($maxSyncAttempts)');
         failed++;
         errors.add('ID ${attendance.id}: exceeded max retry limit');
-        continue;
+      } else {
+        eligible.add(attendance);
       }
+    }
 
-      try {
-        await _syncSingleAttendance(attendance);
-        await _db.markAsSynced(attendance.id!);
-        synced++;
-        debugPrint('Successfully synced attendance ID: ${attendance.id}');
-      } on PhotoFileNotFoundException catch (e) {
-        // Photo file was deleted/cleared — mark as permanently failed (max attempts)
-        // so it won't be retried endlessly
-        failed++;
-        await _db.markAsPermanentlyFailed(attendance.id!, e.toString());
-        errors.add('ID ${attendance.id}: $e (permanent failure)');
-        debugPrint('Permanently failed attendance ID ${attendance.id}: photo missing');
-      } catch (e) {
-        failed++;
-        await _db.incrementSyncAttempts(attendance.id!);
-        errors.add('ID ${attendance.id}: $e');
-        debugPrint('Failed to sync attendance ID ${attendance.id}: $e');
+    // Process in batches of maxConcurrentSyncs
+    for (int i = 0; i < eligible.length; i += maxConcurrentSyncs) {
+      final batch = eligible.skip(i).take(maxConcurrentSyncs).toList();
+
+      final results = await Future.wait(
+        batch.map((attendance) => _syncWithResult(attendance)),
+        eagerError: false,
+      );
+
+      for (final result in results) {
+        if (result.success) {
+          synced++;
+        } else {
+          failed++;
+          errors.add(result.error!);
+        }
       }
     }
 
@@ -150,6 +156,25 @@ class OfflineAttendanceService {
       'failed': failed,
       'errors': errors,
     };
+  }
+
+  /// Attempt to sync a single attendance and return a result object.
+  /// Catches all errors so Future.wait never short-circuits.
+  Future<_SyncResult> _syncWithResult(OfflineAttendance attendance) async {
+    try {
+      await _syncSingleAttendance(attendance);
+      await _db.markAsSynced(attendance.id!);
+      debugPrint('Successfully synced attendance ID: ${attendance.id}');
+      return _SyncResult(success: true);
+    } on PhotoFileNotFoundException catch (e) {
+      await _db.markAsPermanentlyFailed(attendance.id!, e.toString());
+      debugPrint('Permanently failed attendance ID ${attendance.id}: photo missing');
+      return _SyncResult(success: false, error: 'ID ${attendance.id}: $e (permanent failure)');
+    } catch (e) {
+      await _db.incrementSyncAttempts(attendance.id!);
+      debugPrint('Failed to sync attendance ID ${attendance.id}: $e');
+      return _SyncResult(success: false, error: 'ID ${attendance.id}: $e');
+    }
   }
 
   /// Sync single attendance record to server
@@ -341,4 +366,11 @@ class OfflineAttendanceService {
       debugPrint('Error during cleanup: $e');
     }
   }
+}
+
+/// Internal result type for parallel sync operations
+class _SyncResult {
+  final bool success;
+  final String? error;
+  const _SyncResult({required this.success, this.error});
 }
