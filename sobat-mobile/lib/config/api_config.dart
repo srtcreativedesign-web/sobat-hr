@@ -19,8 +19,10 @@ class ApiConfig {
     defaultValue: '192.168.1.12',
   );
 
-  // Return true if ENV is 'prod', otherwise false.
-  static bool get _isProd => _env == 'prod';
+  /// Returns true if production mode:
+  /// - Explicitly set via --dart-define=ENV=prod, OR
+  /// - Running in release mode (Xcode Archive, flutter build --release)
+  static bool get _isProd => _env == 'prod' || kReleaseMode;
 
   static const String _port = '8000';
 

@@ -8,12 +8,20 @@ use Illuminate\Http\Request;
 
 use App\Models\PayrollRef;
 use App\Models\Employee;
+use App\Models\Role;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\GroqAiService;
 
 class PayrollRefController extends Controller
 {
+    private function isAdmin(): bool
+    {
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        return in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN, Role::ADMIN_CABANG, Role::HR]);
+    }
+
     /**
      * Display a listing of Reflexiology payrolls
      */
@@ -21,10 +29,9 @@ class PayrollRefController extends Controller
     {
         $user = auth()->user();
         $query = PayrollRef::with('employee');
-        
+
         // SECURITY CHECK: Scope query to authenticated user
-        $roleName = $user->role ? strtolower($user->role->name) : '';
-        if (!in_array($roleName, ['admin', 'super_admin', 'hr'])) {
+        if (!$this->isAdmin()) {
             $employeeId = $user->employee ? $user->employee->id : null;
             if ($employeeId) {
                 $query->where('employee_id', $employeeId);
@@ -275,14 +282,12 @@ class PayrollRefController extends Controller
     public function show($id)
     {
         $payroll = PayrollRef::with('employee')->findOrFail($id);
-        
-        // Security check
-        $user = auth()->user();
-        $roleName = $user->role ? strtolower($user->role->name) : '';
-        if (!in_array($roleName, ['super_admin', 'admin', 'hr'])) {
-             if (!$user->employee || $user->employee->id !== $payroll->employee_id) {
-                 return response()->json(['message' => 'Unauthorized'], 403);
-             }
+
+        if (!$this->isAdmin()) {
+            $user = auth()->user();
+            if (!$user->employee || $user->employee->id !== $payroll->employee_id) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
         }
         
         return response()->json($this->formatPayroll($payroll));
@@ -290,6 +295,10 @@ class PayrollRefController extends Controller
     
     public function updateStatus(Request $request, $id)
     {
+        if (!$this->isAdmin()) {
+            return response()->json(['message' => 'Anda tidak memiliki akses untuk operasi ini.'], 403);
+        }
+
          $request->validate([
             'status' => 'required|in:draft,approved,paid',
             'approval_signature' => 'nullable|string',
@@ -315,9 +324,13 @@ class PayrollRefController extends Controller
     
     public function destroy($id)
     {
+        if (!$this->isAdmin()) {
+            return response()->json(['message' => 'Anda tidak memiliki akses untuk operasi ini.'], 403);
+        }
+
         $payroll = PayrollRef::findOrFail($id);
         $payroll->delete();
-        return response()->json(['message' => 'Payroll delete successfully']);
+        return response()->json(['message' => 'Payroll deleted successfully']);
     }
     
     /**
@@ -328,13 +341,11 @@ class PayrollRefController extends Controller
         try {
             $payroll = PayrollRef::with('employee')->findOrFail($id);
             
-            // Security check
-            $user = auth()->user();
-            $roleName = $user->role ? strtolower($user->role->name) : '';
-            if (!in_array($roleName, ['super_admin', 'admin', 'hr'])) {
-                 if (!$user->employee || $user->employee->id !== $payroll->employee_id) {
-                     return response()->json(['message' => 'Unauthorized'], 403);
-                 }
+            if (!$this->isAdmin()) {
+                $user = auth()->user();
+                if (!$user->employee || $user->employee->id !== $payroll->employee_id) {
+                    return response()->json(['message' => 'Unauthorized'], 403);
+                }
             }
             
             $formatted = $this->formatPayroll($payroll); 

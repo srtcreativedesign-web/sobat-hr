@@ -4,10 +4,21 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\JobPosition;
+use App\Models\Role;
 use Illuminate\Http\Request;
 
 class JobPositionController extends Controller
 {
+    private function authorizeAdmin(): ?array
+    {
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        if (!in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN, Role::ADMIN_CABANG, Role::HR])) {
+            return ['message' => 'Anda tidak memiliki akses untuk operasi ini.'];
+        }
+        return null;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -35,6 +46,10 @@ class JobPositionController extends Controller
      */
     public function store(Request $request)
     {
+        if ($denied = $this->authorizeAdmin()) {
+            return response()->json($denied, 403);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'nullable|string|max:50|unique:job_positions,code',
@@ -75,6 +90,10 @@ class JobPositionController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if ($denied = $this->authorizeAdmin()) {
+            return response()->json($denied, 403);
+        }
+
         $jobPosition = JobPosition::findOrFail($id);
 
         $validated = $request->validate([
@@ -96,8 +115,11 @@ class JobPositionController extends Controller
      */
     public function destroy($id)
     {
+        if ($denied = $this->authorizeAdmin()) {
+            return response()->json($denied, 403);
+        }
+
         $jobPosition = JobPosition::findOrFail($id);
-        // Optional: Check usage in employees table
         $jobPosition->delete();
 
         return response()->json(['message' => 'Job Position deleted successfully']);

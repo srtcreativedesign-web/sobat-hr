@@ -56,9 +56,9 @@ php artisan storage:link
 ## Architecture
 
 ### API Layer (Laravel)
-- **Routes:** `sobat-api/routes/api.php` — 70+ API endpoints
+- **Routes:** `sobat-api/routes/api.php` — 180+ API endpoints
 - **Controllers:** `sobat-api/app/Http/Controllers/Api/` — thin controllers delegating to services/repositories
-- **Services:** `sobat-api/app/Services/` — business logic (approval, geofence validation, QR code validation, FCM, timestamp tampering detection)
+- **Services:** `sobat-api/app/Services/` — business logic (approval, geofence validation, QR code validation, FCM, timestamp tampering detection, Groq AI for personalized payslip messages)
 - **Repositories:** `sobat-api/app/Repositories/` — data access abstraction
 - **Models:** `sobat-api/app/Models/` — 34 Eloquent models
 - **Exports:** `sobat-api/app/Exports/` — Excel export classes (maatwebsite/excel)
@@ -67,6 +67,7 @@ php artisan storage:link
 - **Testing:** PHPUnit with SQLite in-memory DB
 - **PDF:** barryvdh/laravel-dompdf for payslip generation
 - **Scheduled Tasks:** `cleanup:files` runs daily at 02:00
+- **Job Queues:** `face-verification` queue for async face comparison jobs
 
 ### Custom Middleware
 - **`CheckRole`** — Validates user role against required roles; logs unauthorized attempts with user_id, email, role, and path
@@ -76,7 +77,7 @@ php artisan storage:link
 | Limit | Endpoints |
 |-------|-----------|
 | 5/min | Login, register, forgot-password |
-| 6/min | PIN setup/verify, face enrollment |
+| 6/min | PIN setup/verify, face enrollment/enroll |
 | 10/min | Payroll imports |
 | 30/min | Payslip/slip generation |
 
@@ -100,10 +101,12 @@ php artisan storage:link
 
 ### Key Patterns
 - **Payroll variants:** Multiple payroll models/controllers exist for different business units (FNB, HO, Celluller, Hans, MM, Ref, Wrapping)
-- **Offline attendance:** Two-track system — "operational" (QR scan at outlet) and "head_office" (GPS). Smart online-first logic with 7s timeout, falls back to local SQLite (`offline_attendance.db`), background sync via WorkManager every 15 min. Max 10 sync retries before a record is marked permanently failed. Photo files stored on disk (not base64 in DB); if photo is deleted before sync, the record is marked as permanent failure via `PhotoFileNotFoundException`.
-- **QR attendance:** QR codes use format `OUTLET-{ORG_ID}-LT{FLOOR}-{TIMESTAMP}-{RANDOM}`, validated client-side before offline storage and server-side via `QrCodeValidationService`. Also accepts JSON and pipe-delimited QR formats.
+- **Offline attendance:** Two-track system — "operational" (QR scan at outlet) and "head_office" (GPS). Smart online-first logic with 7s timeout, falls back to local SQLite (`offline_attendance.db`), background sync via WorkManager every 15 min with parallel batch processing (up to 5 concurrent syncs). Max 10 sync retries before a record is marked permanently failed. Photo files stored on disk (not base64 in DB); if photo is deleted before sync, the record is marked as permanent failure via `PhotoFileNotFoundException`. Old synced records auto-cleaned after 7 days.
+- **QR attendance:** QR codes use format `{ORG_CODE}-LT{FLOOR}-{RANDOM}` (no timestamps), with fallback `OUTLET-{ORG_ID}-LT{FLOOR}-{RANDOM}` if org has no code. Validated client-side before offline storage and server-side via `QrCodeValidationService`. Also accepts JSON and pipe-delimited QR formats. QR codes stored in `QrCodeLocation` model with `is_active` tracking.
+- **Face verification:** Async background processing via `VerifyAttendanceFace` job on dedicated `face-verification` queue. Compares check-in photo against enrolled face using Python (`compare_faces.py`). Status tracked per attendance: pending → verified/mismatch/failed. Max 3 retries, 30s timeout. Failed jobs mark attendance as `needs_review`. Face enrollment uses Google ML Kit (`google_mlkit_face_detection`) with auto-capture and manual fallback.
 - **Role-based access:** `App\Models\Role` constants are the single source of truth for role checks across all layers — never hardcode role strings
 - **Device uptime:** Android reads `/proc/uptime` for tampering detection; iOS returns null (server uses timestamp comparison only)
+- **Offline attendance admin:** Endpoints for listing offline submissions, reviewing (accept/reject), viewing statistics, and generating/managing QR codes for outlets
 
 ## Design System
 - **Primary:** Forest Green `#1A4D2E`

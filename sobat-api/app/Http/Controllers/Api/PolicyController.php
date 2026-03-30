@@ -3,12 +3,23 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use App\Models\Policy;
 use Illuminate\Support\Facades\Storage;
 
 class PolicyController extends Controller
 {
+    private function authorizeAdmin(): ?array
+    {
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        if (!in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN, Role::ADMIN_CABANG, Role::HR])) {
+            return ['message' => 'Anda tidak memiliki akses untuk operasi ini.'];
+        }
+        return null;
+    }
+
     /**
      * List policies (Admin sees all, User sees published only)
      */
@@ -39,6 +50,10 @@ class PolicyController extends Controller
 
     public function store(Request $request)
     {
+        if ($denied = $this->authorizeAdmin()) {
+            return response()->json($denied, 403);
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
@@ -75,6 +90,10 @@ class PolicyController extends Controller
 
     public function update(Request $request, string $id)
     {
+        if ($denied = $this->authorizeAdmin()) {
+            return response()->json($denied, 403);
+        }
+
         $policy = Policy::findOrFail($id);
 
         $validated = $request->validate([
@@ -113,6 +132,10 @@ class PolicyController extends Controller
 
     public function destroy(string $id)
     {
+        if ($denied = $this->authorizeAdmin()) {
+            return response()->json($denied, 403);
+        }
+
         $policy = Policy::findOrFail($id);
 
         if ($policy->attachment_path) {

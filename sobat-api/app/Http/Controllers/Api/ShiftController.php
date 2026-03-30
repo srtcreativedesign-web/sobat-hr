@@ -4,11 +4,22 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Role;
 use App\Models\Shift;
 use App\Models\Employee;
 
 class ShiftController extends Controller
 {
+    private function authorizeAdmin(): ?array
+    {
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        if (!in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN, Role::ADMIN_CABANG, Role::HR])) {
+            return ['message' => 'Anda tidak memiliki akses untuk operasi ini.'];
+        }
+        return null;
+    }
+
     public function index(Request $request)
     {
         $query = Shift::query();
@@ -26,6 +37,10 @@ class ShiftController extends Controller
 
     public function store(Request $request)
     {
+        if ($denied = $this->authorizeAdmin()) {
+            return response()->json($denied, 403);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'start_time' => 'required',
@@ -61,6 +76,10 @@ class ShiftController extends Controller
 
     public function update(Request $request, string $id)
     {
+        if ($denied = $this->authorizeAdmin()) {
+            return response()->json($denied, 403);
+        }
+
         $shift = Shift::findOrFail($id);
 
         $validated = $request->validate([
@@ -82,6 +101,10 @@ class ShiftController extends Controller
 
     public function destroy(string $id)
     {
+        if ($denied = $this->authorizeAdmin()) {
+            return response()->json($denied, 403);
+        }
+
         $shift = Shift::findOrFail($id);
         $shift->delete();
 
@@ -93,6 +116,10 @@ class ShiftController extends Controller
      */
     public function assignToEmployee(Request $request)
     {
+        if ($denied = $this->authorizeAdmin()) {
+            return response()->json($denied, 403);
+        }
+
         $validated = $request->validate([
             'shift_id' => 'required|exists:shifts,id',
             'employee_ids' => 'required|array',

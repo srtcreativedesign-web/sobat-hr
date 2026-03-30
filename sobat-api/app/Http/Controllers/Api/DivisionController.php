@@ -5,10 +5,21 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Division;
+use App\Models\Role;
 use Illuminate\Http\Request;
 
 class DivisionController extends Controller
 {
+    private function authorizeAdmin(): ?array
+    {
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        if (!in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN, Role::ADMIN_CABANG, Role::HR])) {
+            return ['message' => 'Anda tidak memiliki akses untuk operasi ini.'];
+        }
+        return null;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -36,6 +47,10 @@ class DivisionController extends Controller
      */
     public function store(Request $request)
     {
+        if ($denied = $this->authorizeAdmin()) {
+            return response()->json($denied, 403);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:divisions,name',
             'code' => 'nullable|string|max:50|unique:divisions,code',
@@ -62,6 +77,10 @@ class DivisionController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if ($denied = $this->authorizeAdmin()) {
+            return response()->json($denied, 403);
+        }
+
         $division = Division::findOrFail($id);
 
         $validated = $request->validate([
@@ -80,8 +99,11 @@ class DivisionController extends Controller
      */
     public function destroy($id)
     {
+        if ($denied = $this->authorizeAdmin()) {
+            return response()->json($denied, 403);
+        }
+
         $division = Division::findOrFail($id);
-        // Optional: Check if used in other tables before delete
         $division->delete();
 
         return response()->json(['message' => 'Division deleted successfully']);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\PayrollWrapping;
 use App\Models\Employee;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use PDF;
@@ -12,14 +13,20 @@ use App\Services\GroqAiService;
 
 class PayrollWrappingController extends Controller
 {
+    private function isAdmin(): bool
+    {
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        return in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN, Role::ADMIN_CABANG, Role::HR]);
+    }
+
     public function index(Request $request)
     {
         $user = auth()->user();
         $query = PayrollWrapping::with('employee');
 
         // Check scope
-        $roleName = $user->role ? strtolower($user->role->name) : '';
-        if (!in_array($roleName, ['admin', 'super_admin', 'hr', 'admin_cabang'])) {
+        if (!$this->isAdmin()) {
             $employeeId = $user->employee ? $user->employee->id : null;
             if ($employeeId) {
                 $query->where('employee_id', $employeeId);
@@ -249,11 +256,23 @@ class PayrollWrappingController extends Controller
     public function show($id)
     {
         $payroll = PayrollWrapping::with('employee')->findOrFail($id);
+
+        if (!$this->isAdmin()) {
+            $user = auth()->user();
+            if (!$user->employee || $user->employee->id !== $payroll->employee_id) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+        }
+
         return response()->json($this->formatPayroll($payroll));
     }
     
     public function updateStatus(Request $request, $id)
     {
+        if (!$this->isAdmin()) {
+            return response()->json(['message' => 'Anda tidak memiliki akses untuk operasi ini.'], 403);
+        }
+
         $payroll = PayrollWrapping::findOrFail($id);
         $payroll->update([
             'status' => $request->status,
@@ -268,6 +287,14 @@ class PayrollWrappingController extends Controller
     public function generateSlip($id)
     {
         $payroll = PayrollWrapping::with('employee')->findOrFail($id);
+
+        if (!$this->isAdmin()) {
+            $user = auth()->user();
+            if (!$user->employee || $user->employee->id !== $payroll->employee_id) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+        }
+
         $data = $this->formatPayroll($payroll); 
         
         // Remove 'employee' to prevent overwriting the relationship object with an array

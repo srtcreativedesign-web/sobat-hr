@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\PayrollFnb;
 use App\Models\Employee;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use PDF;
@@ -12,6 +13,13 @@ use App\Services\GroqAiService;
 
 class PayrollFnbController extends Controller
 {
+    private function isAdmin(): bool
+    {
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        return in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN, Role::ADMIN_CABANG, Role::HR]);
+    }
+
     /**
      * Display a listing of FnB payrolls
      */
@@ -21,8 +29,7 @@ class PayrollFnbController extends Controller
         $query = PayrollFnb::with('employee');
 
         // Check scope
-        $roleName = $user->role ? strtolower($user->role->name) : '';
-        if (!in_array($roleName, ['admin', 'super_admin', 'hr'])) {
+        if (!$this->isAdmin()) {
             $employeeId = $user->employee ? $user->employee->id : null;
             if ($employeeId) {
                 $query->where('employee_id', $employeeId);
@@ -322,7 +329,14 @@ class PayrollFnbController extends Controller
     public function show($id)
     {
         $payroll = PayrollFnb::with('employee')->findOrFail($id);
-        
+
+        if (!$this->isAdmin()) {
+            $user = auth()->user();
+            if (!$user->employee || $user->employee->id !== $payroll->employee_id) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+        }
+
         $formatted = $payroll->toArray();
         
         // Add structured allowances
@@ -379,6 +393,10 @@ class PayrollFnbController extends Controller
      */
     public function updateStatus(Request $request, $id)
     {
+        if (!$this->isAdmin()) {
+            return response()->json(['message' => 'Anda tidak memiliki akses untuk operasi ini.'], 403);
+        }
+
         $request->validate([
             'status' => 'required|in:draft,approved,paid',
             'approval_signature' => 'nullable|string', // Base64 string
@@ -407,6 +425,10 @@ class PayrollFnbController extends Controller
      */
     public function destroy($id)
     {
+        if (!$this->isAdmin()) {
+            return response()->json(['message' => 'Anda tidak memiliki akses untuk operasi ini.'], 403);
+        }
+
         $payroll = PayrollFnb::findOrFail($id);
         $payroll->delete();
 
@@ -420,7 +442,14 @@ class PayrollFnbController extends Controller
     {
         try {
             $payroll = PayrollFnb::with('employee')->findOrFail($id);
-            
+
+            if (!$this->isAdmin()) {
+                $user = auth()->user();
+                if (!$user->employee || $user->employee->id !== $payroll->employee_id) {
+                    return response()->json(['message' => 'Unauthorized'], 403);
+                }
+            }
+
             // Inject structured data for the view (same as show method)
             $payroll->allowances = [
                 'Kehadiran' => [

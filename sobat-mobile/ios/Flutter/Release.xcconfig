@@ -2,5 +2,5 @@
 #include "Generated.xcconfig"
 
 // Architecture settings managed by Podfile post_install
-EXCLUDED_ARCHS[sdk=iphonesimulator*] = 
+EXCLUDED_ARCHS[sdk=iphonesimulator*] =
 
