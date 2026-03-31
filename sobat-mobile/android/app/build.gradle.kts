@@ -72,5 +72,9 @@ dependencies {
     // When using the BoM, don't specify versions in Firebase dependencies
     implementation("com.google.firebase:firebase-analytics")
     
+    // Edge-to-edge support for Android 15+
+    implementation("androidx.activity:activity-ktx:1.9.3")
+    implementation("androidx.core:core-ktx:1.15.0")
+    
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

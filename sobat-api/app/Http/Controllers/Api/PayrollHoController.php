@@ -63,6 +63,18 @@ class PayrollHoController extends Controller
     public function show($id)
     {
         $payroll = Payroll::with(['employee', 'employee.division'])->findOrFail($id);
+
+        // --- IDOR GUARD ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        $isAdmin = in_array($roleName, ['admin', 'super_admin', 'hr', 'admin_cabang']);
+
+        if (!$isAdmin) {
+            if (!$user->employee || $user->employee->id !== $payroll->employee_id) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+        }
+
         return response()->json($this->formatPayroll($payroll));
     }
 
@@ -529,6 +541,17 @@ class PayrollHoController extends Controller
     public function generatePayslip($id)
     {
         $payroll = Payroll::with(['employee'])->findOrFail($id);
+
+        // --- IDOR GUARD ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        $isAdmin = in_array($roleName, ['admin', 'super_admin', 'hr', 'admin_cabang']);
+
+        if (!$isAdmin) {
+            if (!$user->employee || $user->employee->id !== $payroll->employee_id) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+        }
         
         $aiMessage = null;
         try {

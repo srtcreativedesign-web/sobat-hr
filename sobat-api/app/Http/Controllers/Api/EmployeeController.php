@@ -531,6 +531,15 @@ class EmployeeController extends Controller
     {
         $employee = Employee::findOrFail($id);
 
+        // --- IDOR GUARD ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::ADMIN_CABANG]);
+
+        if (!$isAdmin && $employee->id !== $user->employee?->id) {
+            return response()->json(['message' => 'Anda tidak memiliki akses ke data payroll karyawan ini.'], 403);
+        }
+
         $payrolls = $employee->payrolls()
             ->orderBy('period_month', 'desc')
             ->orderBy('period_year', 'desc')
