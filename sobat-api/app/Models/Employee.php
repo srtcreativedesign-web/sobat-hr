@@ -54,6 +54,7 @@ class Employee extends Model
         'division_id', // New Master Data
         'job_position_id', // New Master Data
         'photo_path',
+        'face_photo_path',
     ];
 
     protected $casts = [
