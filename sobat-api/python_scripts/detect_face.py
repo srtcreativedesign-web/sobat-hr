@@ -3,27 +3,25 @@ import json
 import os
 import platform
 
-# Ensure user site-packages are visible (fix for PHP shell_exec environment)
-user_site_packages = '/Users/itsrtcorp/Library/Python/3.9/lib/python/site-packages'
-if user_site_packages not in sys.path:
-    sys.path.append(user_site_packages)
-
+# Add platform-specific site-packages paths
+if platform.system() == 'Darwin':
+    # macOS (development)
+    user_site = os.path.expanduser('~/Library/Python/3.9/lib/python/site-packages')
+    if user_site not in sys.path:
+        sys.path.append(user_site)
+# Linux (server) - standard paths are usually already in sys.path
 
 try:
     import face_recognition
-except ImportError:
-    # Fallback
-    sys.path.append('/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/site-packages')
-    try:
-        import face_recognition
-    except ImportError as e:
-        print(json.dumps({
-            "status": "error", 
-            "message": f"ImportError: {str(e)}", 
-            "debug_sys_path": sys.path,
-            "debug_executable": sys.executable
-        }))
-        sys.exit(0)
+except ImportError as e:
+    print(json.dumps({
+        "status": "error", 
+        "message": f"face_recognition not installed: {str(e)}", 
+        "debug_sys_path": sys.path,
+        "debug_executable": sys.executable,
+        "debug_platform": platform.system()
+    }))
+    sys.exit(0)
 
 def detect_face(image_path):
     try:

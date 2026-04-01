@@ -103,7 +103,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
 
       _controller = CameraController(
         frontCamera,
-        ResolutionPreset.high,
+        ResolutionPreset.medium, // Reduced from high to avoid oversized images on high-MP cameras (iPhone 17 Pro Max 48MP+)
         enableAudio: false,
         imageFormatGroup: Platform.isAndroid
             ? ImageFormatGroup.nv21
@@ -366,7 +366,9 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
       final compressedFile = await FlutterImageCompress.compressAndGetFile(
         imagePath,
         targetPath,
-        quality: 40, // Reduced quality for faster upload/smaller size
+        quality: 50,
+        minWidth: 800,  // Resize to max 800px width
+        minHeight: 800, // Resize to max 800px height
       );
       final finalPath = compressedFile?.path ?? imagePath;
 
@@ -374,7 +376,7 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('${ApiConfig.baseUrl}/employees/enroll-face'),
+        Uri.parse('${ApiConfig.baseUrl}employees/enroll-face'),
       );
 
       request.headers.addAll({
