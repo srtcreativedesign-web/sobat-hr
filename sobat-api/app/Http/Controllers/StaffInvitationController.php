@@ -58,8 +58,14 @@ class StaffInvitationController extends Controller
                     continue; // Skip header
 
                 // Convert encoding to UTF-8 for each cell
-                $name = isset($row[0]) ? mb_convert_encoding($row[0], 'UTF-8', 'auto') : '';
-                $email = isset($row[1]) ? mb_convert_encoding($row[1], 'UTF-8', 'auto') : '';
+                $name = isset($row[0]) ? trim(mb_convert_encoding($row[0], 'UTF-8', 'auto')) : '';
+                $email = isset($row[1]) ? trim(mb_convert_encoding($row[1], 'UTF-8', 'auto')) : '';
+
+                // Skip completely empty rows
+                if (empty($name) && empty($email)) {
+                    continue;
+                }
+
                 $role = isset($row[2]) ? mb_convert_encoding($row[2], 'UTF-8', 'auto') : 'staff';
                 $divisionInput = isset($row[3]) ? mb_convert_encoding($row[3], 'UTF-8', 'auto') : '';
                 $jobLevel = isset($row[4]) ? mb_convert_encoding($row[4], 'UTF-8', 'auto') : '';
