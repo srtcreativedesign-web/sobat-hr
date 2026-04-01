@@ -45,16 +45,13 @@ interface Employee {
   contract_end_date?: string;
 }
 
-interface Organization {
-  id: number;
-  name: string;
-}
+
 
 export default function EmployeesPage() {
   const router = useRouter();
   const { isAuthenticated, checkAuth } = useAuthStore();
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [divisions, setDivisions] = useState<{id: number; name: string}[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
@@ -76,7 +73,7 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     fetchEmployees();
-    fetchOrganizations();
+    fetchDivisions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]); // Re-fetch when currentPage changes
 
@@ -86,7 +83,7 @@ export default function EmployeesPage() {
       const params = new URLSearchParams();
       params.append('page', currentPage.toString());
       if (searchTerm) params.append('search', searchTerm);
-      if (filterOrg) params.append('organization_id', filterOrg);
+      if (filterOrg) params.append('division_id', filterOrg);
       if (filterStatus) params.append('status', filterStatus);
 
       const response = await apiClient.get(`/employees?${params.toString()}`);
@@ -104,12 +101,12 @@ export default function EmployeesPage() {
     }
   };
 
-  const fetchOrganizations = async () => {
+  const fetchDivisions = async () => {
     try {
-      const response = await apiClient.get('/organizations');
-      setOrganizations(response.data.data || response.data || []);
+      const response = await apiClient.get('/divisions');
+      setDivisions(response.data.data || response.data || []);
     } catch (error) {
-      console.error('Failed to fetch organizations:', error);
+      console.error('Failed to fetch divisions:', error);
     }
   };
 
@@ -256,7 +253,7 @@ export default function EmployeesPage() {
   const handleExport = async () => {
     try {
       const params = new URLSearchParams();
-      if (filterOrg) params.append('organization_id', filterOrg);
+      if (filterOrg) params.append('division_id', filterOrg);
       if (filterStatus) params.append('status', filterStatus);
 
       const response = await apiClient.get(`/employees/export?${params.toString()}`, {
@@ -348,8 +345,8 @@ export default function EmployeesPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:border-transparent"
                 >
                   <option value="">Semua Divisi</option>
-                  {organizations.map(org => (
-                    <option key={org.id} value={org.id}>{org.name}</option>
+                  {divisions.map(div => (
+                    <option key={div.id} value={div.id}>{div.name}</option>
                   ))}
                 </select>
               </div>
