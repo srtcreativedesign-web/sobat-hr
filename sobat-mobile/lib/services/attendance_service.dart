@@ -51,8 +51,15 @@ class AttendanceService extends BaseService {
       final response = await dio.post(ApiConfig.attendance, data: formData);
 
       return response.data;
-    } on DioException {
-      rethrow; // Let caller distinguish network vs server errors
+    } on DioException catch (e) {
+      // Parse server error message (e.g. maintenance 503, geolocation 422)
+      final serverMessage = e.response?.data is Map
+          ? e.response?.data['message']
+          : null;
+      if (serverMessage != null) {
+        throw serverMessage;
+      }
+      rethrow;
     } catch (e) {
       throw Exception(AppErrorHandler.getErrorMessage(e));
     }
@@ -130,6 +137,12 @@ class AttendanceService extends BaseService {
 
       return response.data;
     } on DioException catch (e) {
+      final serverMessage = e.response?.data is Map
+          ? e.response?.data['message']
+          : null;
+      if (serverMessage != null) {
+        throw serverMessage;
+      }
       throw Exception(AppErrorHandler.getErrorMessage(e));
     } catch (e) {
       throw Exception(AppErrorHandler.getErrorMessage(e));
