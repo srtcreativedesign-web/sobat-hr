@@ -56,7 +56,7 @@ export default function PayrollPage() {
   const sigPad = useRef<SignatureCanvas>(null);
 
   // Division selector
-  const [selectedDivision, setSelectedDivision] = useState<'all' | 'office' | 'fnb' | 'minimarket' | 'reflexiology' | 'wrapping' | 'hans' | 'cellular'>('fnb');
+  const [selectedDivision, setSelectedDivision] = useState<'all' | 'office' | 'fnb' | 'minimarket' | 'reflexiology' | 'wrapping' | 'hans' | 'cellular' | 'money_changer'>('fnb');
 
   // Filter States
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // Default current month
@@ -100,6 +100,7 @@ export default function PayrollPage() {
       if (selectedDivision === 'wrapping') endpoint = '/payrolls/wrapping';
       if (selectedDivision === 'hans') endpoint = '/payrolls/hans';
       if (selectedDivision === 'cellular') endpoint = '/payroll-cellullers'; // New Endpoint
+      if (selectedDivision === 'money_changer') endpoint = '/payrolls/money-changer';
 
       const response = await apiClient.get(endpoint, {
         params: {
@@ -205,6 +206,7 @@ export default function PayrollPage() {
       if (selectedDivision === 'wrapping') importEndpoint = '/payrolls/wrapping/import';
       if (selectedDivision === 'hans') importEndpoint = '/payrolls/hans/import';
       if (selectedDivision === 'cellular') importEndpoint = '/payroll-cellullers/import'; // New Endpoint
+      if (selectedDivision === 'money_changer') importEndpoint = '/payrolls/money-changer/import';
 
       const response = await apiClient.post(importEndpoint, formData, {
         headers: {
@@ -270,6 +272,7 @@ export default function PayrollPage() {
         if (selectedDivision === 'hans') endpoint = `/payrolls/hans/${pendingApprovalId}/status`;
         if (selectedDivision === 'office') endpoint = `/payrolls/ho/${pendingApprovalId}/status`;
         if (selectedDivision === 'cellular') endpoint = `/payroll-cellullers/${pendingApprovalId}/status`; // New Endpoint
+        if (selectedDivision === 'money_changer') endpoint = `/payrolls/money-changer/${pendingApprovalId}/status`;
 
         // Note: FNB uses updateStatus which takes 'status' and 'approval_signature'
         // Generic Controller might need update. Assuming Generic uses PATCH /payrolls/{id}/status
@@ -309,7 +312,7 @@ export default function PayrollPage() {
 
   // Helper to calculate total allowances for FnB/MM/Ref/Wrapping payroll
   const calculateTotalAllowances = (payroll: any) => {
-    if (['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular'].includes(selectedDivision)) {
+    if (['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) {
       // FnB/MM/Ref backend returns structured allowances object
       if (payroll.allowances && typeof payroll.allowances === 'object') {
         const allowances = payroll.allowances;
@@ -371,7 +374,7 @@ export default function PayrollPage() {
 
   // Helper to calculate overtime pay for FnB/MM/Ref/Wrapping payroll
   const calculateOvertimePay = (payroll: any) => {
-    if (['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular'].includes(selectedDivision)) {
+    if (['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) {
       // Check structured allowances first
       if (payroll.allowances?.Lembur) {
         const lembur = payroll.allowances.Lembur;
@@ -387,7 +390,7 @@ export default function PayrollPage() {
 
   // Helper to calculate total deductions for FnB/MM/Ref payroll
   const calculateTotalDeductions = (payroll: any) => {
-    if (['minimarket', 'reflexiology', 'wrapping', 'hans'].includes(selectedDivision)) {
+    if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'money_changer'].includes(selectedDivision)) {
       return parseFloat(payroll.deduction_total) || 0;
     }
     if (selectedDivision === 'cellular') {
@@ -402,7 +405,7 @@ export default function PayrollPage() {
     if (selectedDivision === 'wrapping') {
       return parseFloat(payroll.total_salary_gross) || 0;
     }
-    if (['fnb', 'minimarket', 'reflexiology', 'hans', 'cellular'].includes(selectedDivision)) {
+    if (['fnb', 'minimarket', 'reflexiology', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) {
       // For FnB/MM/Ref, use total_salary_2 which includes everything
       return parseFloat(payroll.total_salary_2) || 0;
     }
@@ -501,6 +504,7 @@ export default function PayrollPage() {
               <option value="wrapping">Wrapping</option>
               <option value="hans">Hans</option>
               <option value="cellular">Cellular</option>
+              <option value="money_changer">Money Changer</option>
             </select>
           </div>
 
@@ -724,6 +728,8 @@ export default function PayrollPage() {
                                           ? `/payrolls/hans/${payroll.id}/slip`
                                           : selectedDivision === 'cellular'
                                             ? `/payroll-cellullers/${payroll.id}/slip`
+                                            : selectedDivision === 'money_changer'
+                                              ? `/payrolls/money-changer/${payroll.id}/slip`
                                             : selectedDivision === 'office'
                                               ? `/payrolls/ho/${payroll.id}/slip`
                                               : `/payrolls/${payroll.id}/slip`;
@@ -858,7 +864,7 @@ export default function PayrollPage() {
 
               <div className="p-6 overflow-y-auto flex-1">
                 {/* Attendance Summary (for FnB/MM/Ref/Wrapping/Cellular) */}
-                {['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular'].includes(selectedDivision) && (selectedPayroll as any).attendance && (
+                {['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision) && (selectedPayroll as any).attendance && (
                   <div className="mb-6 bg-blue-50 p-4 rounded-xl">
                     <h4 className="text-sm font-bold text-blue-700 uppercase tracking-wider mb-3">Data Kehadiran</h4>
                     <div className="grid grid-cols-4 gap-2 text-xs">
@@ -883,7 +889,7 @@ export default function PayrollPage() {
                       </div>
 
                       {/* FnB/MM/Ref/Wrapping/Cellular Allowances Breakdown */}
-                      {['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular'].includes(selectedDivision) && selectedPayroll.allowances && (
+                      {['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision) && selectedPayroll.allowances && (
                         <>
                           {Object.entries(selectedPayroll.allowances).map(([key, value]: [string, any]) => {
                             if (!value || value === 0 || value === '0.00') return null;
@@ -987,7 +993,7 @@ export default function PayrollPage() {
                     <h4 className="text-sm font-bold text-red-500 uppercase tracking-wider mb-4 border-b border-red-100 pb-2">Potongan</h4>
                     <div className="space-y-3">
                       {/* FnB/MM/Ref/Wrapping/Hans/Office/Cellular Deductions Breakdown */}
-                      {(selectedDivision === 'fnb' || selectedDivision === 'minimarket' || selectedDivision === 'reflexiology' || selectedDivision === 'wrapping' || selectedDivision === 'hans' || selectedDivision === 'office' || selectedDivision === 'cellular') && selectedPayroll.deductions && (
+                      {(selectedDivision === 'fnb' || selectedDivision === 'minimarket' || selectedDivision === 'reflexiology' || selectedDivision === 'wrapping' || selectedDivision === 'hans' || selectedDivision === 'office' || selectedDivision === 'cellular' || selectedDivision === 'money_changer') && selectedPayroll.deductions && (
                         <>
                           {Object.entries(selectedPayroll.deductions).map(([key, value]: [string, any]) => {
                             const numValue = parseFloat(value);
@@ -1004,7 +1010,7 @@ export default function PayrollPage() {
                       )}
 
                       {/* Generic Payroll Deductions */}
-                      {selectedDivision !== 'fnb' && selectedDivision !== 'minimarket' && selectedDivision !== 'reflexiology' && selectedDivision !== 'wrapping' && selectedDivision !== 'hans' && selectedDivision !== 'cellular' && (
+                      {selectedDivision !== 'fnb' && selectedDivision !== 'minimarket' && selectedDivision !== 'reflexiology' && selectedDivision !== 'wrapping' && selectedDivision !== 'hans' && selectedDivision !== 'cellular' && selectedDivision !== 'money_changer' && (
                         <>
                           {selectedPayroll.bpjs_health > 0 && (
                             <div className="flex justify-between text-sm">
@@ -1370,6 +1376,7 @@ export default function PayrollPage() {
                             if (selectedDivision === 'wrapping') saveEndpoint = '/payrolls/wrapping/import/save';
                             if (selectedDivision === 'hans') saveEndpoint = '/payrolls/hans/import/save';
                             if (selectedDivision === 'cellular') saveEndpoint = '/payroll-cellullers/import/save';
+                            if (selectedDivision === 'money_changer') saveEndpoint = '/payrolls/money-changer/import/save';
 
                             const response = await apiClient.post(saveEndpoint, {
                               rows: parsedRows,
