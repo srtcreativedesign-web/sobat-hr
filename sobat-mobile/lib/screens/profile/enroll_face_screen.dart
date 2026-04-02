@@ -148,13 +148,22 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
       );
 
       final camera = _controller!.description;
-      final imageRotation =
-          InputImageRotationValue.fromRawValue(camera.sensorOrientation) ??
-          InputImageRotation.rotation0deg;
+      final InputImageRotation imageRotation;
+      if (Platform.isIOS) {
+        // iOS front camera streams images in landscape-right orientation
+        // regardless of sensorOrientation value; ML Kit expects rotation270deg
+        imageRotation = camera.lensDirection == CameraLensDirection.front
+            ? InputImageRotation.rotation270deg
+            : InputImageRotation.rotation0deg;
+      } else {
+        imageRotation =
+            InputImageRotationValue.fromRawValue(camera.sensorOrientation) ??
+            InputImageRotation.rotation0deg;
+      }
 
       final inputImageFormat =
           InputImageFormatValue.fromRawValue(image.format.raw) ??
-          InputImageFormat.nv21;
+          (Platform.isIOS ? InputImageFormat.bgra8888 : InputImageFormat.nv21);
 
       final inputImageMetadata = InputImageMetadata(
         size: imageSize,
@@ -270,12 +279,16 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
       if (_controller != null && _controller!.value.isStreamingImages) {
         await _controller?.stopImageStream();
       }
+      // iOS AVFoundation needs time to reconfigure after stopping image stream
+      if (Platform.isIOS) {
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
 
       XFile image;
       try {
         image = await _controller!.takePicture();
       } catch (e) {
-      // Silent fail - error already handled by AppErrorHandler
+      // Silent fail - retry after delay
         await Future.delayed(const Duration(milliseconds: 500));
         image = await _controller!.takePicture();
       }
@@ -326,13 +339,19 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
     });
 
     try {
-      await _controller?.stopImageStream();
+      if (_controller != null && _controller!.value.isStreamingImages) {
+        await _controller?.stopImageStream();
+      }
+      // iOS AVFoundation needs time to reconfigure after stopping image stream
+      if (Platform.isIOS) {
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
 
       XFile image;
       try {
         image = await _controller!.takePicture();
       } catch (e) {
-      // Silent fail - error already handled by AppErrorHandler
+      // Silent fail - retry after delay
         await Future.delayed(const Duration(milliseconds: 500));
         image = await _controller!.takePicture();
       }

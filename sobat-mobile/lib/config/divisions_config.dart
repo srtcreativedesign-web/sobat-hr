@@ -12,6 +12,7 @@ class DivisionsConfig {
     'wrapping': 'payrolls/wrapping',
     'hans': 'payrolls/hans',
     'celluller': 'payroll-cellullers',
+    'money_changer': 'payrolls/money-changer',
   };
 
   /// List of all division codes
@@ -59,6 +60,7 @@ class DivisionsConfig {
       'wrapping': 'Wrapping',
       'hans': 'Security (Hans)',
       'celluller': 'Celluller',
+      'money_changer': 'Money Changer',
     };
     return names[division] ?? division;
   }

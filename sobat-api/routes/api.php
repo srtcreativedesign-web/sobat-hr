@@ -170,6 +170,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollHansController::class, 'generateSlip']);
     });
 
+    // Money Changer Payroll routes
+    Route::prefix('payrolls/money-changer')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\PayrollMoneyChangerController::class, 'index']);
+        Route::post('/import', [App\Http\Controllers\Api\PayrollMoneyChangerController::class, 'import']);
+        Route::post('/import/save', [App\Http\Controllers\Api\PayrollMoneyChangerController::class, 'saveImport']);
+        Route::get('/{id}', [App\Http\Controllers\Api\PayrollMoneyChangerController::class, 'show']);
+        Route::patch('/{id}/status', [App\Http\Controllers\Api\PayrollMoneyChangerController::class, 'updateStatus']);
+        Route::delete('/{id}', [App\Http\Controllers\Api\PayrollMoneyChangerController::class, 'destroy']);
+        Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollMoneyChangerController::class, 'generateSlip']);
+    });
+
     // HO (Head Office) Payroll routes - Standardized
     Route::prefix('payrolls/ho')->group(function () {
         Route::get('/', [App\Http\Controllers\Api\PayrollHoController::class, 'index']);
