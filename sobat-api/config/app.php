@@ -123,4 +123,17 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Attendance Maintenance Mode
+    |--------------------------------------------------------------------------
+    |
+    | When set to true, check-in and check-out endpoints will return 503.
+    | Read-only endpoints (history, today, etc.) remain functional.
+    | Toggle via .env: ATTENDANCE_MAINTENANCE=true
+    |
+    */
+
+    'attendance_maintenance' => (bool) env('ATTENDANCE_MAINTENANCE', false),
+
 ];

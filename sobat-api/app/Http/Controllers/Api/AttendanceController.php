@@ -70,6 +70,13 @@ class AttendanceController extends Controller
 
     public function store(Request $request)
     {
+        // --- MAINTENANCE MODE ---
+        if (config('app.attendance_maintenance', false)) {
+            return response()->json([
+                'message' => 'Fitur absensi sedang dalam maintenance. Silakan coba beberapa saat lagi.',
+            ], 503);
+        }
+
         $validated = $request->validate([
             'employee_id' => 'required|exists:employees,id',
             'date' => 'required|date',
@@ -289,6 +296,13 @@ class AttendanceController extends Controller
 
     public function update(Request $request, string $id)
     {
+        // --- MAINTENANCE MODE ---
+        if (config('app.attendance_maintenance', false)) {
+            return response()->json([
+                'message' => 'Fitur absensi sedang dalam maintenance. Silakan coba beberapa saat lagi.',
+            ], 503);
+        }
+
         $attendance = Attendance::findOrFail($id);
 
         // --- IDOR GUARD ---
