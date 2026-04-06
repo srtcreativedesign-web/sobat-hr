@@ -734,7 +734,7 @@ class PayrollController extends Controller
         $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'integer',
-            'division' => 'nullable|string|in:office,fnb,minimarket,reflexiology,wrapping,hans',
+            'division' => 'nullable|string|in:office,fnb,minimarket,reflexiology,wrapping,hans,cellular,money_changer',
             'approval_signature' => 'nullable|string',
             'signer_name' => 'nullable|string',
         ]);
@@ -756,6 +756,8 @@ class PayrollController extends Controller
         if ($division === 'reflexiology') $model = \App\Models\PayrollRef::class;
         if ($division === 'wrapping') $model = \App\Models\PayrollWrapping::class;
         if ($division === 'hans') $model = \App\Models\PayrollHans::class;
+        if ($division === 'cellular') $model = \App\Models\PayrollCelluller::class;
+        if ($division === 'money_changer') $model = \App\Models\PayrollMoneyChanger::class;
 
         // Pending status varies: 'draft' or 'pending'
         // Generic uses 'draft', others use 'pending'. Let's handle both or check model.
@@ -998,6 +1000,29 @@ class PayrollController extends Controller
                             'BPJS TK' => $payroll->deduction_bpjs_tk,
                         ];
                      }
+                     // Money Changer
+                     elseif (str_contains($modelClass, 'PayrollMoneyChanger')) {
+                        $payroll->allowances = [
+                            'Tunjangan Jabatan' => $payroll->position_allowance,
+                            'Uang Makan' => ['rate' => $payroll->meal_rate, 'amount' => $payroll->meal_amount],
+                            'Transport' => ['rate' => $payroll->transport_rate, 'amount' => $payroll->transport_amount],
+                            'Tunjangan Kehadiran' => $payroll->attendance_allowance,
+                            'Tunjangan Kesehatan' => $payroll->health_allowance,
+                            'Lembur' => ['rate' => $payroll->overtime_rate, 'hours' => $payroll->overtime_hours, 'amount' => $payroll->overtime_amount],
+                            'Bonus' => $payroll->bonus,
+                            'THR' => $payroll->holiday_allowance,
+                            'Adj Kekurangan Gaji' => $payroll->adjustment,
+                            'Kebijakan HO' => $payroll->policy_ho,
+                        ];
+                        $payroll->deductions = [
+                            'Absen 1X' => $payroll->deduction_absent,
+                            'Terlambat' => $payroll->deduction_late,
+                            'Selisih SO' => $payroll->deduction_so_shortage,
+                            'Pinjaman' => $payroll->deduction_loan,
+                            'Adm Bank' => $payroll->deduction_admin_fee,
+                            'BPJS TK' => $payroll->deduction_bpjs_tk,
+                        ];
+                     }
 
 
                     // Generate AI Message
@@ -1044,7 +1069,10 @@ class PayrollController extends Controller
                 $processDivision(\App\Models\Payroll::class, 'payslips.ho', 'HO');
             }
             if ($division === 'all' || $division === 'cellular') {
-                $processDivision(\App\Models\PayrollCelluller::class, 'payslips.celluller', 'Cellular'); // Note: View name 'payslips.celluller'
+                $processDivision(\App\Models\PayrollCelluller::class, 'payslips.celluller', 'Cellular');
+            }
+            if ($division === 'all' || $division === 'money_changer') {
+                $processDivision(\App\Models\PayrollMoneyChanger::class, 'payslips.money_changer', 'MoneyChanger');
             }
 
             if (empty($files)) {
