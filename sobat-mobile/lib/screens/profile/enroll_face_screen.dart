@@ -374,28 +374,74 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
     try {
       setState(() {
         _isUploading = true;
-        _statusText = 'UPLOADING...';
+        _statusText = 'COMPRESSING...';
       });
 
-      // Compress image before upload
-      // Use temporary directory for stable file path on iOS
+      // === STEP 1: Aggressive compression for iPhone high-MP cameras ===
       final tempDir = await getTemporaryDirectory();
       final targetPath = p.join(tempDir.path, 'face_enroll_${DateTime.now().millisecondsSinceEpoch}.jpg');
       
-      final compressedFile = await FlutterImageCompress.compressAndGetFile(
-        imagePath,
-        targetPath,
-        quality: 50,
-        minWidth: 800,  // Resize to max 800px width
-        minHeight: 800, // Resize to max 800px height
-      );
-      final finalPath = compressedFile?.path ?? imagePath;
+      // iPhone 17 Pro Max has 48MP+ camera — need aggressive compression
+      final int maxDim = Platform.isIOS ? 640 : 800;
+      final int quality = Platform.isIOS ? 40 : 50;
+      
+      String finalPath = imagePath;
+      
+      try {
+        final compressedFile = await FlutterImageCompress.compressAndGetFile(
+          imagePath,
+          targetPath,
+          quality: quality,
+          minWidth: maxDim,
+          minHeight: maxDim,
+        );
+        
+        if (compressedFile != null) {
+          finalPath = compressedFile.path;
+          debugPrint('[EnrollFace] Compressed: ${File(finalPath).lengthSync()} bytes');
+        } else {
+          debugPrint('[EnrollFace] Compression returned null, using original');
+        }
+      } catch (compressError) {
+        debugPrint('[EnrollFace] Compression failed: $compressError');
+        // Continue with original file
+      }
+      
+      // === STEP 2: Validate file size — re-compress if still too large ===
+      final fileSize = File(finalPath).lengthSync();
+      debugPrint('[EnrollFace] File size: ${(fileSize / 1024).toStringAsFixed(0)} KB');
+      
+      if (fileSize > 2 * 1024 * 1024) { // > 2MB
+        debugPrint('[EnrollFace] Still too large, re-compressing at quality 20');
+        final recompressPath = p.join(tempDir.path, 'face_enroll_small_${DateTime.now().millisecondsSinceEpoch}.jpg');
+        try {
+          final recompressed = await FlutterImageCompress.compressAndGetFile(
+            finalPath,
+            recompressPath,
+            quality: 20,
+            minWidth: 480,
+            minHeight: 480,
+          );
+          if (recompressed != null) {
+            finalPath = recompressed.path;
+            debugPrint('[EnrollFace] Re-compressed: ${File(finalPath).lengthSync()} bytes');
+          }
+        } catch (_) {}
+      }
 
+      setState(() => _statusText = 'UPLOADING...');
+
+      // === STEP 3: Build URL — ensure no trailing slash (prevents Nginx 308 redirect) ===
       final token = await _authService.getToken();
+      final baseUrl = ApiConfig.baseUrl.endsWith('/')
+          ? ApiConfig.baseUrl.substring(0, ApiConfig.baseUrl.length - 1)
+          : ApiConfig.baseUrl;
+      final uploadUrl = '$baseUrl/employees/enroll-face';
+      debugPrint('[EnrollFace] URL: $uploadUrl');
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('${ApiConfig.baseUrl}employees/enroll-face'),
+        Uri.parse(uploadUrl),
       );
 
       request.headers.addAll({
@@ -405,8 +451,15 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
 
       request.files.add(await http.MultipartFile.fromPath('photo', finalPath));
 
-      final streamedResponse = await request.send();
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Upload timeout — koneksi terlalu lambat');
+        },
+      );
       final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint('[EnrollFace] Response: ${response.statusCode} ${response.body.substring(0, math.min(200, response.body.length))}');
 
       if (!mounted) return;
 
@@ -414,13 +467,56 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
         setState(() => _statusText = 'SUCCESS!');
         await Future.delayed(const Duration(milliseconds: 500));
         _showSuccessDialog();
+      } else if (response.statusCode == 308 || response.statusCode == 307) {
+        // Nginx redirect — follow manually
+        final redirectUrl = response.headers['location'];
+        if (redirectUrl != null) {
+          debugPrint('[EnrollFace] Following redirect to: $redirectUrl');
+          // Retry with redirect URL
+          var retryRequest = http.MultipartRequest('POST', Uri.parse(redirectUrl));
+          retryRequest.headers.addAll({
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          });
+          retryRequest.files.add(await http.MultipartFile.fromPath('photo', finalPath));
+          final retryStream = await retryRequest.send().timeout(const Duration(seconds: 30));
+          final retryResponse = await http.Response.fromStream(retryStream);
+          
+          if (!mounted) return;
+          if (retryResponse.statusCode == 200) {
+            setState(() => _statusText = 'SUCCESS!');
+            await Future.delayed(const Duration(milliseconds: 500));
+            _showSuccessDialog();
+            return;
+          }
+        }
+        // If redirect failed, show error
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gagal upload: Server redirect error. Coba lagi.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          _isUploading = false;
+          _isAutoCapturing = false;
+          _statusText = 'RETRYING...';
+          _initCamera();
+        });
       } else {
         String errorMsg = response.body;
-        if (errorMsg.contains('<html') ||
-            errorMsg.contains('<!DOCTYPE html>')) {
-          errorMsg =
-              'Foto terlalu besar atau gangguan server (${response.statusCode}).';
+        if (errorMsg.contains('<html') || errorMsg.contains('<!DOCTYPE html>')) {
+          errorMsg = 'Server error (${response.statusCode}). Coba lagi.';
         }
+        // Try parse JSON message
+        try {
+          final jsonMsg = Uri.decodeFull(errorMsg);
+          if (jsonMsg.contains('"message"')) {
+            final decoded = RegExp(r'"message"\s*:\s*"([^"]+)"').firstMatch(jsonMsg);
+            if (decoded != null) errorMsg = decoded.group(1)!;
+          }
+        } catch (_) {}
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal: $errorMsg'),
@@ -435,11 +531,10 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
         });
       }
     } catch (e) {
-      // Silent fail - error already handled by AppErrorHandler
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Terjadi kesalahan: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Terjadi kesalahan: $e'), backgroundColor: Colors.red),
+        );
         setState(() {
           _isUploading = false;
           _isAutoCapturing = false;
