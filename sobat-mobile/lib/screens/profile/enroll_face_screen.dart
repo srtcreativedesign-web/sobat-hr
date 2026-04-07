@@ -103,12 +103,8 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
 
       _controller = CameraController(
         frontCamera,
-        ResolutionPreset
-            .medium, // Reduced from high to avoid oversized images on high-MP cameras (iPhone 17 Pro Max 48MP+)
+        ResolutionPreset.medium, // Reduced from high to avoid oversized images on high-MP cameras (iPhone 17 Pro Max 48MP+)
         enableAudio: false,
-        imageFormatGroup: Platform.isAndroid
-            ? ImageFormatGroup.nv21
-            : ImageFormatGroup.bgra8888,
       );
 
       _initializeControllerFuture = _controller!.initialize();
@@ -281,10 +277,8 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
       if (_controller != null && _controller!.value.isStreamingImages) {
         await _controller?.stopImageStream();
       }
-      // iOS AVFoundation needs time to reconfigure after stopping image stream
-      if (Platform.isIOS) {
-        await Future.delayed(const Duration(milliseconds: 300));
-      }
+      // Both iOS AVFoundation and Android Camera2 API need time to reconfigure after stopping image stream
+      await Future.delayed(const Duration(milliseconds: 500));
 
       XFile image;
       try {
@@ -344,10 +338,8 @@ class _EnrollFaceScreenState extends State<EnrollFaceScreen>
       if (_controller != null && _controller!.value.isStreamingImages) {
         await _controller?.stopImageStream();
       }
-      // iOS AVFoundation needs time to reconfigure after stopping image stream
-      if (Platform.isIOS) {
-        await Future.delayed(const Duration(milliseconds: 300));
-      }
+      // Both iOS AVFoundation and Android Camera2 API need time to reconfigure after stopping image stream
+      await Future.delayed(const Duration(milliseconds: 500));
 
       XFile image;
       try {
