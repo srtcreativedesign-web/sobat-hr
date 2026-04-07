@@ -126,6 +126,46 @@ export default function EmployeesPage() {
     setSelectedEmployee(null);
   };
 
+  const handleResetDevice = async (employeeId: number) => {
+    try {
+      const result = await Swal.fire({
+        title: 'Reset Device Binding?',
+        text: 'Ini akan mengizinkan karyawan untuk login kembali melalui perangkat baru. Lanjutkan?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#1C3ECA',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, Reset',
+        cancelButtonText: 'Batal'
+      });
+
+      if (result.isConfirmed) {
+        setLoading(true);
+        const response = await apiClient.post(`/employees/${employeeId}/reset-device`);
+        
+        Swal.fire({
+          title: 'Berhasil!',
+          text: response.data.message || 'Device berhasil direset.',
+          icon: 'success',
+          confirmButtonColor: '#1C3ECA',
+        });
+        
+        fetchEmployees(); // refresh list
+        setShowModal(false); // close modal or we could keep it open
+      }
+    } catch (error: any) {
+      console.error('Reset Device Error:', error);
+      Swal.fire({
+        title: 'Error!',
+        text: error.response?.data?.message || 'Gagal mereset device.',
+        icon: 'error',
+        confirmButtonColor: '#1C3ECA',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleImportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!importFile) return;
@@ -691,7 +731,13 @@ export default function EmployeesPage() {
               </div>
 
               {/* Modal Footer */}
-              <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end">
+              <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-between items-center">
+                <button
+                  onClick={() => handleResetDevice(selectedEmployee.id)}
+                  className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 focus:ring-2 focus:ring-red-500 focus:outline-none transition-colors"
+                >
+                  Reset Device
+                </button>
                 <button
                   onClick={handleCloseModal}
                   className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
