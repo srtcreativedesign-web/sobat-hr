@@ -704,4 +704,28 @@ class EmployeeController extends Controller
         );
     }
 
+    /**
+     * Reset Device Binding
+     */
+    public function resetDevice($id)
+    {
+        $employee = Employee::findOrFail($id);
+        
+        if ($employee->user) {
+            $employee->user->device_id = null;
+            $employee->user->device_name = null;
+            $employee->user->save();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Device berhasil direset. Karyawan dapat login kembali dari perangkat baru.'
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Karyawan tidak memiliki akun pengguna.'
+        ], 404);
+    }
+
 }

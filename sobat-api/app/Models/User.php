@@ -26,6 +26,8 @@ class User extends Authenticatable
         'role_id',
         'fcm_token',
         'track_type',
+        'device_id',
+        'device_name',
     ];
 
     /**

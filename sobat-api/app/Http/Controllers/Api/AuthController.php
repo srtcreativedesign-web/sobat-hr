@@ -37,6 +37,27 @@ class AuthController extends Controller
             // Load relationships for UserResource
             $user->load(['role', 'employee.division', 'employee.jobPosition']);
 
+            // DEVICE BINDING LOGIC
+            // Hanya berlaku untuk user dengan role 'employee'
+            if ($user->role && $user->role->name === \App\Models\Role::EMPLOYEE) {
+                if ($request->has('device_id') && !empty($request->device_id)) {
+                    if (is_null($user->device_id)) {
+                        // Bind to this new device
+                        $user->device_id = $request->device_id;
+                        if ($request->has('device_name')) {
+                            $user->device_name = $request->device_name;
+                        }
+                        $user->save();
+                    } else if ($user->device_id !== $request->device_id) {
+                        // Device mismatch
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Akun Anda telah terkait dengan perangkat lain (' . ($user->device_name ?? 'Unknown Device') . '). Hubungi Admin HR untuk melakukan Reset Device.',
+                        ], 403);
+                    }
+                }
+            }
+
             // Create new token
             $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -113,8 +134,6 @@ class AuthController extends Controller
         $user->load(['role', 'employee.division', 'employee.jobPosition']);
 
         return response()->json([
-            'success' => true,
-            'message' => 'User profile fetched successfully',
             'success' => true,
             'message' => 'User profile fetched successfully',
             'data' => new \App\Http\Resources\UserResource($user),

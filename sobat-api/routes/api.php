@@ -56,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('employees', App\Http\Controllers\Api\EmployeeController::class);
     Route::get('/employees/{id}/attendances', [App\Http\Controllers\Api\EmployeeController::class, 'attendances']);
     Route::get('/employees/{id}/payrolls', [App\Http\Controllers\Api\EmployeeController::class, 'payrolls']);
+    Route::post('/employees/{id}/reset-device', [App\Http\Controllers\Api\EmployeeController::class, 'resetDevice']);
     Route::middleware(['throttle:6,1'])->group(function () {
         Route::post('/employees/enroll-face', [App\Http\Controllers\Api\EmployeeController::class, 'enrollFace']);
     });
