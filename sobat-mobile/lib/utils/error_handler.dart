@@ -75,7 +75,7 @@ class AppErrorHandler {
         return _networkError;
 
       case DioExceptionType.badResponse:
-        return _handleBadResponse(e.response?.statusCode);
+        return _handleBadResponse(e.response?.statusCode, e.response?.data);
 
       case DioExceptionType.cancel:
         return 'Permintaan dibatalkan.';
@@ -86,7 +86,12 @@ class AppErrorHandler {
   }
 
   /// Handle HTTP status codes with user-friendly messages
-  static String _handleBadResponse(int? statusCode) {
+  static String _handleBadResponse(int? statusCode, dynamic responseData) {
+    // Try to extract backend custom message first
+    if (responseData != null && responseData is Map && responseData['message'] != null) {
+      return responseData['message'].toString();
+    }
+
     switch (statusCode) {
       case 401:
         return _authError;

@@ -7,6 +7,8 @@ import 'storage_service.dart';
 import '../utils/error_handler.dart';
 import 'base_service.dart';
 
+import 'package:device_info_plus/device_info_plus.dart';
+
 class AuthService extends BaseService {
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
@@ -17,9 +19,31 @@ class AuthService extends BaseService {
       debugPrint('Login endpoint: ${ApiConfig.login}');
       debugPrint('Full URL: ${ApiConfig.baseUrl}${ApiConfig.login}');
       
+      String? deviceId;
+      String? deviceName;
+      try {
+        final deviceInfo = DeviceInfoPlugin();
+        if (Platform.isIOS) {
+          final iosInfo = await deviceInfo.iosInfo;
+          deviceId = iosInfo.identifierForVendor;
+          deviceName = iosInfo.name;
+        } else if (Platform.isAndroid) {
+          final androidInfo = await deviceInfo.androidInfo;
+          deviceId = androidInfo.id;
+          deviceName = '${androidInfo.brand} ${androidInfo.model}';
+        }
+      } catch (e) {
+        debugPrint('Failed to get device info: $e');
+      }
+
       final response = await dio.post(
         ApiConfig.login,
-        data: {'email': email, 'password': password},
+        data: {
+          'email': email, 
+          'password': password,
+          if (deviceId != null) 'device_id': deviceId,
+          if (deviceName != null) 'device_name': deviceName,
+        },
       );
 
       if (response.data is! Map) {
