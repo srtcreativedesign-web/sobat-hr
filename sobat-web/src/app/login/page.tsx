@@ -74,7 +74,7 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="flex items-center gap-3 mb-8">
             <div className="bg-white p-2 rounded-xl">
-              <Image src="/logo/logo.png" width={32} height={32} alt="Logo" className="object-contain" />
+              <Image src="/logo/favicon.png" width={32} height={32} alt="Logo" className="object-contain" />
             </div>
             <span className="text-xl font-bold tracking-widest">SOBAT HR</span>
           </div>

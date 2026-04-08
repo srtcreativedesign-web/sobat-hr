@@ -300,7 +300,7 @@ export default function Sidebar() {
             <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-lg">
               <div className="relative w-6 h-6">
                 <Image
-                  src="/logo/logo.png"
+                  src="/logo/favicon.png"
                   alt="Logo"
                   fill
                   className="object-contain"
