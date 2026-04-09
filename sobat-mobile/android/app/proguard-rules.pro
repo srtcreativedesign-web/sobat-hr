@@ -13,3 +13,10 @@
 # If you ever introduce native Android MethodChannels or Java/Kotlin GSON 
 # serialization that relies on exact class naming, you would add rules like:
 # -keep class co.sobat.sobat_hr.models.** { *; }
+
+# Prevent R8/ProGuard from stripping Flutter core classes required by third-party plugins
+-keep class io.flutter.util.** { *; }
+-keep class io.flutter.app.** { *; }
+-keep class io.flutter.plugin.** { *; }
+-keep class io.flutter.embedding.** { *; }
+-dontwarn io.flutter.**
