@@ -68,4 +68,12 @@ class Organization extends Model
             'radius_meters' => null
         ];
     }
+    /**
+     * Scope for organizations that have geofencing coordinates.
+     */
+    public function scopeGeofencingEnabled($query)
+    {
+        return $query->whereNotNull('latitude')
+            ->whereNotNull('longitude');
+    }
 }

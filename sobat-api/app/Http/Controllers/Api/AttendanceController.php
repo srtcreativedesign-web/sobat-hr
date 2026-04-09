@@ -94,33 +94,57 @@ class AttendanceController extends Controller
         ]);
 
         $employee = Employee::find($validated['employee_id']);
-        $organization = \App\Models\Organization::where('name', $employee->department)->first();
         $attendanceType = $validated['attendance_type'] ?? 'office';
         $trackType = $validated['track_type'] ?? null;
         $isOperational = $trackType === 'operational';
 
+        $matchedOutlet = null;
+
         // Geolocation Validation (Skip for field attendance and operational track)
-        if ($trackType !== 'operational' && $attendanceType === 'office' && isset($validated['latitude']) && isset($validated['longitude']) && $employee && $organization && $organization->latitude) {
-            $orgLat = $organization->latitude;
-            $orgLng = $organization->longitude;
-            $radius = $organization->radius_meters ?? 50;
-            $tolerance = 10;
-            $maxDistance = $radius + $tolerance;
+        if ($trackType !== 'operational' && $attendanceType === 'office' && isset($validated['latitude']) && isset($validated['longitude']) && $employee) {
+            
+            // Get all locations that have custom geofencing enabled
+            $locations = \App\Models\Organization::geofencingEnabled()->get();
+            
+            $isValid = false;
+            $minDistance = 999999;
+            $nearestLoc = null;
 
-            $distance = $this->haversineGreatCircleDistance(
-                $validated['latitude'],
-                $validated['longitude'],
-                $orgLat,
-                $orgLng
-            );
+            foreach ($locations as $loc) {
+                $distance = $this->haversineGreatCircleDistance(
+                    $validated['latitude'],
+                    $validated['longitude'],
+                    $loc->latitude,
+                    $loc->longitude
+                );
 
-            if ($distance > $maxDistance) {
+                $radius = $loc->radius_meters ?? 50;
+                $tolerance = 10;
+                $maxAllowed = $radius + $tolerance;
+
+                if ($distance <= $maxAllowed) {
+                    $isValid = true;
+                    $matchedOutlet = $loc;
+                    break;
+                }
+
+                if ($distance < $minDistance) {
+                    $minDistance = $distance;
+                    $nearestLoc = $loc;
+                }
+            }
+
+            if (!$isValid) {
                 return response()->json([
-                    'message' => 'Anda berada di luar jangkauan kantor.',
-                    'distance' => round($distance, 2) . ' meter',
-                    'radius' => $radius . ' meter (dengan toleransi ' . $tolerance . ' meter)'
+                    'message' => 'Anda berada di luar jangkauan lokasi kantor/gudang yang diijinkan.',
+                    'distance_nearest' => round($minDistance, 2) . ' meter dari ' . ($nearestLoc ? $nearestLoc->name : 'lokasi terdekat'),
                 ], 422);
             }
+        }
+
+        // Auto-assign outlet_id if matched
+        if ($matchedOutlet) {
+            $validated['outlet_id'] = $matchedOutlet->id;
         }
 
         // For field attendance: Auto-set status to pending (requires approval)

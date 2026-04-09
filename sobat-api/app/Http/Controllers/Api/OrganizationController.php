@@ -23,7 +23,7 @@ class OrganizationController extends Controller
         } elseif ($request->has('type')) {
             $query->where('type', $request->type);
         } else {
-             $query->whereNotIn('type', ['Board Of Directors', 'Holdings']);
+             $query->whereNotIn('type', ['Board Of Directors', 'Holdings', 'branch']);
         }
 
         return response()->json($query->get());
