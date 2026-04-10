@@ -18,7 +18,7 @@ class PayrollService extends BaseService {
 
         final response = await dio.get(
           endpoint,
-          queryParameters: {if (year != null) 'year': year},
+          queryParameters: {?'year': year},
         );
 
         if (response.statusCode == 200 && response.data['data'] != null) {

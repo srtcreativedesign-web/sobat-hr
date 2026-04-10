@@ -358,7 +358,7 @@ class PayrollController extends Controller
                     
                     if ($cellValue && stripos($cellValue, 'Nama Karyawan') !== false) {
                         $headerRowIndex = $row;
-                        \Illuminate\Support\Facades\Log::info("Header found at row $row, col " . $cell->getColumn());
+                        Log::info("Header found at row $row, col " . $cell->getColumn());
                         break 2;
                     }
                 }
@@ -435,7 +435,7 @@ class PayrollController extends Controller
                 }
             }
             
-            \Illuminate\Support\Facades\Log::info('Column Mapping Detected', $columnMapping);
+            Log::info('Column Mapping Detected', $columnMapping);
             
             $dataRows = [];
             // Data starts after header row (usually header is row 2, units row 3, data starts row 4)
@@ -750,7 +750,7 @@ class PayrollController extends Controller
             $updateData['approved_by'] = auth()->id();
         }
 
-        $model = \App\Models\Payroll::class;
+        $model = Payroll::class;
         if ($division === 'fnb') $model = \App\Models\PayrollFnb::class;
         if ($division === 'minimarket') $model = \App\Models\PayrollMm::class;
         if ($division === 'reflexiology') $model = \App\Models\PayrollRef::class;
@@ -1066,7 +1066,7 @@ class PayrollController extends Controller
                  $processDivision(\App\Models\PayrollWrapping::class, 'payslips.wrapping', 'Wrapping');
             }
             if ($division === 'all' || $division === 'office') {
-                $processDivision(\App\Models\Payroll::class, 'payslips.ho', 'HO');
+                $processDivision(Payroll::class, 'payslips.ho', 'HO');
             }
             if ($division === 'all' || $division === 'cellular') {
                 $processDivision(\App\Models\PayrollCelluller::class, 'payslips.celluller', 'Cellular');
@@ -1101,7 +1101,7 @@ class PayrollController extends Controller
             return response()->download($zipPath)->deleteFileAfterSend(true);
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("Bulk Download Error: " . $e->getMessage());
+            Log::error("Bulk Download Error: " . $e->getMessage());
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
