@@ -50,14 +50,14 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
-  // Office Location
-  LatLng? _officeLocation;
-  double _attendanceRadius = 100; // Default
+  // Attendance Locations (multi-location)
+  List<Map<String, dynamic>> _locations = [];
+  String? _matchedLocationName;
 
   @override
   void initState() {
     super.initState();
-    _initOfficeLocation();
+    _initLocations();
     _checkPermissionsAndLocate();
     _fetchTodayAttendance();
     _checkConnectivity();
@@ -82,23 +82,27 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     ).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeOut));
   }
 
-  void _initOfficeLocation() {
-    final user = context.read<AuthProvider>().user;
+  /// Hardcoded fallback locations (used when API is unreachable)
+  static const List<Map<String, dynamic>> _fallbackLocations = [
+    {'id': 'office', 'name': 'Office', 'latitude': -6.13778, 'longitude': 106.62295, 'radius_meters': 10},
+    {'id': 'gudang_b3', 'name': 'Gudang B3', 'latitude': -6.134087, 'longitude': 106.623301, 'radius_meters': 10},
+    {'id': 'training_centre', 'name': 'Training Centre', 'latitude': -6.133417, 'longitude': 106.629707, 'radius_meters': 10},
+  ];
 
-    // Default Head Office Coordinates
-    const double fallbackLat = -6.13778;
-    const double fallbackLng = 106.62295;
-    const double fallbackRadius = 100;
+  Future<void> _initLocations() async {
+    // Try fetching from API first
+    final apiLocations = await _attendanceService.getAttendanceLocations();
+    if (mounted) {
+      setState(() {
+        _locations = apiLocations.isNotEmpty
+            ? apiLocations
+            : _fallbackLocations.map((l) => Map<String, dynamic>.from(l)).toList();
+      });
 
-    if (user != null &&
-        user.officeLatitude != null &&
-        user.officeLongitude != null) {
-      _officeLocation = LatLng(user.officeLatitude!, user.officeLongitude!);
-      _attendanceRadius = user.officeRadius?.toDouble() ?? fallbackRadius;
-    } else {
-      // Fallback to Head Office if server data is missing
-      _officeLocation = const LatLng(fallbackLat, fallbackLng);
-      _attendanceRadius = fallbackRadius;
+      // Re-check distance if position already available
+      if (_currentPosition != null) {
+        _checkDistance(_currentPosition!);
+      }
     }
   }
 
@@ -274,25 +278,49 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   }
 
   void _checkDistance(Position userPos) {
-    if (_officeLocation == null) {
+    if (_locations.isEmpty) {
       if (mounted) {
         setState(() {
           _isWithinRange = false;
+          _matchedLocationName = null;
         });
       }
       return;
     }
 
-    double distance = Geolocator.distanceBetween(
-      userPos.latitude,
-      userPos.longitude,
-      _officeLocation!.latitude,
-      _officeLocation!.longitude,
-    );
+    bool found = false;
+    String? matchedName;
 
-    setState(() {
-      _isWithinRange = distance <= _attendanceRadius;
-    });
+    for (final loc in _locations) {
+      final distance = Geolocator.distanceBetween(
+        userPos.latitude,
+        userPos.longitude,
+        (loc['latitude'] as num).toDouble(),
+        (loc['longitude'] as num).toDouble(),
+      );
+      final radius = (loc['radius_meters'] as num?)?.toDouble() ?? 100.0;
+      if (distance <= radius + 10) {
+        found = true;
+        matchedName = loc['name'] as String?;
+        break;
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _isWithinRange = found;
+        _matchedLocationName = matchedName;
+      });
+    }
+  }
+
+  IconData _getLocationIcon(String locationId) {
+    return switch (locationId) {
+      'office' => Icons.business,
+      'gudang_b3' => Icons.warehouse,
+      'training_centre' => Icons.school,
+      _ => Icons.location_on,
+    };
   }
 
   // ... (Keep existing methods until build)
@@ -307,7 +335,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     }
 
     if (_attendanceType == 'office' && !_isWithinRange) {
-      _showErrorSnackBar('Anda harus berada di area kantor untuk absen!');
+      _showErrorSnackBar('Anda harus berada di salah satu area lokasi absensi!');
       return;
     }
 
@@ -370,7 +398,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       // Head office / field: check range
       bool isFieldAttendance = _todayAttendance?['attendance_type'] == 'field';
       if (!isFieldAttendance && !_isWithinRange) {
-        _showErrorSnackBar('Anda harus berada di area kantor untuk absen!');
+        _showErrorSnackBar('Anda harus berada di salah satu area lokasi absensi!');
         return;
       }
     }
@@ -557,11 +585,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       buttonTextColor = gradientColors[0];
     }
 
-    if (_officeLocation == null) {
+    if (_locations.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('Presensi')),
         body: const Center(
-          child: Text('Lokasi kantor belum diatur untuk Anda.'),
+          child: CircularProgressIndicator(),
         ),
       );
     }
@@ -574,8 +602,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              initialCenter: _officeLocation!,
-              initialZoom: 18.0,
+              initialCenter: LatLng(
+                (_locations.first['latitude'] as num).toDouble(),
+                (_locations.first['longitude'] as num).toDouble(),
+              ),
+              initialZoom: 16.0,
             ),
             children: [
               TileLayer(
@@ -584,42 +615,71 @@ class _AttendanceScreenState extends State<AttendanceScreen>
               ),
               CircleLayer(
                 circles: [
-                  if (_officeLocation != null)
+                  for (final loc in _locations)
                     CircleMarker(
-                      point: _officeLocation!,
-                      color: AppTheme.colorCyan.withValues(alpha: 0.15),
-                      borderColor: AppTheme.colorCyan,
-                      borderStrokeWidth: 1,
+                      point: LatLng(
+                        (loc['latitude'] as num).toDouble(),
+                        (loc['longitude'] as num).toDouble(),
+                      ),
+                      color: (loc['name'] == _matchedLocationName)
+                          ? Colors.green.withValues(alpha: 0.2)
+                          : AppTheme.colorCyan.withValues(alpha: 0.15),
+                      borderColor: (loc['name'] == _matchedLocationName)
+                          ? Colors.green
+                          : AppTheme.colorCyan,
+                      borderStrokeWidth: (loc['name'] == _matchedLocationName) ? 2 : 1,
                       useRadiusInMeter: true,
-                      radius: _attendanceRadius,
+                      radius: (loc['radius_meters'] as num?)?.toDouble() ?? 100.0,
                     ),
                 ],
               ),
               MarkerLayer(
                 markers: [
-                  if (_officeLocation != null)
+                  for (final loc in _locations)
                     Marker(
-                      point: _officeLocation!,
-                      width: 60,
-                      height: 60,
+                      point: LatLng(
+                        (loc['latitude'] as num).toDouble(),
+                        (loc['longitude'] as num).toDouble(),
+                      ),
+                      width: 80,
+                      height: 70,
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: (loc['name'] == _matchedLocationName)
+                                  ? Colors.green
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                            ),
+                            child: Text(
+                              loc['name'] as String? ?? '',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: (loc['name'] == _matchedLocationName)
+                                    ? Colors.white
+                                    : AppTheme.colorEggplant,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Container(
+                            padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 10,
-                                ),
-                              ],
+                              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
                             ),
                             child: Icon(
-                              Icons.business,
-                              color: AppTheme.colorEggplant,
-                              size: 24,
+                              _getLocationIcon(loc['id'] as String? ?? ''),
+                              color: (loc['name'] == _matchedLocationName)
+                                  ? Colors.green
+                                  : AppTheme.colorEggplant,
+                              size: 18,
                             ),
                           ),
                         ],
@@ -832,8 +892,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 const SizedBox(width: 8),
                                 Text(
                                   _isWithinRange
-                                      ? 'Di dalam Area Kantor'
-                                      : 'Di Luar Area Kantor',
+                                      ? 'Di Area ${_matchedLocationName ?? 'Kantor'}'
+                                      : 'Di Luar Area',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,

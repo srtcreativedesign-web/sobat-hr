@@ -20,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -56,6 +56,8 @@ class DatabaseHelper {
         location_address $textTypeNullable,
         attendance_type $textTypeNullable,
         field_notes $textTypeNullable,
+        location_id $textTypeNullable,
+        location_name $textTypeNullable,
         is_synced $intType DEFAULT 0,
         sync_attempts $intType DEFAULT 0,
         last_sync_attempt_at $textTypeNullable,
@@ -91,19 +93,19 @@ class DatabaseHelper {
         // 3. Copy data from old to new
         await txn.execute('''
           INSERT INTO offline_attendances (
-            id, user_id, employee_id, track_type, validation_method, 
-            qr_code_data, gps_latitude, gps_longitude, timestamp, 
-            device_timestamp, photo_path, photo_base64, location_address, 
-            attendance_type, field_notes, is_synced, sync_attempts, 
-            last_sync_attempt_at, device_id, device_uptime_seconds, 
+            id, user_id, employee_id, track_type, validation_method,
+            qr_code_data, gps_latitude, gps_longitude, timestamp,
+            device_timestamp, photo_path, photo_base64, location_address,
+            attendance_type, field_notes, is_synced, sync_attempts,
+            last_sync_attempt_at, device_id, device_uptime_seconds,
             created_at, updated_at
           )
-          SELECT 
-            id, user_id, employee_id, track_type, validation_method, 
-            qr_code_data, gps_latitude, gps_longitude, timestamp, 
-            device_timestamp, photo_path, photo_base64, location_address, 
-            attendance_type, field_notes, is_synced, sync_attempts, 
-            last_sync_attempt_at, device_id, device_uptime_seconds, 
+          SELECT
+            id, user_id, employee_id, track_type, validation_method,
+            qr_code_data, gps_latitude, gps_longitude, timestamp,
+            device_timestamp, photo_path, photo_base64, location_address,
+            attendance_type, field_notes, is_synced, sync_attempts,
+            last_sync_attempt_at, device_id, device_uptime_seconds,
             created_at, updated_at
           FROM offline_attendances_old
         ''');
@@ -111,6 +113,11 @@ class DatabaseHelper {
         // 4. Drop old table
         await txn.execute('DROP TABLE offline_attendances_old');
       });
+    }
+    if (oldVersion < 3) {
+      // Add location fields for triple-location geofencing
+      await db.execute('ALTER TABLE offline_attendances ADD COLUMN location_id TEXT');
+      await db.execute('ALTER TABLE offline_attendances ADD COLUMN location_name TEXT');
     }
   }
 

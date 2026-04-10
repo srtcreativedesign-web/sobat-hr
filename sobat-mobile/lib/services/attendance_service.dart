@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:intl/intl.dart';
@@ -102,6 +103,18 @@ class AttendanceService extends BaseService {
       throw Exception(AppErrorHandler.getErrorMessage(e));
     } catch (e) {
       throw Exception(AppErrorHandler.getErrorMessage(e));
+    }
+  }
+
+  /// Fetch all configured attendance locations from server
+  Future<List<Map<String, dynamic>>> getAttendanceLocations() async {
+    try {
+      final response = await dio.get(ApiConfig.attendanceLocations);
+      final locations = response.data['locations'] as List;
+      return locations.map((loc) => Map<String, dynamic>.from(loc)).toList();
+    } catch (e) {
+      debugPrint('Failed to fetch attendance locations: $e');
+      return [];
     }
   }
 

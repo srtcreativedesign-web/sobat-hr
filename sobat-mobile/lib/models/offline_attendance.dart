@@ -20,6 +20,8 @@ class OfflineAttendance {
   final String? lastSyncAttemptAt;
   final String? deviceId;
   final int? deviceUptimeSeconds;
+  final String? locationId;
+  final String? locationName;
   final String createdAt;
   final String updatedAt;
 
@@ -44,6 +46,8 @@ class OfflineAttendance {
     this.lastSyncAttemptAt,
     this.deviceId,
     this.deviceUptimeSeconds,
+    this.locationId,
+    this.locationName,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -71,6 +75,8 @@ class OfflineAttendance {
       lastSyncAttemptAt: map['last_sync_attempt_at'] as String?,
       deviceId: map['device_id'] as String?,
       deviceUptimeSeconds: map['device_uptime_seconds'] as int?,
+      locationId: map['location_id'] as String?,
+      locationName: map['location_name'] as String?,
       createdAt: map['created_at'] as String,
       updatedAt: map['updated_at'] as String,
     );
@@ -99,6 +105,8 @@ class OfflineAttendance {
       'last_sync_attempt_at': lastSyncAttemptAt,
       'device_id': deviceId,
       'device_uptime_seconds': deviceUptimeSeconds,
+      'location_id': locationId,
+      'location_name': locationName,
       'created_at': createdAt,
       'updated_at': updatedAt,
     };
@@ -126,6 +134,8 @@ class OfflineAttendance {
     String? lastSyncAttemptAt,
     String? deviceId,
     int? deviceUptimeSeconds,
+    String? locationId,
+    String? locationName,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -150,6 +160,8 @@ class OfflineAttendance {
       lastSyncAttemptAt: lastSyncAttemptAt ?? this.lastSyncAttemptAt,
       deviceId: deviceId ?? this.deviceId,
       deviceUptimeSeconds: deviceUptimeSeconds ?? this.deviceUptimeSeconds,
+      locationId: locationId ?? this.locationId,
+      locationName: locationName ?? this.locationName,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
