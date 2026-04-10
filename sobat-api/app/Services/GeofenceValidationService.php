@@ -103,8 +103,78 @@ class GeofenceValidationService
     }
 
     /**
+     * Validate GPS coordinates against all hardcoded attendance locations
+     *
+     * @return array ['valid' => bool, 'message' => string, 'matched_location' => array|null, 'data' => array]
+     */
+    public function validateAgainstAllLocations(float $latitude, float $longitude): array
+    {
+        $locations = config('attendance_locations.locations');
+        $tolerance = config('attendance_locations.tolerance_meters', 10);
+
+        $minDistance = PHP_FLOAT_MAX;
+        $nearest = null;
+
+        foreach ($locations as $loc) {
+            $distance = $this->calculateDistance(
+                $latitude,
+                $longitude,
+                $loc['latitude'],
+                $loc['longitude']
+            );
+
+            $maxAllowed = $loc['radius_meters'] + $tolerance;
+
+            if ($distance <= $maxAllowed) {
+                return [
+                    'valid' => true,
+                    'message' => 'Lokasi valid',
+                    'matched_location' => $loc,
+                    'data' => [
+                        'location_id' => $loc['id'],
+                        'location_name' => $loc['name'],
+                        'distance_meters' => round($distance, 2),
+                        'allowed_radius_meters' => $maxAllowed,
+                    ],
+                ];
+            }
+
+            if ($distance < $minDistance) {
+                $minDistance = $distance;
+                $nearest = $loc;
+            }
+        }
+
+        Log::warning('GPS outside all attendance locations', [
+            'employee_lat' => $latitude,
+            'employee_lng' => $longitude,
+            'nearest_location' => $nearest['name'] ?? null,
+            'distance' => round($minDistance, 2),
+        ]);
+
+        return [
+            'valid' => false,
+            'message' => 'Anda berada di luar jangkauan lokasi yang diizinkan.',
+            'matched_location' => null,
+            'data' => [
+                'nearest_location' => $nearest['name'] ?? null,
+                'nearest_location_id' => $nearest['id'] ?? null,
+                'distance_meters' => round($minDistance, 2),
+            ],
+        ];
+    }
+
+    /**
+     * Get all configured attendance locations
+     */
+    public function getLocations(): array
+    {
+        return config('attendance_locations.locations', []);
+    }
+
+    /**
      * Get default Head Office coordinates
-     * 
+     *
      * @return array ['latitude' => float, 'longitude' => float, 'radius_meters' => int]
      */
     public function getDefaultHeadOffice(): array

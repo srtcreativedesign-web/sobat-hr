@@ -35,6 +35,8 @@ class Attendance extends Model
         'is_offline',
         'qr_code_data',
         'outlet_id',
+        'location_id',
+        'location_name',
         'floor_number',
         'device_timestamp',
         'server_timestamp',

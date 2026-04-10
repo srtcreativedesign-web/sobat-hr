@@ -67,6 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/organizations/{id}/employees', [App\Http\Controllers\Api\OrganizationController::class, 'employees']);
 
     // Attendance routes
+    Route::get('/attendance/locations', [App\Http\Controllers\Api\AttendanceController::class, 'getLocations']);
     Route::get('/attendance/pending-count', [App\Http\Controllers\Api\AttendanceController::class, 'getPendingCount']);
     Route::get('/attendance/today', [App\Http\Controllers\Api\AttendanceController::class, 'today']);
     Route::get('/attendance/history', [App\Http\Controllers\Api\AttendanceController::class, 'history']); // New History Route

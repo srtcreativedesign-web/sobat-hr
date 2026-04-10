@@ -130,15 +130,10 @@ class OfflineSyncController extends Controller
                     ], 422);
                 }
 
-                // Get office coordinates (from employee's organization or default)
-                $officeCoords = $this->getOfficeCoordinates($employee);
-                
-                $locationValidation = $this->geofenceService->validate(
+                // Validate GPS against all hardcoded attendance locations
+                $locationValidation = $this->geofenceService->validateAgainstAllLocations(
                     $gpsCoords['latitude'],
-                    $gpsCoords['longitude'],
-                    $officeCoords['latitude'],
-                    $officeCoords['longitude'],
-                    $officeCoords['radius_meters']
+                    $gpsCoords['longitude']
                 );
 
                 if (!$locationValidation['valid']) {
@@ -146,6 +141,7 @@ class OfflineSyncController extends Controller
                     return response()->json([
                         'success' => false,
                         'message' => $locationValidation['message'],
+                        'nearest_location' => $locationValidation['data']['nearest_location'] ?? null,
                         'distance' => $locationValidation['data']['distance_meters'] ?? null,
                     ], 422);
                 }
@@ -198,6 +194,11 @@ class OfflineSyncController extends Controller
             } else {
                 $attendanceData['latitude'] = $gpsCoords['latitude'];
                 $attendanceData['longitude'] = $gpsCoords['longitude'];
+                // Store matched location info from geofence validation
+                if ($locationValidation && isset($locationValidation['data']['location_id'])) {
+                    $attendanceData['location_id'] = $locationValidation['data']['location_id'];
+                    $attendanceData['location_name'] = $locationValidation['data']['location_name'];
+                }
             }
 
             $attendance = Attendance::create($attendanceData);
@@ -316,26 +317,6 @@ class OfflineSyncController extends Controller
         }
 
         return 'present';
-    }
-
-    /**
-     * Get office coordinates for GPS validation
-     */
-    protected function getOfficeCoordinates(Employee $employee): array
-    {
-        // Try to get from employee's organization/division
-        $organization = $employee->division; // Assuming division has geolocation
-        
-        if ($organization && $organization->latitude) {
-            return [
-                'latitude' => (float) $organization->latitude,
-                'longitude' => (float) $organization->longitude,
-                'radius_meters' => (int) ($organization->radius_meters ?? 100),
-            ];
-        }
-
-        // Fallback to default head office
-        return $this->geofenceService->getDefaultHeadOffice();
     }
 
     /**

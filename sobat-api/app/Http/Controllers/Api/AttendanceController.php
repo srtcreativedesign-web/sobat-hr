@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Attendance;
 use App\Models\Employee;
 use App\Jobs\VerifyAttendanceFace;
+use App\Services\GeofenceValidationService;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\AttendanceExport;
@@ -98,53 +99,24 @@ class AttendanceController extends Controller
         $trackType = $validated['track_type'] ?? null;
         $isOperational = $trackType === 'operational';
 
-        $matchedOutlet = null;
-
         // Geolocation Validation (Skip for field attendance and operational track)
         if ($trackType !== 'operational' && $attendanceType === 'office' && isset($validated['latitude']) && isset($validated['longitude']) && $employee) {
-            
-            // Get all locations that have custom geofencing enabled
-            $locations = \App\Models\Organization::geofencingEnabled()->get();
-            
-            $isValid = false;
-            $minDistance = 999999;
-            $nearestLoc = null;
+            $geofenceService = app(GeofenceValidationService::class);
+            $geofenceResult = $geofenceService->validateAgainstAllLocations(
+                $validated['latitude'],
+                $validated['longitude']
+            );
 
-            foreach ($locations as $loc) {
-                $distance = $this->haversineGreatCircleDistance(
-                    $validated['latitude'],
-                    $validated['longitude'],
-                    $loc->latitude,
-                    $loc->longitude
-                );
-
-                $radius = $loc->radius_meters ?? 50;
-                $tolerance = 10;
-                $maxAllowed = $radius + $tolerance;
-
-                if ($distance <= $maxAllowed) {
-                    $isValid = true;
-                    $matchedOutlet = $loc;
-                    break;
-                }
-
-                if ($distance < $minDistance) {
-                    $minDistance = $distance;
-                    $nearestLoc = $loc;
-                }
-            }
-
-            if (!$isValid) {
+            if (!$geofenceResult['valid']) {
                 return response()->json([
-                    'message' => 'Anda berada di luar jangkauan lokasi kantor/gudang yang diijinkan.',
-                    'distance_nearest' => round($minDistance, 2) . ' meter dari ' . ($nearestLoc ? $nearestLoc->name : 'lokasi terdekat'),
+                    'message' => $geofenceResult['message'],
+                    'nearest_location' => $geofenceResult['data']['nearest_location'],
+                    'distance_nearest' => $geofenceResult['data']['distance_meters'] . ' meter dari ' . ($geofenceResult['data']['nearest_location'] ?? 'lokasi terdekat'),
                 ], 422);
             }
-        }
 
-        // Auto-assign outlet_id if matched
-        if ($matchedOutlet) {
-            $validated['outlet_id'] = $matchedOutlet->id;
+            $validated['location_id'] = $geofenceResult['data']['location_id'];
+            $validated['location_name'] = $geofenceResult['data']['location_name'];
         }
 
         // For field attendance: Auto-set status to pending (requires approval)
@@ -229,22 +201,13 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Calculate distance between two points in meters using Haversine formula
+     * Get all configured attendance locations
      */
-    private function haversineGreatCircleDistance($latitudeFrom, $longitudeFrom, $latitudeTo, $longitudeTo, $earthRadius = 6371000)
+    public function getLocations()
     {
-        $latFrom = deg2rad($latitudeFrom);
-        $lonFrom = deg2rad($longitudeFrom);
-        $latTo = deg2rad($latitudeTo);
-        $lonTo = deg2rad($longitudeTo);
-
-        $latDelta = $latTo - $latFrom;
-        $lonDelta = $lonTo - $lonFrom;
-
-        $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) +
-            cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
-        
-        return $angle * $earthRadius;
+        return response()->json([
+            'locations' => config('attendance_locations.locations'),
+        ]);
     }
 
     /**
