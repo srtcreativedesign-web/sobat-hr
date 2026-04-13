@@ -69,7 +69,7 @@ Tambah method baru `validateAgainstAllLocations()`:
 public function validateAgainstAllLocations(float $lat, float $lng): array
 {
     $locations = config('attendance_locations.locations');
-    $tolerance = config('attendance_locations.tolerance_meters', 10);
+    $tolerance = config('attendance_locations.tolerance_meters', 10);]\
 
     $minDistance = PHP_FLOAT_MAX;
     $nearest = null;
