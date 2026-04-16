@@ -33,6 +33,8 @@ export default function ManageJobPositionsPage() {
     const [divisions, setDivisions] = useState<Division[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [filterDivision, setFilterDivision] = useState('');
+    const [filterTrack, setFilterTrack] = useState('');
 
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -68,12 +70,16 @@ export default function ManageJobPositionsPage() {
     useEffect(() => {
         fetchData();
         fetchDivisions();
-    }, [search]);
+    }, [search, filterDivision, filterTrack]);
 
     const fetchData = async () => {
         setIsLoading(true);
         try {
-            const params = search ? { search } : {};
+            const params: any = {};
+            if (search) params.search = search;
+            if (filterDivision) params.division_id = filterDivision;
+            if (filterTrack) params.track = filterTrack;
+
             const { data } = await apiClient.get('/job-positions', { params });
             setJobPositions(data);
         } catch (error) {
@@ -96,6 +102,12 @@ export default function ManageJobPositionsPage() {
     const resetForm = () => {
         setFormData({ name: '', code: '', division_id: '', level: 0, track: 'office' });
         setEditingId(null);
+    };
+
+    const resetFilters = () => {
+        setSearch('');
+        setFilterDivision('');
+        setFilterTrack('');
     };
 
     const handleOpenModal = (position?: JobPosition) => {
@@ -194,8 +206,8 @@ export default function ManageJobPositionsPage() {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-4 border-b border-gray-100 flex gap-4">
-                    <div className="relative flex-1 max-w-md">
+                <div className="p-4 border-b border-gray-100 flex gap-3 flex-wrap items-end">
+                    <div className="relative flex-1 min-w-[200px] max-w-md">
                         <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -209,6 +221,42 @@ export default function ManageJobPositionsPage() {
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
+
+                    <div className="min-w-[180px]">
+                        <select
+                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            value={filterDivision}
+                            onChange={(e) => setFilterDivision(e.target.value)}
+                        >
+                            <option value="">Semua Divisi</option>
+                            {divisions.map(div => (
+                                <option key={div.id} value={div.id}>
+                                    {div.name} {div.department ? `(${div.department.name})` : ''}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="min-w-[140px]">
+                        <select
+                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            value={filterTrack}
+                            onChange={(e) => setFilterTrack(e.target.value)}
+                        >
+                            <option value="">Semua Track</option>
+                            <option value="office">Office</option>
+                            <option value="operational">Operational</option>
+                        </select>
+                    </div>
+
+                    {(search || filterDivision || filterTrack) && (
+                        <button
+                            onClick={resetFilters}
+                            className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                            Reset Filter
+                        </button>
+                    )}
                 </div>
 
                 <div className="overflow-x-auto">

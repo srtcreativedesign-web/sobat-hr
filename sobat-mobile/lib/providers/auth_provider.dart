@@ -23,7 +23,7 @@ class AuthProvider with ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   AuthProvider() {
-    _checkAuth();
+    _checkAuth().catchError((_) {});
     loadBiometricPreference();
   }
 
