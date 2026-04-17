@@ -96,7 +96,8 @@ class AttendanceController extends Controller
 
         $employee = Employee::find($validated['employee_id']);
         $attendanceType = $validated['attendance_type'] ?? 'office';
-        $trackType = $validated['track_type'] ?? null;
+        // ✓ ENFORCE employee's track from database, not from request
+        $trackType = $employee->track_type ?? 'head_office';
         $isOperational = $trackType === 'operational';
 
         // Geolocation Validation (Skip for field attendance and operational track)
@@ -182,6 +183,9 @@ class AttendanceController extends Controller
                 $validated['overtime_duration'] = $clockOutTime->diffInMinutes($workEndTime);
             }
         }
+
+        // Store the employee's actual track_type in the attendance record for auditing
+        $validated['track_type'] = $trackType;
 
         // Wrap in transaction for data consistency under concurrent writes
         $attendance = DB::transaction(function () use ($validated) {
