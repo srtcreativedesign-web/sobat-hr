@@ -268,6 +268,7 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                                         <option value="permanent">Tetap (Permanent)</option>
                                         <option value="contract">Kontrak</option>
                                         <option value="probation">Probation</option>
+                                        <option value="mitra">Mitra</option>
                                     </select>
                                 </div>
                                 <div>
