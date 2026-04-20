@@ -236,6 +236,33 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                                     </select>
                                 </div>
                                 <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Level (Job Level)</label>
+                                    <select name="job_level" value={formData.job_level || formData.level || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none text-gray-900 bg-white">
+                                        <option value="">Pilih Level...</option>
+                                        <optgroup label="Office">
+                                            <option value="staff">Staff</option>
+                                            <option value="team_leader">Team Leader</option>
+                                            <option value="spv">Supervisor</option>
+                                            <option value="deputy_manager">Deputy Manager</option>
+                                            <option value="manager">Manager</option>
+                                            <option value="director">Director</option>
+                                        </optgroup>
+                                        <optgroup label="Operational">
+                                            <option value="crew">Crew</option>
+                                            <option value="crew_leader">Crew Leader</option>
+                                            <option value="manager_ops">Manager Operational</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Jalur Karier (Track)</label>
+                                    <select name="track" value={formData.track || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none text-gray-900 bg-white">
+                                        <option value="">Pilih Track...</option>
+                                        <option value="office">Office</option>
+                                        <option value="operational">Operational</option>
+                                    </select>
+                                </div>
+                                <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Status Kepegawaian</label>
                                     <select name="employment_status" value={formData.employment_status || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none text-gray-900">
                                         <option value="permanent">Tetap (Permanent)</option>

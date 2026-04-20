@@ -209,13 +209,18 @@ class AuthService extends BaseService {
         },
       );
 
-      if (response.statusCode == 200) {
+      // ✓ Accept any 2xx success status code
+      if (response.statusCode != null && response.statusCode! >= 200 && response.statusCode! < 300) {
         return;
       }
       throw Exception('Gagal mengubah password');
     } on DioException catch (e) {
       if (e.response?.statusCode == 422) {
-        throw Exception('Password tidak valid');
+        // ✓ Extract message from server response
+        final message = e.response?.data is Map
+          ? (e.response?.data['message'] ?? 'Data tidak valid')
+          : 'Data tidak valid';
+        throw Exception(message);
       }
       throw Exception(AppErrorHandler.getErrorMessage(e));
     } catch (e) {
