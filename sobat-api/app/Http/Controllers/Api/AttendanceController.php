@@ -565,6 +565,8 @@ class AttendanceController extends Controller
     {
         $count = Attendance::where('status', 'pending')->count();
         return response()->json(['count' => $count]);
+    }
+
     /**
      * Bulk approve attendance records
      */
