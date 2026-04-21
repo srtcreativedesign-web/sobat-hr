@@ -565,5 +565,48 @@ class AttendanceController extends Controller
     {
         $count = Attendance::where('status', 'pending')->count();
         return response()->json(['count' => $count]);
+    /**
+     * Bulk approve attendance records
+     */
+    public function bulkApprove(Request $request)
+    {
+        // --- IDOR GUARD ---
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR]);
+
+        if (!$isAdmin) {
+            return response()->json(['message' => 'Hanya Admin/HR yang dapat melakukan bulk approval.'], 403);
+        }
+
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:attendances,id',
+            'status' => 'required|in:present,late,absent',
+            'admin_note' => 'nullable|string'
+        ]);
+
+        $count = DB::transaction(function () use ($validated) {
+            $updated = 0;
+            $attendances = Attendance::whereIn('id', $validated['ids'])
+                ->where('status', 'pending')
+                ->get();
+
+            foreach ($attendances as $attendance) {
+                $attendance->status = $validated['status'];
+                if (!empty($validated['admin_note'])) {
+                    $existingNotes = $attendance->notes ? $attendance->notes . "\n" : "";
+                    $attendance->notes = $existingNotes . "[Bulk Approved]: " . $validated['admin_note'];
+                }
+                $attendance->save();
+                $updated++;
+            }
+            return $updated;
+        });
+
+        return response()->json([
+            'message' => "Berhasil memproses $count data absensi.",
+            'updated_count' => $count
+        ]);
     }
 }

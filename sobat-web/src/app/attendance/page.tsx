@@ -45,6 +45,11 @@ export default function AttendancePage() {
     const [filterDivision, setFilterDivision] = useState('');
     const [filterOffline, setFilterOffline] = useState('');
     const [selectedAttendance, setSelectedAttendance] = useState<Attendance | null>(null);
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [showBulkModal, setShowBulkModal] = useState(false);
+    const [bulkStatus, setBulkStatus] = useState<'late' | 'present'>('late');
+    const [bulkNote, setBulkNote] = useState('');
+    const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
 
     useEffect(() => {
         checkAuth();
@@ -153,6 +158,87 @@ export default function AttendancePage() {
                 confirmButtonColor: '#60A5FA',
             });
         }
+    };
+
+    const handleBulkApprove = async () => {
+        if (selectedIds.length === 0) return;
+
+        setIsBulkSubmitting(true);
+        try {
+            await apiClient.post('/attendances/bulk-approve', {
+                ids: selectedIds,
+                status: bulkStatus,
+                admin_note: bulkNote
+            });
+
+            Swal.fire({
+                title: 'Berhasil!',
+                text: `${selectedIds.length} data absensi berhasil diproses.`,
+                icon: 'success',
+                confirmButtonColor: '#60A5FA',
+            });
+
+            setShowBulkModal(false);
+            setSelectedIds([]);
+            setBulkNote('');
+            fetchAttendances();
+        } catch (error) {
+            console.error('Failed bulk approval:', error);
+            Swal.fire({
+                title: 'Gagal!',
+                text: 'Terjadi kesalahan saat memproses bulk approval.',
+                icon: 'error',
+                confirmButtonColor: '#60A5FA',
+            });
+        } finally {
+            setIsBulkSubmitting(false);
+        }
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedIds.length === attendances.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(attendances.map(a => a.id));
+        }
+    };
+
+    const toggleSelectOne = (id: number) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
+    const smartSelectLate = () => {
+        const targetIds = attendances
+            .filter(att => {
+                if (att.status !== 'pending') return false;
+                if (!att.check_in) return false;
+                // Criteria: office/field and > 08:05
+                const [h, m] = att.check_in.split(':').map(Number);
+                const isLate = h > 8 || (h === 8 && m > 5);
+                return isLate;
+            })
+            .map(a => a.id);
+
+        if (targetIds.length === 0) {
+            Swal.fire({
+                title: 'Info',
+                text: 'Tidak ditemukan data pending dengan keterlambatan di atas 08:05.',
+                icon: 'info',
+                confirmButtonColor: '#60A5FA',
+            });
+            return;
+        }
+
+        setSelectedIds(targetIds);
+        Swal.fire({
+            title: 'Berhasil!',
+            text: `${targetIds.length} data terpilih secara otomatis.`,
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false,
+        });
     };
 
     const formatDate = (dateString: string) => {
@@ -282,10 +368,26 @@ export default function AttendancePage() {
                         <button
                             type="button"
                             onClick={handleExport}
-                            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
                         >
                             Export Excel
                         </button>
+                        <button
+                            type="button"
+                            onClick={smartSelectLate}
+                            className="px-6 py-2 bg-yellow-100 text-yellow-800 border border-yellow-200 rounded-lg hover:bg-yellow-200 transition-colors font-medium"
+                        >
+                            Pilih Terlambat (>08:05)
+                        </button>
+                        {selectedIds.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => setShowBulkModal(true)}
+                                className="px-6 py-2 bg-[#1C3ECA] text-white rounded-lg hover:bg-[#1C3ECA]/90 transition-all font-bold animate-pulse shadow-lg ring-2 ring-white"
+                            >
+                                Approve Terpilih ({selectedIds.length})
+                            </button>
+                        )}
                     </form>
                 </div>
 
@@ -305,6 +407,14 @@ export default function AttendancePage() {
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
+                                        <th className="px-4 py-3 text-left">
+                                            <input
+                                                type="checkbox"
+                                                className="rounded border-gray-300 text-[#1C3ECA] focus:ring-[#1C3ECA]"
+                                                checked={attendances.length > 0 && selectedIds.length === attendances.length}
+                                                onChange={toggleSelectAll}
+                                            />
+                                        </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Karyawan</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Masuk</th>
@@ -317,8 +427,16 @@ export default function AttendancePage() {
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {attendances.map((att) => (
-                                        <tr key={att.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                        <tr key={att.id} className={`hover:bg-gray-50 ${selectedIds.includes(att.id) ? 'bg-blue-50' : ''}`}>
+                                            <td className="px-4 py-4 whitespace-nowrap">
+                                                <input
+                                                    type="checkbox"
+                                                    className="rounded border-gray-300 text-[#1C3ECA] focus:ring-[#1C3ECA]"
+                                                    checked={selectedIds.includes(att.id)}
+                                                    onChange={() => toggleSelectOne(att.id)}
+                                                />
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 <div className="text-sm font-medium text-gray-900">{att.employee?.full_name || '-'}</div>
                                                 <div className="text-xs text-gray-500">{att.employee?.employee_code}</div>
                                             </td>
@@ -574,6 +692,92 @@ export default function AttendancePage() {
                                         </div>
                                     </div>
                                 )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Bulk Approval Modal */}
+            {showBulkModal && (
+                <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="bulk-modal-title" role="dialog" aria-modal="true">
+                    <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setShowBulkModal(false)}></div>
+                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                        <div className="inline-block align-middle bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full">
+                            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                <h3 className="text-lg leading-6 font-bold text-gray-900 mb-4" id="bulk-modal-title">
+                                    Konfirmasi Bulk Approval ({selectedIds.length} Data)
+                                </h3>
+                                
+                                <div className="mb-4 max-h-40 overflow-y-auto bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                    <p className="text-xs font-bold text-gray-500 uppercase mb-2">Karyawan Terpilih:</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {attendances.filter(a => selectedIds.includes(a.id)).map(a => (
+                                            <span key={a.id} className="px-2 py-1 bg-white text-gray-700 text-xs rounded border border-gray-200">
+                                                {a.employee?.full_name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Set Status Kehadiran Menjadi:</label>
+                                        <div className="flex gap-4">
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="bulkStatus"
+                                                    value="present"
+                                                    checked={bulkStatus === 'present'}
+                                                    onChange={() => setBulkStatus('present')}
+                                                    className="w-4 h-4 text-green-600"
+                                                />
+                                                <span className="text-sm font-semibold text-green-700">HADIR (Sesuai)</span>
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="bulkStatus"
+                                                    value="late"
+                                                    checked={bulkStatus === 'late'}
+                                                    onChange={() => setBulkStatus('late')}
+                                                    className="w-4 h-4 text-yellow-600"
+                                                />
+                                                <span className="text-sm font-semibold text-yellow-700">TERLAMBAT</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Catatan Admin (Opsional):</label>
+                                        <textarea
+                                            value={bulkNote}
+                                            onChange={(e) => setBulkNote(e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-[#1C3ECA] outline-none text-sm"
+                                            rows={3}
+                                            placeholder="Masukkan alasan approval..."
+                                        ></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
+                                <button
+                                    type="button"
+                                    disabled={isBulkSubmitting}
+                                    onClick={handleBulkApprove}
+                                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#1C3ECA] text-base font-medium text-white hover:bg-[#1C3ECA]/90 focus:outline-none sm:w-auto sm:text-sm disabled:opacity-50"
+                                >
+                                    {isBulkSubmitting ? 'Memproses...' : `Proses Approval (${selectedIds.length})`}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowBulkModal(false)}
+                                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm"
+                                >
+                                    Batal
+                                </button>
                             </div>
                         </div>
                     </div>

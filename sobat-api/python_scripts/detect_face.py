@@ -15,7 +15,7 @@ try:
     import face_recognition
 except ImportError as e:
     print(json.dumps({
-        "status": "error", 
+        "status": "error",
         "message": f"face_recognition not installed: {str(e)}", 
         "debug_sys_path": sys.path,
         "debug_executable": sys.executable,

@@ -74,6 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/attendances/export', [App\Http\Controllers\Api\AttendanceController::class, 'export']); // Export Route
     Route::get('/attendances', [App\Http\Controllers\Api\AttendanceController::class, 'index']); // Added for Web Admin
     Route::post('/attendances', [App\Http\Controllers\Api\AttendanceController::class, 'store']);
+    Route::post('/attendances/bulk-approve', [App\Http\Controllers\Api\AttendanceController::class, 'bulkApprove']);
     Route::post('/attendances/{id}/approve', [App\Http\Controllers\Api\AttendanceController::class, 'approveLate']); // Late Approval Route
     Route::put('/attendances/{id}', [App\Http\Controllers\Api\AttendanceController::class, 'update']); // Checkout Route
     Route::post('/attendances/sync', [App\Http\Controllers\Api\AttendanceController::class, 'syncFingerprint']);
