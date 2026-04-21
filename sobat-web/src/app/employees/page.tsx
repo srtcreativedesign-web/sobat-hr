@@ -19,6 +19,7 @@ interface Employee {
     id: number;
     name: string;
   };
+  track?: 'office' | 'operational';
   status: 'active' | 'inactive' | 'resigned';
   join_date: string;
   birth_date?: string;
@@ -58,6 +59,7 @@ export default function EmployeesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterOrg, setFilterOrg] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [filterTrack, setFilterTrack] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -85,6 +87,7 @@ export default function EmployeesPage() {
       if (searchTerm) params.append('search', searchTerm);
       if (filterOrg) params.append('division_id', filterOrg);
       if (filterStatus) params.append('status', filterStatus);
+      if (filterTrack) params.append('track', filterTrack);
 
       const response = await apiClient.get(`/employees?${params.toString()}`);
       setEmployees(response.data.data || []);
@@ -295,6 +298,7 @@ export default function EmployeesPage() {
       const params = new URLSearchParams();
       if (filterOrg) params.append('division_id', filterOrg);
       if (filterStatus) params.append('status', filterStatus);
+      if (filterTrack) params.append('track', filterTrack);
 
       const response = await apiClient.get(`/employees/export?${params.toString()}`, {
         responseType: 'blob'
@@ -407,6 +411,21 @@ export default function EmployeesPage() {
                 </select>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Track
+                </label>
+                <select
+                  value={filterTrack}
+                  onChange={(e) => setFilterTrack(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:border-transparent"
+                >
+                  <option value="">Semua Track</option>
+                  <option value="office">Head Office</option>
+                  <option value="operational">Operational</option>
+                </select>
+              </div>
+
               <div className="flex items-end">
                 <button
                   type="submit"
@@ -451,6 +470,9 @@ export default function EmployeesPage() {
                       Divisi
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Track
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Kontrak Berakhir
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -477,6 +499,15 @@ export default function EmployeesPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {employee.division?.name || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          employee.track === 'operational' 
+                            ? 'bg-amber-100 text-amber-800' 
+                            : 'bg-indigo-100 text-indigo-800'
+                        }`}>
+                          {employee.track === 'operational' ? 'Operational' : 'Head Office'}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {employee.contract_end_date ? (
@@ -722,9 +753,15 @@ export default function EmployeesPage() {
                     </div>
                     <div>
                       <label className="text-sm text-gray-500">Status</label>
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(selectedEmployee.status)}`}>
-                        {selectedEmployee.status === 'active' ? 'Aktif' : selectedEmployee.status === 'inactive' ? 'Tidak Aktif' : 'Resign'}
-                      </span>
+                      <div className="mt-1">
+                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(selectedEmployee.status)}`}>
+                          {selectedEmployee.status === 'active' ? 'Aktif' : selectedEmployee.status === 'inactive' ? 'Tidak Aktif' : 'Resign'}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm text-gray-500">Track</label>
+                      <p className="font-medium text-gray-900 mt-1">{selectedEmployee.track === 'operational' ? 'Operational' : 'Head Office'}</p>
                     </div>
                   </div>
                 </div>

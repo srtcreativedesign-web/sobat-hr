@@ -35,6 +35,11 @@ class EmployeesExport implements FromQuery, WithHeadings, WithMapping, WithStyle
             $query->where('status', $this->request->status);
         }
 
+        // Track Filter
+        if ($this->request->has('track') && $this->request->track) {
+            $query->where('track', $this->request->track);
+        }
+
         return $query->orderBy('full_name', 'asc');
     }
 
@@ -72,6 +77,7 @@ class EmployeesExport implements FromQuery, WithHeadings, WithMapping, WithStyle
             'Alamat KTP',
             'Alamat Domisili',
             'Nama Atasan',
+            'Track',
         ];
     }
 
@@ -122,13 +128,14 @@ class EmployeesExport implements FromQuery, WithHeadings, WithMapping, WithStyle
             $employee->ktp_address ?? '-',
             $employee->current_address ?? '-',
             $employee->supervisor_name ?? '-',
+            $employee->track === 'operational' ? 'Operational' : ($employee->track === 'office' ? 'Head Office' : $employee->track ?? '-'),
         ]);
     }
 
     public function styles(Worksheet $sheet)
     {
         // Style header row
-        $sheet->getStyle('A1:AF1')->applyFromArray([
+        $sheet->getStyle('A1:AG1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['argb' => 'FFFFFF'],
@@ -143,8 +150,8 @@ class EmployeesExport implements FromQuery, WithHeadings, WithMapping, WithStyle
         foreach (range('A', 'Z') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
-        // Additional columns AA-AF
-        foreach (['AA', 'AB', 'AC', 'AD', 'AE', 'AF'] as $col) {
+        // Additional columns AA-AG
+        foreach (['AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG'] as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
     }

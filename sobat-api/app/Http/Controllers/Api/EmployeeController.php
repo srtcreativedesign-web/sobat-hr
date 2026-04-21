@@ -25,6 +25,11 @@ class EmployeeController extends Controller
             $query->where('status', $request->status);
         }
 
+        // Filter by track
+        if ($request->has('track')) {
+            $query->where('track', $request->track);
+        }
+
         // Search by name or employee number
         if ($request->has('search')) {
             $search = $request->search;
