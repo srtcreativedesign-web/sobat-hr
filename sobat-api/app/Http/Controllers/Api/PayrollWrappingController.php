@@ -126,30 +126,64 @@ class PayrollWrappingController extends Controller
             
             $highestRow = $sheet->getHighestRow();
             
-             // Helper
+             // Helper with safety net for formulas
             $getCellValue = function($col, $row) use ($sheet) {
-                $val = $sheet->getCell($col . $row)->getCalculatedValue();
-                if (is_numeric($val)) return (float)$val;
-                if (is_string($val)) {
-                    $cleaned = preg_replace('/[^0-9\.\,\-]/', '', $val);
-                    return is_numeric($cleaned) ? (float)$cleaned : 0;
+                try {
+                    $cell = $sheet->getCell($col . $row);
+                    $val = $cell->getCalculatedValue();
+                    
+                    if (is_numeric($val)) return (float)$val;
+                    if (is_string($val)) {
+                        $cleaned = preg_replace('/[^0-9\.\,\-]/', '', $val);
+                        return is_numeric($cleaned) ? (float)$cleaned : 0;
+                    }
+                    return 0;
+                } catch (\Exception $e) {
+                    Log::warning("Formula error in cell {$col}{$row}: " . $e->getMessage());
+                    // Fallback to raw value if calculation fails
+                    $val = $sheet->getCell($col . $row)->getValue();
+                    if (is_numeric($val)) return (float)$val;
+                    return 0;
                 }
-                return 0;
             };
             
             // Find Header (Nama Karyawan) - usually Row 2
-             $headerRow = 2;
-             $dataStartRow = 4;
+            $dataStartRow = 4;
             
-             $dataRows = [];
-             for ($row = $dataStartRow; $row <= $highestRow; $row++) {
-                 $name = $sheet->getCell('B' . $row)->getValue();
-                 if (empty($name)) continue;
-                 
-                 // Column Mapping based on Analysis
-                 $parsed = [
+            // Period from Request/Filename (Fallback)
+            // If user uploads in April for March, we prioritize the period from the file or a manual override
+            $requestPeriod = $request->input('period');
+            
+            $dataRows = [];
+            for ($row = $dataStartRow; $row <= $highestRow; $row++) {
+                $name = $sheet->getCell('B' . $row)->getValue();
+                
+                // CRITICAL: Stop reading if name is empty (ignore source data like H53 below the table)
+                if (empty($name)) {
+                    Log::info("Empty name encountered at row {$row}. Stopping import.");
+                    break; 
+                }
+                
+                // Determine Period for this row
+                $rowPeriod = $requestPeriod;
+                $periodCell = $sheet->getCell('C' . $row)->getValue();
+                
+                if (is_numeric($periodCell)) {
+                    // Excel date format
+                    $rowPeriod = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($periodCell)->format('Y-m');
+                } elseif (is_string($periodCell) && preg_match('/^\d{4}-\d{2}$/', $periodCell)) {
+                    $rowPeriod = $periodCell;
+                }
+                
+                // If still no period, default to current (but usually it should be in column C)
+                if (!$rowPeriod) {
+                    $rowPeriod = date('Y-m');
+                }
+
+                // Column Mapping based on Analysis
+                $parsed = [
                     'employee_name' => $name,
-                    'period' => date('Y-m'), // Default current
+                    'period' => $rowPeriod,
                     'account_number' => $sheet->getCell('D' . $row)->getValue(),
                     
                     // Attendance (E-K)
@@ -193,19 +227,13 @@ class PayrollWrappingController extends Controller
                     'deduction_bpjs_tk' => $getCellValue('AH', $row),
                     
                     'deduction_total' => $getCellValue('AI', $row),
-                    'net_salary' => $getCellValue('AM', $row) > 0 ? $getCellValue('AM', $row) : $getCellValue('AL', $row), // Try AM (empty?) fallback to AL
+                    'net_salary' => $getCellValue('AM', $row) > 0 ? $getCellValue('AM', $row) : $getCellValue('AL', $row), 
                     
                     'ewa_amount' => $getCellValue('AK', $row),
-                 ];
-                 
-                 // If period is date from excel (46023)
-                 $periodVal = $sheet->getCell('C' . $row)->getValue();
-                 if (is_numeric($periodVal)) {
-                     $parsed['period'] = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($periodVal)->format('Y-m');
-                 }
-                 
-                 $dataRows[] = $parsed;
-             }
+                ];
+                
+                $dataRows[] = $parsed;
+            }
              
              return response()->json([
                 'message' => 'File parsed successfully',
