@@ -377,7 +377,7 @@ export default function AttendancePage() {
                             onClick={smartSelectLate}
                             className="px-6 py-2 bg-yellow-100 text-yellow-800 border border-yellow-200 rounded-lg hover:bg-yellow-200 transition-colors font-medium"
                         >
-                            Pilih Terlambat (>08:05)
+                            Pilih Terlambat ({" > "}08:05)
                         </button>
                         {selectedIds.length > 0 && (
                             <button
