@@ -294,49 +294,35 @@ class _FinanceComingSoonScreenState extends State<FinanceComingSoonScreen> {
                   // --- ACTION CLUSTER ---
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 40),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: ElevatedButton(
-                            onPressed: widget.onBack,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF005EB6),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(100),
+                    child: Center(
+                      child: SizedBox(
+                        width: 220,
+                        child: ElevatedButton(
+                          onPressed: widget.onBack,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF005EB6),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            elevation: 20,
+                            shadowColor: const Color(
+                              0xFF005EB6,
+                            ).withValues(alpha: 0.3),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Text(
+                                'Kembali',
+                                style: TextStyle(fontWeight: FontWeight.w700),
                               ),
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              elevation: 20,
-                              shadowColor: const Color(
-                                0xFF005EB6,
-                              ).withValues(alpha: 0.3),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Text(
-                                  'Kembali',
-                                  style: TextStyle(fontWeight: FontWeight.w700),
-                                ),
-                                SizedBox(width: 8),
-                                Icon(Icons.arrow_forward, size: 16),
-                              ],
-                            ),
+                              SizedBox(width: 8),
+                              Icon(Icons.arrow_forward, size: 16),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Text(
-                            'Beri Tahu Saya',
-                            style: TextStyle(
-                              color: Color(0xFF005EB6),
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
 

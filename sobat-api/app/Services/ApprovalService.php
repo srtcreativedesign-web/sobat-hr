@@ -188,7 +188,7 @@ class ApprovalService
      * @return array Array of employee IDs in approval order
      */
     /**
-     * Determine approvers based on requester's role level
+     * Determine approvers based on requester's track and division
      * 
      * @param Employee $requester The employee submitting the request
      * @return array Array of employee IDs in approval order
@@ -196,159 +196,101 @@ class ApprovalService
     public function determineApprovers(Employee $requester, ?Model $request = null): array
     {
         $approvers = [];
-
-        // 1. DIRECT SUPERVISOR LOGIC (Priority)
-        if ($requester->supervisor_id) {
-            Log::info("Using Direct Supervisor Flow for Employee ID: {$requester->id}");
-            
-            // Step 1: Direct Supervisor
-            $approvers[] = $requester->supervisor_id;
-
-            // Step 2: HRD (Final Step)
-            // Unless the supervisor IS the HRD, to avoid double approval
-            $hrd = $this->findApproverByRoleName('hrd');
-            
-            // If Supervisor is NOT HRD, add HRD as second step
-            if ($hrd && $hrd->id != $requester->supervisor_id) {
-                 $approvers[] = $hrd->id;
-            }
-            
-            Log::info("Direct Supervisor Flow Approvers: " . json_encode($approvers));
-            return array_unique($approvers);
-        }
-
-        // ==========================================
-        // FALLBACK: EXISTING ROLE-BASED LOGIC
-        // ==========================================
-
-        // Get requester's approval level from their user's role
-        $userRoleLevel = $requester->user?->role?->approval_level ?? 0;
-        
-        // Get requester's division for finding same-unit approvers
         $divisionId = $requester->division_id;
-        
-        Log::info("Determining approvers for Employee ID: {$requester->id} ({$requester->full_name}), Role Level: {$userRoleLevel}, Division ID: {$divisionId}, Request Type: " . ($request ? $request->type : 'null'));
-        
-        // ... (rest of the existing logic)
+        $track = strtolower($requester->track ?? 'office'); // Default to office if null
 
-        // SPECIAL CASE: Sick Leave for Manager Level (Level >= 2)
-        // Workflow: COO -> HRD
-        if ($userRoleLevel >= 2 && $request && $request->type === 'sick_leave') {
-            Log::info("Special Workflow: Sick Leave for Manager");
-            $coo = $this->findApproverByRoleName('coo');
-            $hrd = $this->findApproverByRoleName('hrd');
-            
-            if ($coo) {
-                $approvers[] = $coo->id;
-                Log::info("Found COO: {$coo->id} - {$coo->full_name}");
-            } else {
-                Log::warning("COO not found for Special Workflow");
-            }
+        Log::info("Determining approvers for Employee ID: {$requester->id} ({$requester->full_name}), Track: {$track}, Division ID: {$divisionId}");
 
-            if ($hrd) {
-                $approvers[] = $hrd->id;
-                Log::info("Found HRD: {$hrd->id} - {$hrd->full_name}");
-            } else {
-                 Log::warning("HRD not found for Special Workflow");
-            }
-
-            return $approvers;
-        }
-        
-        if ($userRoleLevel >= 2) {
-            // Manager Divisi level -> Only COO approves
-            Log::info("Manager Level Request -> COO Only");
-            
-            $coo = $this->findApproverByRoleName('coo');
-            if ($coo) {
-                $approvers[] = $coo->id;
-            } else {
-                Log::warning("COO not found for Manager Request");
-            }
-        } elseif ($userRoleLevel == 1) {
-            // SPV level -> Manager Divisi + HRD
-            Log::info("SPV Level Request -> Manager Divisi + HRD");
-
-            $managerDivisi = $this->findApproverByRoleName('manager_divisi', $divisionId);
-            $hrd = $this->findApproverByRoleName('hrd');
-            
-            if ($managerDivisi) {
-                $approvers[] = $managerDivisi->id;
-            } else {
-                 // Fallback to generic manager if manager_divisi not found?
-                 Log::warning("Manager Divisi not found in Division {$divisionId}, trying generic 'manager'");
-                 $manager = $this->findApproverByRoleName('manager', $divisionId);
-                 if ($manager) $approvers[] = $manager->id;
-            }
-
-            if ($hrd) $approvers[] = $hrd->id;
+        // Step 1: Supervisor (Priority if exists)
+        if ($requester->supervisor_id) {
+            $approvers[] = $requester->supervisor_id;
+            Log::info("Added Direct Supervisor: {$requester->supervisor_id}");
         } else {
-            // Staff/Crew/Leader level -> SPV + Manager Divisi + HRD
-            Log::info("Staff Level Request -> SPV + Manager + HRD");
-
+            // If no direct supervisor, use SPV as first step (common for both tracks)
             $spv = $this->findApproverByRoleName('spv', $divisionId);
+            if ($spv) {
+                $approvers[] = $spv->id;
+                Log::info("Found SPV: {$spv->id} - {$spv->full_name}");
+            }
+        }
+
+        // Step 2: Manager Level (Track Specific)
+        if ($track === 'operational') {
+            // Operational Track: Manager Divisi
             $managerDivisi = $this->findApproverByRoleName('manager_divisi', $divisionId);
-            $hrd = $this->findApproverByRoleName('hrd');
-            
-            if ($spv) $approvers[] = $spv->id;
-            
             if ($managerDivisi) {
                 $approvers[] = $managerDivisi->id;
-            } else {
-                // Fallback
-                 $manager = $this->findApproverByRoleName('manager', $divisionId);
-                 if ($manager) $approvers[] = $manager->id;
+                Log::info("Found Manager Divisi (Operational): {$managerDivisi->id}");
             }
-
-            if ($hrd) $approvers[] = $hrd->id;
+        } else {
+            // Office Track: Assistant Manager / Deputy Manager / Manager Operasional
+            // We search for any of these roles in the same division
+            $officeManagerRoles = ['assistant_manager', 'deputy_manager', 'manager_operasional', 'manager'];
+            $officeManager = $this->findApproverByRoleName($officeManagerRoles, $divisionId);
+            if ($officeManager) {
+                $approvers[] = $officeManager->id;
+                Log::info("Found Office Manager ({$officeManager->user->role->name}): {$officeManager->id}");
+            }
         }
+
+        // Step 3: HRD (Final Step)
+        $hrd = $this->findApproverByRoleName('hrd');
+        if ($hrd) {
+            $approvers[] = $hrd->id;
+            Log::info("Found HRD: {$hrd->id}");
+        }
+
+        // --- Final Cleanup ---
+        // 1. Remove duplicates
+        $approvers = array_values(array_unique($approvers));
         
-        Log::info("Final Approvers List: " . json_encode($approvers));
+        // 2. Remove requester themselves from approval chain
+        $approvers = array_filter($approvers, fn($id) => $id != $requester->id);
+
+        Log::info("Final Approvers List for {$requester->full_name}: " . json_encode($approvers));
         
-        return $approvers;
+        return array_values($approvers);
     }
     
     /**
-     * Find an approver by role name, optionally filtered by division
+     * Find an approver by role name(s), strictly filtered by division
+     * 
+     * @param string|array $roleName Single role name or array of role names
+     * @param int|null $divisionId Division to filter by
      */
-    private function findApproverByRoleName(string $roleName, ?int $divisionId = null): ?Employee
+    private function findApproverByRoleName($roleName, ?int $divisionId = null): ?Employee
     {
-        Log::info("Searching for approver with role: {$roleName}" . ($divisionId ? " in Division {$divisionId}" : ""));
-
-        // HRD function is handled by Super Admin
-        // When looking for 'hrd', also match 'super_admin'
-        $roleNames = ($roleName === 'hrd') ? ['hrd', 'super_admin'] : [$roleName];
+        $roleNames = is_array($roleName) ? $roleName : [$roleName];
+        
+        // HRD fallback to Super Admin
+        if (in_array('hrd', $roleNames)) {
+            $roleNames[] = 'super_admin';
+            $roleNames[] = 'hr'; // Sometimes used interchangeably
+        }
 
         $query = Employee::whereHas('user.role', function ($q) use ($roleNames) {
             $q->whereIn('name', $roleNames);
-        });
-        
-        $count = (clone $query)->count();
-        Log::info("Found {$count} employees with role(s) " . implode('/', $roleNames) . " (globally)");
+        })->with('user.role')->where('status', 'active');
 
-        // For SPV and Manager Divisi, try to find someone in the same division first
-        if ($divisionId && in_array($roleName, ['spv', 'manager_divisi', 'manager'])) {
-            $sameUnitApprover = (clone $query)->where('division_id', $divisionId)->first();
-            if ($sameUnitApprover) {
-                Log::info("Found same-unit approver: {$sameUnitApprover->id} - {$sameUnitApprover->full_name}");
-                return $sameUnitApprover;
-            }
-            Log::info("No same-unit approver found for {$roleName} in Division {$divisionId}");
-        }
-        
-        // Fallback: get any employee with that role?
-        // Maybe for SPV we don't want cross-dept approval? 
-        // For now, keep original logic (fallback to first found) or restrict.
-        // Original code: return $query->first(); -> This implies cross-dept is allowed as fallback.
-        
-        $fallback = $query->first();
-        if ($fallback) {
-             Log::info("Using fallback approver: {$fallback->id} - {$fallback->full_name}");
-        } else {
-             Log::warning("No approver found at all for role {$roleName}");
+        // Apply Division Filter
+        if ($divisionId) {
+            $query->where('division_id', $divisionId);
         }
 
-        return $fallback;
+        // For HRD and Super Admin, if not found in same division, search globally
+        // (HRD is often centralized)
+        if ($divisionId && in_array('hrd', $roleNames)) {
+            $approver = (clone $query)->first();
+            if ($approver) return $approver;
+            
+            // Fallback to global HRD/Super Admin
+            Log::info("No HRD found in Division {$divisionId}, searching globally.");
+            return Employee::whereHas('user.role', function ($q) {
+                $q->whereIn('name', ['hrd', 'super_admin', 'hr']);
+            })->where('status', 'active')->first();
+        }
+
+        return $query->first();
     }
     
     /**
