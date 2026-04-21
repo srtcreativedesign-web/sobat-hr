@@ -122,11 +122,29 @@ class PayrollWrappingController extends Controller
             $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
             $reader->setReadDataOnly(true);
             $spreadsheet = $reader->load($file->getRealPath());
-            $sheet = $spreadsheet->getActiveSheet();
+            
+            // --- TARGET THE "Gaji" SHEET ---
+            $sheetNames = $spreadsheet->getSheetNames();
+            Log::info("Wrapping Import - Available sheets: " . implode(', ', $sheetNames));
+            
+            $sheet = null;
+            foreach ($sheetNames as $name) {
+                if (stripos($name, 'gaji') !== false) {
+                    $sheet = $spreadsheet->getSheetByName($name);
+                    Log::info("Wrapping Import - Using sheet: {$name}");
+                    break;
+                }
+            }
+            
+            // Fallback to first sheet if "Gaji" not found
+            if (!$sheet) {
+                $sheet = $spreadsheet->getSheet(0);
+                Log::warning("Wrapping Import - 'Gaji' sheet not found. Using first sheet: " . $sheet->getTitle());
+            }
             
             $highestRow = $sheet->getHighestRow();
             
-             // Helper with safety net for formulas
+            // Helper with safety net for formulas
             $getCellValue = function($col, $row) use ($sheet) {
                 try {
                     $cell = $sheet->getCell($col . $row);
@@ -140,7 +158,6 @@ class PayrollWrappingController extends Controller
                     return 0;
                 } catch (\Exception $e) {
                     Log::warning("Formula error in cell {$col}{$row}: " . $e->getMessage());
-                    // Fallback to raw value if calculation fails
                     $val = $sheet->getCell($col . $row)->getValue();
                     if (is_numeric($val)) return (float)$val;
                     return 0;
@@ -149,27 +166,25 @@ class PayrollWrappingController extends Controller
             
             // --- DYNAMIC HEADER DETECTION ---
             $headerRowIndex = -1;
-            Log::info("Starting header detection in sheet for Wrapping Import. Highest Row: {$highestRow}");
-            
             for ($row = 1; $row <= min(15, $highestRow); $row++) {
                 $cellValue = $sheet->getCell('B' . $row)->getValue();
                 if ($cellValue && stripos($cellValue, 'Nama Karyawan') !== false) {
                     $headerRowIndex = $row;
-                    Log::info("Found 'Nama Karyawan' header at Row {$headerRowIndex}");
+                    Log::info("Wrapping Import - Header found at Row {$headerRowIndex}");
                     break;
                 }
             }
             
             if ($headerRowIndex === -1) {
-                Log::warning("Header 'Nama Karyawan' not found in column B. Defaulting to Row 2.");
+                Log::warning("Wrapping Import - Header not found. Defaulting to Row 2.");
                 $headerRowIndex = 2;
             }
             
-            // Assume data starts 2 rows after main header (skipping units/subheader)
+            // Data starts 2 rows after header (skip subheader row with units like "/ Hari")
             $dataStartRow = $headerRowIndex + 2;
-            Log::info("Data extraction will start at Row {$dataStartRow}");
+            Log::info("Wrapping Import - Data starts at Row {$dataStartRow}, Highest Row: {$highestRow}");
             
-            // Period from Request/Filename (Fallback)
+            // Period from Request (manual override from frontend)
             $requestPeriod = $request->input('period');
             
             $dataRows = [];
@@ -178,44 +193,41 @@ class PayrollWrappingController extends Controller
             for ($row = $dataStartRow; $row <= $highestRow; $row++) {
                 $name = $sheet->getCell('B' . $row)->getValue();
                 
-                // If name is empty, we handle it gracefully up to 10 rows
-                if (empty($name)) {
+                // Skip empty rows, stop after 5 consecutive empties
+                if (empty($name) || !is_string($name)) {
                     $consecutiveEmptyRows++;
-                    if ($consecutiveEmptyRows >= 10) {
-                        Log::info("Reached 10 consecutive empty rows at row {$row}. Stopping import loop.");
+                    if ($consecutiveEmptyRows >= 5) {
+                        Log::info("Wrapping Import - 5 consecutive empty rows at row {$row}. Stopping.");
                         break;
                     }
                     continue; 
                 }
                 
-                // Reset counter when a name is found
                 $consecutiveEmptyRows = 0;
                 
-                // Determine Period for this row
+                // Determine Period
                 $rowPeriod = $requestPeriod;
                 $periodCell = $sheet->getCell('C' . $row)->getValue();
                 
                 if (is_numeric($periodCell)) {
-                    // Excel date format
                     try {
                         $rowPeriod = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($periodCell)->format('Y-m');
                     } catch (\Exception $e) {
-                        Log::warning("Could not convert Excel date in C{$row}: " . $e->getMessage());
+                        Log::warning("Wrapping Import - Date conversion error at C{$row}: " . $e->getMessage());
                     }
                 } elseif (is_string($periodCell) && preg_match('/^\d{4}-\d{2}$/', $periodCell)) {
                     $rowPeriod = $periodCell;
                 }
                 
-                // If still no period, fallback to current
                 if (!$rowPeriod) {
                     $rowPeriod = date('Y-m');
                 }
 
-                if (count($dataRows) % 10 === 0 && count($dataRows) > 0) {
-                    Log::info("Parsed " . count($dataRows) . " rows so far...");
-                }
-
-                // Column Mapping based on Analysis
+                // Column Mapping based on actual "Gaji" sheet analysis:
+                // Row 2 headers: A:No | B:Nama | C:Periode | D:No Rek | E-K:Attendance | L:Pokok | M:Training
+                // N-O:Makan | P-Q:Transport | R:Kehadiran | S:Kesehatan | T:Bonus | U:SubTotal
+                // V-X:Lembur | Y:Koli | Z:Aksesoris | AA:Total Gaji&Bonus | AB:Adj
+                // AC-AH:Potongan | AI:Total Potongan | AJ:Grand Total | AK:EWA | AL:Payroll
                 $parsed = [
                     'employee_name' => $name,
                     'period' => $rowPeriod,
@@ -244,8 +256,9 @@ class PayrollWrappingController extends Controller
                     'health_allowance' => $getCellValue('S', $row),
                     'bonus' => $getCellValue('T', $row),
                     
-                    'overtime_amount' => $getCellValue('X', $row), 
+                    // Overtime (V=rate, W=hours, X=amount)
                     'overtime_hours' => $getCellValue('W', $row),
+                    'overtime_amount' => $getCellValue('X', $row), 
                     
                     'target_koli' => $getCellValue('Y', $row),
                     'fee_aksesoris' => $getCellValue('Z', $row),
@@ -253,7 +266,7 @@ class PayrollWrappingController extends Controller
                     'total_salary_gross' => $getCellValue('AA', $row),
                     'adj_bpjs' => $getCellValue('AB', $row),
                     
-                    // Deductions
+                    // Deductions (AC-AH)
                     'deduction_absent' => $getCellValue('AC', $row),
                     'deduction_late' => $getCellValue('AD', $row),
                     'deduction_alpha' => $getCellValue('AE', $row),
@@ -262,20 +275,24 @@ class PayrollWrappingController extends Controller
                     'deduction_bpjs_tk' => $getCellValue('AH', $row),
                     
                     'deduction_total' => $getCellValue('AI', $row),
-                    'net_salary' => $getCellValue('AM', $row) > 0 ? $getCellValue('AM', $row) : $getCellValue('AL', $row), 
                     
+                    // Finals: AJ=Grand Total, AK=EWA, AL=Payroll (net after EWA)
+                    'net_salary' => $getCellValue('AJ', $row),
                     'ewa_amount' => $getCellValue('AK', $row),
                 ];
                 
                 $dataRows[] = $parsed;
             }
+            
+            Log::info("Wrapping Import - Parsed " . count($dataRows) . " employee rows.");
              
-             return response()->json([
+            return response()->json([
                 'message' => 'File parsed successfully',
                 'rows' => $dataRows
             ]);
 
         } catch (\Exception $e) {
+            Log::error("Wrapping Import Error: " . $e->getMessage());
             return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
