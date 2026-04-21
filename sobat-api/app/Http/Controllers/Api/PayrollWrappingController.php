@@ -136,13 +136,13 @@ class PayrollWrappingController extends Controller
                 }
             }
             
-            // Fallback to first sheet if "Gaji" not found
             if (!$sheet) {
                 $sheet = $spreadsheet->getSheet(0);
                 Log::warning("Wrapping Import - 'Gaji' sheet not found. Using first sheet: " . $sheet->getTitle());
             }
             
             $highestRow = $sheet->getHighestRow();
+            $highestColIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($sheet->getHighestColumn());
             
             // Helper with safety net for formulas
             $getCellValue = function($col, $row) use ($sheet) {
@@ -165,35 +165,187 @@ class PayrollWrappingController extends Controller
             };
             
             // --- DYNAMIC HEADER DETECTION ---
+            // Find the header row containing "Nama Karyawan" in column B
             $headerRowIndex = -1;
             for ($row = 1; $row <= min(15, $highestRow); $row++) {
                 $cellValue = $sheet->getCell('B' . $row)->getValue();
                 if ($cellValue && stripos($cellValue, 'Nama Karyawan') !== false) {
                     $headerRowIndex = $row;
-                    Log::info("Wrapping Import - Header found at Row {$headerRowIndex}");
                     break;
                 }
             }
             
             if ($headerRowIndex === -1) {
-                Log::warning("Wrapping Import - Header not found. Defaulting to Row 2.");
-                $headerRowIndex = 2;
+                Log::warning("Wrapping Import - Header not found. Defaulting to Row 5.");
+                $headerRowIndex = 5;
+            }
+            Log::info("Wrapping Import - Header at Row {$headerRowIndex}");
+            
+            // --- DYNAMIC COLUMN MAPPING ---
+            // Read header row (headerRowIndex) AND subheader row (headerRowIndex+1) to build a column map
+            $columnMap = [];
+            $headerLabels = [
+                'nama karyawan' => 'employee_name',
+                'no rekening' => 'account_number',
+                'gaji pokok' => 'basic_salary',
+                'gaji  training' => 'training_salary',
+                'gaji training' => 'training_salary',
+                'uang makan' => 'meal_rate_header',
+                'transport' => 'transport_rate_header',
+                'tunj. kehadiran' => 'attendance_allowance',
+                'tunj kehadiran' => 'attendance_allowance',
+                'tunj. kesehatan' => 'health_allowance',
+                'tunj kesehatan' => 'health_allowance',
+                'insentif lebaran' => 'bonus',
+                'bonus' => 'bonus',
+                'total gaji' => 'subtotal',
+                'lembur' => 'overtime_rate_header',
+                'target koli' => 'target_koli',
+                'fee aksesoris' => 'fee_aksesoris',
+                'total gaji & bonus' => 'total_salary_gross',
+                'adj gaji' => 'adj_bpjs',
+                'potongan' => 'deductions_header',
+                'grand total' => 'net_salary',
+                'pinjaman ewa' => 'ewa_amount',
+                'payroll' => 'payroll_final',
+            ];
+            
+            // Subheader labels (Row headerRowIndex+1)
+            $subHeaderLabels = [
+                'hari' => 'days_total',
+                'off' => 'days_off',
+                'sakit' => 'days_sick',
+                'ijin' => 'days_permission',
+                'alfa' => 'days_alpha',
+                'cuti' => 'days_leave',
+                'ada' => 'days_present',
+                '/ hari' => null, // handled contextually (meal or transport amount)
+                'jumlah' => null, // handled contextually
+                '/ jam' => 'overtime_rate',
+                'jam' => 'overtime_hours',
+                'absen 1x' => 'deduction_absent',
+                'terlambat' => 'deduction_late',
+                'tidak hadir' => 'deduction_alpha',
+                'pinjaman' => 'deduction_loan',
+                'adm bank' => 'deduction_admin_fee',
+                'bpjs tk' => 'deduction_bpjs_tk',
+            ];
+            
+            // Scan header row
+            for ($colIndex = 1; $colIndex <= min(45, $highestColIndex); $colIndex++) {
+                $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
+                $headerVal = strtolower(trim((string)$sheet->getCell($col . $headerRowIndex)->getValue()));
+                $subHeaderVal = strtolower(trim((string)$sheet->getCell($col . ($headerRowIndex + 1))->getValue()));
+                
+                // Check main header
+                foreach ($headerLabels as $key => $field) {
+                    if ($headerVal && stripos($headerVal, $key) !== false && !isset($columnMap[$field])) {
+                        $columnMap[$field] = $col;
+                        break;
+                    }
+                }
+                
+                // Check sub-header for attendance & deduction columns
+                foreach ($subHeaderLabels as $key => $field) {
+                    if ($field && $subHeaderVal === $key && !isset($columnMap[$field])) {
+                        $columnMap[$field] = $col;
+                        break;
+                    }
+                }
+                
+                // Handle "Jumlah" subheaders contextually (meal_amount, transport_amount, overtime_amount, deduction_total)
+                if ($subHeaderVal === 'jumlah') {
+                    // Find what the main header says for this column
+                    if (stripos($headerVal, 'makan') !== false) {
+                        $columnMap['meal_amount'] = $col;
+                    } elseif (stripos($headerVal, 'transport') !== false) {
+                        $columnMap['transport_amount'] = $col;
+                    } elseif (stripos($headerVal, 'lembur') !== false) {
+                        $columnMap['overtime_amount'] = $col;
+                    } elseif (stripos($headerVal, 'potongan') !== false || !empty($columnMap['deduction_bpjs_tk'])) {
+                        $columnMap['deduction_total'] = $col;
+                    }
+                    // Also check merged header context: if previous columns were meal/transport
+                    if (!isset($columnMap['meal_amount']) && isset($columnMap['meal_rate_header'])) {
+                        // Check if this col is right after meal_rate_header
+                        $mealCol = $columnMap['meal_rate_header'];
+                        $mealIdx = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($mealCol);
+                        if ($colIndex === $mealIdx + 1) {
+                            $columnMap['meal_amount'] = $col;
+                        }
+                    }
+                    if (!isset($columnMap['transport_amount']) && isset($columnMap['transport_rate_header'])) {
+                        $transCol = $columnMap['transport_rate_header'];
+                        $transIdx = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($transCol);
+                        if ($colIndex === $transIdx + 1) {
+                            $columnMap['transport_amount'] = $col;
+                        }
+                    }
+                }
+                
+                // Handle "/ Hari" subheaders (rate columns for meal/transport)
+                if ($subHeaderVal === '/ hari') {
+                    if (!isset($columnMap['meal_rate'])) {
+                        $columnMap['meal_rate'] = $col;
+                    } elseif (!isset($columnMap['transport_rate'])) {
+                        $columnMap['transport_rate'] = $col;
+                    }
+                }
             }
             
-            // Data starts 2 rows after header (skip subheader row with units like "/ Hari")
+            Log::info("Wrapping Import - Column Map: " . json_encode($columnMap));
+            
+            // --- EXTRACT PERIOD FROM SHEET ---
+            // Look for "GAJI MARET 2026" or "Periode: ..." in rows above header
+            $detectedPeriod = $request->input('period');
+            if (!$detectedPeriod) {
+                $monthMap = [
+                    'januari' => '01', 'februari' => '02', 'maret' => '03', 'april' => '04',
+                    'mei' => '05', 'juni' => '06', 'juli' => '07', 'agustus' => '08',
+                    'september' => '09', 'oktober' => '10', 'november' => '11', 'desember' => '12',
+                ];
+                
+                for ($row = 1; $row < $headerRowIndex; $row++) {
+                    for ($c = 1; $c <= 5; $c++) {
+                        $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
+                        $cellText = strtolower(trim((string)$sheet->getCell($col . $row)->getValue()));
+                        
+                        foreach ($monthMap as $monthName => $monthNum) {
+                            if (stripos($cellText, $monthName) !== false && preg_match('/(\d{4})/', $cellText, $yearMatch)) {
+                                $detectedPeriod = $yearMatch[1] . '-' . $monthNum;
+                                Log::info("Wrapping Import - Detected period from cell {$col}{$row}: {$detectedPeriod}");
+                                break 3;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (!$detectedPeriod) {
+                $detectedPeriod = date('Y-m');
+                Log::warning("Wrapping Import - Could not detect period. Using current: {$detectedPeriod}");
+            }
+            
+            // --- DATA EXTRACTION ---
             $dataStartRow = $headerRowIndex + 2;
             Log::info("Wrapping Import - Data starts at Row {$dataStartRow}, Highest Row: {$highestRow}");
-            
-            // Period from Request (manual override from frontend)
-            $requestPeriod = $request->input('period');
             
             $dataRows = [];
             $consecutiveEmptyRows = 0;
             
+            // Helper to get value from mapped column
+            $getCol = function($field) use ($columnMap) {
+                return $columnMap[$field] ?? null;
+            };
+            
+            $getMappedValue = function($field, $row) use ($getCellValue, $getCol) {
+                $col = $getCol($field);
+                return $col ? $getCellValue($col, $row) : 0;
+            };
+            
             for ($row = $dataStartRow; $row <= $highestRow; $row++) {
                 $name = $sheet->getCell('B' . $row)->getValue();
                 
-                // Skip empty rows, stop after 5 consecutive empties
                 if (empty($name) || !is_string($name)) {
                     $consecutiveEmptyRows++;
                     if ($consecutiveEmptyRows >= 5) {
@@ -205,80 +357,59 @@ class PayrollWrappingController extends Controller
                 
                 $consecutiveEmptyRows = 0;
                 
-                // Determine Period
-                $rowPeriod = $requestPeriod;
-                $periodCell = $sheet->getCell('C' . $row)->getValue();
+                $accountCol = $getCol('account_number') ?? 'C';
                 
-                if (is_numeric($periodCell)) {
-                    try {
-                        $rowPeriod = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($periodCell)->format('Y-m');
-                    } catch (\Exception $e) {
-                        Log::warning("Wrapping Import - Date conversion error at C{$row}: " . $e->getMessage());
-                    }
-                } elseif (is_string($periodCell) && preg_match('/^\d{4}-\d{2}$/', $periodCell)) {
-                    $rowPeriod = $periodCell;
-                }
-                
-                if (!$rowPeriod) {
-                    $rowPeriod = date('Y-m');
-                }
-
-                // Column Mapping based on actual "Gaji" sheet analysis:
-                // Row 2 headers: A:No | B:Nama | C:Periode | D:No Rek | E-K:Attendance | L:Pokok | M:Training
-                // N-O:Makan | P-Q:Transport | R:Kehadiran | S:Kesehatan | T:Bonus | U:SubTotal
-                // V-X:Lembur | Y:Koli | Z:Aksesoris | AA:Total Gaji&Bonus | AB:Adj
-                // AC-AH:Potongan | AI:Total Potongan | AJ:Grand Total | AK:EWA | AL:Payroll
                 $parsed = [
                     'employee_name' => $name,
-                    'period' => $rowPeriod,
-                    'account_number' => $sheet->getCell('D' . $row)->getValue(),
+                    'period' => $detectedPeriod,
+                    'account_number' => $sheet->getCell($accountCol . $row)->getValue(),
                     
-                    // Attendance (E-K)
-                    'days_total' => (int)$getCellValue('E', $row),
-                    'days_off' => (int)$getCellValue('F', $row),
-                    'days_sick' => (int)$getCellValue('G', $row),
-                    'days_permission' => (int)$getCellValue('H', $row),
-                    'days_alpha' => (int)$getCellValue('I', $row),
-                    'days_leave' => (int)$getCellValue('J', $row),
-                    'days_present' => (int)$getCellValue('K', $row),
+                    // Attendance
+                    'days_total' => (int)$getMappedValue('days_total', $row),
+                    'days_off' => (int)$getMappedValue('days_off', $row),
+                    'days_sick' => (int)$getMappedValue('days_sick', $row),
+                    'days_permission' => (int)$getMappedValue('days_permission', $row),
+                    'days_alpha' => (int)$getMappedValue('days_alpha', $row),
+                    'days_leave' => (int)$getMappedValue('days_leave', $row),
+                    'days_present' => (int)$getMappedValue('days_present', $row),
                     
                     // Income
-                    'basic_salary' => $getCellValue('L', $row),
-                    'training_salary' => $getCellValue('M', $row),
+                    'basic_salary' => $getMappedValue('basic_salary', $row),
+                    'training_salary' => $getMappedValue('training_salary', $row),
                     
-                    'meal_rate' => $getCellValue('N', $row),
-                    'meal_amount' => $getCellValue('O', $row),
+                    'meal_rate' => $getMappedValue('meal_rate', $row),
+                    'meal_amount' => $getMappedValue('meal_amount', $row),
                     
-                    'transport_rate' => $getCellValue('P', $row),
-                    'transport_amount' => $getCellValue('Q', $row),
+                    'transport_rate' => $getMappedValue('transport_rate', $row),
+                    'transport_amount' => $getMappedValue('transport_amount', $row),
                     
-                    'attendance_allowance' => $getCellValue('R', $row), 
-                    'health_allowance' => $getCellValue('S', $row),
-                    'bonus' => $getCellValue('T', $row),
+                    'attendance_allowance' => $getMappedValue('attendance_allowance', $row), 
+                    'health_allowance' => $getMappedValue('health_allowance', $row),
+                    'bonus' => $getMappedValue('bonus', $row),
                     
-                    // Overtime (V=rate, W=hours, X=amount)
-                    'overtime_hours' => $getCellValue('W', $row),
-                    'overtime_amount' => $getCellValue('X', $row), 
+                    // Overtime
+                    'overtime_hours' => $getMappedValue('overtime_hours', $row),
+                    'overtime_amount' => $getMappedValue('overtime_amount', $row), 
                     
-                    'target_koli' => $getCellValue('Y', $row),
-                    'fee_aksesoris' => $getCellValue('Z', $row),
+                    'target_koli' => $getMappedValue('target_koli', $row),
+                    'fee_aksesoris' => $getMappedValue('fee_aksesoris', $row),
                     
-                    'total_salary_gross' => $getCellValue('AA', $row),
-                    'adj_bpjs' => $getCellValue('AB', $row),
+                    'total_salary_gross' => $getMappedValue('total_salary_gross', $row),
+                    'adj_bpjs' => $getMappedValue('adj_bpjs', $row),
                     
-                    // Deductions (AC-AH)
-                    'deduction_absent' => $getCellValue('AC', $row),
-                    'deduction_late' => $getCellValue('AD', $row),
-                    'deduction_alpha' => $getCellValue('AE', $row),
-                    'deduction_loan' => $getCellValue('AF', $row),
-                    'deduction_admin_fee' => $getCellValue('AG', $row),
-                    'deduction_bpjs_tk' => $getCellValue('AH', $row),
+                    // Deductions
+                    'deduction_absent' => $getMappedValue('deduction_absent', $row),
+                    'deduction_late' => $getMappedValue('deduction_late', $row),
+                    'deduction_alpha' => $getMappedValue('deduction_alpha', $row),
+                    'deduction_loan' => $getMappedValue('deduction_loan', $row),
+                    'deduction_admin_fee' => $getMappedValue('deduction_admin_fee', $row),
+                    'deduction_bpjs_tk' => $getMappedValue('deduction_bpjs_tk', $row),
                     
-                    'deduction_total' => $getCellValue('AI', $row),
+                    'deduction_total' => $getMappedValue('deduction_total', $row),
                     
-                    // Finals: AJ=Grand Total, AK=EWA, AL=Payroll (net after EWA)
-                    'net_salary' => $getCellValue('AJ', $row),
-                    'ewa_amount' => $getCellValue('AK', $row),
+                    // Finals
+                    'net_salary' => $getMappedValue('net_salary', $row),
+                    'ewa_amount' => $getMappedValue('ewa_amount', $row),
                 ];
                 
                 $dataRows[] = $parsed;
@@ -292,7 +423,7 @@ class PayrollWrappingController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error("Wrapping Import Error: " . $e->getMessage());
+            Log::error("Wrapping Import Error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
             return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
