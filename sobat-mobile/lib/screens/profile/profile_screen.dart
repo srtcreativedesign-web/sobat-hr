@@ -153,12 +153,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     currentIndex: 4,
                     onTap: (index) {
                       if (index == 0) {
-                        Navigator.popUntil(context, (route) => route.isFirst);
+                        Navigator.pop(context, 0);
                       } else if (index == 1) {
-                        Navigator.pushNamed(context, '/submission/list');
+                        Navigator.pop(context, 1);
                       } else if (index == 3) {
-                        // Wallet Button Disabled
-                        // Navigator.pushNamed(context, '/payroll');
+                        Navigator.pop(context, 3);
                       }
                     },
                   ),

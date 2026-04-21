@@ -25,6 +25,7 @@ import '../../services/approval_service.dart'; // Added for badge
 import '../../services/notification_service.dart'; // Added for notif badge
 import '../attendance/offline_attendance_handler.dart'; // Added for operational track
 import '../../services/offline_attendance_service.dart';
+import '../finance/finance_coming_soon_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -642,6 +643,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ? _buildDashboardContent(user)
               : _selectedIndex == 1
               ? const SubmissionScreen()
+              : _selectedIndex == 3
+              ? FinanceComingSoonScreen(onBack: () => setState(() => _selectedIndex = 0))
               : Center(child: Text('Coming Soon: Index $_selectedIndex')),
 
           // 3. Floating Bottom Nav
@@ -653,8 +656,14 @@ class _HomeScreenState extends State<HomeScreen> {
               currentIndex: _selectedIndex,
               onTap: (index) {
                 if (index == 4) {
-                  Navigator.pushNamed(context, '/profile').then((_) {
-                    if (mounted) setState(() => _selectedIndex = 0);
+                  Navigator.pushNamed(context, '/profile').then((result) {
+                    if (mounted) {
+                      if (result != null && result is int) {
+                        setState(() => _selectedIndex = result);
+                      } else {
+                        setState(() => _selectedIndex = 0);
+                      }
+                    }
                   });
                 } else {
                   setState(() => _selectedIndex = index);

@@ -41,8 +41,8 @@ class AuthService extends BaseService {
         data: {
           'email': email, 
           'password': password,
-          ?'device_id': deviceId,
-          ?'device_name': deviceName,
+          'device_id': deviceId,
+          'device_name': deviceName,
         },
       );
 

@@ -49,16 +49,28 @@ void main() async {
   }
 
   // Initialize connectivity monitoring
-  await ConnectivityService().initialize();
+  try {
+    await ConnectivityService().initialize();
+  } catch (e) {
+    debugPrint('ConnectivityService initialization failed: $e');
+  }
 
   // Initialize background sync for offline attendance
-  initializeBackgroundSync();
+  try {
+    initializeBackgroundSync();
+  } catch (e) {
+    debugPrint('Background sync initialization failed: $e');
+  }
 
   await initializeDateFormatting('id_ID', null);
   final prefs = await SharedPreferences.getInstance();
 
   // Check for in-app updates (non-blocking)
-  UpdateService().checkForUpdate();
+  try {
+    UpdateService().checkForUpdate();
+  } catch (e) {
+    debugPrint('Update check failed: $e');
+  }
 
   // --- GLOBAL ERROR HANDLING ---
   // 1. Capture errors during build phase (The Red Screen)

@@ -133,9 +133,9 @@ class AttendanceService extends BaseService {
       FormData formData = FormData.fromMap({
         '_method': 'PUT',
         'check_out': checkOutTime,
-        ?'status': status,
-        ?'notes': notes,
-        ?'qr_code_data': qrCodeData,
+        'status': status,
+        'notes': notes,
+        'qr_code_data': qrCodeData,
         'photo': await MultipartFile.fromFile(
           photo.path,
           filename: fileName,

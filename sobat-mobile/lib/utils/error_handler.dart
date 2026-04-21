@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:dio/dio.dart';
 
@@ -37,12 +38,35 @@ class AppErrorHandler {
 
   /// Show internal error for framework/platform exceptions
   static void showInternalError(Object exception, StackTrace? stack) {
-    debugPrint('Internal Error: $exception');
-    if (stack != null) debugPrint('Stack: $stack');
+    debugPrint('Internal Error Capture: $exception');
+    if (stack != null && kDebugMode) debugPrint('Stack: $stack');
     
-    // Only show dialog if we have a context via navigatorKey
+    // List of non-critical errors that should only be logged, NOT shown as popups
+    final logOnlyPatterns = [
+      'Geocoding no longer works',
+      'Location permission denied',
+      'Notification permission denied',
+      'PlatformException(not_available',
+      'PlatformException(PermissionDenied',
+      'FirebaseMessaging',
+      'in_app_update',
+      'FlutterError(Navigator.pop', // Popping from empty stack
+    ];
+
+    final exceptionStr = exception.toString();
+    final isLogOnly = logOnlyPatterns.any((pattern) => exceptionStr.contains(pattern));
+
+    if (isLogOnly) {
+      debugPrint('Skipping popup for non-critical/platform error: $exceptionStr');
+      return;
+    }
+
+    // Only show dialog if we have a context via navigatorKey and it's truly an error
     if (navigatorKey.currentContext != null) {
-      showErrorDialog(getErrorMessage(exception));
+      // Small delay to ensure navigator is ready
+      Future.delayed(const Duration(milliseconds: 500), () {
+        showErrorDialog(getErrorMessage(exception));
+      });
     }
   }
 

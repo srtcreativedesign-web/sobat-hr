@@ -90,18 +90,33 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   ];
 
   Future<void> _initLocations() async {
-    // Try fetching from API first
-    final apiLocations = await _attendanceService.getAttendanceLocations();
-    if (mounted) {
-      setState(() {
-        _locations = apiLocations.isNotEmpty
-            ? apiLocations
-            : _fallbackLocations.map((l) => Map<String, dynamic>.from(l)).toList();
-      });
+    try {
+      // Try fetching from API first
+      final apiLocations = await _attendanceService.getAttendanceLocations();
+      if (mounted) {
+        setState(() {
+          _locations =
+              apiLocations.isNotEmpty
+                  ? apiLocations
+                  : _fallbackLocations
+                      .map((l) => Map<String, dynamic>.from(l))
+                      .toList();
+        });
 
-      // Re-check distance if position already available
-      if (_currentPosition != null) {
-        _checkDistance(_currentPosition!);
+        // Re-check distance if position already available
+        if (_currentPosition != null) {
+          _checkDistance(_currentPosition!);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error initializing locations: $e');
+      if (mounted) {
+        setState(() {
+          _locations =
+              _fallbackLocations
+                  .map((l) => Map<String, dynamic>.from(l))
+                  .toList();
+        });
       }
     }
   }
@@ -194,21 +209,22 @@ class _AttendanceScreenState extends State<AttendanceScreen>
               : const LocationSettings(
                   accuracy: LocationAccuracy.high,
                 ),
-        );
+        ).timeout(const Duration(seconds: 15));
 
         // Get Address
         try {
           List<Placemark> placemarks = await placemarkFromCoordinates(
             position.latitude,
             position.longitude,
-          );
+          ).timeout(const Duration(seconds: 10));
+          
           if (placemarks.isNotEmpty) {
             Placemark place = placemarks.first;
             _currentAddress =
                 '${place.street}, ${place.subLocality}, ${place.locality}';
           }
         } catch (e) {
-          // Silent fail - error already handled by AppErrorHandler
+          debugPrint('Geocoding failed: $e');
           _currentAddress = 'Lokasi tidak diketahui';
         }
 
@@ -226,11 +242,12 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           18.0,
         );
       } catch (e) {
-        // Silent fail - error already handled by AppErrorHandler
+        debugPrint('Location fetching failed: $e');
         if (mounted) {
           setState(() {
             _isLoading = false;
           });
+          _showErrorSnackBar('Gagal mendapatkan lokasi GPS. Mohon coba lagi.');
         }
       }
     } else {

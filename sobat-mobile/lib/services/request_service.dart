@@ -35,7 +35,7 @@ class RequestService extends BaseService {
       final response = await dio.get(
         'requests',
         queryParameters: {
-          ?'type': type,
+          'type': type,
           if (status != null && status != 'Semua') 'status': status,
         },
       );
