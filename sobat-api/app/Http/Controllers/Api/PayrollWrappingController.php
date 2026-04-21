@@ -147,22 +147,49 @@ class PayrollWrappingController extends Controller
                 }
             };
             
-            // Find Header (Nama Karyawan) - usually Row 2
-            $dataStartRow = 4;
+            // --- DYNAMIC HEADER DETECTION ---
+            $headerRowIndex = -1;
+            Log::info("Starting header detection in sheet for Wrapping Import. Highest Row: {$highestRow}");
+            
+            for ($row = 1; $row <= min(15, $highestRow); $row++) {
+                $cellValue = $sheet->getCell('B' . $row)->getValue();
+                if ($cellValue && stripos($cellValue, 'Nama Karyawan') !== false) {
+                    $headerRowIndex = $row;
+                    Log::info("Found 'Nama Karyawan' header at Row {$headerRowIndex}");
+                    break;
+                }
+            }
+            
+            if ($headerRowIndex === -1) {
+                Log::warning("Header 'Nama Karyawan' not found in column B. Defaulting to Row 2.");
+                $headerRowIndex = 2;
+            }
+            
+            // Assume data starts 2 rows after main header (skipping units/subheader)
+            $dataStartRow = $headerRowIndex + 2;
+            Log::info("Data extraction will start at Row {$dataStartRow}");
             
             // Period from Request/Filename (Fallback)
-            // If user uploads in April for March, we prioritize the period from the file or a manual override
             $requestPeriod = $request->input('period');
             
             $dataRows = [];
+            $consecutiveEmptyRows = 0;
+            
             for ($row = $dataStartRow; $row <= $highestRow; $row++) {
                 $name = $sheet->getCell('B' . $row)->getValue();
                 
-                // CRITICAL: Stop reading if name is empty (ignore source data like H53 below the table)
+                // If name is empty, we handle it gracefully up to 10 rows
                 if (empty($name)) {
-                    Log::info("Empty name encountered at row {$row}. Stopping import.");
-                    break; 
+                    $consecutiveEmptyRows++;
+                    if ($consecutiveEmptyRows >= 10) {
+                        Log::info("Reached 10 consecutive empty rows at row {$row}. Stopping import loop.");
+                        break;
+                    }
+                    continue; 
                 }
+                
+                // Reset counter when a name is found
+                $consecutiveEmptyRows = 0;
                 
                 // Determine Period for this row
                 $rowPeriod = $requestPeriod;
@@ -170,14 +197,22 @@ class PayrollWrappingController extends Controller
                 
                 if (is_numeric($periodCell)) {
                     // Excel date format
-                    $rowPeriod = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($periodCell)->format('Y-m');
+                    try {
+                        $rowPeriod = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($periodCell)->format('Y-m');
+                    } catch (\Exception $e) {
+                        Log::warning("Could not convert Excel date in C{$row}: " . $e->getMessage());
+                    }
                 } elseif (is_string($periodCell) && preg_match('/^\d{4}-\d{2}$/', $periodCell)) {
                     $rowPeriod = $periodCell;
                 }
                 
-                // If still no period, default to current (but usually it should be in column C)
+                // If still no period, fallback to current
                 if (!$rowPeriod) {
                     $rowPeriod = date('Y-m');
+                }
+
+                if (count($dataRows) % 10 === 0 && count($dataRows) > 0) {
+                    Log::info("Parsed " . count($dataRows) . " rows so far...");
                 }
 
                 // Column Mapping based on Analysis
