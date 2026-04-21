@@ -30,7 +30,15 @@ sobat-web/.env*.local
 *.swp
 *.swo
 *~
-context.md
+
+# Documentation and Reports
+*.md
+*.xlsx
+*.xls
+
+# Preserve essential documentation
+!**/README.md
+!**/API_DOCUMENTATION.md
 
 # Firebase / Sensitive
 sobat-mobile/android/app/google-services.json
