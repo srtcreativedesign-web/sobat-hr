@@ -82,115 +82,328 @@ class PayrollMmController extends Controller
             $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
             $reader->setReadDataOnly(true);
             $spreadsheet = $reader->load($file->getRealPath());
-            $sheet = $spreadsheet->getActiveSheet();
             
-            $highestRow = $sheet->getHighestRow();
-            $highestColumn = $sheet->getHighestColumn();
+            // --- TARGET THE SHEET ---
+            $sheetNames = $spreadsheet->getSheetNames();
+            Log::info("MM Import - Available sheets: " . implode(', ', $sheetNames));
             
-            // Helper to get calculated cell value
-            $getCellValue = function($col, $row) use ($sheet) {
-                $cell = $sheet->getCell($col . $row);
-                $value = $cell->getCalculatedValue();
-                
-                if (is_numeric($value)) return (float) $value;
-                if (is_string($value)) {
-                    $cleaned = preg_replace('/[^0-9\.\,\-]/', '', $value);
-                    if ($cleaned !== '' && is_numeric($cleaned)) return (float) $cleaned;
-                    return $value;
-                }
-                return $value ?? 0;
-            };
-            
-            // Detect header row (Look for "Nama Karyawan")
-            $headerRowIndex = -1;
-            for ($row = 1; $row <= min(10, $highestRow); $row++) {
-                $rowIterator = $sheet->getRowIterator($row, $row)->current();
-                $cellIterator = $rowIterator->getCellIterator('A', $highestColumn);
-                $cellIterator->setIterateOnlyExistingCells(false);
-                
-                foreach ($cellIterator as $cell) {
-                    $cellValue = $cell->getValue();
-                    if ($cellValue && stripos($cellValue, 'Nama Karyawan') !== false) {
-                        $headerRowIndex = $row;
+            $sheet = null;
+            // Try specific names first
+            foreach (['minimarket', 'gaji'] as $targetName) {
+                foreach ($sheetNames as $actualName) {
+                    if (stripos($actualName, $targetName) !== false) {
+                        $sheet = $spreadsheet->getSheetByName($actualName);
+                        Log::info("MM Import - Using sheet: {$actualName}");
                         break 2;
                     }
                 }
             }
             
+            if (!$sheet) {
+                $sheet = $spreadsheet->getSheet(0);
+                Log::warning("MM Import - Target sheet not found. Using first sheet: " . $sheet->getTitle());
+            }
+            
+            $highestRow = $sheet->getHighestRow();
+            $highestColIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($sheet->getHighestColumn());
+            
+            // Helper with safety net for formulas
+            $getCellValue = function($col, $row) use ($sheet) {
+                try {
+                    $cell = $sheet->getCell($col . $row);
+                    $val = $cell->getCalculatedValue();
+                    
+                    if (is_numeric($val)) return (float)$val;
+                    if (is_string($val)) {
+                        $cleaned = preg_replace('/[^0-9\.\,\-]/', '', $val);
+                        return is_numeric($cleaned) ? (float)$cleaned : 0;
+                    }
+                    return 0;
+                } catch (\Exception $e) {
+                    Log::warning("Formula error in cell {$col}{$row}: " . $e->getMessage());
+                    $val = $sheet->getCell($col . $row)->getValue();
+                    if (is_numeric($val)) return (float)$val;
+                    return 0;
+                }
+            };
+            
+            // --- DYNAMIC HEADER DETECTION ---
+            // Find the header row containing "Nama Karyawan" in column B
+            $headerRowIndex = -1;
+            for ($row = 1; $row <= min(15, $highestRow); $row++) {
+                $cellValue = $sheet->getCell('B' . $row)->getValue();
+                if ($cellValue && stripos($cellValue, 'Nama Karyawan') !== false) {
+                    $headerRowIndex = $row;
+                    break;
+                }
+            }
+            
             if ($headerRowIndex === -1) {
-                return response()->json(['message' => 'Format Excel tidak dikenali. Pastikan ada kolom "Nama Karyawan".'], 422);
+                Log::warning("MM Import - Header not found. Defaulting to Row 5.");
+                $headerRowIndex = 5;
+            }
+            Log::info("MM Import - Header at Row {$headerRowIndex}");
+            
+            // --- DYNAMIC COLUMN MAPPING ---
+            $columnMap = [];
+            $headerLabels = [
+                'nama karyawan' => 'employee_name',
+                'no rekening' => 'account_number',
+                'gaji pokok' => 'basic_salary',
+                'uang makan' => 'meal_rate_header',
+                'transport' => 'transport_rate_header',
+                'tunj. kehadiran' => 'attendance_allowance_header',
+                'tunj kehadiran' => 'attendance_allowance_header',
+                'tunj. kesehatan' => 'health_allowance',
+                'tunj kesehatan' => 'health_allowance',
+                'tunj. jabatan' => 'position_allowance',
+                'tunj jabatan' => 'position_allowance',
+                'total gaji' => 'total_salary_1',
+                'lembur' => 'overtime_rate_header',
+                'bonus' => 'bonus',
+                'insentif lebaran' => 'holiday_allowance',
+                'thr' => 'holiday_allowance',
+                'insentif' => 'incentive',
+                'total gaji & bonus' => 'total_salary_2',
+                'kebijakan' => 'policy_ho',
+                'adj' => 'policy_ho',
+                'potongan' => 'deductions_header',
+                'grand total' => 'grand_total',
+                'pinjaman ewa' => 'ewa_amount',
+                'ewa' => 'ewa_amount',
+                'payroll' => 'net_salary',
+            ];
+            
+            // Subheader labels (Row headerRowIndex+1)
+            $subHeaderLabels = [
+                'hari' => 'days_total',
+                'off' => 'days_off',
+                'sakit' => 'days_sick',
+                'ijin' => 'days_permission',
+                'alfa' => 'days_alpha',
+                'cuti' => 'days_leave',
+                'ada' => 'days_present',
+                '/ hari' => null, // handled contextually
+                'jumlah' => null, // handled contextually
+                '/ jam' => 'overtime_rate',
+                'jam' => 'overtime_hours',
+                'absen 1x' => 'deduction_absent',
+                'terlambat' => 'deduction_absent', // Maybe same deduction column
+                'selisih so' => 'deduction_shortage',
+                'pinjaman' => 'deduction_loan',
+                'adm bank' => 'deduction_admin_fee',
+                'bpjs tk' => 'deduction_bpjs_tk',
+            ];
+            
+            // Scan header row
+            for ($colIndex = 1; $colIndex <= min(45, $highestColIndex); $colIndex++) {
+                $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
+                $headerVal = strtolower(trim((string)$sheet->getCell($col . $headerRowIndex)->getValue()));
+                $subHeaderVal = strtolower(trim((string)$sheet->getCell($col . ($headerRowIndex + 1))->getValue()));
+                
+                // Check main header
+                foreach ($headerLabels as $key => $field) {
+                    if ($headerVal && stripos($headerVal, $key) !== false && !isset($columnMap[$field])) {
+                        $columnMap[$field] = $col;
+                        break;
+                    }
+                }
+                
+                // Check sub-header
+                foreach ($subHeaderLabels as $key => $field) {
+                    if ($field && $subHeaderVal === $key && !isset($columnMap[$field])) {
+                        $columnMap[$field] = $col;
+                        break;
+                    }
+                }
+                
+                // Handle "Jumlah" subheaders contextually
+                if ($subHeaderVal === 'jumlah') {
+                    if (stripos($headerVal, 'makan') !== false) {
+                        $columnMap['meal_amount'] = $col;
+                    } elseif (stripos($headerVal, 'transport') !== false) {
+                        $columnMap['transport_amount'] = $col;
+                    } elseif (stripos($headerVal, 'kehadiran') !== false) {
+                        $columnMap['attendance_amount'] = $col;
+                    } elseif (stripos($headerVal, 'lembur') !== false) {
+                        $columnMap['overtime_amount'] = $col;
+                    } elseif (stripos($headerVal, 'potongan') !== false || !empty($columnMap['deduction_bpjs_tk'])) {
+                        $columnMap['deduction_total'] = $col;
+                    }
+                    
+                    // Merged header context fallback
+                    if (!isset($columnMap['meal_amount']) && isset($columnMap['meal_rate_header']) && $colIndex === (\PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($columnMap['meal_rate_header']) + 1)) {
+                        $columnMap['meal_amount'] = $col;
+                    }
+                    if (!isset($columnMap['transport_amount']) && isset($columnMap['transport_rate_header']) && $colIndex === (\PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($columnMap['transport_rate_header']) + 1)) {
+                        $columnMap['transport_amount'] = $col;
+                    }
+                    if (!isset($columnMap['attendance_amount']) && isset($columnMap['attendance_allowance_header']) && $colIndex === (\PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($columnMap['attendance_allowance_header']) + 1)) {
+                        $columnMap['attendance_amount'] = $col;
+                    }
+                }
+                
+                // Handle "/ Hari" contextually
+                if ($subHeaderVal === '/ hari') {
+                    if (stripos($headerVal, 'makan') !== false || (!isset($columnMap['meal_rate']) && isset($columnMap['total_salary_1']))) {
+                        $columnMap['meal_rate'] = $col;
+                    } elseif (stripos($headerVal, 'transport') !== false || (!isset($columnMap['transport_rate']) && isset($columnMap['meal_rate']))) {
+                        $columnMap['transport_rate'] = $col;
+                    } elseif (stripos($headerVal, 'kehadiran') !== false || (!isset($columnMap['attendance_rate']) && isset($columnMap['transport_rate']))) {
+                        $columnMap['attendance_rate'] = $col;
+                    }
+                    
+                    // Specific matching for "x / Hari"
+                    if (stripos($headerVal, 'makan') !== false) $columnMap['meal_rate'] = $col;
+                    if (stripos($headerVal, 'transport') !== false) $columnMap['transport_rate'] = $col;
+                    if (stripos($headerVal, 'kehadiran') !== false) $columnMap['attendance_rate'] = $col;
+                }
+            }
+            
+            Log::info("MM Import - Column Map: " . json_encode($columnMap));
+            
+            // --- EXTRACT PERIOD ---
+            $detectedPeriod = $request->input('period');
+            if (!$detectedPeriod) {
+                $monthMap = [
+                    'januari' => '01', 'februari' => '02', 'maret' => '03', 'april' => '04',
+                    'mei' => '05', 'juni' => '06', 'juli' => '07', 'agustus' => '08',
+                    'september' => '09', 'oktober' => '10', 'november' => '11', 'desember' => '12',
+                ];
+                
+                for ($row = 1; $row < $headerRowIndex; $row++) {
+                    for ($c = 1; $c <= 5; $c++) {
+                        $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
+                        $cellText = strtolower(trim((string)$sheet->getCell($col . $row)->getValue()));
+                        
+                        foreach ($monthMap as $monthName => $monthNum) {
+                            if (stripos($cellText, $monthName) !== false && preg_match('/(\d{4})/', $cellText, $yearMatch)) {
+                                $detectedPeriod = $yearMatch[1] . '-' . $monthNum;
+                                Log::info("MM Import - Detected period from cell {$col}{$row}: {$detectedPeriod}");
+                                break 3;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (!$detectedPeriod) {
+                // Check if any row has Periode column filled, else fallback
+                $detectedPeriod = date('Y-m'); 
+                Log::warning("MM Import - Could not detect period. Using current: {$detectedPeriod}");
             }
             
             $dataRows = [];
-            $startDataRow = $headerRowIndex + 2; // Skip header and units row
+            $consecutiveEmptyRows = 0;
+            $startDataRow = $headerRowIndex + 2;
+            
+            $getCol = function($field) use ($columnMap) {
+                return $columnMap[$field] ?? null;
+            };
+            
+            $getMappedValue = function($field, $row) use ($getCellValue, $getCol) {
+                $col = $getCol($field);
+                return $col ? $getCellValue($col, $row) : 0;
+            };
             
             for ($row = $startDataRow; $row <= $highestRow; $row++) {
-                // Column B assumed to be Employee Name based on MM analysis
-                $employeeName = $getCellValue('B', $row);
+                $employeeName = $sheet->getCell('B' . $row)->getValue();
                 
-                if (empty($employeeName) || !is_string($employeeName)) continue;
+                if (empty($employeeName) || !is_string($employeeName)) {
+                    $consecutiveEmptyRows++;
+                    if ($consecutiveEmptyRows >= 5) {
+                        break;
+                    }
+                    continue; 
+                }
                 
-                // MAP COLUMNS BASED ON 'read_headers.php' OUTPUT FOR MM
+                $consecutiveEmptyRows = 0;
+                
+                $accountCol = $getCol('account_number') ?? 'D';
+                if ($accountCol === 'D' && !isset($columnMap['account_number'])) {
+                    // if shift happened, it's C
+                     $accountCol = 'C'; 
+                }
+                
+                // Identify period for this row: if we detected it globally, use it. Some MM files have Periode in col C
+                $rowPeriod = $detectedPeriod;
+                if (!isset($columnMap['account_number'])) { // meaning we couldn't properly detect account number, so Periode might be C
+                     $periodCell = $sheet->getCell('C' . $row)->getValue();
+                     if (is_numeric($periodCell)) {
+                        try {
+                            $rowPeriod = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($periodCell)->format('Y-m');
+                        } catch (\Exception $e) {}
+                     } elseif (is_string($periodCell) && preg_match('/^\d{4}-\d{2}$/', $periodCell)) {
+                         $rowPeriod = $periodCell;
+                     }
+                }
+                
                 $parsed = [
                     'employee_name' => $employeeName,
-                    'period' => $request->period ?? date('Y-m'), // Use period from request if provided
-                    'account_number' => $getCellValue('D', $row),
+                    'period' => $rowPeriod,
+                    'account_number' => $sheet->getCell($accountCol . $row)->getValue(),
                     
-                    // Attendance (E-K)
-                    'days_total' => (int) $getCellValue('E', $row),
-                    'days_off' => (int) $getCellValue('F', $row),
-                    'days_sick' => (int) $getCellValue('G', $row),
-                    'days_permission' => (int) $getCellValue('H', $row),
-                    'days_alpha' => (int) $getCellValue('I', $row),
-                    'days_leave' => (int) $getCellValue('J', $row),
-                    'days_present' => (int) $getCellValue('K', $row),
+                    // Attendance 
+                    'days_total' => (int) $getMappedValue('days_total', $row),
+                    'days_off' => (int) $getMappedValue('days_off', $row),
+                    'days_sick' => (int) $getMappedValue('days_sick', $row),
+                    'days_permission' => (int) $getMappedValue('days_permission', $row),
+                    'days_alpha' => (int) $getMappedValue('days_alpha', $row),
+                    'days_leave' => (int) $getMappedValue('days_leave', $row),
+                    'days_present' => (int) $getMappedValue('days_present', $row),
                     
                     // Salary
-                    'basic_salary' => $getCellValue('L', $row),
+                    'basic_salary' => $getMappedValue('basic_salary', $row),
                     
                     // Allowances
-                    'meal_rate' => $getCellValue('M', $row),
-                    'meal_amount' => $getCellValue('N', $row),
+                    'meal_rate' => $getMappedValue('meal_rate', $row),
+                    'meal_amount' => $getMappedValue('meal_amount', $row),
                     
-                    'transport_rate' => $getCellValue('O', $row),
-                    'transport_amount' => $getCellValue('P', $row),
+                    'transport_rate' => $getMappedValue('transport_rate', $row),
+                    'transport_amount' => $getMappedValue('transport_amount', $row),
                     
-                    'attendance_rate' => $getCellValue('Q', $row),
-                    'attendance_amount' => $getCellValue('R', $row),
+                    'attendance_rate' => $getMappedValue('attendance_rate', $row),
+                    'attendance_amount' => $getMappedValue('attendance_amount', $row), // Also corresponds to attendance_allowance_header
                     
-                    'health_allowance' => $getCellValue('S', $row),
-                    'position_allowance' => $getCellValue('T', $row),
+                    'health_allowance' => $getMappedValue('health_allowance', $row),
+                    'position_allowance' => $getMappedValue('position_allowance', $row),
                     
-                    'total_salary_1' => $getCellValue('U', $row),
+                    'total_salary_1' => $getMappedValue('total_salary_1', $row),
                     
                     // Overtime
-                    'overtime_rate' => $getCellValue('V', $row),
-                    'overtime_hours' => $getCellValue('W', $row),
-                    'overtime_amount' => $getCellValue('X', $row),
+                    'overtime_rate' => $getMappedValue('overtime_rate', $row),
+                    'overtime_hours' => $getMappedValue('overtime_hours', $row),
+                    'overtime_amount' => $getMappedValue('overtime_amount', $row),
                     
                     // Bonus & Incentives
-                    'bonus' => $getCellValue('Y', $row),
-                    'incentive' => $getCellValue('Z', $row),
-                    'holiday_allowance' => $getCellValue('AA', $row),
+                    'bonus' => $getMappedValue('bonus', $row),
+                    'incentive' => $getMappedValue('incentive', $row),
+                    'holiday_allowance' => $getMappedValue('holiday_allowance', $row), // THR / Lebaran
                     
-                    'total_salary_2' => $getCellValue('AB', $row),
-                    'policy_ho' => $getCellValue('AC', $row),
+                    'total_salary_2' => $getMappedValue('total_salary_2', $row),
+                    'policy_ho' => $getMappedValue('policy_ho', $row),
                     
                     // Deductions
-                    'deduction_absent' => $getCellValue('AD', $row), // Absen 1X
-                    'deduction_alpha' => $getCellValue('AE', $row),
-                    'deduction_shortage' => $getCellValue('AF', $row), // Selisih SO
-                    'deduction_loan' => $getCellValue('AG', $row),
-                    'deduction_admin_fee' => $getCellValue('AH', $row),
-                    'deduction_bpjs_tk' => $getCellValue('AI', $row),
+                    'deduction_absent' => $getMappedValue('deduction_absent', $row), 
+                    'deduction_alpha' => $getMappedValue('days_alpha', $row) > 0 ? $getMappedValue('deduction_absent', $row) : 0, // Fallback if no specific deduction_alpha mapped
+                    'deduction_shortage' => $getMappedValue('deduction_shortage', $row),
+                    'deduction_loan' => $getMappedValue('deduction_loan', $row),
+                    'deduction_admin_fee' => $getMappedValue('deduction_admin_fee', $row),
+                    'deduction_bpjs_tk' => $getMappedValue('deduction_bpjs_tk', $row),
                     
-                    'deduction_total' => $getCellValue('AJ', $row),
+                    'deduction_total' => $getMappedValue('deduction_total', $row),
                     
                     // Finals
-                    'grand_total' => $getCellValue('AK', $row),
-                    'ewa_amount' => $getCellValue('AL', $row),
-                    'net_salary' => $getCellValue('AM', $row),
+                    'grand_total' => $getMappedValue('grand_total', $row),
+                    'ewa_amount' => $getMappedValue('ewa_amount', $row),
+                    'net_salary' => $getMappedValue('net_salary', $row),
                 ];
+                
+                // If the column names didn't map perfectly for attendance_amount, but we found the header
+                if (!$parsed['attendance_amount'] && $parsed['attendance_rate']) {
+                     // Check if there is an amount mapped
+                     $parsed['attendance_amount'] = $getMappedValue('attendance_allowance_header', $row) ?: ($parsed['attendance_rate'] * clone $parsed['days_present']);
+                }
                 
                 $dataRows[] = $parsed;
             }
@@ -203,7 +416,7 @@ class PayrollMmController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('MM Payroll Import Error: ' . $e->getMessage());
+            Log::error('MM Payroll Import Error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
