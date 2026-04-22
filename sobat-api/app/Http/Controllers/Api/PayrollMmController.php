@@ -411,18 +411,18 @@ class PayrollMmController extends Controller
                 }
                 
                 // Fallback for grand total and net salary if header is missing (like in 04. Gaji Bekal.xlsx format)
-                if (!$parsed['grand_total']) {
+                if (!$parsed['grand_total'] || !$parsed['net_salary']) {
                     // Try to guess from the last column if it contains a formula for total
                     $guessedGrandTotal = $getCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($highestColIndex), $row);
                     $guessedNet = $getCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($highestColIndex), $row);
                     
                     if ($parsed['total_salary_2']) {
                         $calculatedTotal = $parsed['total_salary_2'] + $parsed['policy_ho'] - $parsed['deduction_total'];
-                        $parsed['grand_total'] = $calculatedTotal;
-                        $parsed['net_salary'] = $calculatedTotal - $parsed['ewa_amount'];
+                        $parsed['grand_total'] = $parsed['grand_total'] ?: $calculatedTotal;
+                        $parsed['net_salary'] = $parsed['net_salary'] ?: ($parsed['grand_total'] - $parsed['ewa_amount']);
                     } elseif ($guessedGrandTotal > 0) {
-                         $parsed['grand_total'] = $guessedGrandTotal;
-                         $parsed['net_salary'] = $guessedNet;
+                         $parsed['grand_total'] = $parsed['grand_total'] ?: $guessedGrandTotal;
+                         $parsed['net_salary'] = $parsed['net_salary'] ?: $guessedNet;
                     }
                 }
                 
