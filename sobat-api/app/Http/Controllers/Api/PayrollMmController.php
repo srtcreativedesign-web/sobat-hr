@@ -399,10 +399,31 @@ class PayrollMmController extends Controller
                     'net_salary' => $getMappedValue('net_salary', $row),
                 ];
                 
+                // --- FALLBACK CALCULATIONS ---
                 // If the column names didn't map perfectly for attendance_amount, but we found the header
                 if (!$parsed['attendance_amount'] && $parsed['attendance_rate']) {
-                     // Check if there is an amount mapped
                      $parsed['attendance_amount'] = $getMappedValue('attendance_allowance_header', $row) ?: ($parsed['attendance_rate'] * clone $parsed['days_present']);
+                }
+                
+                // Fallback for deduction total if missing
+                if (!$parsed['deduction_total']) {
+                    $parsed['deduction_total'] = $parsed['deduction_absent'] + $parsed['deduction_alpha'] + $parsed['deduction_shortage'] + $parsed['deduction_loan'] + $parsed['deduction_admin_fee'] + $parsed['deduction_bpjs_tk'];
+                }
+                
+                // Fallback for grand total and net salary if header is missing (like in 04. Gaji Bekal.xlsx format)
+                if (!$parsed['grand_total']) {
+                    // Try to guess from the last column if it contains a formula for total
+                    $guessedGrandTotal = $getCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($highestColIndex), $row);
+                    $guessedNet = $getCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($highestColIndex), $row);
+                    
+                    if ($parsed['total_salary_2']) {
+                        $calculatedTotal = $parsed['total_salary_2'] + $parsed['policy_ho'] - $parsed['deduction_total'];
+                        $parsed['grand_total'] = $calculatedTotal;
+                        $parsed['net_salary'] = $calculatedTotal - $parsed['ewa_amount'];
+                    } elseif ($guessedGrandTotal > 0) {
+                         $parsed['grand_total'] = $guessedGrandTotal;
+                         $parsed['net_salary'] = $guessedNet;
+                    }
                 }
                 
                 $dataRows[] = $parsed;
