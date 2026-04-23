@@ -120,9 +120,116 @@ class PayrollRefController extends Controller
                 }
             }
             
-            if ($headerRowIndex === -1) {
-                return response()->json(['message' => 'Format Excel tidak dikenali. Pastikan ada kolom "Nama Karyawan".'], 422);
+
+if ($headerRowIndex === -1) {
+                Log::warning("Reflexiology Import - Header not found. Defaulting to Row 4.");
+                $headerRowIndex = 4;
             }
+            
+            Log::info("Reflexiology Import - Header at Row {$headerRowIndex}");
+            
+            // --- DYNAMIC COLUMN MAPPING ---
+            $columnMap = [];
+            $headerLabels = [
+                'nama karyawan' => 'employee_name',
+                'no rekening' => 'account_number',
+                'gaji pokok' => 'basic_salary',
+                'uang makan' => 'meal_rate_header',
+                'transport' => 'transport_rate_header',
+                'tunj. kehadiran' => 'attendance_allowance_header',
+                'tunj kehadiran' => 'attendance_allowance_header',
+                'tunj. kesehatan' => 'health_allowance',
+                'tunj kesehatan' => 'health_allowance',
+                'tunj. jabatan' => 'position_allowance',
+                'tunj jabatan' => 'position_allowance',
+                'total gaji & bonus' => 'total_salary_2',
+                'total gaji' => 'total_salary_1',
+                'lembur wajib' => 'mandatory_overtime_header',
+                'lembur' => 'overtime_rate_header',
+                'insentif lebaran' => 'holiday_allowance',
+                'thr' => 'holiday_allowance',
+                'insentif' => 'incentive',
+                'bonus' => 'bonus',
+                'kebijakan' => 'policy_ho',
+                'adj' => 'adjustment',
+                'potongan' => 'deductions_header',
+                'grand total' => 'grand_total',
+                'pinjaman ewa' => 'ewa_amount',
+                'ewa' => 'ewa_amount',
+                'payroll' => 'net_salary',
+                'masa kerja' => 'years_of_service',
+                'ket ' => 'notes',
+                'ket' => 'notes',
+            ];
+            
+            $subHeaderLabels = [
+                'hari' => 'days_total',
+                'off' => 'days_off',
+                'sakit' => 'days_sick',
+                'ijin' => 'days_permission',
+                'alfa' => 'days_alpha',
+                'cuti' => 'days_leave',
+                'ada' => 'days_present',
+                '/ hari' => null, 
+                'jumlah' => null, 
+                '/ jam' => 'overtime_rate',
+                'jam' => 'overtime_hours',
+                'absen 1x' => 'deduction_absent',
+                'terlambat' => 'deduction_late', 
+                'selisih so' => 'deduction_so_shortage',
+                'pinjaman' => 'deduction_loan',
+                'adm bank' => 'deduction_admin_fee',
+                'bpjs tk' => 'deduction_bpjs_tk',
+                'long shift' => 'days_long_shift',
+            ];
+            
+            $highestColIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestColumn);
+            
+            // Scan header row
+            for ($colIndex = 1; $colIndex <= min(50, $highestColIndex); $colIndex++) {
+                $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
+                $headerVal = strtolower(trim((string)$sheet->getCell($col . $headerRowIndex)->getValue()));
+                $subHeaderVal = strtolower(trim((string)$sheet->getCell($col . ($headerRowIndex + 1))->getValue()));
+                
+                foreach ($headerLabels as $key => $field) {
+                    if ($headerVal && stripos($headerVal, $key) !== false && !isset($columnMap[$field])) {
+                        $columnMap[$field] = $col;
+                        break;
+                    }
+                }
+                
+                foreach ($subHeaderLabels as $key => $field) {
+                    if ($field && $subHeaderVal === $key && !isset($columnMap[$field])) {
+                        $columnMap[$field] = $col;
+                        break;
+                    }
+                }
+                
+                if ($subHeaderVal === 'jumlah') {
+                    if (stripos($headerVal, 'makan') !== false) $columnMap['meal_amount'] = $col;
+                    elseif (stripos($headerVal, 'transport') !== false) $columnMap['transport_amount'] = $col;
+                    elseif (stripos($headerVal, 'kehadiran') !== false) $columnMap['attendance_amount'] = $col;
+                    elseif (stripos($headerVal, 'lembur wajib') !== false) $columnMap['mandatory_overtime_amount'] = $col;
+                    elseif (stripos($headerVal, 'lembur') !== false) $columnMap['overtime_amount'] = $col;
+                    elseif (stripos($headerVal, 'potongan') !== false || !empty($columnMap['deduction_bpjs_tk'])) $columnMap['deduction_total'] = $col;
+                    
+                    if (!isset($columnMap['meal_amount']) && isset($columnMap['meal_rate_header']) && $colIndex === (\PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($columnMap['meal_rate_header']) + 1)) {
+                        $columnMap['meal_amount'] = $col;
+                    }
+                    if (!isset($columnMap['transport_amount']) && isset($columnMap['transport_rate_header']) && $colIndex === (\PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($columnMap['transport_rate_header']) + 1)) {
+                        $columnMap['transport_amount'] = $col;
+                    }
+                }
+                
+                if ($subHeaderVal === '/ hari') {
+                    if (stripos($headerVal, 'makan') !== false) $columnMap['meal_rate'] = $col;
+                    elseif (stripos($headerVal, 'transport') !== false) $columnMap['transport_rate'] = $col;
+                    elseif (stripos($headerVal, 'kehadiran') !== false) $columnMap['attendance_rate'] = $col;
+                    elseif (stripos($headerVal, 'lembur wajib') !== false) $columnMap['mandatory_overtime_rate'] = $col;
+                }
+            }
+            
+            Log::info("Reflexiology Import - Column Map: " . json_encode($columnMap));
             
             // --- EXTRACT PERIOD ---
             $detectedPeriod = $request->input('period');
@@ -133,14 +240,15 @@ class PayrollRefController extends Controller
                     'september' => '09', 'oktober' => '10', 'november' => '11', 'desember' => '12',
                 ];
                 
-                for ($r = 1; $r < $headerRowIndex; $r++) {
+                for ($row = 1; $row < $headerRowIndex; $row++) {
                     for ($c = 1; $c <= 5; $c++) {
                         $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
-                        $cellText = strtolower(trim((string)$sheet->getCell($col . $r)->getValue()));
+                        $cellText = strtolower(trim((string)$sheet->getCell($col . $row)->getValue()));
                         
                         foreach ($monthMap as $monthName => $monthNum) {
                             if (stripos($cellText, $monthName) !== false && preg_match('/(\d{4})/', $cellText, $yearMatch)) {
                                 $detectedPeriod = $yearMatch[1] . '-' . $monthNum;
+                                Log::info("Reflexiology Import - Detected period from cell {$col}{$row}: {$detectedPeriod}");
                                 break 3;
                             }
                         }
@@ -149,96 +257,130 @@ class PayrollRefController extends Controller
             }
             if (!$detectedPeriod) {
                 $detectedPeriod = date('Y-m'); 
+                Log::warning("Reflexiology Import - Could not detect period. Using current: {$detectedPeriod}");
             }
             
             $dataRows = [];
-            $startDataRow = $headerRowIndex + 2; // Skip header and units row
+            $consecutiveEmptyRows = 0;
+            $startDataRow = $headerRowIndex + 2;
+            
+            $getCol = function($field) use ($columnMap) {
+                return $columnMap[$field] ?? null;
+            };
+            
+            // Convert to float implicitly by casting
+            $getMappedValue = function($field, $row) use ($getCellValue, $getCol) {
+                $col = $getCol($field);
+                $val = $col ? $getCellValue($col, $row) : 0;
+                // Soft cast it
+                if (is_string($val) && !is_numeric($val)) return 0;
+                return (float)$val; 
+            };
             
             for ($row = $startDataRow; $row <= $highestRow; $row++) {
-                // Column B assumed to be Employee Name based on MM analysis
-                $employeeName = $getCellValue('B', $row);
+                $employeeName = $sheet->getCell('B' . $row)->getValue();
                 
-                if (empty($employeeName) || !is_string($employeeName)) continue;
+                if (empty($employeeName) || !is_string($employeeName)) {
+                    $consecutiveEmptyRows++;
+                    if ($consecutiveEmptyRows >= 5) {
+                        break;
+                    }
+                    continue; 
+                }
                 
-                // MAP COLUMNS FOR REFLEXIOLOGY (Updated for 'payroll reflexy.xlsx')
-                // A: No, B: Name, C: Account, D: Days Total
-                // E-I: Off, Sick, Permission, Alpha, Leave(Cuti)
-                // J: Long Shift, K: Present
-                // L: Basic, M-N: Meal, O-P: Transport, Q-R: Attendance, S: Position, T: Health
-                // U: Subtotal 1, V-X: Overtime, Y: Bonus, Z: Incentive
-                // AA: Gross, AB: Policy HO (Empty?), AC: Absen 1X, AD: Late, AE: No Show, AF: Loan, AG: Admin, AH: BPJS TK
-                // AI: Deduction Total, AJ: Net, AK: Years Service, AL: Notes
-
+                $consecutiveEmptyRows = 0;
+                
+                $accountCol = $getCol('account_number') ?? 'D';
+                if ($accountCol === 'D' && !isset($columnMap['account_number'])) {
+                     $accountCol = 'C'; 
+                }
+                
                 $parsed = [
                     'employee_name' => $employeeName,
                     'period' => $detectedPeriod,
-                    'account_number' => $getCellValue('C', $row), // Corrected from D
+                    'account_number' => $sheet->getCell($accountCol . $row)->getValue(),
                     
-                    // Attendance
-                    'days_total' => (int) $getCellValue('D', $row),
-                    'days_off' => (int) $getCellValue('E', $row),
-                    'days_sick' => (int) $getCellValue('F', $row),
-                    'days_permission' => (int) $getCellValue('G', $row),
-                    'days_alpha' => (int) $getCellValue('H', $row),
-                    'days_leave' => (int) $getCellValue('I', $row),
-                    'days_long_shift' => (int) $getCellValue('J', $row), // New
-                    'days_present' => (int) $getCellValue('K', $row),
+                    'days_total' => (int) $getMappedValue('days_total', $row),
+                    'days_off' => (int) $getMappedValue('days_off', $row),
+                    'days_sick' => (int) $getMappedValue('days_sick', $row),
+                    'days_permission' => (int) $getMappedValue('days_permission', $row),
+                    'days_alpha' => (int) $getMappedValue('days_alpha', $row),
+                    'days_leave' => (int) $getMappedValue('days_leave', $row),
+                    'days_long_shift' => (int) $getMappedValue('days_long_shift', $row),
+                    'days_present' => (int) $getMappedValue('days_present', $row),
                     
-                    // Salary
-                    'basic_salary' => $getCellValue('L', $row),
+                    'basic_salary' => $getMappedValue('basic_salary', $row),
                     
-                    // Allowances
-                    'meal_rate' => $getCellValue('M', $row),
-                    'meal_amount' => $getCellValue('N', $row),
+                    'meal_rate' => $getMappedValue('meal_rate', $row),
+                    'meal_amount' => $getMappedValue('meal_amount', $row),
                     
-                    'transport_rate' => $getCellValue('O', $row),
-                    'transport_amount' => $getCellValue('P', $row),
+                    'transport_rate' => $getMappedValue('transport_rate', $row),
+                    'transport_amount' => $getMappedValue('transport_amount', $row),
                     
-                    'attendance_rate' => $getCellValue('Q', $row),
-                    'attendance_amount' => $getCellValue('R', $row),
+                    'attendance_rate' => $getMappedValue('attendance_rate', $row),
+                    'attendance_amount' => $getMappedValue('attendance_amount', $row),
                     
-                    'position_allowance' => $getCellValue('S', $row),
-                    'health_allowance' => $getCellValue('T', $row),
+                    'position_allowance' => $getMappedValue('position_allowance', $row),
+                    'health_allowance' => $getMappedValue('health_allowance', $row),
                     
-                    'total_salary_1' => $getCellValue('U', $row),
+                    'total_salary_1' => $getMappedValue('total_salary_1', $row),
                     
-                    // Overtime
-                    'overtime_rate' => $getCellValue('V', $row),
-                    'overtime_hours' => $getCellValue('W', $row),
-                    'overtime_amount' => $getCellValue('X', $row),
+                    'overtime_rate' => $getMappedValue('overtime_rate', $row),
+                    'overtime_hours' => $getMappedValue('overtime_hours', $row),
+                    'overtime_amount' => $getMappedValue('overtime_amount', $row) + $getMappedValue('mandatory_overtime_amount', $row), 
                     
-                    // Bonus & Incentives
-                    'bonus' => $getCellValue('Y', $row),
-                    'incentive' => $getCellValue('Z', $row),
-                    // 'holiday_allowance' => $getCellValue('AA', $row), // NO, AA is Gross in this file
-                    'holiday_allowance' => 0, // Not in this file?
+                    'bonus' => $getMappedValue('bonus', $row),
+                    'holiday_allowance' => $getMappedValue('holiday_allowance', $row),
+                    'adjustment' => $getMappedValue('adjustment', $row),
+                    'incentive' => $getMappedValue('incentive', $row),
                     
-                    'total_salary_2' => $getCellValue('AA', $row), // Used to be AB
-                    'policy_ho' => $getCellValue('AB', $row), // Might be empty
+                    'total_salary_2' => $getMappedValue('total_salary_2', $row),
+                    'policy_ho' => $getMappedValue('policy_ho', $row),
                     
-                    // Deductions
-                    'deduction_absent' => $getCellValue('AC', $row), // Absen 1X
-                    'deduction_late' => $getCellValue('AD', $row), // Terlambat (New)
-                    'deduction_alpha' => $getCellValue('AE', $row), // Tidak Hadir -> Alpha
-                    'deduction_loan' => $getCellValue('AF', $row), // Pinjaman
-                    'deduction_admin_fee' => $getCellValue('AG', $row), // Adm Bank
-                    'deduction_bpjs_tk' => $getCellValue('AH', $row), // BPJS TK
+                    'deduction_absent' => $getMappedValue('deduction_absent', $row), 
+                    'deduction_late' => $getMappedValue('deduction_late', $row), 
+                    'deduction_so_shortage' => $getMappedValue('deduction_so_shortage', $row),
+                    'deduction_alpha' => $getMappedValue('days_alpha', $row) > 0 ? $getMappedValue('deduction_absent', $row) : 0, 
+                    'deduction_loan' => $getMappedValue('deduction_loan', $row),
+                    'deduction_admin_fee' => $getMappedValue('deduction_admin_fee', $row),
+                    'deduction_bpjs_tk' => $getMappedValue('deduction_bpjs_tk', $row),
                     
-                    'deduction_total' => $getCellValue('AI', $row),
+                    'deduction_total' => $getMappedValue('deduction_total', $row),
                     
-                    // Finals
-                    // AJ is Net (Grand Total)
-                    'net_salary' => $getCellValue('AJ', $row),
-                    'grand_total' => $getCellValue('AJ', $row), // Duplicate net to grand total for structure consistency
-                    'ewa_amount' => 0, // No EWA column in this file
+                    'grand_total' => $getMappedValue('grand_total', $row),
+                    'ewa_amount' => $getMappedValue('ewa_amount', $row),
+                    'net_salary' => $getMappedValue('net_salary', $row),
                     
-                    // Extras
-                    'years_of_service' => $getCellValue('AK', $row),
-                    'notes' => $getCellValue('AL', $row),
+                    'years_of_service' => $getMappedValue('years_of_service', $row) ?: ($getCol('years_of_service') ? $sheet->getCell($getCol('years_of_service') . $row)->getValue() : null),
+                    'notes' => $getMappedValue('notes', $row) ?: ($getCol('notes') ? $sheet->getCell($getCol('notes') . $row)->getValue() : null),
                 ];
+                
+                // Fallbacks if calculated total is missing
+                if (!$parsed['deduction_total']) {
+                    $parsed['deduction_total'] = $parsed['deduction_absent'] + $parsed['deduction_late'] + $parsed['deduction_so_shortage'] + $parsed['deduction_alpha'] + $parsed['deduction_loan'] + $parsed['deduction_admin_fee'] + $parsed['deduction_bpjs_tk'];
+                }
+                
+                if (!$parsed['attendance_amount'] && $parsed['attendance_rate']) {
+                    $parsed['attendance_amount'] = $getMappedValue('attendance_allowance_header', $row) ?: ($parsed['attendance_rate'] * $parsed['days_present']);
+                }
+                
+                if (!$parsed['grand_total'] || !$parsed['net_salary']) {
+                    $guessedGrandTotal = $getCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($highestColIndex), $row);
+                    $guessedNet = $getCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($highestColIndex), $row);
+                    
+                    if ($parsed['total_salary_2']) {
+                        $calculatedTotal = $parsed['total_salary_2'] + $parsed['policy_ho'] - $parsed['deduction_total'];
+                        $parsed['grand_total'] = $parsed['grand_total'] ?: $calculatedTotal;
+                        $parsed['net_salary'] = $parsed['net_salary'] ?: ($parsed['grand_total'] - $parsed['ewa_amount']);
+                    } elseif ((float)$guessedGrandTotal > 0) {
+                         $parsed['grand_total'] = $parsed['grand_total'] ?: (float)$guessedGrandTotal;
+                         $parsed['net_salary'] = $parsed['net_salary'] ?: (float)$guessedNet;
+                    }
+                }
                 
                 $dataRows[] = $parsed;
             }
+
 
             return response()->json([
                 'message' => 'File parsed successfully',
