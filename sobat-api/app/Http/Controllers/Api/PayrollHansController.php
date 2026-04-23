@@ -399,8 +399,16 @@ if ($headerRowIndex === -1) {
             $errors = [];
             
             foreach ($request->rows as $index => $row) {
-                // Find employee by full_name
-                $employee = Employee::where('full_name', $row['employee_name'])->first();
+                // Find employee by full_name - robust lookup for spaces and case
+                $employeeName = trim($row['employee_name']);
+                $employeeName = preg_replace('/\s+/', ' ', $employeeName);
+                
+                $employee = Employee::whereRaw('LOWER(TRIM(REPLACE(full_name, "  ", " "))) = ?', [strtolower($employeeName)])->first();
+                
+                if (!$employee) {
+                    // Fallback to LIKE if strict match fails (may be risky but helpful for typos)
+                    $employee = Employee::where('full_name', 'LIKE', '%' . $employeeName . '%')->first();
+                }
                 
                 if (!$employee) {
                     $errors[] = "Row " . ($index + 1) . ": Employee '{$row['employee_name']}' not found";
