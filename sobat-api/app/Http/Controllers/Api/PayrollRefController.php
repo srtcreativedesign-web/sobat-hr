@@ -124,6 +124,33 @@ class PayrollRefController extends Controller
                 return response()->json(['message' => 'Format Excel tidak dikenali. Pastikan ada kolom "Nama Karyawan".'], 422);
             }
             
+            // --- EXTRACT PERIOD ---
+            $detectedPeriod = $request->input('period');
+            if (!$detectedPeriod) {
+                $monthMap = [
+                    'januari' => '01', 'februari' => '02', 'maret' => '03', 'april' => '04',
+                    'mei' => '05', 'juni' => '06', 'juli' => '07', 'agustus' => '08',
+                    'september' => '09', 'oktober' => '10', 'november' => '11', 'desember' => '12',
+                ];
+                
+                for ($r = 1; $r < $headerRowIndex; $r++) {
+                    for ($c = 1; $c <= 5; $c++) {
+                        $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
+                        $cellText = strtolower(trim((string)$sheet->getCell($col . $r)->getValue()));
+                        
+                        foreach ($monthMap as $monthName => $monthNum) {
+                            if (stripos($cellText, $monthName) !== false && preg_match('/(\d{4})/', $cellText, $yearMatch)) {
+                                $detectedPeriod = $yearMatch[1] . '-' . $monthNum;
+                                break 3;
+                            }
+                        }
+                    }
+                }
+            }
+            if (!$detectedPeriod) {
+                $detectedPeriod = date('Y-m'); 
+            }
+            
             $dataRows = [];
             $startDataRow = $headerRowIndex + 2; // Skip header and units row
             
@@ -144,7 +171,7 @@ class PayrollRefController extends Controller
 
                 $parsed = [
                     'employee_name' => $employeeName,
-                    'period' => date('Y-m'), // Default to current
+                    'period' => $detectedPeriod,
                     'account_number' => $getCellValue('C', $row), // Corrected from D
                     
                     // Attendance
@@ -241,8 +268,15 @@ class PayrollRefController extends Controller
             $errors = [];
             
             foreach ($request->rows as $index => $row) {
-                // Find employee by full_name
-                $employee = Employee::where('full_name', $row['employee_name'])->first();
+                // Find employee by full_name - robust lookup
+                $employeeName = trim($row['employee_name']);
+                $employeeName = preg_replace('/\s+/', ' ', $employeeName);
+                
+                $employee = Employee::whereRaw('LOWER(TRIM(REPLACE(full_name, "  ", " "))) = ?', [strtolower($employeeName)])->first();
+                
+                if (!$employee) {
+                    $employee = Employee::where('full_name', 'LIKE', '%' . $employeeName . '%')->first();
+                }
                 
                 if (!$employee) {
                     $errors[] = "Row " . ($index + 1) . ": Employee '{$row['employee_name']}' not found";
