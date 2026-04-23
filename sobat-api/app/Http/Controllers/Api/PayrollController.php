@@ -19,6 +19,14 @@ class PayrollController extends Controller
     {
         $query = Payroll::with(['employee']);
 
+        
+        // Filter by search name
+        if ($request->has('search') && !empty($request->search)) {
+            $query->whereHas('employee', function($q) use ($request) {
+                $q->where('full_name', 'like', '%' . $request->search . '%');
+            });
+        }
+
         // Filter by status
         if ($request->has('status')) {
             $query->where('status', $request->status);

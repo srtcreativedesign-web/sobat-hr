@@ -48,6 +48,14 @@ class PayrollFnbController extends Controller
             $query->where('period', $periodString);
         }
         
+        
+        // Filter by search name
+        if ($request->has('search') && !empty($request->search)) {
+            $query->whereHas('employee', function($q) use ($request) {
+                $q->where('full_name', 'like', '%' . $request->search . '%');
+            });
+        }
+
         // Filter by status (allow overriding if user is checking 'draft' etc, but mostly for admins)
         if ($request->has('status')) {
             $query->where('status', $request->status);

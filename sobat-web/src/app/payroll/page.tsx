@@ -61,6 +61,8 @@ export default function PayrollPage() {
   // Filter States
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // Default current month
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear()); // Default current year
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -76,10 +78,19 @@ export default function PayrollPage() {
     checkAuth();
   }, [checkAuth]);
 
+  // Debounce search effect
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1); // Reset to page 1 on search
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
   useEffect(() => {
     fetchPayrolls();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedMonth, selectedYear, selectedDivision, currentPage]);
+  }, [selectedMonth, selectedYear, selectedDivision, currentPage, debouncedSearch]);
 
   const fetchPayrolls = async () => {
     try {
@@ -106,7 +117,8 @@ export default function PayrollPage() {
         params: {
           page: currentPage,
           ...(selectedMonth !== 0 && { month: selectedMonth }),
-          ...(selectedYear !== 0 && { year: selectedYear })
+          ...(selectedYear !== 0 && { year: selectedYear }),
+          ...(debouncedSearch && { search: debouncedSearch })
         }
       });
 
@@ -506,6 +518,23 @@ export default function PayrollPage() {
               <option value="cellular">Cellular</option>
               <option value="money_changer">Money Changer</option>
             </select>
+          </div>
+
+          <div className="flex items-center gap-2 flex-grow max-w-sm px-4">
+             <div className="relative w-full">
+               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                 <svg className="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                   <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
+                 </svg>
+               </div>
+               <input 
+                 type="text" 
+                 className="block w-full p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg focus:ring-[#1C3ECA] focus:border-[#1C3ECA]" 
+                 placeholder="Cari nama karyawan..." 
+                 value={searchQuery}
+                 onChange={(e) => setSearchQuery(e.target.value)}
+               />
+             </div>
           </div>
 
           {/* Period Filter */}
