@@ -376,6 +376,21 @@ if ($headerRowIndex === -1) {
                          $parsed['grand_total'] = $parsed['grand_total'] ?: (float)$guessedGrandTotal;
                          $parsed['net_salary'] = $parsed['net_salary'] ?: (float)$guessedNet;
                     }
+                    
+                    // ULTRA FALLBACK: If Excel formula is broken (#VALUE!) and mapped value is strictly 0
+                    if (empty($parsed['grand_total'])) {
+                         $totalAllowances = $parsed['meal_amount'] + $parsed['transport_amount'] + $parsed['attendance_amount'] + $parsed['position_allowance'] + $parsed['health_allowance'];
+                         $totalOthers = $parsed['bonus'] + $parsed['incentive'] + $parsed['holiday_allowance'] + $parsed['policy_ho'] + $parsed['adjustment'];
+                         
+                         $grossSalary = $parsed['basic_salary'] + $totalAllowances + $parsed['overtime_amount'] + $totalOthers;
+                         
+                         $parsed['grand_total'] = $grossSalary - $parsed['deduction_total'];
+                         $parsed['net_salary'] = $parsed['grand_total'] - $parsed['ewa_amount'];
+                         
+                         if (empty($parsed['total_salary_2'])) {
+                             $parsed['total_salary_2'] = $grossSalary;
+                         }
+                    }
                 }
                 
                 $dataRows[] = $parsed;
