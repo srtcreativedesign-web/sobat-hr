@@ -18,6 +18,11 @@ sobat-web/out/
 sobat-web/build/
 sobat-web/.env*.local
 
+# Node.js WA Service
+sobat-wa-service/node_modules/
+sobat-wa-service/.wwebjs_auth/
+sobat-wa-service/.wwebjs_cache/
+
 # MCP config (contains API keys)
 .mcp.json
 

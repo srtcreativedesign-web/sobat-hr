@@ -1,2 +1,3 @@
-2026/04/24-08:14:17.797 445c02 Creating DB /Applications/XAMPP/xamppfiles/htdocs/sobat-hr/sobat-wa-service/.wwebjs_auth/session/Default/Local Storage/leveldb since it was missing.
-2026/04/24-08:14:17.813 445c02 Reusing MANIFEST /Applications/XAMPP/xamppfiles/htdocs/sobat-hr/sobat-wa-service/.wwebjs_auth/session/Default/Local Storage/leveldb/MANIFEST-000001
+2026/04/24-08:28:50.086 44ca43 Reusing MANIFEST /Applications/XAMPP/xamppfiles/htdocs/sobat-hr/sobat-wa-service/.wwebjs_auth/session/Default/Local Storage/leveldb/MANIFEST-000001
+2026/04/24-08:28:50.090 44ca43 Recovering log #3
+2026/04/24-08:28:50.091 44ca43 Reusing old log /Applications/XAMPP/xamppfiles/htdocs/sobat-hr/sobat-wa-service/.wwebjs_auth/session/Default/Local Storage/leveldb/000003.log 

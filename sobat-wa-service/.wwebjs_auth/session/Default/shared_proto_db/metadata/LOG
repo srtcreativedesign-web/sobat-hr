@@ -1,2 +1,3 @@
-2026/04/24-08:14:17.850 445c1b Creating DB /Applications/XAMPP/xamppfiles/htdocs/sobat-hr/sobat-wa-service/.wwebjs_auth/session/Default/shared_proto_db/metadata since it was missing.
-2026/04/24-08:14:17.853 445c1b Reusing MANIFEST /Applications/XAMPP/xamppfiles/htdocs/sobat-hr/sobat-wa-service/.wwebjs_auth/session/Default/shared_proto_db/metadata/MANIFEST-000001
+2026/04/24-08:28:50.869 44ca43 Reusing MANIFEST /Applications/XAMPP/xamppfiles/htdocs/sobat-hr/sobat-wa-service/.wwebjs_auth/session/Default/shared_proto_db/metadata/MANIFEST-000001
+2026/04/24-08:28:50.869 44ca43 Recovering log #3
+2026/04/24-08:28:50.869 44ca43 Reusing old log /Applications/XAMPP/xamppfiles/htdocs/sobat-hr/sobat-wa-service/.wwebjs_auth/session/Default/shared_proto_db/metadata/000003.log 

@@ -137,12 +137,46 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> forgotPassword(String phone) async {
+  Future<bool> requestOtp(String phone) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
-      await _authService.forgotPassword(phone);
+      await _authService.requestOtp(phone);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<String?> verifyOtp(String phone, String otpCode) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final token = await _authService.verifyOtp(phone, otpCode);
+      _isLoading = false;
+      notifyListeners();
+      return token;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<bool> resetPassword(String token, String newPassword, String confirmPassword) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await _authService.resetPassword(token, newPassword, confirmPassword);
       _isLoading = false;
       notifyListeners();
       return true;

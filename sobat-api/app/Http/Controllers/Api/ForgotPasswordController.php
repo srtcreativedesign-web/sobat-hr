@@ -28,8 +28,14 @@ class ForgotPasswordController extends Controller
             $phone = '62' . substr($phone, 3);
         }
 
+        // Evaluate both "08..." and "628..." formats since the DB might store either.
+        $phoneToSearch62 = $phone; // "628..."
+        $phoneToSearch0 = '0' . substr($phone, 2); // "08..."
+
         // Verify if employee exists
-        $employeeExists = \App\Models\Employee::where('phone', $phone)->exists();
+        $employeeExists = \App\Models\Employee::where('phone', $phoneToSearch62)
+            ->orWhere('phone', $phoneToSearch0)
+            ->exists();
         if (!$employeeExists) {
             return response()->json([
                 'status' => 'error',
@@ -60,7 +66,7 @@ class ForgotPasswordController extends Controller
         $message = "*SOBAT HRIS SYSTEM*\n\nKode OTP untuk reset password Anda adalah: *{$otpCode}*.\n\nKode ini berlaku selama 5 menit. JANGAN berikan kode ini kepada siapapun termasuk pihak administrasi.";
 
         try {
-            $response = Http::post('http://127.0.0.1:3000/send-otp', [
+            $response = Http::post('http://127.0.0.1:3333/send-otp', [
                 'number' => $phone,
                 'message' => $message
             ]);
@@ -146,7 +152,12 @@ class ForgotPasswordController extends Controller
             ], 400);
         }
 
-        $employee = \App\Models\Employee::where('phone', $phone)->first();
+        $phoneToSearch62 = $phone;                 // "628..."
+        $phoneToSearch0 = '0' . substr($phone, 2); // "08..."
+
+        $employee = \App\Models\Employee::where('phone', $phoneToSearch62)
+            ->orWhere('phone', $phoneToSearch0)
+            ->first();
         if (!$employee || !$employee->user) {
             return response()->json([
                 'status' => 'error',

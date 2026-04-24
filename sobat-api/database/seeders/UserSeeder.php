@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         $superAdminRole = Role::where('name', 'super_admin')->first();
-        $adminCabangRole = Role::where('name', 'admin_cabang')->first();
+        $adminCabangRole = Role::where('name', 'spv')->first();
         $staffRole = Role::where('name', 'staff')->first();
 
         // Super Admin
@@ -23,24 +23,26 @@ class UserSeeder extends Seeder
             'name' => 'Super Admin',
             'email' => 'admin@sobat.co.id',
             'password' => Hash::make('password123'),
-            'role_id' => $superAdminRole->id,
+            'role_id' => $superAdminRole->id ?? 1,
         ]);
 
         // Admin Cabang Jakarta
-        User::create([
-            'name' => 'Admin Jakarta',
-            'email' => 'admin.jakarta@sobat.co.id',
-            'password' => Hash::make('password123'),
-            'role_id' => $adminCabangRole->id,
-        ]);
+        if ($adminCabangRole) {
+            User::create([
+                'name' => 'Admin Jakarta',
+                'email' => 'admin.jakarta@sobat.co.id',
+                'password' => Hash::make('password123'),
+                'role_id' => $adminCabangRole->id,
+            ]);
 
-        // Admin Cabang Surabaya
-        User::create([
-            'name' => 'Admin Surabaya',
-            'email' => 'admin.surabaya@sobat.co.id',
-            'password' => Hash::make('password123'),
-            'role_id' => $adminCabangRole->id,
-        ]);
+            // Admin Cabang Surabaya
+            User::create([
+                'name' => 'Admin Surabaya',
+                'email' => 'admin.surabaya@sobat.co.id',
+                'password' => Hash::make('password123'),
+                'role_id' => $adminCabangRole->id,
+            ]);
+        }
 
         // Staff
         User::create([

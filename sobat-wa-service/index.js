@@ -61,7 +61,7 @@ app.post('/send-otp', async (req, res) => {
     }
 });
 
-const PORT = 3000;
+const PORT = 3333;
 app.listen(PORT, '127.0.0.1', () => {
     console.log(`\n🚀 SOBAT WA Microservice berjalan di internal port ${PORT}`);
 });

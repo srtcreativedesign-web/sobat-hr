@@ -232,16 +232,54 @@ class AuthService extends BaseService {
     return await StorageService.getToken();
   }
 
-  Future<void> forgotPassword(String phone) async {
+  Future<void> requestOtp(String phone) async {
     try {
       final response = await dio.post(
-        'auth/forgot-password',
-        data: {'phone': phone},
+        ApiConfig.requestOtp,
+        data: {'phone_number': phone},
       );
       if (response.statusCode == 200) {
         return;
       }
-      throw Exception('Gagal mengirim permintaan');
+      throw Exception('Gagal mengirim OTP');
+    } on DioException catch (e) {
+      throw Exception(AppErrorHandler.getErrorMessage(e));
+    } catch (e) {
+      throw Exception(AppErrorHandler.getErrorMessage(e));
+    }
+  }
+
+  Future<String> verifyOtp(String phone, String otpCode) async {
+    try {
+      final response = await dio.post(
+        ApiConfig.verifyOtp,
+        data: {'phone_number': phone, 'otp_code': otpCode},
+      );
+      if (response.statusCode == 200 && response.data['status'] == 'success') {
+        return response.data['reset_token'];
+      }
+      throw Exception('Kode OTP salah atau kedaluwarsa');
+    } on DioException catch (e) {
+      throw Exception(AppErrorHandler.getErrorMessage(e));
+    } catch (e) {
+      throw Exception(AppErrorHandler.getErrorMessage(e));
+    }
+  }
+
+  Future<void> resetPassword(String token, String password, String passwordConfirmation) async {
+    try {
+      final response = await dio.post(
+        ApiConfig.resetPassword,
+        data: {
+          'reset_token': token,
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+        },
+      );
+      if (response.statusCode == 200) {
+        return;
+      }
+      throw Exception('Gagal mereset password');
     } on DioException catch (e) {
       throw Exception(AppErrorHandler.getErrorMessage(e));
     } catch (e) {

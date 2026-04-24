@@ -49,77 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showForgotPasswordDialog() {
-    final phoneController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Lupa Password'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Masukkan nomor HP Anda. Admin akan meninjau permintaan reset password Anda.',
-              style: TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'Nomor HP',
-                hintText: 'Contoh: 08123456789',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (phoneController.text.isEmpty) return;
-
-              Navigator.pop(dialogContext); // Close input dialog
-
-              final authProvider = Provider.of<AuthProvider>(
-                context, // Safe: Uses State's context
-                listen: false,
-              );
-              final success = await authProvider.forgotPassword(
-                phoneController.text.trim(),
-              );
-
-              if (!mounted) return;
-
-              if (success) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Permintaan terkirim. Hubungi Admin untuk persetujuan.',
-                    ),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      authProvider.errorMessage ?? 'Gagal mengirim permintaan',
-                    ),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            child: const Text('Kirim'),
-          ),
-        ],
-      ),
-    );
+    Navigator.pushNamed(context, '/forgot-password');
   }
 
   void _showHelpOptions() {

@@ -43,15 +43,16 @@ class WelcomeScreen extends StatelessWidget {
                 const Spacer(),
 
                 // 3. Central Illustration
-                SizedBox(
-                  height: 320,
-                  width: double.infinity,
-                  child: Image.asset(
-                    'assets/images/ilustrasi.png',
-                    fit: BoxFit.contain,
+                Expanded(
+                  flex: 3,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24.0),
+                    child: Image.asset(
+                      'assets/images/ilustrasi.png',
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
-                const Spacer(),
 
                 // 4. Welcome Text
                 const Text(

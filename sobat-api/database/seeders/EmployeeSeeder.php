@@ -39,6 +39,7 @@ class EmployeeSeeder extends Seeder
             Employee::updateOrCreate(
                 ['email' => 'admin@sobat.co.id'],
                 [
+                    'organization_id' => $defaultOrg->id,
                     'user_id' => $superAdminUser->id,
                     'division_id' => $ceoOrg ? $ceoOrg->id : $defaultOrg->id,
                     'employee_code' => 'EMP001',
@@ -46,6 +47,7 @@ class EmployeeSeeder extends Seeder
                     'job_level' => 'director', 
                     'track' => 'office',
                     'position' => 'Chief Executive Officer',
+                    'phone' => '081234567890',
                     'join_date' => '2020-01-01',
                     'status' => 'active',
                 ]
@@ -57,6 +59,7 @@ class EmployeeSeeder extends Seeder
             Employee::updateOrCreate(
                 ['email' => 'admin.jakarta@sobat.co.id'],
                 [
+                    'organization_id' => $defaultOrg->id,
                     'user_id' => $adminJakartaUser->id,
                     'division_id' => $holding1 ? $holding1->id : $defaultOrg->id,
                     'employee_code' => 'EMP002',
@@ -75,6 +78,7 @@ class EmployeeSeeder extends Seeder
             Employee::updateOrCreate(
                 ['email' => 'john.doe@sobat.co.id'],
                 [
+                    'organization_id' => $defaultOrg->id,
                     'user_id' => $johnUser->id,
                     'division_id' => $itDiv ? $itDiv->id : $defaultOrg->id,
                     'employee_code' => 'EMP004',
@@ -93,6 +97,7 @@ class EmployeeSeeder extends Seeder
             Employee::updateOrCreate(
                 ['email' => 'jane.smith@sobat.co.id'],
                 [
+                    'organization_id' => $defaultOrg->id,
                     'user_id' => $janeUser->id,
                     'division_id' => $hrDiv ? $hrDiv->id : $defaultOrg->id,
                     'employee_code' => 'EMP005',
@@ -120,6 +125,7 @@ class EmployeeSeeder extends Seeder
             Employee::updateOrCreate(
                 ['email' => 'michael.johnson@sobat.co.id'],
                 [
+                    'organization_id' => $defaultOrg->id,
                     'user_id' => $michaelUser->id,
                     'division_id' => $miniDiv ? $miniDiv->id : $defaultOrg->id,
                     'employee_code' => 'EMP006',
