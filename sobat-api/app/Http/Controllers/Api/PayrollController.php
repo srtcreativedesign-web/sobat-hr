@@ -40,6 +40,16 @@ class PayrollController extends Controller
         // Automatic scope for non-admin users or mobile platform
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
+
+        // --- DEBUG LOG (Hapus setelah beres) ---
+        \Illuminate\Support\Facades\Log::info('DEBUG PLATFORM:', [
+            'User-Agent' => $request->userAgent(),
+            'Has-Origin' => $request->hasHeader('Origin'),
+            'Origin-Val' => $request->header('Origin'),
+            'X-Platform' => $request->header('X-Platform'),
+            'Role-Name'  => $roleName,
+        ]);
+
         // Detect mobile automatically even without new headers
         $isMobile = $request->header('X-Platform') === 'mobile' || 
                     !$request->hasHeader('Origin') || 
