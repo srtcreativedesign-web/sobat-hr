@@ -35,6 +35,11 @@ Route::middleware(['auth:sanctum', 'role:super_admin,admin_cabang'])->group(func
 });
 
 // Protected routes
+// Forgot Password (OTP via WA)
+Route::post('/forgot-password/request-otp', [App\Http\Controllers\Api\ForgotPasswordController::class, 'requestOtp']);
+Route::post('/forgot-password/verify-otp', [App\Http\Controllers\Api\ForgotPasswordController::class, 'verifyOtp']);
+Route::post('/forgot-password/reset', [App\Http\Controllers\Api\ForgotPasswordController::class, 'resetPassword']);
+
 Route::middleware('auth:sanctum')->group(function () {
     // Auth routes
     Route::post('/auth/logout', [App\Http\Controllers\Api\AuthController::class, 'logout']);

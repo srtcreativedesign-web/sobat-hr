@@ -1,0 +1,23 @@
+2026/04/24-08:14:19.783 445bfe Creating DB /Applications/XAMPP/xamppfiles/htdocs/sobat-hr/sobat-wa-service/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb since it was missing.
+2026/04/24-08:14:19.785 445bfe Reusing MANIFEST /Applications/XAMPP/xamppfiles/htdocs/sobat-hr/sobat-wa-service/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/04/24-08:14:47.067 445c02 Level-0 table #5: started
+2026/04/24-08:14:47.077 445c02 Level-0 table #5: 1007179 bytes OK
+2026/04/24-08:14:47.079 445c02 Delete type=0 #3
+2026/04/24-08:14:48.245 445bfe Level-0 table #7: started
+2026/04/24-08:14:48.255 445bfe Level-0 table #7: 1085703 bytes OK
+2026/04/24-08:14:48.256 445bfe Delete type=0 #4
+2026/04/24-08:14:48.279 445bfe Compacting 1@1 + 1@2 files
+2026/04/24-08:14:48.299 445bfe Generated table #8@1: 20110 keys, 974165 bytes
+2026/04/24-08:14:48.299 445bfe Compacted 1@1 + 1@2 files => 974165 bytes
+2026/04/24-08:14:48.300 445bfe compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/04/24-08:14:48.300 445bfe Delete type=2 #7
+2026/04/24-08:14:48.300 445bfe Delete type=2 #5
+2026/04/24-08:14:48.861 445c02 Level-0 table #10: started
+2026/04/24-08:14:48.871 445c02 Level-0 table #10: 1058488 bytes OK
+2026/04/24-08:14:48.872 445c02 Delete type=0 #6
+2026/04/24-08:14:48.873 445c02 Compacting 1@1 + 1@2 files
+2026/04/24-08:14:48.886 445c02 Generated table #11@1: 27597 keys, 1241789 bytes
+2026/04/24-08:14:48.886 445c02 Compacted 1@1 + 1@2 files => 1241789 bytes
+2026/04/24-08:14:48.888 445c02 compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/04/24-08:14:48.888 445c02 Delete type=2 #10
+2026/04/24-08:14:48.888 445c02 Delete type=2 #8
