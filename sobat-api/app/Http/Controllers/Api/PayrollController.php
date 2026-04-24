@@ -41,22 +41,19 @@ class PayrollController extends Controller
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
 
-        // --- DEBUG LOG (Hapus setelah beres) ---
-        \Illuminate\Support\Facades\Log::info('DEBUG PLATFORM:', [
-            'User-Agent' => $request->userAgent(),
-            'Has-Origin' => $request->hasHeader('Origin'),
-            'Origin-Val' => $request->header('Origin'),
-            'X-Platform' => $request->header('X-Platform'),
-            'Role-Name'  => $roleName,
-        ]);
-
-        // Detect mobile automatically even without new headers
+        // Detect mobile automatically with higher sensitivity
+        $userAgent = strtolower($request->userAgent());
         $isMobile = $request->header('X-Platform') === 'mobile' || 
-                    !$request->hasHeader('Origin') || 
-                    str_contains($request->userAgent(), 'Dart');
+                    str_contains($userAgent, 'dart') || 
+                    str_contains($userAgent, 'android') || 
+                    str_contains($userAgent, 'iphone') ||
+                    !$request->hasHeader('Origin');
+
+        // Admin Roles for Web check
+        $adminRoles = [Role::ADMIN, Role::SUPER_ADMIN, Role::HR, Role::HRD, Role::ADMIN_CABANG];
 
         // Filter for self-view only if NOT in Admin roles OR if accessed via Mobile
-        if (!in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR]) || $isMobile) {
+        if (!in_array($roleName, $adminRoles) || $isMobile) {
             $employeeId = $user->employee ? $user->employee->id : null;
 
             if ($employeeId) {
@@ -67,7 +64,7 @@ class PayrollController extends Controller
             }
             
             // For non-admin roles (regular employees), only show approved/paid
-            if (!in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR])) {
+            if (!in_array($roleName, $adminRoles)) {
                 $query->whereIn('status', ['approved', 'paid']);
             }
         }
