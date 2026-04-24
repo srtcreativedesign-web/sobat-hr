@@ -32,40 +32,34 @@ class PayrollController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Filter by employee
-        if ($request->has('employee_id')) {
-            $query->where('employee_id', $request->employee_id);
-        }
-
-        // Automatic scope for non-admin users or mobile platform
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
 
-        // Detect mobile automatically with higher sensitivity
-        $userAgent = strtolower($request->userAgent());
-        $isMobile = $request->header('X-Platform') === 'mobile' || 
-                    str_contains($userAgent, 'dart') || 
-                    str_contains($userAgent, 'android') || 
-                    str_contains($userAgent, 'iphone') ||
-                    !$request->hasHeader('Origin');
+        // --- PLATFORM DIFFERENTIATION ---
+        // Web Browsers ALWAYS send 'Origin' header for API calls.
+        // Mobile Apps (Dio/Flutter) DO NOT send it by default.
+        $isMobile = !$request->hasHeader('Origin');
 
-        // Admin Roles for Web check
-        $adminRoles = [Role::ADMIN, Role::SUPER_ADMIN, Role::HR, Role::HRD, Role::ADMIN_CABANG];
-
-        // Filter for self-view only if NOT in Admin roles OR if accessed via Mobile
-        if (!in_array($roleName, $adminRoles) || $isMobile) {
+        // IF MOBILE: Force self-view regardless of role.
+        if ($isMobile) {
             $employeeId = $user->employee ? $user->employee->id : null;
-
             if ($employeeId) {
                 $query->where('employee_id', $employeeId);
             } else {
-                // Return empty if no employee linked and requested self-view
                 return response()->json(['data' => []]);
             }
+        } 
+        // IF WEB: Only filter if the user is NOT an admin.
+        else {
+            $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR, Role::HRD, Role::ADMIN_CABANG]);
+            if (!$isAdmin) {
+                 $query->where('employee_id', $user->employee?->id);
+                 $query->whereIn('status', ['approved', 'paid']);
+            }
             
-            // For non-admin roles (regular employees), only show approved/paid
-            if (!in_array($roleName, $adminRoles)) {
-                $query->whereIn('status', ['approved', 'paid']);
+            // Allow admin on web to filter by specific employee_id if provided
+            if ($isAdmin && $request->has('employee_id') && !empty($request->employee_id)) {
+                $query->where('employee_id', $request->employee_id);
             }
         }
 
