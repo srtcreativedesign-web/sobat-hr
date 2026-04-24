@@ -37,25 +37,29 @@ class PayrollController extends Controller
             $query->where('employee_id', $request->employee_id);
         }
 
-        // Automatic scope for non-admin users
+        // Automatic scope for non-admin users or mobile platform
         $user = auth()->user();
-        // Check if user has a role relation and if that role is admin/hr
         $roleName = $user->role ? strtolower($user->role->name) : '';
+        // Detect mobile automatically even without new headers
+        $isMobile = $request->header('X-Platform') === 'mobile' || 
+                    !$request->hasHeader('Origin') || 
+                    str_contains($request->userAgent(), 'Dart');
 
-
-        if (!in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR])) {
-            // Access employee via relation
+        // Filter for self-view only if NOT in Admin roles OR if accessed via Mobile
+        if (!in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR]) || $isMobile) {
             $employeeId = $user->employee ? $user->employee->id : null;
 
             if ($employeeId) {
                 $query->where('employee_id', $employeeId);
             } else {
-                // If user has no employee_id linked, they shouldn't see any payrolls
+                // Return empty if no employee linked and requested self-view
                 return response()->json(['data' => []]);
             }
             
-            // Non-admin users can ONLY see approved or paid payrolls
-            $query->whereIn('status', ['approved', 'paid']);
+            // For non-admin roles (regular employees), only show approved/paid
+            if (!in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR])) {
+                $query->whereIn('status', ['approved', 'paid']);
+            }
         }
 
         // Filter by period (month and year)

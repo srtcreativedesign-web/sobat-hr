@@ -26,7 +26,10 @@ class RequestController extends Controller
         
         \Illuminate\Support\Facades\Log::info('User Info:', ['id' => $user->id, 'role' => $roleName, 'isAdmin' => $isAdmin]);
 
-        if (!$isAdmin) {
+        $isMobile = $request->header('X-Platform') === 'mobile' || 
+                    !$request->hasHeader('Origin') || 
+                    str_contains($request->userAgent(), 'Dart');
+        if (!$isAdmin || $isMobile) {
             if (!$user->employee) {
                 return response()->json([]);
             }

@@ -27,8 +27,13 @@ class AttendanceController extends Controller
         // EAGER LOADING: employee
         $query = Attendance::with(['employee.division']);
 
-        if (!$isAdmin) {
-            // Non-admin: force filter to own employee_id only
+        $isMobile = $request->header('X-Platform') === 'mobile' || 
+                    !$request->hasHeader('Origin') || 
+                    str_contains($request->userAgent(), 'Dart');
+
+        // Filter for self-view only if NOT in Admin roles OR if accessed via Mobile
+        if (!$isAdmin || $isMobile) {
+            // Non-admin or Mobile: force filter to own employee_id only
             if (!$user->employee) {
                 return response()->json(['message' => 'Employee record not found'], 404);
             }

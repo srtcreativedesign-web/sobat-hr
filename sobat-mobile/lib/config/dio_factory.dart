@@ -20,9 +20,12 @@ class DioFactory {
         baseUrl: baseUrl ?? ApiConfig.baseUrl,
         connectTimeout: connectTimeout ?? ApiConfig.connectTimeout,
         receiveTimeout: receiveTimeout ?? ApiConfig.receiveTimeout,
-        headers:
-            headers ??
-            {'Accept': 'application/json', 'Content-Type': 'application/json'},
+        headers: headers ??
+            {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'X-Platform': 'mobile',
+            },
       ),
     );
 
