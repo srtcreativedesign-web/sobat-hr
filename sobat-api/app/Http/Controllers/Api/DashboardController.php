@@ -17,10 +17,44 @@ class DashboardController extends Controller
      */
     public function analytics(Request $request)
     {
+        $user = $request->user();
+        $isMobile = $request->header('X-Platform') === 'mobile' || 
+                    !$request->hasHeader('Origin') || 
+                    str_contains($request->userAgent(), 'Dart');
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR]);
+
         $now = Carbon::now();
         $currentMonth = $now->month;
         $currentYear = $now->year;
 
+        // If on mobile, return personalized small-set of data
+        if ($isMobile) {
+            $employeeId = $user->employee ? $user->employee->id : null;
+            
+            $myRequests = [
+                'pending' => RequestModel::where('employee_id', $employeeId)->where('status', 'pending')->count(),
+                'approved' => RequestModel::where('employee_id', $employeeId)->where('status', 'approved')->count(),
+                'rejected' => RequestModel::where('employee_id', $employeeId)->where('status', 'rejected')->count(),
+            ];
+
+            $myAttendance = Attendance::where('employee_id', $employeeId)
+                ->whereMonth('date', $currentMonth)
+                ->whereYear('date', $currentYear)
+                ->select('status', DB::raw('count(*) as count'))
+                ->groupBy('status')
+                ->pluck('count', 'status')
+                ->toArray();
+
+            return response()->json([
+                'is_mobile' => true,
+                'requests' => $myRequests,
+                'attendance_monthly' => $myAttendance,
+                'employee' => $user->employee,
+            ]);
+        }
+
+        // --- WEB ADMIN GLOBAL VIEW ---
         // Total employees by status
         $employeeStats = [
             'total' => Employee::count(),
@@ -274,37 +308,47 @@ class DashboardController extends Controller
     /**
      * Get recent activity (Employees & Requests)
      */
-    public function recentActivity()
+    public function recentActivity(Request $request)
     {
-        // 1. Recent Employees
-        $recentEmployees = Employee::select('id', 'full_name', 'created_at')
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get()
-            ->map(function ($employee) {
-                return [
-                    'id' => 'emp_' . $employee->id,
-                    'type' => 'employee_onboarding',
-                    'message' => "New employee {$employee->full_name} onboarded.",
-                    'timestamp' => $employee->created_at,
-                    'user' => $employee->full_name,
-                    'status' => 'active'
-                ];
-            });
+        $user = $request->user();
+        $isMobile = $request->header('X-Platform') === 'mobile' || 
+                    !$request->hasHeader('Origin') || 
+                    str_contains($request->userAgent(), 'Dart');
+
+        // 1. Recent Employees (HIDE ON MOBILE for non-HR)
+        $recentEmployees = collect();
+        if (!$isMobile) {
+            $recentEmployees = Employee::select('id', 'full_name', 'created_at')
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get()
+                ->map(function ($employee) {
+                    return [
+                        'id' => 'emp_' . $employee->id,
+                        'type' => 'employee_onboarding',
+                        'message' => "New employee {$employee->full_name} onboarded.",
+                        'timestamp' => $employee->created_at,
+                        'user' => $employee->full_name,
+                        'status' => 'active'
+                    ];
+                });
+        }
 
         // 2. Recent Requests
-        $recentRequests = RequestModel::with('employee')
-            ->select('id', 'employee_id', 'type', 'status', 'created_at', 'updated_at')
-            ->orderBy('updated_at', 'desc')
+        $requestQuery = RequestModel::with('employee')
+            ->select('id', 'employee_id', 'type', 'status', 'created_at', 'updated_at');
+
+        // IF MOBILE: Filter to OWN requests ONLY
+        if ($isMobile) {
+            $requestQuery->where('employee_id', $user->employee?->id);
+        }
+
+        $recentRequests = $requestQuery->orderBy('updated_at', 'desc')
             ->limit(5)
             ->get()
             ->map(function ($req) {
-                 // Format: "Leave request by John Doe pending"
-                 // Or "Leave request by John Doe approved"
-                 $typeStr = ucfirst($req->type); // Leave, Overtime
-                 $statusStr = $req->status; // pending, approved, rejected
-                 
-                 // User might be null if deleted, handle safely
+                 $typeStr = ucfirst($req->type);
+                 $statusStr = $req->status;
                  $userName = $req->employee->full_name ?? 'Unknown Employee';
 
                 return [
