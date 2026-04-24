@@ -162,7 +162,9 @@ class RequestController extends Controller
                             ->sum(function ($req) {
                                 if ($req->amount > 0) return $req->amount;
                                 if ($req->start_date && $req->end_date) {
-                                    return $req->start_date->diffInDays($req->end_date) + 1;
+                                    $s = \Carbon\Carbon::parse($req->start_date);
+                                    $e = \Carbon\Carbon::parse($req->end_date);
+                                    return $s->diffInDays($e) + 1;
                                 }
                                 return 0;
                             });
@@ -383,7 +385,7 @@ class RequestController extends Controller
 
         // Check main request attachments field
         if ($requestModel->attachments) {
-            $decoded = json_decode($requestModel->attachments, true);
+            $decoded = $requestModel->attachments; // Already cast to array in Model
             if (is_array($decoded)) $attachments = array_merge($attachments, $decoded);
         }
 
@@ -599,7 +601,9 @@ class RequestController extends Controller
             ->sum(function ($req) {
                 if ($req->amount > 0) return $req->amount;
                 if ($req->start_date && $req->end_date) {
-                    return $req->start_date->diffInDays($req->end_date) + 1;
+                    $s = \Carbon\Carbon::parse($req->start_date);
+                    $e = \Carbon\Carbon::parse($req->end_date);
+                    return $s->diffInDays($e) + 1;
                 }
                 return 0;
             });
