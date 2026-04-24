@@ -35,21 +35,22 @@ class PayrollController extends Controller
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
 
-        // --- PLATFORM DIFFERENTIATION ---
-        // Web Browsers ALWAYS send 'Origin' header for API calls.
-        // Mobile Apps (Dio/Flutter) DO NOT send it by default.
-        $isMobile = !$request->hasHeader('Origin');
+        // --- SECURE PLATFORM CHECK (BROWSER FINGERPRINT) ---
+        // Modern browsers (Web Admin) ALWAYS send 'Sec-Fetch-Site' or 'Referer'.
+        // Mobile apps (Dio) NEVER send 'Sec-Fetch-Site' by default.
+        $isMobile = !$request->hasHeader('Sec-Fetch-Site');
 
-        // IF MOBILE: Force self-view regardless of role.
+        // IF MOBILE: Force self-view permanently, no matter who is logging in.
         if ($isMobile) {
             $employeeId = $user->employee ? $user->employee->id : null;
             if ($employeeId) {
+                // FORCE: Only show own records
                 $query->where('employee_id', $employeeId);
             } else {
                 return response()->json(['data' => []]);
             }
         } 
-        // IF WEB: Only filter if the user is NOT an admin.
+        // IF WEB: Admin can see everything, others are filtered.
         else {
             $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR, Role::HRD, Role::ADMIN_CABANG]);
             if (!$isAdmin) {
