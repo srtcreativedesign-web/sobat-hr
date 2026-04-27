@@ -452,8 +452,13 @@ class PayrollController extends Controller
                                 break;
                             }
                         } else {
-                            // Single header check (e.g., "Gaji Pokok" or ["Gaji Pokok", "Gapok"])
-                            if ($headerValue && stripos($headerValue, $pattern) !== false) {
+                            // Single check: cek HEADER ROW dulu, lalu SUB-HEADER ROW
+                            // Ini penting karena di Tung Tau, kolom seperti "BPJS TK",
+                            // "Pinjaman", "Adm Bank" labelnya ada di sub-header saja.
+                            $matchedHeader = $headerValue && stripos($headerValue, $pattern) !== false;
+                            $matchedSub = $unitsValue && stripos($unitsValue, $pattern) !== false;
+                            
+                            if ($matchedHeader || $matchedSub) {
                                 $columnMapping[$key] = $col;
                                 break;
                             }
