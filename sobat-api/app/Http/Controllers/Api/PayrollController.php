@@ -392,59 +392,82 @@ class PayrollController extends Controller
             $columnMapping = [];
             $headerPatterns = [
                 'periode' => ['Periode'],
-                'nama_karyawan' => ['Nama Karyawan', 'Nama Pegawai', 'Nama'],
+                'nama_karyawan' => ['Nama Karyawan', 'Nama Pegawai'],
                 'no_rekening' => ['No Rekening', 'Rekening'],
                 'gaji_pokok' => ['Gaji Pokok', 'Gapok', 'Basic Salary'],
                 'kehadiran_jumlah' => [['Kehadiran', 'Jumlah']],
-                'kehadiran_rate' => [['Kehadiran', '@hari']],
+                'kehadiran_rate' => [['Kehadiran', '/ Hari']],
                 'transport_jumlah' => [['Transport', 'Jumlah']],
-                'transport_rate' => [['Transport', '@hari']],
-                'kesehatan_jumlah' => [['Kesehatan', 'Jumlah'], 'Tunj. Kesehatan'],
-                'tunj_jabatan' => ['Tunj. Jabatan', 'Jabatan'],
-                'total_gaji' => ['Total Gaji', 'Gross Salary', 'Total Gaji & Bonus'],
+                'transport_rate' => [['Transport', '/ Hari']],
+                'kesehatan_jumlah' => ['Tunj. Kesehatan'],
+                'tunj_jabatan' => ['Tunj. Jabatan'],
+                'total_gaji' => [['Total Gaji', '( Rp )']],  // Hanya "Total Gaji (Rp)", bukan "Total Gaji & Bonus"
+                'total_gaji_bonus' => ['Total Gaji & Bonus'],
+                'lembur_rate' => [['Lembur', '/ Jam']],
                 'lembur_jam' => [['Lembur', 'Jam']],
                 'lembur_jumlah' => [['Lembur', 'Jumlah']],
-                'lembur_rate' => [['Lembur', '@']],
-                'insentif' => ['Insentif', 'Bonus', 'Insentif Kehadrian (tidak telat)'],
+                'insentif' => ['Insentif Kehadrian'],
                 'insentif_luar_kota' => ['Luar Kota', 'Insentif Luar Kota'],
-                'insentif_kehadiran' => ['Insentif Kehadiran', 'Kehadiran (tidak telat)'],
+                'insentif_kehadiran' => ['Insentif Kehadiran'],
                 'insentif_lebaran' => ['Insentif Lebaran'],
                 'backup' => ['Backup'],
-                'adjustment' => ['Adj', 'Penyesuaian'],
+                'adjustment' => ['Adj', 'Penyesuaian', 'Kebijakan'],
                 'piket_um_sabtu' => ['Piket', 'Piket UM'],
-                'absen' => ['Absen', 'Absen 1x', 'Absen 1X'],
+                'absen' => ['Absen 1x', 'Absen 1X'],
                 'alfa' => ['ALFA', 'Alpa'],
-                'terlambat' => ['Terlambat', 'terlambat (menit)'],
-                'selisih' => ['Selisih', 'Selisih SO'],
-                'pinjaman' => ['Pinjaman', 'Kasbon', 'Potongan Pinjaman'],
+                'terlambat' => ['Terlambat'],
+                'selisih' => ['Selisih SO', 'Selisih'],
+                'pinjaman' => ['Pinjaman'],
+                'kasbon' => ['Kasbon'],
                 'adm_bank' => ['Adm Bank', 'Admin Bank'],
                 'bpjs_tk' => ['BPJS TK', 'BPJS Ketenagakerjaan'],
                 'jumlah_potongan' => [['Potongan', 'Jumlah'], 'Total Potongan'],
-                'grand_total' => ['Grand Total', 'Total Gaji Akhir'],
+                'grand_total' => ['Grand Total'],
                 'ewa' => ['EWA', 'Pinjaman ke Stafbook', 'Pinjaman stafbook'],
                 'potongan_ewa' => ['Potongan EWA'],
-                'payroll' => ['Payroll', 'total Gaji Ditransfer', 'Gaji Diterima', 'THP'],
-                'jml_hr_masuk' => ['JML HR', 'Hadir', 'Jumlah Hari'],
+                'payroll' => ['Payroll', 'THP'],
+                'jml_hr_masuk' => ['JML HR', 'Jumlah Hari'],
             ];
             
             // Use cell iterator to support columns beyond Z (AA, AB, etc.)
+            // ALSO build a lookup of all header values for merged cell detection
+            $allHeaders = []; // col => headerValue
+            $allSubs = [];    // col => subValue
+            $colOrder = [];   // ordered list of column letters
+            
             $headerRow = $sheet->getRowIterator($headerRowIndex, $headerRowIndex)->current();
             $cellIterator = $headerRow->getCellIterator('A', $highestColumn);
             $cellIterator->setIterateOnlyExistingCells(false);
             
             foreach ($cellIterator as $cell) {
                 $col = $cell->getColumn();
-                $headerValue = $cell->getValue();
-                $unitsValue = $sheet->getCell($col . ($headerRowIndex + 1))->getValue();
+                $colOrder[] = $col;
+                $allHeaders[$col] = $cell->getValue();
+                $allSubs[$col] = $sheet->getCell($col . ($headerRowIndex + 1))->getValue();
+            }
+            
+            // Now iterate and map
+            foreach ($colOrder as $idx => $col) {
+                $headerValue = $allHeaders[$col];
+                $unitsValue = $allSubs[$col];
+                
+                // For merged cell support: if header is empty, inherit from previous column
+                $effectiveHeader = $headerValue;
+                if (empty($effectiveHeader) && $idx > 0) {
+                    $prevCol = $colOrder[$idx - 1];
+                    $effectiveHeader = $allHeaders[$prevCol];
+                }
                 
                 foreach ($headerPatterns as $key => $patterns) {
-                    // Convert to array for consistent processing if it's a single string
+                    // Skip if already mapped
+                    if (isset($columnMapping[$key])) continue;
+                    
                     $alternativePatterns = is_array($patterns) ? $patterns : [$patterns];
                     
                     foreach ($alternativePatterns as $pattern) {
                         if (is_array($pattern)) {
-                            // Multi-row header check (e.g., ["Kehadiran", "Jumlah"])
-                            $headerMatch = $headerValue && stripos($headerValue, $pattern[0]) !== false;
+                            // Multi-row header check: use effectiveHeader (merged cell aware)
+                            $headerMatch = $effectiveHeader && stripos($effectiveHeader, $pattern[0]) !== false;
                             $unitsMatch = $unitsValue && stripos($unitsValue, $pattern[1]) !== false;
                             
                             if ($headerMatch && $unitsMatch) {
@@ -452,9 +475,7 @@ class PayrollController extends Controller
                                 break;
                             }
                         } else {
-                            // Single check: cek HEADER ROW dulu, lalu SUB-HEADER ROW
-                            // Ini penting karena di Tung Tau, kolom seperti "BPJS TK",
-                            // "Pinjaman", "Adm Bank" labelnya ada di sub-header saja.
+                            // Single check: header row OR sub-header row
                             $matchedHeader = $headerValue && stripos($headerValue, $pattern) !== false;
                             $matchedSub = $unitsValue && stripos($unitsValue, $pattern) !== false;
                             
@@ -533,6 +554,7 @@ class PayrollController extends Controller
                 
                 // Totals
                 $totalGaji = $getCellValue($columnMapping['total_gaji'] ?? null, $row);
+                $totalGajiBonus = $getCellValue($columnMapping['total_gaji_bonus'] ?? null, $row);
                 
                 // Deductions Breakdown
                 $absen = $getCellValue($columnMapping['absen'] ?? null, $row);
@@ -561,8 +583,11 @@ class PayrollController extends Controller
                 // Calculate total allowances for storage
                 $allowancesTotal = $kehadiranAllowance + $transportAllowance + $healthAllowance + $positionAllowance;
                 
-                // Use Total Gaji from Excel if available, otherwise calculate
-                if ($totalGaji > 0) {
+                // Use the best available gross salary value
+                // Priority: Total Gaji & Bonus > Total Gaji > Calculate
+                if ($totalGajiBonus > 0) {
+                    $grossSalary = $totalGajiBonus;
+                } elseif ($totalGaji > 0) {
                     $grossSalary = $totalGaji;
                 } else {
                     $grossSalary = $basicSalary + $allowancesTotal + $overtimePay + $holidayAllowance + $adjustment + $insentifLebaran + $backup;
