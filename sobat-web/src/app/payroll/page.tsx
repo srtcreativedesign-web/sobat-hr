@@ -53,6 +53,7 @@ export default function PayrollPage() {
   const [pendingApprovalId, setPendingApprovalId] = useState<number | null>(null);
   const [isBulkApproval, setIsBulkApproval] = useState(false);
   const [signerName, setSignerName] = useState('');
+  const [approvalNotes, setApprovalNotes] = useState('');
   const sigPad = useRef<SignatureCanvas>(null);
 
   // Division selector
@@ -270,6 +271,7 @@ export default function PayrollPage() {
           ids: selectedIds,
           approval_signature: signatureData,
           signer_name: signerName,
+          notes: approvalNotes,
           division: selectedDivision
         });
         alert(response.data.message);
@@ -294,7 +296,8 @@ export default function PayrollPage() {
         await apiClient.patch(endpoint, {
           status: 'approved',
           approval_signature: signatureData,
-          signer_name: signerName
+          signer_name: signerName,
+          notes: approvalNotes
         });
       }
 
@@ -1225,6 +1228,17 @@ export default function PayrollPage() {
                   onChange={(e) => setSignerName(e.target.value)}
                   placeholder="Masukkan nama lengkap (e.g. Budi Santoso, HRD)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#93C5FD]"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Catatan / Notes (Opsional)</label>
+                <textarea
+                  value={approvalNotes}
+                  onChange={(e) => setApprovalNotes(e.target.value)}
+                  placeholder="Masukkan catatan tambahan untuk payslip ini..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#93C5FD]"
+                  rows={2}
                 />
               </div>
 

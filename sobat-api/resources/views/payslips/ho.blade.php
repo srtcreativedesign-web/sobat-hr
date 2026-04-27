@@ -308,6 +308,13 @@
         </div>
     @endif
 
+        @if(!empty($payroll->notes))
+        <div style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
+            <strong style="color: #333; font-size: 11px;">Catatan / Notes:</strong>
+            <div style="font-style: italic; color: #555; font-size: 11px; margin-top: 4px;">{{ $payroll->notes }}</div>
+        </div>
+    @endif
+    
     <div class="signature-section">
         <div class="signature-box">
             <div>Disetujui Oleh,</div>

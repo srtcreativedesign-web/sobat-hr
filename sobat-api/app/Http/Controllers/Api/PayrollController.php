@@ -822,6 +822,7 @@ class PayrollController extends Controller
             'division' => 'nullable|string|in:office,fnb,minimarket,reflexiology,wrapping,hans,cellular,money_changer',
             'approval_signature' => 'nullable|string',
             'signer_name' => 'nullable|string',
+            'notes' => 'nullable|string',
         ]);
 
         $ids = $request->input('ids');

@@ -292,6 +292,7 @@ class PayrollCellullerController extends Controller
             'status' => 'required|in:draft,approved,paid',
             'approval_signature' => 'nullable|string',
         ]);
+            'notes' => 'nullable|string',
 
         $payroll = PayrollCelluller::findOrFail($id);
         
@@ -300,6 +301,7 @@ class PayrollCellullerController extends Controller
         if ($request->status === 'approved' && $request->has('approval_signature')) {
             $data['approval_signature'] = $request->approval_signature;
             $data['signer_name'] = $request->signer_name;
+            $data['notes'] = $request->notes;
             $data['approved_by'] = auth()->id();
         }
 
