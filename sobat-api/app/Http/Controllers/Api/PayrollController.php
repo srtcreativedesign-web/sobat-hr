@@ -486,65 +486,72 @@ class PayrollController extends Controller
             
             for ($row = $startDataRow; $row <= $highestRow; $row++) {
                 // Get employee name
-                $namaCol = $columnMapping['nama_karyawan'] ?? 'B';
+                $namaCol = $columnMapping['nama_karyawan'] ?? null;
+                if (!$namaCol) continue;
+                
                 $employeeName = $getCellValue($namaCol, $row);
                 
                 // Skip if no employee name
                 if (empty($employeeName) || !is_string($employeeName)) continue;
                 
                 // Read values using mapped columns
-                $periode = $getCellValue($columnMapping['periode'] ?? 'A', $row);
-                $accountNumber = $getCellValue($columnMapping['no_rekening'] ?? 'C', $row);
+                $periode = $getCellValue($columnMapping['periode'] ?? null, $row);
+                $accountNumber = $getCellValue($columnMapping['no_rekening'] ?? null, $row);
                 
                 // Basic Salary
-                $basicSalary = $getCellValue($columnMapping['gaji_pokok'] ?? 'K', $row);
+                $basicSalary = $getCellValue($columnMapping['gaji_pokok'] ?? null, $row);
                 
                 // Days present (JML HR MASUK)
-                $daysPresent = $getCellValue($columnMapping['jml_hr_masuk'] ?? 'E', $row);
+                $daysPresent = $getCellValue($columnMapping['jml_hr_masuk'] ?? null, $row);
                 
-                // Allowances - use "Jumlah" columns
-                $kehadiranAllowance = $getCellValue($columnMapping['kehadiran_jumlah'] ?? 'M', $row);
-                $kehadiranRate = $getCellValue($columnMapping['kehadiran_rate'] ?? 'H', $row);
-                $transportAllowance = $getCellValue($columnMapping['transport_jumlah'] ?? 'O', $row);
-                $transportRate = $getCellValue($columnMapping['transport_rate'] ?? 'F', $row);
-                $healthAllowance = $getCellValue($columnMapping['kesehatan_jumlah'] ?? 'Q', $row);
-                $positionAllowance = $getCellValue($columnMapping['tunj_jabatan'] ?? 'R', $row);
+                // Allowances
+                $kehadiranAllowance = $getCellValue($columnMapping['kehadiran_jumlah'] ?? null, $row);
+                $kehadiranRate = $getCellValue($columnMapping['kehadiran_rate'] ?? null, $row);
+                $transportAllowance = $getCellValue($columnMapping['transport_jumlah'] ?? null, $row);
+                $transportRate = $getCellValue($columnMapping['transport_rate'] ?? null, $row);
+                $healthAllowance = $getCellValue($columnMapping['kesehatan_jumlah'] ?? null, $row);
+                $positionAllowance = $getCellValue($columnMapping['tunj_jabatan'] ?? null, $row);
                 
                 // Overtime
-                $overtimeHours = $getCellValue($columnMapping['lembur_jam'] ?? 'U', $row);
-                $overtimePay = $getCellValue($columnMapping['lembur_jumlah'] ?? 'V', $row);
-                $overtimeRate = $getCellValue($columnMapping['lembur_rate'] ?? 'K', $row);
+                $overtimeHours = $getCellValue($columnMapping['lembur_jam'] ?? null, $row);
+                $overtimePay = $getCellValue($columnMapping['lembur_jumlah'] ?? null, $row);
+                $overtimeRate = $getCellValue($columnMapping['lembur_rate'] ?? null, $row);
                 
                 // Other Income
-                $holidayAllowance = $getCellValue($columnMapping['insentif'] ?? 'W', $row);
-                $insentifLuarKota = $getCellValue($columnMapping['insentif_luar_kota'] ?? 'P', $row);
-                $insentifKehadiran = $getCellValue($columnMapping['insentif_kehadiran'] ?? 'Q', $row);
+                $holidayAllowance = $getCellValue($columnMapping['insentif'] ?? null, $row);
+                $insentifLuarKota = $getCellValue($columnMapping['insentif_luar_kota'] ?? null, $row);
+                $insentifKehadiran = $getCellValue($columnMapping['insentif_kehadiran'] ?? null, $row);
                 $insentifLebaran = $getCellValue($columnMapping['insentif_lebaran'] ?? null, $row);
                 $backup = $getCellValue($columnMapping['backup'] ?? null, $row);
-                $adjustment = $getCellValue($columnMapping['adjustment'] ?? 'X', $row);
-                $piketUmSabtu = $getCellValue($columnMapping['piket_um_sabtu'] ?? 'S', $row);
+                $adjustment = $getCellValue($columnMapping['adjustment'] ?? null, $row);
+                $piketUmSabtu = $getCellValue($columnMapping['piket_um_sabtu'] ?? null, $row);
                 
-                // Totals (FORMULAS or calculated)
-                $totalGaji = $getCellValue($columnMapping['total_gaji'] ?? 'Y', $row);
+                // Totals
+                $totalGaji = $getCellValue($columnMapping['total_gaji'] ?? null, $row);
                 
                 // Deductions Breakdown
-                $absen = $getCellValue($columnMapping['absen'] ?? 'AA', $row);
-                $alfa = $getCellValue($columnMapping['alfa'] ?? 'V', $row);
-                $terlambat = $getCellValue($columnMapping['terlambat'] ?? 'AB', $row);
-                $selisihSO = $getCellValue($columnMapping['selisih'] ?? 'AC', $row);
-                $pinjaman = $getCellValue($columnMapping['pinjaman'] ?? 'AD', $row);
-                $kasbon = $getCellValue($columnMapping['kasbon'] ?? 'U', $row);
-                $admBank = $getCellValue($columnMapping['adm_bank'] ?? 'AE', $row);
-                $bpjsTK = $getCellValue($columnMapping['bpjs_tk'] ?? 'AF', $row);
+                $absen = $getCellValue($columnMapping['absen'] ?? null, $row);
+                $alfa = $getCellValue($columnMapping['alfa'] ?? null, $row);
+                $terlambat = $getCellValue($columnMapping['terlambat'] ?? null, $row);
+                $selisihSO = $getCellValue($columnMapping['selisih'] ?? null, $row);
+                $pinjaman = $getCellValue($columnMapping['pinjaman'] ?? null, $row);
+                $kasbon = $getCellValue($columnMapping['kasbon'] ?? null, $row);
+                $admBank = $getCellValue($columnMapping['adm_bank'] ?? null, $row);
+                $bpjsTK = $getCellValue($columnMapping['bpjs_tk'] ?? null, $row);
                 
-                // Total Deductions (FORMULA)
-                $totalDeductions = $getCellValue($columnMapping['jumlah_potongan'] ?? 'AG', $row);
+                // Total Deductions
+                $totalDeductions = $getCellValue($columnMapping['jumlah_potongan'] ?? null, $row);
                 
-                // Grand Total and Final Net Salary (FORMULAS)
-                $grandTotal = $getCellValue($columnMapping['grand_total'] ?? 'AH', $row);
-                $ewa = $getCellValue($columnMapping['ewa'] ?? 'AI', $row);
-                $potEwa = $getCellValue($columnMapping['potongan_ewa'] ?? 'W', $row);
-                $netSalary = $getCellValue($columnMapping['payroll'] ?? 'AJ', $row);
+                // Grand Total and Final Net Salary
+                $grandTotal = $getCellValue($columnMapping['grand_total'] ?? null, $row);
+                $ewa = $getCellValue($columnMapping['ewa'] ?? null, $row);
+                $potEwa = $getCellValue($columnMapping['potongan_ewa'] ?? null, $row);
+                $netSalary = $getCellValue($columnMapping['payroll'] ?? null, $row);
+                
+                // Logic: If netSalary is 0 but grandTotal exists, use grandTotal
+                if ($netSalary <= 0 && $grandTotal > 0) {
+                    $netSalary = $grandTotal;
+                }
                 
                 // Calculate total allowances for storage
                 $allowancesTotal = $kehadiranAllowance + $transportAllowance + $healthAllowance + $positionAllowance;
