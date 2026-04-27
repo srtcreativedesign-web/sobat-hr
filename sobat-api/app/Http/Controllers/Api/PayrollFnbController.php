@@ -351,6 +351,11 @@ class PayrollFnbController extends Controller
                 $deductionBpjsTk = $getCellValue($columnMapping['bpjs_tk'] ?? null, $row);
                 
                 $totalDeductions = $getCellValue($columnMapping['jumlah_potongan'] ?? null, $row);
+                
+                // Fallback: calculate total deductions from individual items if not detected
+                if ($totalDeductions <= 0) {
+                    $totalDeductions = abs($deductionAbsent) + abs($deductionLate) + abs($deductionShortage) + abs($deductionLoan) + abs($deductionAdminFee) + abs($deductionBpjsTk);
+                }
                 $grandTotal = $getCellValue($columnMapping['grand_total'] ?? null, $row);
                 $ewa = $getCellValue($columnMapping['ewa'] ?? null, $row);
                 $netSalary = $getCellValue($columnMapping['payroll'] ?? null, $row);
