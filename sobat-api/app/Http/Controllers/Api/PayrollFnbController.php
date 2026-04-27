@@ -139,24 +139,29 @@ class PayrollFnbController extends Controller
             $highestRow = $sheet->getHighestRow();
             $highestColumn = $sheet->getHighestColumn();
             
-            // Helper to get calculated cell value
+            // Helper to get calculated cell value (null-safe)
             $getCellValue = function($col, $row) use ($sheet) {
-                $cell = $sheet->getCell($col . $row);
-                $value = $cell->getCalculatedValue();
-                
-                if (is_numeric($value)) {
-                    return (float) $value;
-                }
-                
-                if (is_string($value)) {
-                    $cleaned = preg_replace('/[^0-9\.\,\-]/', '', $value);
-                    if ($cleaned !== '' && is_numeric($cleaned)) {
-                        return (float) $cleaned;
+                if (!$col) return 0;
+                try {
+                    $cell = $sheet->getCell($col . $row);
+                    $value = $cell->getCalculatedValue();
+                    
+                    if (is_numeric($value)) {
+                        return (float) $value;
                     }
-                    return $value;
+                    
+                    if (is_string($value)) {
+                        $cleaned = preg_replace('/[^0-9\.\,\-]/', '', $value);
+                        if ($cleaned !== '' && is_numeric($cleaned)) {
+                            return (float) $cleaned;
+                        }
+                        return $value;
+                    }
+                    
+                    return $value ?? 0;
+                } catch (\Exception $e) {
+                    return 0;
                 }
-                
-                return $value ?? 0;
             };
             
             // Detect header row
@@ -180,78 +185,242 @@ class PayrollFnbController extends Controller
                 return response()->json(['message' => 'Format Excel tidak dikenali. Pastikan ada kolom "Nama Karyawan".'], 422);
             }
             
+            // BUILD COLUMN MAPPING dynamically from headers
+            $headerPatterns = [
+                'nama_karyawan' => ['Nama Karyawan', 'Nama Pegawai'],
+                'no_rekening' => ['No Rekening', 'Rekening'],
+                'days_total' => [['Jumlah', 'Hari']],
+                'days_off' => ['Off'],
+                'days_sick' => ['Sakit'],
+                'days_permission' => ['Ijin'],
+                'days_alpha' => ['Alfa', 'ALFA', 'Alpa'],
+                'days_leave' => ['Cuti'],
+                'days_present' => ['Ada', 'Hadir'],
+                'gaji_pokok' => ['Gaji Pokok', 'Gapok', 'Basic Salary'],
+                'kehadiran_rate' => [['Kehadiran', '/ Hari']],
+                'kehadiran_jumlah' => [['Kehadiran', 'Jumlah']],
+                'transport_rate' => [['Transport', '/ Hari']],
+                'transport_jumlah' => [['Transport', 'Jumlah']],
+                'kesehatan' => ['Tunj. Kesehatan'],
+                'jabatan' => ['Tunj. Jabatan'],
+                'total_gaji' => [['Total Gaji', '( Rp )']],
+                'lembur_rate' => [['Lembur', '/ Jam']],
+                'lembur_jam' => [['Lembur', 'Jam']],
+                'lembur_jumlah' => [['Lembur', 'Jumlah']],
+                'backup' => ['Backup'],
+                'insentif_kehadiran' => ['Insentif Kehadrian', 'Insentif Kehadiran'],
+                'insentif_lebaran' => ['Insentif Lebaran'],
+                'total_gaji_bonus' => ['Total Gaji & Bonus'],
+                'kebijakan_ho' => ['Kebijakan'],
+                'absen_count' => ['Absen 1x'],
+                'absen' => ['Absen 1X'],
+                'terlambat_menit' => ['terlambat (menit)'],
+                'terlambat' => ['Terlambat'],
+                'selisih' => ['Selisih SO', 'Selisih'],
+                'pinjaman' => ['Pinjaman'],
+                'adm_bank' => ['Adm Bank', 'Admin Bank'],
+                'bpjs_tk' => ['BPJS TK', 'BPJS Ketenagakerjaan'],
+                'jumlah_potongan' => [['Potongan', 'Jumlah'], 'Total Potongan'],
+                'grand_total' => ['Grand Total'],
+                'ewa' => ['EWA', 'Pinjaman ke Stafbook', 'Pinjaman stafbook'],
+                'potongan_ewa' => ['Potongan EWA'],
+                'payroll' => ['Payroll', 'THP'],
+                'adjustment' => ['Adj', 'Penyesuaian'],
+            ];
+            
+            // Build header lookup (supports merged cells)
+            $allHeaders = [];
+            $allSubs = [];
+            $colOrder = [];
+            
+            $headerRow = $sheet->getRowIterator($headerRowIndex, $headerRowIndex)->current();
+            $cellIterator = $headerRow->getCellIterator('A', $highestColumn);
+            $cellIterator->setIterateOnlyExistingCells(false);
+            
+            foreach ($cellIterator as $cell) {
+                $col = $cell->getColumn();
+                $colOrder[] = $col;
+                $allHeaders[$col] = $cell->getValue();
+                $allSubs[$col] = $sheet->getCell($col . ($headerRowIndex + 1))->getValue();
+            }
+            
+            $columnMapping = [];
+            foreach ($colOrder as $idx => $col) {
+                $headerValue = $allHeaders[$col];
+                $unitsValue = $allSubs[$col];
+                
+                // Merged cell support: inherit header from previous column if empty
+                $effectiveHeader = $headerValue;
+                if (empty($effectiveHeader) && $idx > 0) {
+                    $prevCol = $colOrder[$idx - 1];
+                    $effectiveHeader = $allHeaders[$prevCol];
+                }
+                
+                foreach ($headerPatterns as $key => $patterns) {
+                    if (isset($columnMapping[$key])) continue;
+                    
+                    $alternativePatterns = is_array($patterns) ? $patterns : [$patterns];
+                    
+                    foreach ($alternativePatterns as $pattern) {
+                        if (is_array($pattern)) {
+                            // Multi-row header check (merged cell aware)
+                            $headerMatch = $effectiveHeader && stripos($effectiveHeader, $pattern[0]) !== false;
+                            $unitsMatch = $unitsValue && stripos($unitsValue, $pattern[1]) !== false;
+                            
+                            if ($headerMatch && $unitsMatch) {
+                                $columnMapping[$key] = $col;
+                                break;
+                            }
+                        } else {
+                            // Single check: header OR sub-header
+                            $matchedHeader = $headerValue && stripos($headerValue, $pattern) !== false;
+                            $matchedSub = $unitsValue && stripos($unitsValue, $pattern) !== false;
+                            
+                            if ($matchedHeader || $matchedSub) {
+                                $columnMapping[$key] = $col;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            Log::info('FnB Column Mapping Detected', $columnMapping);
+            
+            // Detect outlet name from first cell
+            $firstCell = $sheet->getCell('A1')->getValue();
+            $outletName = 'FnB';
+            if ($firstCell && stripos($firstCell, 'Tung Tau') !== false) {
+                $outletName = 'Tung Tau';
+            } elseif ($firstCell && stripos($firstCell, 'GD 600') !== false) {
+                $outletName = 'GD 600';
+            }
+            
             $dataRows = [];
             $startDataRow = $headerRowIndex + 2; // Skip header and units row
             
             for ($row = $startDataRow; $row <= $highestRow; $row++) {
-                $employeeName = $getCellValue('B', $row);
+                $employeeName = $getCellValue($columnMapping['nama_karyawan'] ?? null, $row);
                 
                 // Skip if no employee name
                 if (empty($employeeName) || !is_string($employeeName)) continue;
                 
-                // Map all columns based on FnB Excel structure (from analysis)
+                // Read all values dynamically
+                $daysTotal = (int) $getCellValue($columnMapping['days_total'] ?? null, $row);
+                $daysOff = (int) $getCellValue($columnMapping['days_off'] ?? null, $row);
+                $daysSick = (int) $getCellValue($columnMapping['days_sick'] ?? null, $row);
+                $daysPermission = (int) $getCellValue($columnMapping['days_permission'] ?? null, $row);
+                $daysAlpha = (int) $getCellValue($columnMapping['days_alpha'] ?? null, $row);
+                $daysLeave = (int) $getCellValue($columnMapping['days_leave'] ?? null, $row);
+                $daysPresent = (int) $getCellValue($columnMapping['days_present'] ?? null, $row);
+                
+                // If days_present not detected, calculate it
+                if ($daysPresent <= 0 && $daysTotal > 0) {
+                    $daysPresent = $daysTotal - $daysOff - $daysSick - $daysPermission - $daysAlpha - $daysLeave;
+                    if ($daysPresent < 0) $daysPresent = 0;
+                }
+                
+                $basicSalary = $getCellValue($columnMapping['gaji_pokok'] ?? null, $row);
+                
+                $attendanceRate = $getCellValue($columnMapping['kehadiran_rate'] ?? null, $row);
+                $attendanceAmount = $getCellValue($columnMapping['kehadiran_jumlah'] ?? null, $row);
+                $transportRate = $getCellValue($columnMapping['transport_rate'] ?? null, $row);
+                $transportAmount = $getCellValue($columnMapping['transport_jumlah'] ?? null, $row);
+                $healthAllowance = $getCellValue($columnMapping['kesehatan'] ?? null, $row);
+                $positionAllowance = $getCellValue($columnMapping['jabatan'] ?? null, $row);
+                
+                $totalSalary1 = $getCellValue($columnMapping['total_gaji'] ?? null, $row);
+                
+                $overtimeRate = $getCellValue($columnMapping['lembur_rate'] ?? null, $row);
+                $overtimeHours = $getCellValue($columnMapping['lembur_jam'] ?? null, $row);
+                $overtimeAmount = $getCellValue($columnMapping['lembur_jumlah'] ?? null, $row);
+                
+                $backup = $getCellValue($columnMapping['backup'] ?? null, $row);
+                $insentifKehadiran = $getCellValue($columnMapping['insentif_kehadiran'] ?? null, $row);
+                $holidayAllowance = $getCellValue($columnMapping['insentif_lebaran'] ?? null, $row);
+                $adjustment = $getCellValue($columnMapping['adjustment'] ?? null, $row);
+                
+                $totalSalary2 = $getCellValue($columnMapping['total_gaji_bonus'] ?? null, $row);
+                $policyHo = $getCellValue($columnMapping['kebijakan_ho'] ?? null, $row);
+                
+                $deductionAbsent = $getCellValue($columnMapping['absen'] ?? null, $row);
+                $deductionLate = $getCellValue($columnMapping['terlambat'] ?? null, $row);
+                $deductionShortage = $getCellValue($columnMapping['selisih'] ?? null, $row);
+                $deductionLoan = $getCellValue($columnMapping['pinjaman'] ?? null, $row);
+                $deductionAdminFee = $getCellValue($columnMapping['adm_bank'] ?? null, $row);
+                $deductionBpjsTk = $getCellValue($columnMapping['bpjs_tk'] ?? null, $row);
+                
+                $totalDeductions = $getCellValue($columnMapping['jumlah_potongan'] ?? null, $row);
+                $grandTotal = $getCellValue($columnMapping['grand_total'] ?? null, $row);
+                $ewa = $getCellValue($columnMapping['ewa'] ?? null, $row);
+                $netSalary = $getCellValue($columnMapping['payroll'] ?? null, $row);
+                
+                // Fallback: if net_salary is 0 but grand_total exists
+                if ($netSalary <= 0 && $grandTotal > 0) {
+                    $netSalary = $grandTotal;
+                }
+                
+                // Use best available gross salary
+                if ($totalSalary2 > 0) {
+                    $grossSalary = $totalSalary2;
+                } elseif ($totalSalary1 > 0) {
+                    $grossSalary = $totalSalary1;
+                } else {
+                    $grossSalary = $basicSalary + $attendanceAmount + $transportAmount + $healthAllowance + $positionAllowance + $overtimeAmount + $holidayAllowance + $adjustment + $backup + $insentifKehadiran;
+                }
+                
                 $parsed = [
                     'employee_name' => $employeeName,
-                    'period' => $request->period ?? date('Y-m'), // Use period from request if provided
-                    'account_number' => $getCellValue('D', $row), // Shifted +1 (C->D)
+                    'period' => $request->period ?? date('Y-m'),
+                    'account_number' => $getCellValue($columnMapping['no_rekening'] ?? null, $row),
+                    'outlet_name' => $outletName,
                     
-                    // Attendance (E-J)
-                    'days_total' => (int) $getCellValue('E', $row),
-                    'days_off' => (int) $getCellValue('F', $row),
-                    'days_sick' => (int) $getCellValue('G', $row),
-                    'days_permission' => (int) $getCellValue('H', $row),
-                    'days_alpha' => (int) $getCellValue('I', $row),
-                    'days_leave' => (int) $getCellValue('J', $row),
-                    // 'days_present' not explicitly in file between Leave and Basic
-                    'days_present' => (int) $getCellValue('E', $row) - ((int) $getCellValue('F', $row) + (int) $getCellValue('G', $row) + (int) $getCellValue('H', $row) + (int) $getCellValue('I', $row) + (int) $getCellValue('J', $row)), 
+                    // Attendance
+                    'days_total' => $daysTotal,
+                    'days_off' => $daysOff,
+                    'days_sick' => $daysSick,
+                    'days_permission' => $daysPermission,
+                    'days_alpha' => $daysAlpha,
+                    'days_leave' => $daysLeave,
+                    'days_present' => $daysPresent,
                     
-                    // Basic Salary (K)
-                    'basic_salary' => $getCellValue('K', $row),
+                    // Salary
+                    'basic_salary' => $basicSalary,
+                    'attendance_rate' => $attendanceRate,
+                    'attendance_amount' => $attendanceAmount,
+                    'transport_rate' => $transportRate,
+                    'transport_amount' => $transportAmount,
+                    'health_allowance' => $healthAllowance,
+                    'position_allowance' => $positionAllowance,
+                    'total_salary_1' => $totalSalary1,
                     
-                    // Allowances
-                    // L, M are Meal (Skip as DB doesn't have it)
-                    'transport_rate' => $getCellValue('N', $row),
-                    'transport_amount' => $getCellValue('O', $row),
-                    
-                    'attendance_rate' => $getCellValue('P', $row), // Shift +4 (L->P)
-                    'attendance_amount' => $getCellValue('Q', $row), // Shift +4 (M->Q)
-                    
-                    'position_allowance' => $getCellValue('R', $row), // Shift +1 (Q->R)
-                    'health_allowance' => $getCellValue('S', $row), // Shift +3 (P->S)
-                    
-                    // Total Salary 1 (T)
-                    'total_salary_1' => $getCellValue('T', $row), // Shift +2 (R->T)
-                    
-                    // Overtime (U-W)
-                    'overtime_rate' => $getCellValue('U', $row), // Shift +2 (S->U)
-                    'overtime_hours' => $getCellValue('V', $row), // Shift +2 (T->V)
-                    'overtime_amount' => $getCellValue('W', $row), // Shift +2 (U->W)
+                    // Overtime
+                    'overtime_rate' => $overtimeRate,
+                    'overtime_hours' => $overtimeHours,
+                    'overtime_amount' => $overtimeAmount,
                     
                     // Other Income
-                    'holiday_allowance' => $getCellValue('Y', $row), // Usually shift +? assuming alignment allows
-                    'adjustment' => $getCellValue('Z', $row),
+                    'backup' => $backup,
+                    'insentif_kehadiran' => $insentifKehadiran,
+                    'holiday_allowance' => $holidayAllowance,
+                    'adjustment' => $adjustment,
+                    'total_salary_2' => $totalSalary2,
+                    'policy_ho' => $policyHo,
                     
-                    // Total Salary 2 (AA)
-                    'total_salary_2' => $getCellValue('AA', $row),
+                    // Deductions
+                    'deduction_absent' => $deductionAbsent,
+                    'deduction_late' => $deductionLate,
+                    'deduction_shortage' => $deductionShortage,
+                    'deduction_loan' => $deductionLoan,
+                    'deduction_admin_fee' => $deductionAdminFee,
+                    'deduction_bpjs_tk' => $deductionBpjsTk,
+                    'total_deductions' => $totalDeductions,
                     
-                    // Policy (AB)
-                    'policy_ho' => $getCellValue('AB', $row),
-                    
-                    // Deductions (AC-AH)
-                    'deduction_absent' => $getCellValue('AC', $row),
-                    'deduction_late' => $getCellValue('AD', $row),
-                    'deduction_shortage' => $getCellValue('AE', $row), // Assuming Sequence
-                    'deduction_loan' => $getCellValue('AF', $row),
-                    'deduction_admin_fee' => $getCellValue('AG', $row),
-                    'deduction_bpjs_tk' => $getCellValue('AH', $row),
-                    
-                    // Total Deductions (AI)
-                    'total_deductions' => $getCellValue('AI', $row),
-                    
-                    // Final Calculations
-                    'grand_total' => $getCellValue('AJ', $row),
-                    // 'ewa_amount' => $getCellValue('AK', $row), // Assuming AK
-                    'net_salary' => $getCellValue('AJ', $row), // Duplicate Grand Total or check column
+                    // Finals
+                    'grand_total' => $grandTotal,
+                    'ewa_amount' => $ewa,
+                    'net_salary' => $netSalary,
+                    'gross_salary' => $grossSalary,
                 ];
                 
                 $dataRows[] = $parsed;
