@@ -224,7 +224,7 @@ class PayrollFnbController extends Controller
                 'grand_total' => ['Grand Total'],
                 'ewa' => ['EWA', 'Pinjaman ke Stafbook', 'Pinjaman stafbook'],
                 'potongan_ewa' => ['Potongan EWA'],
-                'payroll' => ['Payroll', 'THP'],
+                'payroll' => ['Total Gaji Ditransfer', 'Payroll', 'THP'],
                 'adjustment' => ['Adj', 'Penyesuaian'],
             ];
             

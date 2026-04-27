@@ -402,14 +402,22 @@ export default function PayrollPage() {
 
   // Helper to calculate total deductions for FnB/MM/Ref payroll
   const calculateTotalDeductions = (payroll: any) => {
+    let baseDeduction = 0;
     if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'money_changer'].includes(selectedDivision)) {
-      return parseFloat(payroll.deduction_total) || 0;
+      baseDeduction = parseFloat(payroll.deduction_total) || 0;
+    } else if (selectedDivision === 'cellular') {
+      baseDeduction = parseFloat(payroll.total_deduction) || 0;
+    } else {
+      // Generic / FnB
+      baseDeduction = parseFloat(payroll.total_deductions) || 0;
     }
-    if (selectedDivision === 'cellular') {
-      return parseFloat(payroll.total_deduction) || 0;
+    
+    // Add EWA if applicable
+    if (['fnb', 'minimarket', 'reflexiology', 'wrapping'].includes(selectedDivision) && payroll.ewa_amount) {
+      baseDeduction += parseFloat(payroll.ewa_amount) || 0;
     }
-    // Generic
-    return parseFloat(payroll.total_deductions) || 0;
+    
+    return baseDeduction;
   };
 
   // Helper to calculate gross salary for FnB/MM/Ref/Wrapping payroll
@@ -1072,10 +1080,7 @@ export default function PayrollPage() {
                       <div className="pt-2 border-t border-gray-100 flex justify-between font-bold text-gray-900 mt-2">
                         <span>Total Potongan</span>
                         <span className="text-red-600">
-                          -{formatCurrency(
-                            calculateTotalDeductions(selectedPayroll) +
-                            ((selectedDivision === 'fnb' || selectedDivision === 'minimarket' || selectedDivision === 'reflexiology' || selectedDivision === 'wrapping') && selectedPayroll.ewa_amount ? (typeof selectedPayroll.ewa_amount === 'string' ? parseFloat(selectedPayroll.ewa_amount) : selectedPayroll.ewa_amount) : 0)
-                          )}
+                          -{formatCurrency(calculateTotalDeductions(selectedPayroll))}
                         </span>
                       </div>
                     </div>
