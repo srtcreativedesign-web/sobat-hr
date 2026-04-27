@@ -5,10 +5,14 @@ const qrcode = require('qrcode-terminal');
 const app = express();
 app.use(express.json());
 
+// State monitoring
+let isReady = false;
+
 // Inisialisasi WhatsApp Client dengan LocalAuth agar sesi tersimpan
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
+        headless: true,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -23,32 +27,57 @@ const client = new Client({
 });
 
 client.on('qr', (qr) => {
+    isReady = false;
     console.log('\n--- SCAN QR CODE DI BAWAH INI DENGAN WHATSAPP ANDA ---');
     qrcode.generate(qr, { small: true });
 });
 
 client.on('ready', () => {
+    isReady = true;
     console.log('\n✅ WhatsApp Client is READY!');
     console.log('🤖 Bot pengirim OTP telah siap.');
 });
 
 client.on('disconnected', (reason) => {
+    isReady = false;
     console.log('WhatsApp terputus!', reason);
-    // client.initialize(); // Coba inisialisasi ulang jika ingin auto-reconnect tanpa disadari
+    console.log('Mencoba inisialisasi ulang dalam 5 detik...');
+    setTimeout(() => {
+        client.initialize();
+    }, 5000);
+});
+
+client.on('auth_failure', (msg) => {
+    isReady = false;
+    console.error('Gagal autentikasi:', msg);
 });
 
 client.initialize();
 
+// Endpoint untuk cek status koneksi
+app.get('/status', (req, res) => {
+    res.status(200).json({
+        status: isReady ? 'ready' : 'not_ready',
+        message: isReady ? 'WhatsApp is connected' : 'WhatsApp is not connected or initializing'
+    });
+});
+
 // Endpoint Internal untuk menerima request dari Laravel
 app.post('/send-otp', async (req, res) => {
     const { number, message } = req.body;
+
+    if (!isReady) {
+        return res.status(503).json({ 
+            status: 'error', 
+            message: 'Service WhatsApp sedang tidak siap/offline. Silakan cek koneksi atau scan ulang.' 
+        });
+    }
 
     if (!number || !message) {
         return res.status(400).json({ error: 'Number dan message wajib diisi' });
     }
 
     // Format nomor WA untuk Indonesia: 6281234567890@c.us
-    // Pastikan Laravel mengirim format nomor yang sudah diawali 62
     const chatId = `${number}@c.us`;
 
     try {
