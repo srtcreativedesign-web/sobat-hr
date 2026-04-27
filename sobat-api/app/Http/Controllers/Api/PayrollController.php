@@ -339,24 +339,30 @@ class PayrollController extends Controller
             
             // Helper function to get calculated value from cell
             $getCellValue = function($col, $row) use ($sheet) {
-                $cell = $sheet->getCell($col . $row);
-                $value = $cell->getCalculatedValue();
+                if (!$col) return 0; // Return 0 if column mapping not found
                 
-                // Clean numeric values
-                if (is_numeric($value)) {
-                    return (float) $value;
-                }
-                
-                // Clean string numeric values (remove currency symbols, etc)
-                if (is_string($value)) {
-                    $cleaned = preg_replace('/[^0-9\.\,\-]/', '', $value);
-                    if ($cleaned !== '' && is_numeric($cleaned)) {
-                        return (float) $cleaned;
+                try {
+                    $cell = $sheet->getCell($col . $row);
+                    $value = $cell->getCalculatedValue();
+                    
+                    // Clean numeric values
+                    if (is_numeric($value)) {
+                        return (float) $value;
                     }
-                    return $value; // Return as string if not numeric
+                    
+                    // Clean string numeric values (remove currency symbols, etc)
+                    if (is_string($value)) {
+                        $cleaned = preg_replace('/[^0-9\.\,\-]/', '', $value);
+                        if ($cleaned !== '' && is_numeric($cleaned)) {
+                            return (float) $cleaned;
+                        }
+                        return $value; // Return as string if not numeric
+                    }
+                    
+                    return $value ?? 0;
+                } catch (\Exception $e) {
+                    return 0;
                 }
-                
-                return $value ?? 0;
             };
             
             // Detect header row (look for "Nama Karyawan")
@@ -385,40 +391,40 @@ class PayrollController extends Controller
             // BUILD COLUMN MAPPING based on header names
             $columnMapping = [];
             $headerPatterns = [
-                'periode' => 'Periode',
-                'nama_karyawan' => 'Nama Karyawan',
-                'no_rekening' => 'No Rekening',
-                'gaji_pokok' => 'Gaji Pokok',
-                'kehadiran_jumlah' => ['Kehadiran', 'Jumlah'], // Multi-row header
-                'kehadiran_rate' => ['Kehadiran', '@hari'],
-                'transport_jumlah' => ['Transport', 'Jumlah'],
-                'transport_rate' => ['Transport', '@hari'],
-                'kesehatan_jumlah' => ['Kesehatan', 'Jumlah'],
-                'tunj_jabatan' => 'Tunj. Jabatan',
-                'total_gaji' => 'Total Gaji',
-                'lembur_jam' => ['Lembur', 'Jam'],
-                'lembur_jumlah' => ['Lembur', 'Jumlah'],
-                'lembur_rate' => ['Lembur', '@'],
-                'insentif' => 'Insentif',
-                'insentif_luar_kota' => 'Insentif Luar Kota',
-                'insentif_kehadiran' => 'Insentif Kehadiran',
-                'adjustment' => 'Adj',
-                'piket_um_sabtu' => 'Piket',
-                'absen' => 'Absen',
-                'alfa' => 'ALFA',
-                'terlambat' => 'Terlambat',
-                'selisih' => 'Selisih',
-                'pinjaman' => 'Pinjaman',
-                'kasbon' => 'Kasbon',
-                'adm_bank' => 'Adm Bank',
-                'bpjs_tk' => 'BPJS TK',
-                'jumlah_potongan' => ['Potongan', 'Jumlah'],
-                'grand_total' => 'Grand Total',
-                'ewa' => 'EWA',
-                'potongan_ewa' => 'Potongan EWA',
-                'payroll' => 'Payroll',
-                'jml_hr_masuk' => 'JML HR',
-                'gaji_diterima' => 'Gaji',
+                'periode' => ['Periode'],
+                'nama_karyawan' => ['Nama Karyawan', 'Nama Pegawai', 'Nama'],
+                'no_rekening' => ['No Rekening', 'Rekening'],
+                'gaji_pokok' => ['Gaji Pokok', 'Gapok', 'Basic Salary'],
+                'kehadiran_jumlah' => [['Kehadiran', 'Jumlah']],
+                'kehadiran_rate' => [['Kehadiran', '@hari']],
+                'transport_jumlah' => [['Transport', 'Jumlah']],
+                'transport_rate' => [['Transport', '@hari']],
+                'kesehatan_jumlah' => [['Kesehatan', 'Jumlah'], 'Tunj. Kesehatan'],
+                'tunj_jabatan' => ['Tunj. Jabatan', 'Jabatan'],
+                'total_gaji' => ['Total Gaji', 'Gross Salary', 'Total Gaji & Bonus'],
+                'lembur_jam' => [['Lembur', 'Jam']],
+                'lembur_jumlah' => [['Lembur', 'Jumlah']],
+                'lembur_rate' => [['Lembur', '@']],
+                'insentif' => ['Insentif', 'Bonus', 'Insentif Kehadrian (tidak telat)'],
+                'insentif_luar_kota' => ['Luar Kota', 'Insentif Luar Kota'],
+                'insentif_kehadiran' => ['Insentif Kehadiran', 'Kehadiran (tidak telat)'],
+                'insentif_lebaran' => ['Insentif Lebaran'],
+                'backup' => ['Backup'],
+                'adjustment' => ['Adj', 'Penyesuaian'],
+                'piket_um_sabtu' => ['Piket', 'Piket UM'],
+                'absen' => ['Absen', 'Absen 1x', 'Absen 1X'],
+                'alfa' => ['ALFA', 'Alpa'],
+                'terlambat' => ['Terlambat', 'terlambat (menit)'],
+                'selisih' => ['Selisih', 'Selisih SO'],
+                'pinjaman' => ['Pinjaman', 'Kasbon', 'Potongan Pinjaman'],
+                'adm_bank' => ['Adm Bank', 'Admin Bank'],
+                'bpjs_tk' => ['BPJS TK', 'BPJS Ketenagakerjaan'],
+                'jumlah_potongan' => [['Potongan', 'Jumlah'], 'Total Potongan'],
+                'grand_total' => ['Grand Total', 'Total Gaji Akhir'],
+                'ewa' => ['EWA', 'Pinjaman ke Stafbook', 'Pinjaman stafbook'],
+                'potongan_ewa' => ['Potongan EWA'],
+                'payroll' => ['Payroll', 'total Gaji Ditransfer', 'Gaji Diterima', 'THP'],
+                'jml_hr_masuk' => ['JML HR', 'Hadir', 'Jumlah Hari'],
             ];
             
             // Use cell iterator to support columns beyond Z (AA, AB, etc.)
@@ -431,19 +437,26 @@ class PayrollController extends Controller
                 $headerValue = $cell->getValue();
                 $unitsValue = $sheet->getCell($col . ($headerRowIndex + 1))->getValue();
                 
-                foreach ($headerPatterns as $key => $pattern) {
-                    if (is_array($pattern)) {
-                        // Multi-row header check (e.g., "Kehadiran" in row 2, "Jumlah" in row 3)
-                        $headerMatch = $headerValue && stripos($headerValue, $pattern[0]) !== false;
-                        $unitsMatch = $unitsValue && stripos($unitsValue, $pattern[1]) !== false;
-                        
-                        if ($headerMatch && $unitsMatch) {
-                            $columnMapping[$key] = $col;
-                        }
-                    } else {
-                        // Single header check
-                        if ($headerValue && stripos($headerValue, $pattern) !== false) {
-                            $columnMapping[$key] = $col;
+                foreach ($headerPatterns as $key => $patterns) {
+                    // Convert to array for consistent processing if it's a single string
+                    $alternativePatterns = is_array($patterns) ? $patterns : [$patterns];
+                    
+                    foreach ($alternativePatterns as $pattern) {
+                        if (is_array($pattern)) {
+                            // Multi-row header check (e.g., ["Kehadiran", "Jumlah"])
+                            $headerMatch = $headerValue && stripos($headerValue, $pattern[0]) !== false;
+                            $unitsMatch = $unitsValue && stripos($unitsValue, $pattern[1]) !== false;
+                            
+                            if ($headerMatch && $unitsMatch) {
+                                $columnMapping[$key] = $col;
+                                break;
+                            }
+                        } else {
+                            // Single header check (e.g., "Gaji Pokok" or ["Gaji Pokok", "Gapok"])
+                            if ($headerValue && stripos($headerValue, $pattern) !== false) {
+                                $columnMapping[$key] = $col;
+                                break;
+                            }
                         }
                     }
                 }
@@ -451,6 +464,22 @@ class PayrollController extends Controller
             
             Log::info('Column Mapping Detected', $columnMapping);
             
+            // Detect Outlet Name and Type
+            $firstCell = $sheet->getCell('A1')->getValue();
+            $outletName = null;
+            $type = 'fnb'; // Default
+            
+            if (stripos($firstCell, 'Tung Tau') !== false) {
+                $outletName = 'Tung Tau';
+                $type = 'fnb';
+            } elseif (stripos($storedPath, 'Maximum 600') !== false || stripos($firstCell, 'GD 600') !== false) {
+                $outletName = 'GD 600';
+                $type = 'fnb';
+            } elseif (stripos($firstCell, 'HO') !== false || stripos($storedPath, 'HO') !== false) {
+                $outletName = 'Head Office';
+                $type = 'ho';
+            }
+
             $dataRows = [];
             // Data starts after header row (usually header is row 2, units row 3, data starts row 4)
             $startDataRow = $headerRowIndex + 2;
@@ -490,12 +519,13 @@ class PayrollController extends Controller
                 $holidayAllowance = $getCellValue($columnMapping['insentif'] ?? 'W', $row);
                 $insentifLuarKota = $getCellValue($columnMapping['insentif_luar_kota'] ?? 'P', $row);
                 $insentifKehadiran = $getCellValue($columnMapping['insentif_kehadiran'] ?? 'Q', $row);
+                $insentifLebaran = $getCellValue($columnMapping['insentif_lebaran'] ?? null, $row);
+                $backup = $getCellValue($columnMapping['backup'] ?? null, $row);
                 $adjustment = $getCellValue($columnMapping['adjustment'] ?? 'X', $row);
                 $piketUmSabtu = $getCellValue($columnMapping['piket_um_sabtu'] ?? 'S', $row);
                 
                 // Totals (FORMULAS or calculated)
                 $totalGaji = $getCellValue($columnMapping['total_gaji'] ?? 'Y', $row);
-                $gajiDiterima = $getCellValue($columnMapping['gaji_diterima'] ?? 'T', $row);
                 
                 // Deductions Breakdown
                 $absen = $getCellValue($columnMapping['absen'] ?? 'AA', $row);
@@ -523,16 +553,7 @@ class PayrollController extends Controller
                 if ($totalGaji > 0) {
                     $grossSalary = $totalGaji;
                 } else {
-                    // Fallback: calculate from components
-                    $grossSalary = $basicSalary + $allowancesTotal + $overtimePay + $holidayAllowance + $adjustment;
-                }
-                
-                // If net salary is 0, try to calculate it
-                if ($netSalary == 0 && $grandTotal > 0) {
-                    $netSalary = $grandTotal - $ewa;
-                }
-                if ($netSalary == 0 && $gajiDiterima > 0) {
-                    $netSalary = $gajiDiterima - $kasbon - $alfa - ($potEwa > 0 ? $potEwa : $ewa);
+                    $grossSalary = $basicSalary + $allowancesTotal + $overtimePay + $holidayAllowance + $adjustment + $insentifLebaran + $backup;
                 }
                 
                 // Details for JSON storage
@@ -546,6 +567,8 @@ class PayrollController extends Controller
                     'holiday_allowance' => $holidayAllowance,
                     'attendance_allowance' => $kehadiranAllowance,
                     'attendance_rate' => $kehadiranRate,
+                    'insentif_lebaran' => $insentifLebaran,
+                    'backup' => $backup,
                     'adjustment' => $adjustment,
                     'overtime_hours' => $overtimeHours,
                     'overtime_rate' => $overtimeRate,
@@ -553,7 +576,6 @@ class PayrollController extends Controller
                     'insentif_kehadiran' => $insentifKehadiran,
                     'piket_um_sabtu' => $piketUmSabtu,
                     'total_gaji' => $totalGaji,
-                    'gaji_diterima' => $gajiDiterima,
                     'deductions' => [
                         'absent' => $absen,
                         'alfa' => $alfa,
@@ -570,6 +592,8 @@ class PayrollController extends Controller
                 $parsed = [
                     'employee_name' => $employeeName,
                     'period' => $request->period ?? date('Y-m'),
+                    'type' => $type,
+                    'outlet_name' => $outletName,
                     'basic_salary' => $basicSalary,
                     'allowances' => $allowancesTotal,
                     'overtime' => $overtimePay,

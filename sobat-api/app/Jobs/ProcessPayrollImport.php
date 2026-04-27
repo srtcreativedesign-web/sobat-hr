@@ -47,8 +47,10 @@ class ProcessPayrollImport implements ShouldQueue
                 $overtime = $row['overtime'] ?? 0;
                 $totalDeductions = $row['total_deductions'] ?? 0;
                 
-                $grossSalary = $basicSalary + $allowances + $overtime;
+                $grossSalary = $row['gross_salary'] ?? ($basicSalary + $allowances + $overtime);
                 $details = $row['details'] ?? [];
+                $type = $row['type'] ?? 'fnb';
+                $outletName = $row['outlet_name'] ?? null;
                 
                 $deductions = $details['deductions'] ?? [];
                 $bpjsTK = (float) ($deductions['bpjs_tk'] ?? 0);
@@ -57,7 +59,8 @@ class ProcessPayrollImport implements ShouldQueue
                 $otherDeductions = $totalDeductions - $knownDeductions;
                 if ($otherDeductions < 0) $otherDeductions = 0;
 
-                $calculatedNetSalary = $grossSalary - $totalDeductions;
+                // Trust Excel's net salary if provided, otherwise calculate
+                $netSalary = $row['net_salary'] ?? ($grossSalary - $totalDeductions);
 
                 \App\Models\Payroll::updateOrCreate(
                     [
@@ -65,12 +68,14 @@ class ProcessPayrollImport implements ShouldQueue
                         'period' => $periodString,
                     ],
                     [
+                        'type' => $type,
+                        'outlet_name' => $outletName,
                         'basic_salary' => $basicSalary,
                         'allowances' => $allowances,
                         'overtime_pay' => $overtime,
                         'gross_salary' => $grossSalary,
                         'total_deductions' => $totalDeductions,
-                        'net_salary' => $calculatedNetSalary,
+                        'net_salary' => $netSalary,
                         'details' => $details,
                         'status' => 'draft',
                         'bpjs_kesehatan' => 0, 
