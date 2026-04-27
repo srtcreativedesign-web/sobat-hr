@@ -580,9 +580,9 @@ class PayrollFnbController extends Controller
 
         $request->validate([
             'status' => 'required|in:draft,approved,paid',
-            'approval_signature' => 'nullable|string', // Base64 string
-            'notes' => 'nullable|string',
-        ]);
+            'approval_signature' => 'nullable|string',
+            'notes' => 'nullable|string', // Base64 string
+                    ]);
 
         $payroll = PayrollFnb::findOrFail($id);
         

@@ -476,9 +476,9 @@ if ($headerRowIndex === -1) {
          $request->validate([
             'status' => 'required|in:draft,approved,paid',
             'approval_signature' => 'nullable|string',
-        ]);
             'notes' => 'nullable|string',
-
+        ]);
+            
         $payroll = PayrollHans::findOrFail($id);
         
         $data = ['status' => $request->status];

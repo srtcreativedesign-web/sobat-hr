@@ -291,9 +291,9 @@ class PayrollCellullerController extends Controller
          $request->validate([
             'status' => 'required|in:draft,approved,paid',
             'approval_signature' => 'nullable|string',
-        ]);
             'notes' => 'nullable|string',
-
+        ]);
+            
         $payroll = PayrollCelluller::findOrFail($id);
         
         $data = ['status' => $request->status];

@@ -526,9 +526,9 @@ class PayrollMmController extends Controller
          $request->validate([
             'status' => 'required|in:draft,approved,paid',
             'approval_signature' => 'nullable|string',
-        ]);
             'notes' => 'nullable|string',
-
+        ]);
+            
         $payroll = PayrollMm::findOrFail($id);
         
         $data = ['status' => $request->status];
