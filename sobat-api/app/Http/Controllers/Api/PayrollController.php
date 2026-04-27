@@ -490,6 +490,16 @@ class PayrollController extends Controller
             
             Log::info('Column Mapping Detected', $columnMapping);
             
+            // Debug: log first data row values for critical fields
+            $debugRow = $headerRowIndex + 2;
+            $debugData = [];
+            foreach (['payroll', 'grand_total', 'bpjs_tk', 'total_gaji_bonus', 'kehadiran_jumlah', 'transport_jumlah'] as $debugKey) {
+                $debugCol = $columnMapping[$debugKey] ?? 'NOT_FOUND';
+                $debugVal = $debugCol !== 'NOT_FOUND' ? $getCellValue($debugCol, $debugRow) : 'N/A';
+                $debugData[$debugKey] = "Col=$debugCol Val=$debugVal";
+            }
+            Log::info('DEBUG FIRST ROW VALUES', $debugData);
+            
             // Detect Outlet Name and Type
             $firstCell = $sheet->getCell('A1')->getValue();
             $outletName = null;
