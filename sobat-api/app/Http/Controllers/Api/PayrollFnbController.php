@@ -409,7 +409,7 @@ class PayrollFnbController extends Controller
                     'insentif_kehadiran' => $insentifKehadiran,
                     'holiday_allowance' => $holidayAllowance,
                     'adjustment' => $adjustment,
-                    'total_salary_2' => $totalSalary2,
+                    'total_salary_2' => $grossSalary, // Frontend uses total_salary_2 as gross_salary
                     'policy_ho' => $policyHo,
                     
                     // Deductions
@@ -425,7 +425,6 @@ class PayrollFnbController extends Controller
                     'grand_total' => $grandTotal,
                     'ewa_amount' => $ewa,
                     'net_salary' => $netSalary,
-                    'gross_salary' => $grossSalary,
                 ];
                 
                 $dataRows[] = $parsed;
@@ -478,7 +477,7 @@ class PayrollFnbController extends Controller
                 }
                 
                 // Debug log the data being saved
-                \Illuminate\Support\Facades\Log::info('FnB Payroll Save Data', [
+                Log::info('FnB Payroll Save Data', [
                     'employee_id' => $employee->id,
                     'employee_name' => $row['employee_name'],
                     'data_keys' => array_keys($row),
