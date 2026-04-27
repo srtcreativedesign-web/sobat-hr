@@ -833,6 +833,7 @@ class PayrollController extends Controller
         if ($request->has('approval_signature')) {
             $updateData['approval_signature'] = $request->approval_signature;
             $updateData['signer_name'] = $request->signer_name;
+            $updateData['notes'] = $request->notes;
             $updateData['approved_by'] = auth()->id();
         }
 
