@@ -63,10 +63,22 @@ class PayrollMaximum extends Model
         'thp',
         'stafbook_loan',
         'net_salary',
+        
+        // Status & Approvals
+        'status',
+        'notes',
+        'approved_by',
+        'approval_signature',
+        'signer_name',
     ];
 
     public function employee()
     {
         return $this->belongsTo(Employee::class);
+    }
+    
+    public function approver()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'approved_by');
     }
 }
