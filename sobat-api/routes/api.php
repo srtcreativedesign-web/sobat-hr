@@ -134,6 +134,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollFnbController::class, 'generateSlip']); // Added FnB slip route
     });
 
+    // Tungtau Payroll routes
+    Route::prefix('payrolls/tungtau')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\PayrollTungtauController::class, 'index']);
+        Route::post('/import', [App\Http\Controllers\Api\PayrollTungtauController::class, 'import']);
+        Route::post('/import/save', [App\Http\Controllers\Api\PayrollTungtauController::class, 'saveImport']);
+        Route::get('/{id}', [App\Http\Controllers\Api\PayrollTungtauController::class, 'show']);
+        Route::patch('/{id}/status', [App\Http\Controllers\Api\PayrollTungtauController::class, 'updateStatus']);
+        Route::delete('/{id}', [App\Http\Controllers\Api\PayrollTungtauController::class, 'destroy']);
+        Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollTungtauController::class, 'generateSlip']);
+    });
+
     // Minimarket Payroll routes
     Route::prefix('payrolls/mm')->group(function () {
         Route::get('/', [App\Http\Controllers\Api\PayrollMmController::class, 'index']);

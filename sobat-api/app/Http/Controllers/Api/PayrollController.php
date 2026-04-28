@@ -819,7 +819,7 @@ class PayrollController extends Controller
         $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'integer',
-            'division' => 'nullable|string|in:office,fnb,minimarket,reflexiology,wrapping,hans,cellular,money_changer',
+            'division' => 'nullable|string|in:office,fnb,minimarket,reflexiology,wrapping,hans,cellular,money_changer,tungtau',
             'approval_signature' => 'nullable|string',
             'notes' => 'nullable|string',
             'signer_name' => 'nullable|string',
@@ -845,6 +845,7 @@ class PayrollController extends Controller
         if ($division === 'hans') $model = \App\Models\PayrollHans::class;
         if ($division === 'cellular') $model = \App\Models\PayrollCelluller::class;
         if ($division === 'money_changer') $model = \App\Models\PayrollMoneyChanger::class;
+        if ($division === 'tungtau') $model = \App\Models\PayrollTungtau::class;
 
         // Pending status varies: 'draft' or 'pending'
         // Generic uses 'draft', others use 'pending'. Let's handle both or check model.
