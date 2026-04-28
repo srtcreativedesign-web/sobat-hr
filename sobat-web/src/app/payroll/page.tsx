@@ -1046,6 +1046,10 @@ export default function PayrollPage() {
                           {Object.entries(selectedPayroll.deductions).map(([key, value]: [string, any]) => {
                             const numValue = parseFloat(value);
                             if (!numValue || numValue === 0) return null;
+                            
+                            // Skip EWA/Stafbook from general deductions as it's shown at the end
+                            if (key.toLowerCase().includes('ewa') || key.toLowerCase().includes('stafbook') || key.toLowerCase() === 'pinjaman') return null;
+
 
                             return (
                               <div key={key} className="flex justify-between text-sm">
