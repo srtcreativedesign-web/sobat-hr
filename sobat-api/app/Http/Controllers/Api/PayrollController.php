@@ -819,7 +819,7 @@ class PayrollController extends Controller
         $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'integer',
-            'division' => 'nullable|string|in:office,fnb,minimarket,reflexiology,wrapping,hans,cellular,money_changer,tungtau',
+            'division' => 'nullable|string|in:office,fnb,minimarket,reflexiology,wrapping,hans,cellular,money_changer,tungtau,maximum',
             'approval_signature' => 'nullable|string',
             'notes' => 'nullable|string',
             'signer_name' => 'nullable|string',
@@ -846,6 +846,7 @@ class PayrollController extends Controller
         if ($division === 'cellular') $model = \App\Models\PayrollCelluller::class;
         if ($division === 'money_changer') $model = \App\Models\PayrollMoneyChanger::class;
         if ($division === 'tungtau') $model = \App\Models\PayrollTungtau::class;
+        if ($division === 'maximum') $model = \App\Models\PayrollMaximum::class;
 
         // Pending status varies: 'draft' or 'pending'
         // Generic uses 'draft', others use 'pending'. Let's handle both or check model.
@@ -956,7 +957,7 @@ class PayrollController extends Controller
     {
         $request->validate([
             'period' => 'required|string', // YYYY-MM
-            'division' => 'required|string', // all, office, hans, fnb, mm, ref, wrapping
+            'division' => 'required|string', // all, office, hans, fnb, maximum, mm, ref, wrapping, tungtau
         ]);
 
         $period = $request->period;
@@ -1138,6 +1139,12 @@ class PayrollController extends Controller
             };
 
             // Switch Divisions
+            if ($division === 'all' || $division === 'maximum') {
+                $processDivision(\App\Models\PayrollMaximum::class, 'payslips.maximum', 'Maximum600');
+            }
+            if ($division === 'all' || $division === 'tungtau') {
+                $processDivision(\App\Models\PayrollTungtau::class, 'payslips.tungtau', 'Tungtau');
+            }
             if ($division === 'all' || $division === 'hans') {
                 $processDivision(\App\Models\PayrollHans::class, 'payslips.hans', 'Hans');
             }
