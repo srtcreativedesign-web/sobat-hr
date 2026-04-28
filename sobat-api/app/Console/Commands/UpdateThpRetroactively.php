@@ -12,64 +12,64 @@ class UpdateThpRetroactively extends Command
      *
      * @var string
      */
-    protected \$signature = 'payroll:update-thp';
+    protected $signature = 'payroll:update-thp';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected \$description = 'Retroactively calculates and updates the THP column for all existing payroll records across all divisions.';
+    protected $description = 'Retroactively calculates and updates the THP column for all existing payroll records across all divisions.';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        \$this->info('Starting retroactive THP update...');
+        $this->info('Starting retroactive THP update...');
 
         // 1. FnB (THP = net_salary + ewa_amount)
-        \$fnbCount = DB::table('payroll_fnbs')->update([
+        $fnbCount = DB::table('payroll_fnbs')->update([
             'thp' => DB::raw('net_salary + ewa_amount')
         ]);
-        \$this->info("Updated \$fnbCount records in payroll_fnbs.");
+        $this->info("Updated $fnbCount records in payroll_fnbs.");
 
         // 2. Minimarket (THP = net_salary + (ewa_amount > 0 ? ewa_amount : deduction_loan))
-        \$mmCount = DB::table('payrolls_mm')->update([
+        $mmCount = DB::table('payrolls_mm')->update([
             'thp' => DB::raw('net_salary + IF(ewa_amount > 0, ewa_amount, deduction_loan)')
         ]);
-        \$this->info("Updated \$mmCount records in payrolls_mm.");
+        $this->info("Updated $mmCount records in payrolls_mm.");
 
         // 3. Reflexiology
-        \$refCount = DB::table('payrolls_ref')->update([
+        $refCount = DB::table('payrolls_ref')->update([
             'thp' => DB::raw('net_salary + ewa_amount')
         ]);
-        \$this->info("Updated \$refCount records in payrolls_ref.");
+        $this->info("Updated $refCount records in payrolls_ref.");
 
         // 4. Wrapping
-        \$wrappingCount = DB::table('payrolls_wrapping')->update([
+        $wrappingCount = DB::table('payrolls_wrapping')->update([
             'thp' => DB::raw('net_salary + ewa_amount')
         ]);
-        \$this->info("Updated \$wrappingCount records in payrolls_wrapping.");
+        $this->info("Updated $wrappingCount records in payrolls_wrapping.");
 
         // 5. Hans (THP = net_salary + (ewa_amount > 0 ? ewa_amount : deduction_loan))
-        \$hansCount = DB::table('payrolls_hans')->update([
+        $hansCount = DB::table('payrolls_hans')->update([
             'thp' => DB::raw('net_salary + IF(ewa_amount > 0, ewa_amount, deduction_loan)')
         ]);
-        \$this->info("Updated \$hansCount records in payrolls_hans.");
+        $this->info("Updated $hansCount records in payrolls_hans.");
 
         // 6. Cellular (THP = final_payment + ewa_amount)
-        \$cellularCount = DB::table('payroll_cellullers')->update([
+        $cellularCount = DB::table('payroll_cellullers')->update([
             'thp' => DB::raw('final_payment + ewa_amount')
         ]);
-        \$this->info("Updated \$cellularCount records in payroll_cellullers.");
+        $this->info("Updated $cellularCount records in payroll_cellullers.");
 
         // 7. Money Changer
-        \$mcCount = DB::table('payrolls_money_changer')->update([
+        $mcCount = DB::table('payrolls_money_changer')->update([
             'thp' => DB::raw('net_salary + ewa_amount')
         ]);
-        \$this->info("Updated \$mcCount records in payrolls_money_changer.");
+        $this->info("Updated $mcCount records in payrolls_money_changer.");
 
-        \$this->info('THP update completed successfully!');
+        $this->info('THP update completed successfully!');
     }
 }
