@@ -203,14 +203,15 @@ class PayrollFnbController extends Controller
                 'transport_jumlah' => [['Transport', 'Jumlah']],
                 'kesehatan' => ['Tunj. Kesehatan'],
                 'jabatan' => ['Tunj. Jabatan'],
-                'total_gaji' => [['Total Gaji', '( Rp )']],
+                'total_gaji' => ['Total Gaji            ( Rp )', 'Total Gaji'],
                 'lembur_rate' => [['Lembur', '/ Jam']],
                 'lembur_jam' => [['Lembur', 'Jam']],
                 'lembur_jumlah' => [['Lembur', 'Jumlah']],
                 'backup' => ['Backup'],
                 'insentif_kehadiran' => ['Insentif Kehadrian', 'Insentif Kehadiran'],
                 'insentif_lebaran' => ['Insentif Lebaran'],
-                'total_gaji_bonus' => ['Total Gaji & Bonus'],
+                'insentif' => ['Insentif '], // Added for Max 600
+                'total_gaji_bonus' => ['Total Gaji    (Rp)', 'Total Gaji & Bonus'],
                 'kebijakan_ho' => ['Kebijakan'],
                 'absen_count' => ['Absen 1x'],
                 'absen' => ['Absen 1X'],
@@ -245,15 +246,19 @@ class PayrollFnbController extends Controller
             }
             
             $columnMapping = [];
+            $lastHeader = '';
+            $usedColumns = []; // Track used columns to prevent double-mapping (like U for both rate and jam)
+            
             foreach ($colOrder as $idx => $col) {
                 $headerValue = $allHeaders[$col];
                 $unitsValue = $allSubs[$col];
                 
-                // Merged cell support: inherit header from previous column if empty
-                $effectiveHeader = $headerValue;
-                if (empty($effectiveHeader) && $idx > 0) {
-                    $prevCol = $colOrder[$idx - 1];
-                    $effectiveHeader = $allHeaders[$prevCol];
+                // Proper merged cell resolution
+                if (!empty($headerValue)) {
+                    $lastHeader = $headerValue;
+                    $effectiveHeader = $headerValue;
+                } else {
+                    $effectiveHeader = $lastHeader;
                 }
                 
                 foreach ($headerPatterns as $key => $patterns) {
@@ -267,17 +272,24 @@ class PayrollFnbController extends Controller
                             $headerMatch = $effectiveHeader && stripos($effectiveHeader, $pattern[0]) !== false;
                             $unitsMatch = $unitsValue && stripos($unitsValue, $pattern[1]) !== false;
                             
-                            if ($headerMatch && $unitsMatch) {
+                            // Prevent 'Jam' matching '/ Jam' by checking exact match if pattern is exactly 'Jam'
+                            if ($pattern[1] === 'Jam' && $unitsMatch && stripos($unitsValue, '/ Jam') !== false) {
+                                $unitsMatch = false; // It's '/ Jam', not 'Jam'
+                            }
+                            
+                            if ($headerMatch && $unitsMatch && !in_array($col, $usedColumns)) {
                                 $columnMapping[$key] = $col;
+                                $usedColumns[] = $col;
                                 break;
                             }
                         } else {
                             // Single check: header OR sub-header
-                            $matchedHeader = $headerValue && stripos($headerValue, $pattern) !== false;
+                            $matchedHeader = $effectiveHeader && stripos($effectiveHeader, $pattern) !== false;
                             $matchedSub = $unitsValue && stripos($unitsValue, $pattern) !== false;
                             
-                            if ($matchedHeader || $matchedSub) {
+                            if (($matchedHeader || $matchedSub) && !in_array($col, $usedColumns)) {
                                 $columnMapping[$key] = $col;
+                                $usedColumns[] = $col;
                                 break;
                             }
                         }
@@ -336,6 +348,7 @@ class PayrollFnbController extends Controller
                 $overtimeAmount = $getCellValue($columnMapping['lembur_jumlah'] ?? null, $row);
                 
                 $backup = $getCellValue($columnMapping['backup'] ?? null, $row);
+                $insentif = $getCellValue($columnMapping['insentif'] ?? null, $row); // For max 600
                 $insentifKehadiran = $getCellValue($columnMapping['insentif_kehadiran'] ?? null, $row);
                 $holidayAllowance = $getCellValue($columnMapping['insentif_lebaran'] ?? null, $row);
                 $adjustment = $getCellValue($columnMapping['adjustment'] ?? null, $row);
@@ -371,7 +384,7 @@ class PayrollFnbController extends Controller
                 } elseif ($totalSalary1 > 0) {
                     $grossSalary = $totalSalary1;
                 } else {
-                    $grossSalary = $basicSalary + $attendanceAmount + $transportAmount + $healthAllowance + $positionAllowance + $overtimeAmount + $holidayAllowance + $adjustment + $backup + $insentifKehadiran;
+                    $grossSalary = $basicSalary + $attendanceAmount + $transportAmount + $healthAllowance + $positionAllowance + $overtimeAmount + $holidayAllowance + $adjustment + $backup + $insentifKehadiran + $insentif;
                 }
                 
                 $parsed = [
