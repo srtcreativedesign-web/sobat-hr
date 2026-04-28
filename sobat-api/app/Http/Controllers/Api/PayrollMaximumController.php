@@ -102,6 +102,10 @@ class PayrollMaximumController extends Controller
                 'BPJS TK' => $payroll->deduction_bpjs_tk,
             ];
             
+            // Add extra fields
+            $formatted['ewa_amount'] = $payroll->stafbook_loan;
+            $formatted['thp'] = $payroll->thp;
+            
             // Add attendance data
             $formatted['attendance'] = [
                 'Total Hari' => $payroll->days_total,
@@ -568,6 +572,10 @@ class PayrollMaximumController extends Controller
             'Adm Bank' => $payroll->deduction_admin_fee,
             'BPJS TK' => $payroll->deduction_bpjs_tk,
         ];
+        
+        // Add extra fields
+        $formatted['ewa_amount'] = $payroll->stafbook_loan;
+        $formatted['thp'] = $payroll->thp;
         
         // Add attendance data
         $formatted['attendance'] = [
