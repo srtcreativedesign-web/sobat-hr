@@ -28,11 +28,19 @@ class UpdateThpRetroactively extends Command
     {
         $this->info('Starting retroactive THP update...');
 
+        // Ensure payroll_fnb has thp column (it was missed in previous migration due to typo)
+        if (\Illuminate\Support\Facades\Schema::hasTable('payroll_fnb') && !\Illuminate\Support\Facades\Schema::hasColumn('payroll_fnb', 'thp')) {
+            \Illuminate\Support\Facades\Schema::table('payroll_fnb', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->decimal('thp', 15, 2)->default(0)->after('net_salary');
+            });
+            $this->info('Added missing thp column to payroll_fnb.');
+        }
+
         // 1. FnB (THP = net_salary + ewa_amount)
-        $fnbCount = DB::table('payroll_fnbs')->update([
+        $fnbCount = DB::table('payroll_fnb')->update([
             'thp' => DB::raw('net_salary + ewa_amount')
         ]);
-        $this->info("Updated $fnbCount records in payroll_fnbs.");
+        $this->info("Updated $fnbCount records in payroll_fnb.");
 
         // 2. Minimarket (THP = net_salary + (ewa_amount > 0 ? ewa_amount : deduction_loan))
         $mmCount = DB::table('payrolls_mm')->update([
