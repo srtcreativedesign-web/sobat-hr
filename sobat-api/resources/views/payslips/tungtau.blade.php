@@ -232,7 +232,7 @@
         
          @if($payroll->deduction_loan > 0)
         <tr>
-            <td>Kasbon / Pinjaman</td>
+            <td>Potongan Stafbook</td>
             <td class="amount">Rp {{ number_format($payroll->deduction_loan, 0, ',', '.') }}</td>
         </tr>
         @endif

@@ -1073,7 +1073,7 @@ export default function PayrollPage() {
                       )}
 
                       {/* EWA Display (for FnB/MM/Ref/Wrapping only, Hans excluded) */}
-                      {(selectedDivision === 'tungtau' || selectedDivision === 'fnb' || selectedDivision === 'minimarket' || selectedDivision === 'reflexiology' || selectedDivision === 'wrapping') && selectedPayroll.ewa_amount && (
+                      {(selectedDivision === 'tungtau' || selectedDivision === 'fnb' || selectedDivision === 'minimarket' || selectedDivision === 'reflexiology' || selectedDivision === 'wrapping') && parseFloat(selectedPayroll.ewa_amount) > 0 && (
                         <div className="bg-red-50 p-2 rounded-lg mt-2">
                           <div className="text-xs font-semibold text-red-700 mb-1">EWA (Kasbon)</div>
                           <div className="flex justify-between text-sm">
@@ -1102,7 +1102,7 @@ export default function PayrollPage() {
                       <p className="text-indigo-100 text-xs font-medium uppercase tracking-wider">Grand Total</p>
                       <p className="text-2xl font-bold">{formatCurrency(selectedPayroll.net_salary)}</p>
                     </div>
-                    {selectedDivision === 'cellular' && selectedPayroll.ewa_amount && (
+                    {selectedDivision === 'cellular' && parseFloat(selectedPayroll.ewa_amount) > 0 && (
                       <div className="text-right">
                         <p className="text-indigo-100 text-xs font-medium uppercase tracking-wider">EWA (Kasbon)</p>
                         <p className="text-xl font-semibold opacity-90">-{formatCurrency(typeof selectedPayroll.ewa_amount === 'string' ? parseFloat(selectedPayroll.ewa_amount) : selectedPayroll.ewa_amount)}</p>

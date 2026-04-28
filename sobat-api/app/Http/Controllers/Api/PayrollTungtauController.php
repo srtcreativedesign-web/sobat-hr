@@ -98,7 +98,7 @@ class PayrollTungtauController extends Controller
                 'Potongan Absen' => $payroll->deduction_absent,
                 'Terlambat' => $payroll->deduction_late,
                 'Selisih SO' => $payroll->deduction_shortage,
-                'Pinjaman' => $payroll->deduction_loan,
+                'Potongan Stafbook' => $payroll->deduction_loan,
                 'Adm Bank' => $payroll->deduction_admin_fee,
                 'BPJS TK' => $payroll->deduction_bpjs_tk,
             ];
@@ -551,7 +551,7 @@ class PayrollTungtauController extends Controller
             'Potongan Absen' => $payroll->deduction_absent,
             'Terlambat' => $payroll->deduction_late,
             'Selisih SO' => $payroll->deduction_shortage,
-            'Pinjaman' => $payroll->deduction_loan,
+            'Potongan Stafbook' => $payroll->deduction_loan,
             'Adm Bank' => $payroll->deduction_admin_fee,
             'BPJS TK' => $payroll->deduction_bpjs_tk,
         ];
@@ -665,7 +665,7 @@ class PayrollTungtauController extends Controller
                 'Potongan Absen' => $payroll->deduction_absent,
                 'Terlambat' => $payroll->deduction_late,
                 'Selisih SO' => $payroll->deduction_shortage,
-                'Pinjaman' => $payroll->deduction_loan,
+                'Potongan Stafbook' => $payroll->deduction_loan,
                 'Adm Bank' => $payroll->deduction_admin_fee,
                 'BPJS TK' => $payroll->deduction_bpjs_tk,
             ];
