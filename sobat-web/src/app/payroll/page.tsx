@@ -419,7 +419,7 @@ export default function PayrollPage() {
     }
     
     // Add EWA if applicable
-    if (['fnb', 'tungtau', 'minimarket', 'reflexiology', 'wrapping'].includes(selectedDivision) && payroll.ewa_amount) {
+    if (['fnb', 'tungtau', 'maximum', 'minimarket', 'reflexiology', 'wrapping'].includes(selectedDivision) && payroll.ewa_amount) {
       baseDeduction += parseFloat(payroll.ewa_amount) || 0;
     }
     
@@ -431,7 +431,7 @@ export default function PayrollPage() {
     if (selectedDivision === 'wrapping') {
       return parseFloat(payroll.total_salary_gross) || 0;
     }
-    if (['fnb', 'tungtau', 'minimarket', 'reflexiology', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) {
+    if (['fnb', 'tungtau', 'maximum', 'minimarket', 'reflexiology', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) {
       // For FnB/MM/Ref, use total_salary_2 which includes everything
       return parseFloat(payroll.total_salary_2) || 0;
     }
@@ -525,6 +525,7 @@ export default function PayrollPage() {
               <option value="all">Semua Divisi (Bulk Download)</option>
               <option value="office">Office (Pusat)</option>
               <option value="fnb">FnB</option>\n              <option value="tungtau">FnB Tungtau</option>
+            <option value="maximum">FnB Maximum 600</option>
               <option value="minimarket">Minimarket</option>
               <option value="reflexiology">Reflexiology</option>
               <option value="wrapping">Wrapping</option>
@@ -1073,7 +1074,7 @@ export default function PayrollPage() {
                       )}
 
                       {/* EWA Display (for FnB/MM/Ref/Wrapping only, Hans excluded) */}
-                      {(selectedDivision === 'tungtau' || selectedDivision === 'fnb' || selectedDivision === 'minimarket' || selectedDivision === 'reflexiology' || selectedDivision === 'wrapping') && parseFloat(selectedPayroll.ewa_amount) > 0 && (
+                      {(selectedDivision === 'tungtau' || selectedDivision === 'maximum' || selectedDivision === 'fnb' || selectedDivision === 'minimarket' || selectedDivision === 'reflexiology' || selectedDivision === 'wrapping') && parseFloat(selectedPayroll.ewa_amount) > 0 && (
                         <div className="bg-red-50 p-2 rounded-lg mt-2">
                           <div className="text-xs font-semibold text-red-700 mb-1">EWA (Kasbon)</div>
                           <div className="flex justify-between text-sm">

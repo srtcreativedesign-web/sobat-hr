@@ -145,6 +145,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollTungtauController::class, 'generateSlip']);
     });
 
+    // Maximum 600 Payroll routes
+    Route::prefix('payrolls/maximum')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\PayrollMaximumController::class, 'index']);
+        Route::post('/import', [App\Http\Controllers\Api\PayrollMaximumController::class, 'import']);
+        Route::post('/import/save', [App\Http\Controllers\Api\PayrollMaximumController::class, 'saveImport']);
+        Route::get('/{id}', [App\Http\Controllers\Api\PayrollMaximumController::class, 'show']);
+        Route::patch('/{id}/status', [App\Http\Controllers\Api\PayrollMaximumController::class, 'updateStatus']);
+        Route::delete('/{id}', [App\Http\Controllers\Api\PayrollMaximumController::class, 'destroy']);
+        Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollMaximumController::class, 'generateSlip']);
+    });
+
     // Minimarket Payroll routes
     Route::prefix('payrolls/mm')->group(function () {
         Route::get('/', [App\Http\Controllers\Api\PayrollMmController::class, 'index']);
