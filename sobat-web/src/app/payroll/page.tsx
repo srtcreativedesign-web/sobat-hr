@@ -107,6 +107,7 @@ export default function PayrollPage() {
       let endpoint = '';
       if (selectedDivision === 'office') endpoint = '/payrolls/ho';
       if (selectedDivision === 'fnb') endpoint = '/payrolls/fnb';
+      if (selectedDivision === 'maximum') endpoint = '/payrolls/maximum';
     if (selectedDivision === 'tungtau') endpoint = '/payrolls/tungtau';
       if (selectedDivision === 'minimarket') endpoint = '/payrolls/mm';
       if (selectedDivision === 'reflexiology') endpoint = '/payrolls/ref';
@@ -215,7 +216,8 @@ export default function PayrollPage() {
       let importEndpoint = '';
       if (selectedDivision === 'office') importEndpoint = '/payrolls/ho/import'; // Use HO endpoint
       if (selectedDivision === 'fnb') importEndpoint = '/payrolls/fnb/import';
-    if (selectedDivision === 'tungtau') importEndpoint = '/payrolls/tungtau/import';
+      if (selectedDivision === 'maximum') importEndpoint = '/payrolls/maximum/import';
+      if (selectedDivision === 'tungtau') importEndpoint = '/payrolls/tungtau/import';
       if (selectedDivision === 'minimarket') importEndpoint = '/payrolls/mm/import';
       if (selectedDivision === 'reflexiology') importEndpoint = '/payrolls/ref/import';
       if (selectedDivision === 'wrapping') importEndpoint = '/payrolls/wrapping/import';
@@ -282,6 +284,7 @@ export default function PayrollPage() {
         // Single Approve
         let endpoint = `/payrolls/${pendingApprovalId}/status`;
         if (selectedDivision === 'fnb') endpoint = `/payrolls/fnb/${pendingApprovalId}/status`;
+        if (selectedDivision === 'maximum') endpoint = `/payrolls/maximum/${pendingApprovalId}/status`;
         if (selectedDivision === 'tungtau') endpoint = `/payrolls/tungtau/${pendingApprovalId}/status`;
         if (selectedDivision === 'minimarket') endpoint = `/payrolls/mm/${pendingApprovalId}/status`;
         if (selectedDivision === 'reflexiology') endpoint = `/payrolls/ref/${pendingApprovalId}/status`;
@@ -760,7 +763,9 @@ export default function PayrollPage() {
                           <button
                             onClick={async () => {
                               try {
-                                const endpoint = selectedDivision === 'tungtau'
+                                const endpoint = selectedDivision === 'maximum'
+                                  ? `/payrolls/maximum/${payroll.id}/slip`
+                                  : selectedDivision === 'tungtau'
                                   ? `/payrolls/tungtau/${payroll.id}/slip`
                                   : selectedDivision === 'fnb'
                                   ? `/payrolls/fnb/${payroll.id}/slip`
@@ -1139,7 +1144,9 @@ export default function PayrollPage() {
                   <button
                     onClick={async () => {
                       try {
-                        const endpoint = selectedDivision === 'tungtau'
+                        const endpoint = selectedDivision === 'maximum'
+                          ? `/payrolls/maximum/${selectedPayroll.id}/slip`
+                          : selectedDivision === 'tungtau'
                           ? `/payrolls/tungtau/${selectedPayroll.id}/slip`
                           : selectedDivision === 'fnb'
                           ? `/payrolls/fnb/${selectedPayroll.id}/slip`
@@ -1427,6 +1434,7 @@ export default function PayrollPage() {
                             let saveEndpoint = '/payrolls/import/save';
                             if (selectedDivision === 'office') saveEndpoint = '/payrolls/ho/import/save';
                             if (selectedDivision === 'fnb') saveEndpoint = '/payrolls/fnb/import/save';
+                            if (selectedDivision === 'maximum') saveEndpoint = '/payrolls/maximum/import/save';
                             if (selectedDivision === 'tungtau') saveEndpoint = '/payrolls/tungtau/import/save';
                             if (selectedDivision === 'minimarket') saveEndpoint = '/payrolls/mm/import/save';
                             if (selectedDivision === 'reflexiology') saveEndpoint = '/payrolls/ref/import/save';
