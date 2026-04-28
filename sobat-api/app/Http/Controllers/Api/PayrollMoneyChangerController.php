@@ -334,6 +334,7 @@ if ($headerRowIndex === -1) {
                     'grand_total' => $getMappedValue('grand_total', $row),
                     'ewa_amount' => $getMappedValue('ewa_amount', $row),
                     'net_salary' => $getMappedValue('net_salary', $row),
+                    'thp' => (float)$getMappedValue('net_salary', $row) + (float)$getMappedValue('ewa_amount', $row),
                     
                     'years_of_service' => $getMappedValue('years_of_service', $row) ?: ($getCol('years_of_service') ? $sheet->getCell($getCol('years_of_service') . $row)->getValue() : null),
                     'notes' => $getMappedValue('notes', $row) ?: ($getCol('notes') ? $sheet->getCell($getCol('notes') . $row)->getValue() : null),

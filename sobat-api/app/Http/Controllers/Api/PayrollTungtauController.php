@@ -103,6 +103,9 @@ class PayrollTungtauController extends Controller
                 'BPJS TK' => $payroll->deduction_bpjs_tk,
             ];
             
+            // Add extra fields
+            $formatted['thp'] = $payroll->net_salary + $payroll->ewa_amount;
+            
             // Add attendance data
             $formatted['attendance'] = [
                 'Total Hari' => $payroll->days_total,
@@ -555,6 +558,9 @@ class PayrollTungtauController extends Controller
             'Adm Bank' => $payroll->deduction_admin_fee,
             'BPJS TK' => $payroll->deduction_bpjs_tk,
         ];
+        
+        // Add extra fields
+        $formatted['thp'] = $payroll->net_salary + $payroll->ewa_amount;
         
         // Add attendance data
         $formatted['attendance'] = [

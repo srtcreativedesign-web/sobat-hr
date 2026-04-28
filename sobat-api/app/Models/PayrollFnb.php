@@ -60,6 +60,7 @@ class PayrollFnb extends Model
         'grand_total',
         'ewa_amount',
         'net_salary',
+        'thp',
         
         // Metadata
         'status',

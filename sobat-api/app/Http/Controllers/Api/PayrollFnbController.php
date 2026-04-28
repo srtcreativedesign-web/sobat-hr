@@ -101,6 +101,9 @@ class PayrollFnbController extends Controller
                 'BPJS TK' => $payroll->deduction_bpjs_tk,
             ];
             
+            // Add extra fields
+            $formatted['thp'] = $payroll->thp;
+            
             // Add attendance data
             $formatted['attendance'] = [
                 'Total Hari' => $payroll->days_total,
@@ -564,6 +567,9 @@ class PayrollFnbController extends Controller
             'Adm Bank' => $payroll->deduction_admin_fee,
             'BPJS TK' => $payroll->deduction_bpjs_tk,
         ];
+        
+        // Add extra fields
+        $formatted['thp'] = $payroll->thp;
         
         // Add attendance data
         $formatted['attendance'] = [

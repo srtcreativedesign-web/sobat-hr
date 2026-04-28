@@ -212,9 +212,9 @@ class PayrollWrappingController extends Controller
                 'total gaji & bonus' => 'total_salary_gross',
                 'adj gaji' => 'adj_bpjs',
                 'potongan' => 'deductions_header',
-                'grand total' => 'net_salary',
+                'grand total' => 'thp',
                 'pinjaman ewa' => 'ewa_amount',
-                'payroll' => 'payroll_final',
+                'payroll' => 'net_salary',
             ];
             
             // Subheader labels (Row headerRowIndex+1)
@@ -415,6 +415,7 @@ class PayrollWrappingController extends Controller
                     'deduction_total' => $getMappedValue('deduction_total', $row),
                     
                     // Finals
+                    'thp' => $getMappedValue('thp', $row),
                     'net_salary' => $getMappedValue('net_salary', $row),
                     'ewa_amount' => $getMappedValue('ewa_amount', $row),
                 ];

@@ -251,25 +251,30 @@
         </tr>
         @endif
 
-        @if($payroll->ewa_amount > 0)
-        <tr>
-            <td>EWA (Kasbon)</td>
-            <td class="amount">Rp {{ number_format($payroll->ewa_amount, 0, ',', '.') }}</td>
-        </tr>
-        @endif
+        
         
         <tr style="height: 5px;"></tr>
         <tr>
             <td style="font-weight: bold; color: #d32f2f;">TOTAL POTONGAN</td>
-            <td class="amount" style="font-weight: bold; color: #d32f2f;">(Rp {{ number_format($payroll->total_deductions + $payroll->ewa_amount, 0, ',', '.') }})</td>
+            <td class="amount" style="font-weight: bold; color: #d32f2f;">(Rp {{ number_format($payroll->total_deductions , 0, ',', '.') }})</td>
         </tr>
     </table>
 
-    <div class="total-section">
+        <div class="total-section">
         <table style="width: 100%;">
             <tr>
-                <td style="font-size: 14px; font-weight: bold;">GAJI BERSIH (NET SALARY)</td>
-                <td style="font-size: 16px; font-weight: bold; text-align: right;">Rp {{ number_format($payroll->net_salary, 0, ',', '.') }}</td>
+                <td style="font-size: 12px; font-weight: bold; color: #333;">TOTAL PENDAPATAN (THP)</td>
+                <td style="font-size: 14px; font-weight: bold; text-align: right;">Rp {{ number_format($payroll->thp, 0, ',', '.') }}</td>
+            </tr>
+            @if($payroll->ewa_amount > 0)
+            <tr>
+                <td style="font-size: 12px; font-weight: bold; color: #d32f2f;">POTONGAN STAFBOOK (EWA)</td>
+                <td style="font-size: 14px; font-weight: bold; color: #d32f2f; text-align: right;">-Rp {{ number_format($payroll->ewa_amount, 0, ',', '.') }}</td>
+            </tr>
+            @endif
+            <tr>
+                <td style="font-size: 14px; font-weight: bold; padding-top: 5px;">TOTAL DITRANSFER</td>
+                <td style="font-size: 16px; font-weight: bold; text-align: right; padding-top: 5px;">Rp {{ number_format(isset($payroll->final_payment) ? $payroll->final_payment : $payroll->net_salary, 0, ',', '.') }}</td>
             </tr>
         </table>
     </div>

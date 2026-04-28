@@ -44,6 +44,7 @@ class PayrollCelluller extends Model
         'deduction_bpjs_tk',
         'total_deduction',
         'net_salary',
+        'thp',
         'ewa_amount',
         'final_payment',
         'years_of_service',
