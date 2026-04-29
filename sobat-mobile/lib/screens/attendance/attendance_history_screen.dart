@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../config/theme.dart';
 import '../../services/attendance_service.dart';
+import '../../widgets/attendance_badge.dart';
 import 'attendance_screen.dart';
 
 class AttendanceHistoryScreen extends StatefulWidget {
@@ -222,32 +223,25 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
     // Status color
     Color statusColor;
-    String statusText;
 
     switch (item['status']) {
       case 'present':
         statusColor = Colors.green;
-        statusText = 'Hadir';
         break;
       case 'late':
         statusColor = Colors.orange;
-        statusText = 'Terlambat';
         break;
       case 'absent':
         statusColor = Colors.red;
-        statusText = 'Alpa';
         break;
       case 'leave':
         statusColor = Colors.blue;
-        statusText = 'Cuti'; // or Izin
         break;
       case 'sick':
         statusColor = Colors.purple;
-        statusText = 'Sakit';
         break;
       default:
         statusColor = Colors.grey;
-        statusText = item['status'] ?? '-';
     }
 
     return Container(
@@ -312,23 +306,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                         fontSize: 14,
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        statusText,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: statusColor,
-                        ),
-                      ),
+                    AttendanceBadge(
+                      status: item['status'] == 'late' 
+                        ? AttendanceStatus.late 
+                        : (item['status'] == 'absent' ? AttendanceStatus.absent : AttendanceStatus.onTime),
                     ),
                   ],
                 ),

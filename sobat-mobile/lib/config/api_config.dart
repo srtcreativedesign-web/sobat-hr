@@ -16,7 +16,7 @@ class ApiConfig {
   static const String _env = String.fromEnvironment('ENV', defaultValue: 'dev');
   static const String _devHost = String.fromEnvironment(
     'DEV_HOST',
-    defaultValue: '127.0.0.1',
+    defaultValue: '192.168.1.22',
   );
 
   /// Returns true if production mode:

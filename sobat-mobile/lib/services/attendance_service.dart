@@ -19,6 +19,7 @@ class AttendanceService extends BaseService {
     String? attendanceType,
     String? fieldNotes,
     String? trackType,
+    bool? isShifting,
   }) async {
     
 
@@ -43,6 +44,7 @@ class AttendanceService extends BaseService {
       if (notes != null && notes.isNotEmpty) map['notes'] = notes;
       if (attendanceType != null) map['attendance_type'] = attendanceType;
       if (trackType != null) map['track_type'] = trackType;
+      if (isShifting != null) map['is_shifting'] = isShifting ? 1 : 0;
       if (fieldNotes != null && fieldNotes.isNotEmpty) {
         map['field_notes'] = fieldNotes;
       }
@@ -125,12 +127,14 @@ class AttendanceService extends BaseService {
     String? status,
     String? notes,
     String? qrCodeData,
+    String? attendanceType,
+    String? fieldNotes,
   }) async {
 
     try {
       String fileName = photo.path.split('/').last;
 
-      FormData formData = FormData.fromMap({
+      Map<String, dynamic> map = {
         '_method': 'PUT',
         'check_out': checkOutTime,
         'status': status,
@@ -141,7 +145,12 @@ class AttendanceService extends BaseService {
           filename: fileName,
           contentType: MediaType('image', 'jpeg'),
         ),
-      });
+      };
+
+      if (attendanceType != null) map['attendance_type'] = attendanceType;
+      if (fieldNotes != null) map['field_notes'] = fieldNotes;
+
+      FormData formData = FormData.fromMap(map);
 
       final response = await dio.post(
         'attendances/$attendanceId',

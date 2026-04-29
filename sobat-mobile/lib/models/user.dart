@@ -21,6 +21,9 @@ class User {
   final double? officeLongitude;
   final int? officeRadius;
   final String? facePhotoPath;
+  final String? shiftName;
+  final String? shiftStartTime;
+  final String? shiftEndTime;
   final int approvalLevel;
 
   User({
@@ -47,6 +50,9 @@ class User {
     this.officeRadius,
     this.joinDateEditCount = 0,
     this.facePhotoPath,
+    this.shiftName,
+    this.shiftStartTime,
+    this.shiftEndTime,
     this.approvalLevel = 0,
   });
 
@@ -66,6 +72,9 @@ class User {
     int? rad;
     int editCount = 0;
     int appLevel = 0;
+    String? sName;
+    String? sStart;
+    String? sEnd;
 
     // Parse Approval Level (Root Level priority)
     if (json['approval_level'] != null) {
@@ -88,6 +97,14 @@ class User {
       jobLvl = json['employee']['job_level'];
       trk = json['employee']['track'];
       pos = json['employee']['position'];
+
+      // Parse Shift Name
+      if (json['employee']['shift'] != null && json['employee']['shift'] is Map) {
+        sName = json['employee']['shift']['name']?.toString();
+        sStart = json['employee']['shift']['start_time']?.toString();
+        sEnd = json['employee']['shift']['end_time']?.toString();
+      }
+
       if (json['employee']['join_date_edit_count'] != null) {
         editCount =
             int.tryParse(json['employee']['join_date_edit_count'].toString()) ??
@@ -182,6 +199,9 @@ class User {
               json['employee']['face_photo_path'] != null)
           ? json['employee']['face_photo_path']?.toString()
           : json['face_photo_path']?.toString(),
+      shiftName: sName,
+      shiftStartTime: sStart,
+      shiftEndTime: sEnd,
       approvalLevel: appLevel,
     );
   }
@@ -205,6 +225,9 @@ class User {
       'organization_id': organizationId,
       'join_date_edit_count': joinDateEditCount,
       'face_photo_path': facePhotoPath,
+      'shift_name': shiftName,
+      'shift_start_time': shiftStartTime,
+      'shift_end_time': shiftEndTime,
       'approval_level': approvalLevel,
     };
   }

@@ -26,6 +26,7 @@ import '../../services/notification_service.dart'; // Added for notif badge
 import '../attendance/offline_attendance_handler.dart'; // Added for operational track
 import '../../services/offline_attendance_service.dart';
 import '../finance/finance_coming_soon_screen.dart';
+import '../../widgets/attendance_badge.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -967,10 +968,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ApiConfig.getStorageUrl(user.avatar!) ?? '',
                                 )
                               : null,
-                          child: (user?.avatar == null || user!.avatar!.isEmpty)
+                          child: (user?.avatar == null || (user?.avatar?.isEmpty ?? true))
                               ? Text(
-                                  (user?.name.isNotEmpty == true)
-                                      ? user!.name[0].toUpperCase()
+                                  (user?.name != null && user!.name.isNotEmpty)
+                                      ? user.name[0].toUpperCase()
                                       : 'U',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
@@ -1084,8 +1085,6 @@ class _HomeScreenState extends State<HomeScreen> {
     ).format(now); // Full month name
 
     // Determine Status
-    String status = 'Belum Hadir';
-    Color statusColor = Colors.orange;
     String buttonText = 'Clock In Sekarang';
     IconData buttonIcon = Icons.login;
     bool isButtonDisabled = false;
@@ -1094,8 +1093,6 @@ class _HomeScreenState extends State<HomeScreen> {
     bool isWeekend =
         (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday);
     if (isWeekend) {
-      status = 'Libur Akhir Pekan';
-      statusColor = Colors.redAccent;
       isButtonDisabled = true;
       buttonText = 'Libur';
     }
@@ -1114,8 +1111,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (_todayAttendance != null) {
       if (_todayAttendance!['check_out'] != null) {
-        status = 'Sudah Selesai';
-        statusColor = Colors.lightGreenAccent;
         buttonText = 'Absen Selesai';
         isButtonDisabled = true;
         buttonIcon = Icons.check_circle;
@@ -1142,28 +1137,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
         if (statusStr == 'pending') {
           if (isLate) {
-            status = 'Telat - Menunggu Approval';
-            statusColor = Colors.orangeAccent;
             buttonText = 'Menunggu Approval';
             buttonIcon = Icons.timer;
             isButtonDisabled = true;
           } else {
-            status = 'Menunggu Approval';
-            statusColor = Colors.amberAccent;
             buttonText = 'Clock Out Sekarang';
             buttonIcon = Icons.logout;
             isButtonDisabled = false;
           }
         } else if (statusStr == 'rejected') {
-          status = 'Absensi Ditolak';
-          statusColor = Colors.redAccent;
           buttonText = 'Ditolak';
           isButtonDisabled = true;
           buttonIcon = Icons.cancel;
         } else {
           // Present / Approved
-          status = 'Sedang Bekerja';
-          statusColor = Colors.lightBlueAccent;
           buttonText = 'Clock Out Sekarang';
           buttonIcon = Icons.logout;
           isButtonDisabled = false;
@@ -1171,79 +1158,69 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    // Gradient Colors based on status (simplified)
-    // Gradient & Text Colors
-    List<Color> gradientColors = AppTheme.gradientDefault;
-    Color textColor = AppTheme.colorEggplant;
-    Color subTextColor = AppTheme.colorEggplant.withValues(alpha: 0.7);
-    Color glassBorderColor = AppTheme.colorEggplant.withValues(alpha: 0.1);
-    Color buttonTextColor = AppTheme.colorEggplant;
+    // ─────────────────────────────────────────────
+    //  New Attendance Card v2 Implementation
+    // ─────────────────────────────────────────────
 
-    if (status == 'Sedang Bekerja') {
-      gradientColors = AppTheme.gradientWorking;
-      textColor = Colors.white;
-      subTextColor = Colors.white.withValues(alpha: 0.7);
-      glassBorderColor = Colors.white.withValues(alpha: 0.1);
-      buttonTextColor = gradientColors[0];
-    } else if (status == 'Sudah Selesai') {
-      gradientColors = AppTheme.gradientFinished;
-      textColor = Colors.white;
-      subTextColor = Colors.white.withValues(alpha: 0.7);
-      glassBorderColor = Colors.white.withValues(alpha: 0.1);
-      buttonTextColor = gradientColors[0];
+    // Helper: Parse HH:mm to DateTime for today
+    DateTime parseShiftTime(String? timeStr, DateTime fallback) {
+      if (timeStr == null || timeStr.isEmpty) return fallback;
+      try {
+        final parts = timeStr.split(':');
+        return DateTime(now.year, now.month, now.day, int.parse(parts[0]), int.parse(parts[1]));
+      } catch (_) {
+        return fallback;
+      }
+    }
+
+    // Shift Times
+    final shiftStart = parseShiftTime(user!.shiftStartTime, DateTime(now.year, now.month, now.day, 8, 0));
+    final shiftEnd = parseShiftTime(user!.shiftEndTime, DateTime(now.year, now.month, now.day, 17, 0));
+    final shiftLabel = "Shift ${user!.shiftStartTime?.substring(0, 5) ?? '08:00'} - ${user!.shiftEndTime?.substring(0, 5) ?? '17:00'}";
+
+    // Attendance Data
+    DateTime? checkInTime;
+    DateTime? checkOutTime;
+    if (_todayAttendance != null) {
+      if (_todayAttendance!['check_in'] != null) {
+        checkInTime = parseShiftTime(_todayAttendance!['check_in'].toString(), now);
+      }
+      if (_todayAttendance!['check_out'] != null) {
+        checkOutTime = parseShiftTime(_todayAttendance!['check_out'].toString(), now);
+      }
+    }
+
+    // Work Duration Calculation
+    String durationLabel = "0j 0m";
+    if (checkInTime != null) {
+      final endTime = checkOutTime ?? now;
+      final diff = endTime.difference(checkInTime);
+      final hours = diff.inHours;
+      final minutes = diff.inMinutes % 60;
+      durationLabel = "${hours}j ${minutes}m";
     }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
+        color: const Color(0xFF2D2A6E), // Deep Blue/Eggplant from screenshot
         borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: gradientColors,
-        ),
         boxShadow: [
           BoxShadow(
-            color: gradientColors[0].withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: const Color(0xFF2D2A6E).withValues(alpha: 0.2),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Stack(
+      child: Column(
         children: [
-          // Background Pattern (Optional subtle circles)
-          Positioned(
-            top: -20,
-            right: -20,
-            child: Container(
-              width: 150,
-              height: 150,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.05),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -30,
-            left: -30,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.05),
-              ),
-            ),
-          ),
-
+          // Top Section: Dark Blue
           Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header: Date & Status
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1253,222 +1230,125 @@ class _HomeScreenState extends State<HomeScreen> {
                         Text(
                           formattedDate,
                           style: TextStyle(
-                            color: textColor,
-                            fontSize: 14,
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        // Real-time Clock
                         StreamBuilder(
-                          stream: Stream.periodic(
-                            const Duration(seconds: 1),
-                            (i) => i,
+                          stream: Stream.periodic(const Duration(seconds: 1)),
+                          builder: (context, _) => Text(
+                            DateFormat('HH:mm').format(DateTime.now()),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 36,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          builder: (context, snapshot) {
-                            return Text(
-                              DateFormat('HH:mm:ss').format(DateTime.now()),
-                              style: TextStyle(
-                                color: textColor,
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                height: 1.2,
-                              ),
-                            );
-                          },
                         ),
                       ],
                     ),
-                    Flexible(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
+                    // Work Duration Badge
+                    if (checkInTime != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: textColor.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: textColor.withValues(alpha: 0.3),
-                          ),
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                        child: Column(
                           children: [
-                            Icon(Icons.circle, size: 8, color: statusColor),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                status,
-                                style: TextStyle(
-                                  color: textColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                                overflow: TextOverflow.ellipsis,
+                            Text(
+                              'Durasi kerja',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.6),
+                                fontSize: 10,
+                              ),
+                            ),
+                            Text(
+                              durationLabel,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
                             ),
                           ],
                         ),
                       ),
+                  ],
+                ),
+                const SizedBox(height: 30),
+                
+                // Timeline
+                _buildAttendanceTimeline(shiftStart, shiftEnd, checkInTime, checkOutTime),
+              ],
+            ),
+          ),
+
+          // Bottom Section: White
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF9F9F9),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
+              ),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildAttendanceStatusBadge(isWeekend),
+                    Row(
+                      children: [
+                        Icon(Icons.access_time, size: 14, color: Colors.grey.shade500),
+                        const SizedBox(width: 4),
+                        Text(
+                          shiftLabel,
+                          style: TextStyle(
+                            color: Colors.grey.shade500,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-
-                // Times Container (Glassmorphism)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: glassBorderColor),
-                  ),
-                  child: Row(
-                    children: [
-                      // Check In
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.login_rounded,
-                                  color: subTextColor,
-                                  size: 16,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'JAM MASUK',
-                                  style: TextStyle(
-                                    color: subTextColor,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              (_todayAttendance != null &&
-                                      _todayAttendance!['check_in'] != null)
-                                  ? (_todayAttendance!['check_in']
-                                                .toString()
-                                                .length >=
-                                            5
-                                        ? _todayAttendance!['check_in']
-                                              .toString()
-                                              .substring(0, 5)
-                                        : _todayAttendance!['check_in']
-                                              .toString())
-                                  : '--:--',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(width: 1, height: 40, color: glassBorderColor),
-                      const SizedBox(width: 16),
-                      // Check Out
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.logout_rounded,
-                                  color: subTextColor,
-                                  size: 16,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'JAM KELUAR',
-                                  style: TextStyle(
-                                    color: subTextColor,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              (_todayAttendance != null &&
-                                      _todayAttendance!['check_out'] != null)
-                                  ? (_todayAttendance!['check_out']
-                                                .toString()
-                                                .length >=
-                                            5
-                                        ? _todayAttendance!['check_out']
-                                              .toString()
-                                              .substring(0, 5)
-                                        : _todayAttendance!['check_out']
-                                              .toString())
-                                  : '--:--',
-                              style: TextStyle(
-                                color: textColor,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Action Button
+                
+                // Action Button (Clock In/Out)
+                const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: isButtonDisabled
-                        ? null
-                        : () {
-                            // If operational track, use offline/QR handler even if online
-                            // as requested: "langsung scan barcode"
-                            if (user.track == 'operational') {
-                              OfflineAttendanceHandler(context: context)
-                                  .startOfflineAttendance();
-                            } else {
-                              Navigator.pushNamed(
-                                context,
-                                '/attendance',
-                              ).then((_) => _loadTodayAttendance());
-                            }
-                          },
+                    onPressed: isButtonDisabled ? null : () {
+                      if (user!.track == 'operational') {
+                        OfflineAttendanceHandler(context: context).startOfflineAttendance();
+                      } else {
+                        Navigator.pushNamed(context, '/attendance').then((_) => _loadTodayAttendance());
+                      }
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
-                      foregroundColor: buttonTextColor,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                      foregroundColor: const Color(0xFF2D2A6E),
                       elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.grey.shade200),
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(buttonIcon, size: 20),
                         const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            buttonText,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                        Text(
+                          buttonText,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -1480,6 +1360,151 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildAttendanceTimeline(DateTime start, DateTime end, DateTime? checkIn, DateTime? checkOut) {
+    final currentProgressTime = checkOut ?? DateTime.now();
+    
+    double calculateProgress(DateTime time) {
+      final total = end.difference(start).inSeconds;
+      if (total <= 0) return 0;
+      final current = time.difference(start).inSeconds;
+      return (current / total).clamp(0.0, 1.0);
+    }
+
+    final checkInProgress = checkIn != null ? calculateProgress(checkIn) : 0.0;
+    final currentProgress = calculateProgress(currentProgressTime);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        
+        return Column(
+          children: [
+            Stack(
+              alignment: Alignment.centerLeft,
+              clipBehavior: Clip.none,
+              children: [
+                // Base Line
+                Container(
+                  height: 3,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                
+                // Progress Segment
+                if (checkIn != null)
+                  Container(
+                    height: 3,
+                    width: width * currentProgress,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF7B61FF),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                
+                // Dots
+                _timelineDot(0, Colors.white.withValues(alpha: 0.3)),
+                if (checkIn != null)
+                  _timelineDot(width * checkInProgress, const Color(0xFF97C459)),
+                if (checkIn != null)
+                  _timelineDot(width * currentProgress, const Color(0xFFFBB03B)),
+                _timelineDot(width, const Color(0xFF3C3489)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _timelineLabelV2('Masuk', checkIn != null ? DateFormat('HH:mm').format(checkIn) : '--:--', checkIn != null ? const Color(0xFF97C459) : null),
+                _timelineLabelV2('Keluar', checkOut != null ? DateFormat('HH:mm').format(checkOut) : (checkIn != null ? DateFormat('HH:mm').format(DateTime.now()) : '--:--'), checkIn != null ? const Color(0xFFFBB03B) : null),
+                _timelineLabelV2('Selesai', DateFormat('HH:mm').format(end), Colors.white.withValues(alpha: 0.3)),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _timelineDot(double left, Color color) {
+    return Positioned(
+      left: left - 4,
+      top: -2.5, // Center vertically on 3px line (8px dot -> offset = (8-3)/2 = 2.5)
+      child: Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(color: const Color(0xFF2D2A6E), width: 1.5),
+        ),
+      ),
+    );
+  }
+
+  Widget _timelineLabelV2(String label, String time, Color? color) {
+    final textColor = color ?? Colors.white;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          time,
+          style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 13),
+        ),
+        Text(
+          label,
+          style: TextStyle(color: textColor.withValues(alpha: 0.6), fontSize: 10),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAttendanceStatusBadge(bool isWeekend) {
+    AttendanceStatus badgeStatus = AttendanceStatus.absent;
+
+    if (_todayAttendance != null) {
+      if (_todayAttendance!['check_out'] != null) {
+        String statusStr = _todayAttendance!['status']?.toString().toLowerCase() ?? '';
+        
+        // Check for Early Leave
+        final user = Provider.of<AuthProvider>(context, listen: false).user;
+        final shiftEndTimeStr = user?.shiftEndTime;
+        if (shiftEndTimeStr != null && shiftEndTimeStr.contains(':')) {
+          try {
+            final now = DateTime.now();
+            final parts = shiftEndTimeStr.split(':');
+            final shiftEnd = DateTime(now.year, now.month, now.day, int.parse(parts[0]), int.parse(parts[1]));
+            
+            // Format check-out correctly for parsing
+            String checkOutStr = _todayAttendance!['check_out'].toString();
+            if (checkOutStr.length == 5) checkOutStr += ":00"; // HH:mm -> HH:mm:ss
+            
+            final datePrefix = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+            final checkOut = DateTime.parse("$datePrefix $checkOutStr");
+            
+            if (checkOut.isBefore(shiftEnd.subtract(const Duration(minutes: 5)))) {
+              badgeStatus = AttendanceStatus.earlyLeave;
+            } else {
+              badgeStatus = (statusStr == 'late') ? AttendanceStatus.late : AttendanceStatus.onTime;
+            }
+          } catch (_) {
+            badgeStatus = (statusStr == 'late') ? AttendanceStatus.late : AttendanceStatus.onTime;
+          }
+        } else {
+          badgeStatus = (statusStr == 'late') ? AttendanceStatus.late : AttendanceStatus.onTime;
+        }
+      } else if (_todayAttendance!['check_in'] != null) {
+        badgeStatus = AttendanceStatus.inProgress;
+      }
+    } else if (isWeekend) {
+      badgeStatus = AttendanceStatus.absent;
+    }
+
+    return AttendanceBadge(status: badgeStatus);
   }
 
   Widget _buildHorizontalCards() {
@@ -2286,14 +2311,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final menuItems = <Map<String, dynamic>>[
       {
-        'icon': Icons.receipt_long_rounded,
+        'icon': 'assets/icons/payslip.png',
+        'isAsset': true,
         'label': 'Slip Gaji',
         'subtitle': 'Lihat slip',
         'gradient': [const Color(0xFF667EEA), const Color(0xFF764BA2)],
         'onTap': _navigateToPayroll,
       },
       {
-        'icon': Icons.flight_takeoff_rounded,
+        'icon': 'assets/icons/leave.png',
+        'isAsset': true,
         'label': _isLoadingLeave ? 'Cuti' : 'Cuti ($_leaveBalance)',
         'subtitle': 'Ajukan cuti',
         'gradient': [const Color(0xFF43E97B), const Color(0xFF38F9D7)],
@@ -2307,15 +2334,33 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       },
       {
-        'icon': Icons.history_rounded,
+        'icon': 'assets/icons/history.png',
+        'isAsset': true,
         'label': 'Riwayat',
         'subtitle': 'Kehadiran',
         'gradient': [const Color(0xFFF6D365), const Color(0xFFFDA085)],
         'onTap': () => Navigator.pushNamed(context, '/attendance/history'),
       },
+      {
+        'icon': 'assets/icons/overtime.png',
+        'isAsset': true,
+        'label': 'Lembur',
+        'subtitle': 'Ajukan lembur',
+        'gradient': [const Color(0xFFFF9A9E), const Color(0xFFFAD0C4)],
+        'onTap': () => Navigator.pushNamed(context, '/submission/create', arguments: 'Lembur'),
+      },
+      {
+        'icon': 'assets/icons/bussines-trip.png',
+        'isAsset': true,
+        'label': 'Dinas',
+        'subtitle': 'Perjalanan',
+        'gradient': [const Color(0xFF84FAB0), const Color(0xFF8FD3F4)],
+        'onTap': () => Navigator.pushNamed(context, '/submission/create', arguments: 'Dinas'),
+      },
       if (canApprove)
         {
           'icon': Icons.verified_rounded,
+          'isAsset': false,
           'label': 'Approval',
           'subtitle': _pendingApprovalsCount > 0
               ? '$_pendingApprovalsCount pending'
@@ -2392,11 +2437,12 @@ class _HomeScreenState extends State<HomeScreen> {
           childAspectRatio: 0.78,
           children: menuItems.map((item) {
             return _buildActionItem(
-              item['icon'] as IconData,
+              item['icon'],
               item['label'] as String,
               item['gradient'] as List<Color>,
               subtitle: item['subtitle'] as String,
               badgeCount: (item['badge'] as int?) ?? 0,
+              isAsset: (item['isAsset'] as bool?) ?? false,
               onTap: item['onTap'] as VoidCallback?,
             );
           }).toList(),
@@ -2406,12 +2452,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildActionItem(
-    IconData icon,
+    dynamic icon,
     String label,
     List<Color> gradientColors, {
     String subtitle = '',
     VoidCallback? onTap,
     int badgeCount = 0,
+    bool isAsset = false,
   }) {
     return Container(
       decoration: const BoxDecoration(color: Colors.transparent),
@@ -2428,25 +2475,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    Container(
+                    SizedBox(
                       width: 42,
                       height: 42,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: gradientColors,
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: gradientColors[0].withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Icon(icon, color: Colors.white, size: 22),
+                      child: isAsset
+                          ? Image.asset(
+                              icon as String,
+                              errorBuilder: (context, error, stackTrace) => Icon(
+                                Icons.error_outline_rounded,
+                                color: gradientColors[0],
+                                size: 22,
+                              ),
+                            )
+                          : Icon(icon as IconData, color: gradientColors[0], size: 28),
                     ),
                     if (badgeCount > 0)
                       Positioned(
@@ -2592,12 +2633,71 @@ class _HomeScreenState extends State<HomeScreen> {
                     'id_ID',
                   ).format(date);
 
-                  return _buildTimelineItem(
-                    icon,
-                    color,
-                    activity['title'],
-                    timeStr,
-                    activity['desc'],
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Icon Circle
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(icon, color: color, size: 20),
+                        ),
+                        const SizedBox(width: 16),
+                        // Content
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      activity['title'],
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        color: AppTheme.textDark,
+                                      ),
+                                    ),
+                                  ),
+                                  if (activity['type'] == 'attendance')
+                                    AttendanceBadge(
+                                      status: activity['title'] == 'Absen Masuk' 
+                                        ? (activity['status'] == 'success' ? AttendanceStatus.onTime : AttendanceStatus.late)
+                                        : AttendanceStatus.onTime, // Assuming check out is usually onTime for now
+                                      showDot: false,
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                activity['desc'],
+                                style: const TextStyle(
+                                  color: AppTheme.textLight,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                timeStr,
+                                style: TextStyle(
+                                  color: Colors.grey.shade400,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 }).toList(),
               ),
@@ -2607,89 +2707,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildTimelineItem(
-    IconData icon,
-    Color color,
-    String title,
-    String time,
-    String desc,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 40,
-            width: 40,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 4),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 4,
-                ),
-              ],
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade100),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 8,
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textDark,
-                        ),
-                      ),
-                      Text(
-                        time,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: AppTheme.textLight,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    desc,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textLight,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildBanner(User? user) {
     if (user == null || user.contractEnd == null) {

@@ -99,6 +99,11 @@ flutter:
     - assets/logo/ios.png
     - assets/logo/googleplay.png
     - assets/images/
+    - assets/icons/leave.png
+    - assets/icons/history.png
+    - assets/icons/overtime.png
+    - assets/icons/bussines-trip.png
+    - assets/icons/payslip.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

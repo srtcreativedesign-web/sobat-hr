@@ -17,6 +17,7 @@ import 'dart:io';
 import 'package:intl/intl.dart';
 import 'selfie_screen.dart';
 import 'attendance_qr_scanner_screen.dart';
+import 'package:awesome_dialog/awesome_dialog.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -134,6 +135,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       if (mounted) {
         setState(() {
           _todayAttendance = attendance;
+          if (attendance != null && attendance['attendance_type'] != null) {
+            _attendanceType = attendance['attendance_type'];
+          }
         });
       }
     } catch (e) {
@@ -148,6 +152,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           if (localAttendance != null && mounted) {
             setState(() {
               _todayAttendance = localAttendance;
+              if (localAttendance['attendance_type'] != null) {
+                _attendanceType = localAttendance['attendance_type'];
+              }
             });
           }
         }
@@ -369,16 +376,49 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       return;
     }
 
+    // Check for Shifting (late > 60m)
+    bool isShifting = false;
+    final now = DateTime.now();
+    if (now.hour >= 9) {
+      bool userConfirmedShift = false;
+      await AwesomeDialog(
+        context: context,
+        dialogType: DialogType.question,
+        animType: AnimType.scale,
+        title: 'Konfirmasi Shifting',
+        desc: 'Anda terlambat lebih dari 60 menit. Apakah Anda bekerja shift hari ini?',
+        btnOkText: 'YA',
+        btnCancelText: 'TIDAK',
+        btnOkColor: Colors.green,
+        btnCancelColor: Colors.red,
+        btnOkOnPress: () {
+          userConfirmedShift = true;
+        },
+        btnCancelOnPress: () {
+          userConfirmedShift = false;
+        },
+      ).show();
+      isShifting = userConfirmedShift;
+    }
+
     // Default HO Selfie flow
+    if (!mounted) return;
     final String? photoPath = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SelfieScreen(address: _currentAddress),
+        builder: (context) => SelfieScreen(
+          address: _currentAddress,
+          shiftName: user?.shiftName ?? 'Regular Morning',
+          isShifting: isShifting,
+          status: _attendanceType == 'office' 
+            ? (isShifting ? 'Work from Office (Shift)' : 'Work from Office') 
+            : 'Work from Field',
+        ),
       ),
     );
 
     if (photoPath != null) {
-      _submitAttendance(photoPath);
+      _submitAttendance(photoPath, isShifting: isShifting);
     }
   }
 
@@ -412,20 +452,32 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
       if (checkoutQrData == null || checkoutQrData.isEmpty) return; // User cancelled
     } else {
-      // Head office / field: check range
-      bool isFieldAttendance = _todayAttendance?['attendance_type'] == 'field';
-      if (!isFieldAttendance && !_isWithinRange) {
-        _showErrorSnackBar('Anda harus berada di salah satu area lokasi absensi!');
+      // Flexible checkout: check based on CURRENTLY SELECTED type in UI
+      if (_attendanceType == 'office' && !_isWithinRange) {
+        _showErrorSnackBar('Anda harus berada di salah satu area lokasi absensi untuk Absen Kantor!');
+        return;
+      }
+      
+      if (_attendanceType == 'field' && _fieldNotesController.text.trim().isEmpty) {
+        _showErrorSnackBar('Wajib mengisi keterangan untuk Absen Luar saat pulang!');
         return;
       }
     }
 
     // 1. Photo Confirmation (Selfie)
     if (!mounted) return;
+    final user = context.read<AuthProvider>().user;
     final String? photoPath = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SelfieScreen(address: _currentAddress),
+        builder: (context) => SelfieScreen(
+          address: _currentAddress,
+          shiftName: user?.shiftName ?? 'Regular Morning',
+          isShifting: false,
+          status: _attendanceType == 'office' 
+            ? 'Work from Office' 
+            : 'Work from Field',
+        ),
       ),
     );
 
@@ -441,8 +493,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         photo: File(photoPath),
         status: 'present',
         qrCodeData: checkoutQrData,
+        attendanceType: _attendanceType,
+        fieldNotes: _attendanceType == 'field' ? _fieldNotesController.text : null,
       );
 
+      _fieldNotesController.clear();
       await _fetchTodayAttendance(); // Refresh status
 
       if (!mounted) return;
@@ -464,19 +519,31 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
-    );
+    AwesomeDialog(
+      context: context,
+      dialogType: DialogType.error,
+      animType: AnimType.scale,
+      title: 'Gagal',
+      desc: message,
+      btnOkColor: Colors.red,
+      btnOkOnPress: () {},
+    ).show();
   }
 
   void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.green),
-    );
+    AwesomeDialog(
+      context: context,
+      dialogType: DialogType.success,
+      animType: AnimType.scale,
+      title: 'Berhasil',
+      desc: message,
+      btnOkColor: Colors.green,
+      btnOkOnPress: () {},
+    ).show();
   }
 
 
-  Future<void> _submitAttendance(String photoPath, [String? qrCodeData]) async {
+  Future<void> _submitAttendance(String photoPath, {String? qrCodeData, bool isShifting = false}) async {
     _showLoading();
 
     try {
@@ -495,6 +562,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         address: _currentAddress,
         attendanceType: _attendanceType,
         fieldNotes: _attendanceType == 'field' ? _fieldNotesController.text : null,
+        trackType: user.trackType,
+        isShifting: isShifting,
         notes: qrCodeData, // Include QR data in notes for operational
       );
 
@@ -984,8 +1053,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Toggle Attendance Type (Only if not checked in)
-                        if (canCheckIn) ...[
+                        // Toggle Attendance Type (Visible if not finished today)
+                        if (canCheckIn || canCheckOut) ...[
                           Container(
                             margin: const EdgeInsets.only(bottom: 20),
                             padding: const EdgeInsets.all(4),
@@ -1107,8 +1176,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                           ],
                         ],
 
-                        // Show Active Type if Checked In
-                        if (!canCheckIn) ...[
+                        // Show Active Check-in Type if already Checked In
+                        if (hasCheckedIn) ...[
                           Container(
                             padding: const EdgeInsets.symmetric(
                               vertical: 8,
@@ -1308,7 +1377,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 child: ElevatedButton.icon(
                                   onPressed:
                                       (canCheckOut &&
-                                          _isWithinRange &&
+                                          (_attendanceType == 'field' || _isWithinRange) &&
                                           !_isLoading)
                                       ? _handleCheckOut
                                       : null,

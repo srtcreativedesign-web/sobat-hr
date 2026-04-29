@@ -756,6 +756,13 @@ class _PayrollScreenState extends State<PayrollScreen> {
                     ...(payroll['deductions'] as Map).entries.map((entry) {
                       final amount =
                           double.tryParse(entry.value.toString()) ?? 0;
+                      
+                      // Skip EWA/Pinjaman from list as it will be shown in summary
+                      final label = entry.key.toString().toLowerCase();
+                      if (label.contains('ewa') || label.contains('pinjaman') || label.contains('kasbon')) {
+                        return const SizedBox.shrink();
+                      }
+
                       if (amount > 0) {
                         return _buildDetailRow(
                           entry.key,
@@ -783,88 +790,85 @@ class _PayrollScreenState extends State<PayrollScreen> {
                       _buildDetailRow('PPh 21', payroll['tax'], isMinus: true),
                   ],
 
-                  // EWA Display (for FnB)
-                  if (payroll['ewa_amount'] != null) ...[
-                    Builder(
-                      builder: (context) {
-                        final ewaAmount =
-                            double.tryParse(payroll['ewa_amount'].toString()) ??
-                            0;
-                        if (ewaAmount > 0) {
-                          return Container(
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.red.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'EWA (KASBON)',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.red,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Total EWA'),
-                                    Text(
-                                      '- ${_formatCurrency(ewaAmount)}',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.red,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    ),
-                  ],
-
                   const Divider(height: 32),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Total Diterima',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textDark,
-                        ),
-                      ),
-                      Text(
-                        _formatCurrency(
-                          double.tryParse(
-                                (payroll['division'] == 'celluller'
-                                            ? (payroll['final_payment'] ??
-                                                  payroll['net_salary'])
-                                            : payroll['net_salary'])
-                                        ?.toString() ??
-                                    '0',
-                              ) ??
-                              0,
-                        ),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.colorEggplant,
-                        ),
-                      ),
-                    ],
+                  
+                  // SUMMARY SECTION (THP -> EWA -> FINAL)
+                  Builder(
+                    builder: (context) {
+                      final thp = double.tryParse(payroll['thp']?.toString() ?? '0') ?? 0;
+                      final ewa = double.tryParse(payroll['ewa_amount']?.toString() ?? '0') ?? 0;
+                      
+                      // For final amount, use final_payment for cellular, or net_salary for others
+                      final finalAmount = double.tryParse(
+                        (payroll['division'] == 'celluller'
+                            ? (payroll['final_payment'] ?? payroll['net_salary'])
+                            : payroll['net_salary'])
+                        ?.toString() ?? '0'
+                      ) ?? 0;
+
+                      return Column(
+                        children: [
+                          if (thp > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Total Pendapatan (THP)',
+                                    style: TextStyle(fontWeight: FontWeight.w600),
+                                  ),
+                                  Text(
+                                    _formatCurrency(thp),
+                                    style: const TextStyle(fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          
+                          if (ewa > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Potongan Stafbook (EWA)',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                  Text(
+                                    '- ${_formatCurrency(ewa)}',
+                                    style: const TextStyle(color: Colors.red),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Total Ditransfer',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.textDark,
+                                ),
+                              ),
+                              Text(
+                                _formatCurrency(finalAmount),
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.colorEggplant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    }
                   ),
                 ],
               ),

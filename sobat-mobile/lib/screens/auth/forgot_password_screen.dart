@@ -26,7 +26,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   bool _obscureConfirmPassword = true;
 
   String _resetToken = '';
-  
+
   Timer? _countdownTimer;
   int _secondsLeft = 60;
   bool _canResend = false;
@@ -61,19 +61,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red.shade700,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red.shade700),
     );
   }
 
   void _showSuccess(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green.shade700,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.green.shade700),
     );
   }
 
@@ -82,7 +76,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     final phone = _phoneController.text.replaceAll(RegExp(r'[^0-9]'), '');
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    
+
     final success = await authProvider.requestOtp(phone);
     if (success && mounted) {
       _showSuccess('OTP telah dikirim ke nomor WhatsApp Anda');
@@ -124,9 +118,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.resetPassword(
-      _resetToken, 
-      _passwordController.text, 
-      _confirmPasswordController.text
+      _resetToken,
+      _passwordController.text,
+      _confirmPasswordController.text,
     );
 
     if (success && mounted) {
@@ -153,7 +147,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Masukkan nomor WhatsApp Anda yang terdaftar pada sistem SOBA HR.',
+            'Masukkan nomor WhatsApp Anda yang terdaftar pada sistem SOBAT HR.',
             style: TextStyle(fontSize: 14, color: AppTheme.textLight),
           ),
           const SizedBox(height: 32),
@@ -434,7 +428,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                  _obscureConfirmPassword
+                      ? Icons.visibility_off
+                      : Icons.visibility,
                   color: Colors.grey,
                 ),
                 onPressed: () {
@@ -464,7 +460,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             child: Consumer<AuthProvider>(
               builder: (context, authProvider, child) {
                 return ElevatedButton(
-                  onPressed: authProvider.isLoading ? null : _handleResetPassword,
+                  onPressed: authProvider.isLoading
+                      ? null
+                      : _handleResetPassword,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.colorPrimary,
                     foregroundColor: Colors.white,
@@ -505,25 +503,31 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: _currentStep == 0 
-        ? IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppTheme.colorPrimary),
-            onPressed: () => Navigator.pop(context),
-          )
-        : IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppTheme.colorPrimary),
-            onPressed: () {
-              if (_currentStep == 1) {
-                setState(() {
-                  _currentStep = 0;
-                  _countdownTimer?.cancel();
-                });
-              } else if (_currentStep == 2) {
-                // In reset password stage, going back usually means cancelling completely
-                // or we can just prohibit returning without resetting
-              }
-            },
-          ),
+        leading: _currentStep == 0
+            ? IconButton(
+                icon: const Icon(
+                  Icons.arrow_back,
+                  color: AppTheme.colorPrimary,
+                ),
+                onPressed: () => Navigator.pop(context),
+              )
+            : IconButton(
+                icon: const Icon(
+                  Icons.arrow_back,
+                  color: AppTheme.colorPrimary,
+                ),
+                onPressed: () {
+                  if (_currentStep == 1) {
+                    setState(() {
+                      _currentStep = 0;
+                      _countdownTimer?.cancel();
+                    });
+                  } else if (_currentStep == 2) {
+                    // In reset password stage, going back usually means cancelling completely
+                    // or we can just prohibit returning without resetting
+                  }
+                },
+              ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -542,7 +546,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ],
               ),
               const SizedBox(height: 32),
-              
+
               if (_currentStep == 0) _buildStep0(),
               if (_currentStep == 1) _buildStep1(),
               if (_currentStep == 2) _buildStep2(),
