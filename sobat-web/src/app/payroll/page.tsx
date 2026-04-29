@@ -33,6 +33,7 @@ interface Payroll {
   approval_signature?: string;
   final_payment?: number; // Added for Cellular
   account_number?: string; // Added for detail display
+  thp?: number | string; // Added for THP display
 }
 
 export default function PayrollPage() {
@@ -57,7 +58,7 @@ export default function PayrollPage() {
   const sigPad = useRef<SignatureCanvas>(null);
 
   // Division selector
-  const [selectedDivision, setSelectedDivision] = useState<'all' | 'office' | 'fnb' | 'minimarket' | 'reflexiology' | 'wrapping' | 'hans' | 'cellular' | 'money_changer' | 'tungtau'>('fnb');
+  const [selectedDivision, setSelectedDivision] = useState<'all' | 'office' | 'fnb' | 'minimarket' | 'reflexiology' | 'wrapping' | 'hans' | 'cellular' | 'money_changer' | 'tungtau' | 'maximum'>('fnb');
 
   // Filter States
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // Default current month
@@ -1098,14 +1099,14 @@ export default function PayrollPage() {
                       <div className="flex items-center justify-between border-b border-white/20 pb-4">
                         <div>
                           <p className="text-indigo-100 text-xs font-medium uppercase tracking-wider">Total Pendapatan (THP)</p>
-                          <p className="text-2xl font-bold">{formatCurrency(selectedPayroll.thp)}</p>
+                          <p className="text-2xl font-bold">{formatCurrency(Number(selectedPayroll.thp || 0))}</p>
                         </div>
                       </div>
-                      {parseFloat(selectedPayroll.ewa_amount) > 0 && (
+                      {parseFloat(String(selectedPayroll.ewa_amount || 0)) > 0 && (
                         <div className="flex items-center justify-between border-b border-white/20 pb-4 text-red-200">
                           <div>
                             <p className="text-xs font-medium uppercase tracking-wider">Potongan Stafbook (EWA)</p>
-                            <p className="text-2xl font-bold">-{formatCurrency(typeof selectedPayroll.ewa_amount === 'string' ? parseFloat(selectedPayroll.ewa_amount) : selectedPayroll.ewa_amount)}</p>
+                             <p className="text-2xl font-bold">-{formatCurrency(typeof selectedPayroll.ewa_amount === 'string' ? (parseFloat(selectedPayroll.ewa_amount) || 0) : (selectedPayroll.ewa_amount || 0))}</p>
                           </div>
                         </div>
                       )}

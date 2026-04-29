@@ -8,7 +8,7 @@ use App\Models\Employee;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use PDF;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use App\Services\GroqAiService;
 
 class PayrollTungtauController extends Controller

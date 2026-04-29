@@ -97,6 +97,7 @@ class AttendanceController extends Controller
             'attendance_type' => 'nullable|in:office,field',
             'field_notes' => 'nullable|string|required_if:attendance_type,field',
             'track_type' => 'nullable|in:operational,head_office',
+            'is_shifting' => 'nullable|boolean',
         ]);
 
         $employee = Employee::find($validated['employee_id']);
@@ -158,20 +159,39 @@ class AttendanceController extends Controller
 
         // Late/Status calculation (skip if already pending from field attendance)
         if ($validated['status'] !== 'pending') {
-            $workStartTime = Carbon::parse($validated['date'] . ' 08:00:00');
-            $clockInTime = Carbon::parse($validated['date'] . ' ' . $validated['check_in']);
-
-            if ($clockInTime->gt($workStartTime)) {
-                $lateDuration = abs($clockInTime->diffInMinutes($workStartTime));
-                $validated['late_duration'] = $lateDuration;
-
-                if ($lateDuration > 5) {
-                    $validated['status'] = 'pending';
-                } else {
-                    $validated['status'] = 'late';
-                }
-            } else {
+            // Check if user claimed shifting
+            if (isset($validated['is_shifting']) && $validated['is_shifting'] == true) {
                 $validated['status'] = 'present';
+                $validated['late_duration'] = 0;
+            } else {
+                // Get employee shift
+                $shift = $employee->shift;
+                $defaultStartTime = '08:00:00';
+                
+                if ($shift) {
+                    // Use shift start time if available
+                    $startTimeStr = $shift->start_time instanceof Carbon 
+                        ? $shift->start_time->format('H:i:s') 
+                        : Carbon::parse($shift->start_time)->format('H:i:s');
+                    $workStartTime = Carbon::parse($validated['date'] . ' ' . $startTimeStr);
+                } else {
+                    $workStartTime = Carbon::parse($validated['date'] . ' ' . $defaultStartTime);
+                }
+
+                $clockInTime = Carbon::parse($validated['date'] . ' ' . $validated['check_in']);
+
+                if ($clockInTime->gt($workStartTime)) {
+                    $lateDuration = abs($clockInTime->diffInMinutes($workStartTime));
+                    $validated['late_duration'] = $lateDuration;
+
+                    if ($lateDuration > 5) {
+                        $validated['status'] = 'pending';
+                    } else {
+                        $validated['status'] = 'late';
+                    }
+                } else {
+                    $validated['status'] = 'present';
+                }
             }
         }
 
@@ -181,11 +201,49 @@ class AttendanceController extends Controller
             $checkOut = Carbon::parse($validated['check_out']);
             $validated['work_hours'] = $checkIn->floatDiffInHours($checkOut);
 
-            $workEndTime = Carbon::parse($validated['date'] . ' 17:00:00');
+            // Get employee shift for overtime
+            $shift = $employee->shift;
+            $defaultEndTime = '17:00:00';
+
+            if ($shift) {
+                $endTimeStr = $shift->end_time instanceof Carbon 
+                    ? $shift->end_time->format('H:i:s') 
+                    : Carbon::parse($shift->end_time)->format('H:i:s');
+                $workEndTime = Carbon::parse($validated['date'] . ' ' . $endTimeStr);
+            } else {
+                $workEndTime = Carbon::parse($validated['date'] . ' ' . $defaultEndTime);
+            }
+
             $clockOutTime = Carbon::parse($validated['date'] . ' ' . $validated['check_out']);
 
             if ($clockOutTime->gt($workEndTime)) {
                 $validated['overtime_duration'] = $clockOutTime->diffInMinutes($workEndTime);
+            }
+        }
+
+        // Verify face synchronously for immediate feedback
+        if ($needsFaceVerification) {
+            $verificationResult = $this->verifyFaceInline(
+                $employee->id,
+                $validated['photo_path']
+            );
+
+            if ($verificationResult['status'] === 'mismatch') {
+                // Delete the photo as it's not valid
+                Storage::disk('public')->delete($validated['photo_path']);
+                
+                return response()->json([
+                    'message' => 'Verifikasi wajah gagal: wajah tidak cocok. Pastikan Anda melakukan absensi sendiri.',
+                    'distance' => $verificationResult['distance'] ?? null
+                ], 422);
+            } elseif ($verificationResult['status'] === 'error') {
+                // If AI service is down, we might allow it but flag it? 
+                // For now, let's allow but log error, or we can be strict.
+                Log::error('Face verification service error: ' . $verificationResult['message']);
+                $validated['face_verification_status'] = 'failed';
+            } else {
+                $validated['face_verified'] = true;
+                $validated['face_verification_status'] = 'verified';
             }
         }
 
@@ -196,15 +254,6 @@ class AttendanceController extends Controller
         $attendance = DB::transaction(function () use ($validated) {
             return Attendance::create($validated);
         });
-
-        // Dispatch face verification as background job (non-blocking)
-        if ($needsFaceVerification) {
-            VerifyAttendanceFace::dispatch(
-                $attendance->id,
-                $employee->id,
-                $validated['photo_path']
-            );
-        }
 
         return response()->json($attendance, 201);
     }
@@ -270,8 +319,8 @@ class AttendanceController extends Controller
         imagejpeg($newImage, $destinationPath, $quality);
 
         // Free memory
-        imagedestroy($sourceImage);
-        imagedestroy($newImage);
+        @imagedestroy($sourceImage);
+        @imagedestroy($newImage);
     }
 
     public function show(string $id)
@@ -315,6 +364,8 @@ class AttendanceController extends Controller
             'check_out' => 'nullable',
             'status' => 'sometimes|in:present,late,absent,leave,sick',
             'notes' => 'nullable|string',
+            'attendance_type' => 'nullable|in:office,field',
+            'field_notes' => 'nullable|string',
             'photo' => 'required_with:check_out|image|mimes:jpg,jpeg,png|max:5120', // ADDED MIMES VALIDATION
             'qr_code_data' => 'nullable|string', // QR code for operational checkout validation
         ]);
@@ -371,7 +422,7 @@ class AttendanceController extends Controller
 
             // Cleanup: Delete old checkout photo if exists
             if ($attendance->checkout_photo_path) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($attendance->checkout_photo_path);
+                Storage::disk('public')->delete($attendance->checkout_photo_path);
             }
 
             // Compress and Resize Image (Consistent with check-in)
@@ -392,16 +443,20 @@ class AttendanceController extends Controller
                 // Calculate Work Hours
             $validated['work_hours'] = $checkIn->floatDiffInHours($checkOut);
 
-                // Calculate Overtime (after 17:00)
-                // Use date from attendance record
-                $dateStr = $attendance->date; // Assuming date is YYYY-MM-DD string or Carbon
-                // If $attendance->date is Carbon (casted), format it. If string, use directly.
-                // Model usually casts 'date' => 'date'.
+                // Calculate Overtime based on Shift
+                $shift = $attendance->employee->shift;
+                $defaultEndTime = '17:00:00';
                 $dateVal = $attendance->date instanceof Carbon ? $attendance->date->format('Y-m-d') : $attendance->date;
-                
-                $workEndTime = Carbon::parse($dateVal . ' 17:00:00');
-                // Check Out Date/Time 
-                // Note: If check out is next day, this logic needs adjustment. Assuming same day for now.
+
+                if ($shift) {
+                    $endTimeStr = $shift->end_time instanceof Carbon 
+                        ? $shift->end_time->format('H:i:s') 
+                        : Carbon::parse($shift->end_time)->format('H:i:s');
+                    $workEndTime = Carbon::parse($dateVal . ' ' . $endTimeStr);
+                } else {
+                    $workEndTime = Carbon::parse($dateVal . ' ' . $defaultEndTime);
+                }
+
                 $clockOutDateTime = Carbon::parse($dateVal . ' ' . $checkOutTime);
                 
                 if ($clockOutDateTime->gt($workEndTime)) {
@@ -434,10 +489,10 @@ class AttendanceController extends Controller
 
         // Cleanup: Delete associated photos from storage before deleting the record
         if ($attendance->photo_path) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($attendance->photo_path);
+            Storage::disk('public')->delete($attendance->photo_path);
         }
         if ($attendance->checkout_photo_path) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($attendance->checkout_photo_path);
+            Storage::disk('public')->delete($attendance->checkout_photo_path);
         }
 
         $attendance->delete();
@@ -502,7 +557,7 @@ class AttendanceController extends Controller
         }
 
         $attendance = Attendance::where('employee_id', $user->employee->id)
-            ->whereDate('date', Carbon::today())
+            ->where('date', Carbon::today()->toDateString())
             ->first();
 
         return response()->json($attendance);
@@ -600,6 +655,7 @@ class AttendanceController extends Controller
                 ->get();
 
             foreach ($attendances as $attendance) {
+                /** @var \App\Models\Attendance $attendance */
                 $attendance->status = $validated['status'];
                 if (!empty($validated['admin_note'])) {
                     $existingNotes = $attendance->notes ? $attendance->notes . "\n" : "";
@@ -615,5 +671,45 @@ class AttendanceController extends Controller
             'message' => "Berhasil memproses $count data absensi.",
             'updated_count' => $count
         ]);
+    }
+
+    /**
+     * Verify face inline (synchronous)
+     */
+    private function verifyFaceInline(int $employeeId, string $checkInPhoto)
+    {
+        $employee = Employee::find($employeeId);
+        if (!$employee || !$employee->face_photo_path) {
+            return ['status' => 'error', 'message' => 'Employee face data not found'];
+        }
+
+        $checkInPhotoPath = storage_path('app/public/' . $checkInPhoto);
+        $referencePhotoPath = storage_path('app/public/' . $employee->face_photo_path);
+        $scriptPath = base_path('python_scripts/compare_faces.py');
+
+        // Platform-aware Python command
+        if (PHP_OS_FAMILY === 'Darwin') {
+            $command = "/usr/bin/arch -arm64 /usr/bin/python3 " . escapeshellarg($scriptPath) . " " . escapeshellarg($referencePhotoPath) . " " . escapeshellarg($checkInPhotoPath) . " 2>&1";
+        } else {
+            $command = "/usr/bin/python3 " . escapeshellarg($scriptPath) . " " . escapeshellarg($referencePhotoPath) . " " . escapeshellarg($checkInPhotoPath) . " 2>&1";
+        }
+
+        $output = shell_exec($command);
+        $result = json_decode($output, true);
+
+        if (!$result || !isset($result['status'])) {
+            return ['status' => 'error', 'message' => 'AI Service error', 'raw' => $output];
+        }
+
+        if ($result['status'] === 'success' && $result['match']) {
+            return ['status' => 'success', 'match' => true, 'distance' => $result['distance']];
+        }
+
+        return [
+            'status' => 'mismatch', 
+            'match' => false, 
+            'distance' => $result['distance'] ?? null,
+            'message' => $result['message'] ?? 'Face mismatch'
+        ];
     }
 }

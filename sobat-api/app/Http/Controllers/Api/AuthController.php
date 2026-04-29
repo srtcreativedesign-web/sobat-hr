@@ -35,7 +35,7 @@ class AuthController extends Controller
             $user->tokens()->delete();
 
             // Load relationships for UserResource
-            $user->load(['role', 'employee.division', 'employee.jobPosition']);
+            $user->load(['role', 'employee.division', 'employee.jobPosition', 'employee.shift']);
 
             // DEVICE BINDING LOGIC
             // Hanya berlaku untuk user dengan role 'employee'
@@ -131,7 +131,7 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         $user = $request->user();
-        $user->load(['role', 'employee.division', 'employee.jobPosition']);
+        $user->load(['role', 'employee.division', 'employee.jobPosition', 'employee.shift']);
 
         return response()->json([
             'success' => true,

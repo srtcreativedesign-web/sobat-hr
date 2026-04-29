@@ -45,6 +45,7 @@ class Attendance extends Model
         'device_uptime_seconds',
         'review_status',
         'review_notes',
+        'is_shifting',
     ];
 
     protected $casts = [
