@@ -104,10 +104,9 @@ class AttendanceController extends Controller
         $attendanceType = $validated['attendance_type'] ?? 'office';
         // ✓ ENFORCE employee's track from database, not from request
         $trackType = $employee->track_type ?? 'head_office';
-        $isOperational = $trackType === 'operational';
 
-        // Geolocation Validation (Skip for field attendance and operational track)
-        if ($trackType !== 'operational' && $attendanceType === 'office' && isset($validated['latitude']) && isset($validated['longitude']) && $employee) {
+        // Geolocation Validation (Mandatory for Head Office track)
+        if ($trackType === 'head_office' && $attendanceType === 'office' && isset($validated['latitude']) && isset($validated['longitude']) && $employee) {
             $geofenceService = app(GeofenceValidationService::class);
             $geofenceResult = $geofenceService->validateAgainstAllLocations(
                 $validated['latitude'],
@@ -146,10 +145,10 @@ class AttendanceController extends Controller
             $validated['photo_path'] = $path;
 
             // Determine if face verification is needed (head_office track only)
-            if (!$isOperational && $employee->face_photo_path) {
+            if ($trackType === 'head_office' && $employee->face_photo_path) {
                 $needsFaceVerification = true;
                 $validated['face_verification_status'] = 'pending';
-            } else if (!$isOperational && !$employee->face_photo_path) {
+            } else if ($trackType === 'head_office' && !$employee->face_photo_path) {
                 Storage::disk('public')->delete($path);
                 return response()->json([
                     'message' => 'Anda belum mendaftarkan wajah. Silakan daftarkan wajah terlebih dahulu di menu Profil.',
@@ -369,47 +368,6 @@ class AttendanceController extends Controller
             'photo' => 'required_with:check_out|image|mimes:jpg,jpeg,png|max:5120', // ADDED MIMES VALIDATION
             'qr_code_data' => 'nullable|string', // QR code for operational checkout validation
         ]);
-
-        // Operational track: validate checkout QR matches check-in location
-        if ($attendance->track_type === 'operational' && isset($validated['check_out'])) {
-            if (empty($validated['qr_code_data'])) {
-                return response()->json([
-                    'message' => 'Scan QR Code diperlukan untuk checkout di outlet. Silakan scan QR Code yang sama dengan saat check-in.',
-                ], 422);
-            }
-
-            // Match against check-in QR code or outlet
-            $checkInQr = $attendance->qr_code_data;
-            $checkInOutletId = $attendance->outlet_id;
-            $checkoutQr = $validated['qr_code_data'];
-
-            // Validate checkout QR exists and is active
-            $checkoutQrLocation = \App\Models\QrCodeLocation::where('qr_code', $checkoutQr)
-                ->where('is_active', true)
-                ->first();
-
-            if (!$checkoutQrLocation) {
-                return response()->json([
-                    'message' => 'QR Code checkout tidak valid atau sudah tidak aktif.',
-                ], 422);
-            }
-
-            // Compare: checkout outlet must match check-in outlet
-            $isSameLocation = false;
-
-            if ($checkInQr && $checkInQr === $checkoutQr) {
-                $isSameLocation = true;
-            } elseif ($checkInOutletId && $checkoutQrLocation->organization_id == $checkInOutletId) {
-                // Same outlet even if QR code string differs (e.g. regenerated QR)
-                $isSameLocation = true;
-            }
-
-            if (!$isSameLocation) {
-                return response()->json([
-                    'message' => 'Lokasi checkout tidak sesuai dengan lokasi check-in. Anda harus checkout di outlet yang sama.',
-                ], 422);
-            }
-        }
 
         // Handle Checkout Photo Upload (with compression)
         if ($request->hasFile('photo')) {
