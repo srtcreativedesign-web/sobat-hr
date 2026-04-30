@@ -410,11 +410,14 @@ class _SelfieScreenState extends State<SelfieScreen>
     });
 
     try {
+      // 1. First set state to prevent further face detection processing
+      if (mounted) setState(() => _isProcessing = true);
+      
+      // 2. Stop the stream
       await _controller?.stopImageStream();
-      // iOS AVFoundation needs time to reconfigure after stopping image stream
-      if (Platform.isIOS) {
-        await Future.delayed(const Duration(milliseconds: 300));
-      }
+      
+      // 3. IMPORTANT: Give it a long 1-second breath for Xiaomi sensors
+      await Future.delayed(const Duration(milliseconds: 1000));
 
       XFile image;
       try {
@@ -482,10 +485,8 @@ class _SelfieScreenState extends State<SelfieScreen>
       if (_controller != null && _controller!.value.isStreamingImages) {
         await _controller?.stopImageStream();
       }
-      // iOS AVFoundation needs time to reconfigure after stopping image stream
-      if (Platform.isIOS) {
-        await Future.delayed(const Duration(milliseconds: 300));
-      }
+      // Give it a long 1-second breath
+      await Future.delayed(const Duration(milliseconds: 1000));
 
       XFile image;
       try {

@@ -369,9 +369,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       return;
     }
 
+    final user = context.read<AuthProvider>().user;
+    print('################ TRACK DEBUG: Attendance Check-In for User: ${user?.name}, Track: ${user?.trackType}');
+    
     // HO flow: Always proceed to selfie/gps
     if (!mounted) return;
-    final user = context.read<AuthProvider>().user;
 
     // Check for Shifting (late > 60m)
     bool isShifting = false;
@@ -448,6 +450,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     // 1. Photo Confirmation (Selfie)
     if (!mounted) return;
     final user = context.read<AuthProvider>().user;
+    print('################ TRACK DEBUG: Attendance Check-Out for User: ${user?.name}, Track: ${user?.trackType}');
     final String? photoPath = await Navigator.push(
       context,
       MaterialPageRoute(

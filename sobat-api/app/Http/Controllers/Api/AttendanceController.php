@@ -96,7 +96,7 @@ class AttendanceController extends Controller
             'location_address' => 'nullable|string',
             'attendance_type' => 'nullable|in:office,field',
             'field_notes' => 'nullable|string|required_if:attendance_type,field',
-            'track_type' => 'nullable|in:operational,head_office',
+            'track_type' => 'nullable|in:operational,head_office,office',
             'is_shifting' => 'nullable|boolean',
         ]);
 
@@ -104,9 +104,10 @@ class AttendanceController extends Controller
         $attendanceType = $validated['attendance_type'] ?? 'office';
         // ✓ ENFORCE employee's track from database, not from request
         $trackType = $employee->track_type ?? 'head_office';
+        \Log::info("Attendance Store - Employee: {$employee->full_name}, Track: {$trackType}, Type: {$attendanceType}");
 
-        // Geolocation Validation (Mandatory for Head Office track)
-        if ($trackType === 'head_office' && $attendanceType === 'office' && isset($validated['latitude']) && isset($validated['longitude']) && $employee) {
+        // Geolocation Validation (Mandatory for Head Office / Office track)
+        if (($trackType === 'head_office' || $trackType === 'office') && $attendanceType === 'office' && isset($validated['latitude']) && isset($validated['longitude']) && $employee) {
             $geofenceService = app(GeofenceValidationService::class);
             $geofenceResult = $geofenceService->validateAgainstAllLocations(
                 $validated['latitude'],
@@ -145,7 +146,7 @@ class AttendanceController extends Controller
             $validated['photo_path'] = $path;
 
             // Determine if face verification is needed (head_office track only)
-            if ($trackType === 'head_office' && $employee->face_photo_path) {
+            if (($trackType === 'head_office' || $trackType === 'office') && $employee->face_photo_path) {
                 $needsFaceVerification = true;
                 $validated['face_verification_status'] = 'pending';
             } else if ($trackType === 'head_office' && !$employee->face_photo_path) {
@@ -340,6 +341,7 @@ class AttendanceController extends Controller
 
     public function update(Request $request, string $id)
     {
+        $attendance = Attendance::findOrFail($id);
         // --- MAINTENANCE MODE ---
         if (config('app.attendance_maintenance', false)) {
             return response()->json([
@@ -365,9 +367,12 @@ class AttendanceController extends Controller
             'notes' => 'nullable|string',
             'attendance_type' => 'nullable|in:office,field',
             'field_notes' => 'nullable|string',
-            'photo' => 'required_with:check_out|image|mimes:jpg,jpeg,png|max:5120', // ADDED MIMES VALIDATION
+            'photo' => 'required_with:check_out|image|mimes:jpg,jpeg,png|max:5120',
+            'track_type' => 'nullable|in:operational,head_office,office',
             'qr_code_data' => 'nullable|string', // QR code for operational checkout validation
         ]);
+
+        \Log::info("Attendance Update/Checkout - ID: {$attendance->id}, Track (DB): {$attendance->track_type}");
 
         // Handle Checkout Photo Upload (with compression)
         if ($request->hasFile('photo')) {
