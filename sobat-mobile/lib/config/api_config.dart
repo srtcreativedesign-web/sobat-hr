@@ -8,7 +8,9 @@ class ApiConfig {
   //   Development : flutter run
   //   Production  : flutter run --dart-define=ENV=prod
   //   Custom IP   : flutter run --dart-define=DEV_HOST=192.168.1.X
-  //
+  //    open ios/Runner.xcworkspace
+  // flutter build appbundle --dart-define=ENV=prod
+
   // ⚠️ Untuk Development, cari IP WiFi Anda:
   //   Terminal: ifconfig | grep "inet " | grep -v 127.0.0.1
   // ==========================================================================

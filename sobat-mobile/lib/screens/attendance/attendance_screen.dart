@@ -369,12 +369,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       return;
     }
 
-    // Navigate based on track type
+    // HO flow: Always proceed to selfie/gps
+    if (!mounted) return;
     final user = context.read<AuthProvider>().user;
-    if (user?.trackType == 'operational') {
-      OfflineAttendanceHandler(context: context).startOfflineAttendance();
-      return;
-    }
 
     // Check for Shifting (late > 60m)
     bool isShifting = false;
@@ -431,37 +428,21 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       return;
     }
 
+    // Flexible checkout: check based on CURRENTLY SELECTED type in UI
     if (_todayAttendance == null) {
       _showErrorSnackBar('Data absensi hari ini tidak ditemukan.');
       return;
     }
 
-    // Check if this is an operational track checkout — requires QR scan
-    final bool isOperational = _todayAttendance!['track_type'] == 'operational';
-    String? checkoutQrData;
-
-    if (isOperational) {
-      // Operational track: scan QR at checkout (must match check-in outlet)
-      checkoutQrData = await Navigator.push<String>(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              AttendanceQrScannerScreen(onScanSuccess: (data) => data),
-        ),
-      );
-
-      if (checkoutQrData == null || checkoutQrData.isEmpty) return; // User cancelled
-    } else {
-      // Flexible checkout: check based on CURRENTLY SELECTED type in UI
-      if (_attendanceType == 'office' && !_isWithinRange) {
-        _showErrorSnackBar('Anda harus berada di salah satu area lokasi absensi untuk Absen Kantor!');
-        return;
-      }
-      
-      if (_attendanceType == 'field' && _fieldNotesController.text.trim().isEmpty) {
-        _showErrorSnackBar('Wajib mengisi keterangan untuk Absen Luar saat pulang!');
-        return;
-      }
+    // Flexible checkout: check based on CURRENTLY SELECTED type in UI
+    if (_attendanceType == 'office' && !_isWithinRange) {
+      _showErrorSnackBar('Anda harus berada di salah satu area lokasi absensi untuk Absen Kantor!');
+      return;
+    }
+    
+    if (_attendanceType == 'field' && _fieldNotesController.text.trim().isEmpty) {
+      _showErrorSnackBar('Wajib mengisi keterangan untuk Absen Luar saat pulang!');
+      return;
     }
 
     // 1. Photo Confirmation (Selfie)
@@ -492,7 +473,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         checkOutTime: DateFormat('HH:mm:ss').format(DateTime.now()),
         photo: File(photoPath),
         status: 'present',
-        qrCodeData: checkoutQrData,
         attendanceType: _attendanceType,
         fieldNotes: _attendanceType == 'field' ? _fieldNotesController.text : null,
       );
@@ -1326,7 +1306,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                             ),
                           ),
                           const Text(
-                            '• QR Code untuk operasional / GPS untuk kantor',
+                            '• Aktifkan GPS untuk melakukan absensi kantor',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: Colors.white70,

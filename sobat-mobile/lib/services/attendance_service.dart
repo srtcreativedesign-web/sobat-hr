@@ -126,7 +126,6 @@ class AttendanceService extends BaseService {
     required File photo,
     String? status,
     String? notes,
-    String? qrCodeData,
     String? attendanceType,
     String? fieldNotes,
   }) async {
@@ -139,7 +138,6 @@ class AttendanceService extends BaseService {
         'check_out': checkOutTime,
         'status': status,
         'notes': notes,
-        'qr_code_data': qrCodeData,
         'photo': await MultipartFile.fromFile(
           photo.path,
           filename: fileName,
