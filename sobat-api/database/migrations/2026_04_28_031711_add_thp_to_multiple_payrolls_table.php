@@ -22,7 +22,7 @@ return new class extends Migration
         ];
 
         foreach ($tables as $tableName) {
-            if (Schema::hasTable($tableName)) {
+            if (Schema::hasTable($tableName) && !Schema::hasColumn($tableName, 'thp')) {
                 Schema::table($tableName, function (Blueprint $table) {
                     // Add THP column, defaulting to 0
                     $table->decimal('thp', 15, 2)->default(0)->after('net_salary');
