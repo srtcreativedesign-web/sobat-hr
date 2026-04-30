@@ -18,6 +18,8 @@ import '../../screens/submission/submission_screen.dart';
 import '../../screens/submission/create_submission_screen.dart'; // Added
 import '../../screens/announcement/announcement_detail_screen.dart'; // Added
 
+import '../../widgets/payroll_cards.dart';
+import '../../services/thr_service.dart';
 import 'package:intl/intl.dart';
 import '../profile/enroll_face_screen.dart'; // Added
 import '../approval/approval_list_screen.dart'; // Added
@@ -42,6 +44,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Map<String, dynamic>? _lastPayroll;
   bool _isLoadingPayroll = true;
+  Map<String, dynamic>? _lastThr;
+  bool _isLoadingThr = true;
   List<Map<String, dynamic>> _announcements = [];
   bool _isLoadingAnnouncements = true;
 
@@ -87,6 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadTodayAttendance();
     _loadLeaveBalance();
     _loadLastPayroll();
+    _loadLastThr();
     _loadAnnouncements();
     _loadRecentActivities();
     _checkFaceEnrollment();
@@ -402,6 +407,22 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       // Silent fail - error already handled by AppErrorHandler
       if (mounted) setState(() => _isLoadingPayroll = false);
+    }
+  }
+
+  Future<void> _loadLastThr() async {
+    try {
+      final thrs = await ThrService().getThrs();
+      if (thrs.isNotEmpty && mounted) {
+        setState(() {
+          _lastThr = thrs.first;
+          _isLoadingThr = false;
+        });
+      } else if (mounted) {
+        setState(() => _isLoadingThr = false);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingThr = false);
     }
   }
 
@@ -1174,9 +1195,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // Shift Times
-    final shiftStart = parseShiftTime(user!.shiftStartTime, DateTime(now.year, now.month, now.day, 8, 0));
-    final shiftEnd = parseShiftTime(user!.shiftEndTime, DateTime(now.year, now.month, now.day, 17, 0));
-    final shiftLabel = "Shift ${user!.shiftStartTime?.substring(0, 5) ?? '08:00'} - ${user!.shiftEndTime?.substring(0, 5) ?? '17:00'}";
+    final shiftStart = parseShiftTime(user.shiftStartTime, DateTime(now.year, now.month, now.day, 8, 0));
+    final shiftEnd = parseShiftTime(user.shiftEndTime, DateTime(now.year, now.month, now.day, 17, 0));
+    final shiftLabel = "Shift ${user.shiftStartTime?.substring(0, 5) ?? '08:00'} - ${user.shiftEndTime?.substring(0, 5) ?? '17:00'}";
 
     // Attendance Data
     DateTime? checkInTime;
@@ -1325,7 +1346,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: isButtonDisabled ? null : () {
-                      if (user!.track == 'operational') {
+                      if (user.track == 'operational') {
                         OfflineAttendanceHandler(context: context).startOfflineAttendance();
                       } else {
                         Navigator.pushNamed(context, '/attendance').then((_) => _loadTodayAttendance());
@@ -1511,7 +1532,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       children: [
         SizedBox(
-          height: 220,
+          height: 280, // Increased height for new cards
           child: PageView(
             controller: _dashboardController,
             onPageChanged: (index) {
@@ -1522,8 +1543,14 @@ class _HomeScreenState extends State<HomeScreen> {
             physics: const BouncingScrollPhysics(),
             children: [
               _buildLeaveBalanceCard(),
-              _buildLastSalaryCard(),
-              _buildThrDashboardCard(),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: _buildNewPayrollCard(),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: _buildNewThrCard(),
+              ),
             ],
           ),
         ),
@@ -1706,333 +1733,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildLastSalaryCard() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.colorEggplant,
-            AppTheme.colorEggplant.withValues(alpha: 0.8),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.colorEggplant.withValues(alpha: 0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: InkWell(
-        onTap: _navigateToPayroll,
-        child: Stack(
-          children: [
-            Positioned(
-              top: -10,
-              right: -10,
-              child: Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.05),
-                ),
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Slip Gaji Terakhir',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.normal,
-                            color: Colors.white.withValues(alpha: 0.7),
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _isLoadingPayroll
-                              ? 'Memuat...'
-                              : _lastPayroll != null
-                              ? () {
-                                  final periodStr =
-                                      _lastPayroll!['period'] ??
-                                      _lastPayroll!['period_start'];
-                                  if (periodStr != null) {
-                                    final dateStr =
-                                        periodStr.toString().length == 7
-                                        ? '$periodStr-01'
-                                        : periodStr.toString();
-                                    return 'Periode ${DateFormat('MMM yyyy', 'id_ID').format(DateTime.parse(dateStr))}';
-                                  }
-                                  return 'Belum ada data';
-                                }()
-                              : 'Belum ada data',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.payments_outlined,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _isLoadingPayroll
-                          ? '...'
-                          : _lastPayroll != null
-                          ? 'Rp  * * * * * *'
-                          : '-',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      '*Ketuk untuk melihat detail',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.white.withValues(alpha: 0.5),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.only(top: 12),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      top: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Builder(
-                        builder: (context) {
-                          final status = _lastPayroll != null
-                              ? _lastPayroll!['status']
-                              : 'pending';
-                          Color color;
-                          String text;
 
-                          if (status == 'paid') {
-                            color = const Color(0xFF86EFAC); // Green
-                            text = 'Sudah Ditransfer';
-                          } else if (status == 'approved') {
-                            color = Colors.lightBlueAccent; // Blue
-                            text = 'Disetujui';
-                          } else {
-                            color = Colors.amberAccent; // Orange/Yellow
-                            text = 'Proses';
-                          }
-
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              text,
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                                color: color,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildThrDashboardCard() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF06B6D4), // Cyan 500
-            Color(0xFF3B82F6), // Blue 500
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF06B6D4).withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: InkWell(
-        onTap: () => Navigator.pushNamed(context, '/payroll/thr'),
-        child: Stack(
-          children: [
-            Positioned(
-              top: -10,
-              right: -10,
-              child: Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.1),
-                ),
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Tunjangan Hari Raya',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.normal,
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Tahun ${DateTime.now().year}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.card_giftcard_rounded,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Cek Slip THR ✨',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      '*Ketuk untuk melihat riwayat',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.white.withValues(alpha: 0.8),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.only(top: 12),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      top: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.2),
-                      ),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'Bonus Tahunan',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildAnnouncements() {
     return Column(
@@ -2305,11 +2006,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildQuickActions() {
     final user = Provider.of<AuthProvider>(context).user;
-    // final jobLevel = user?.jobLevel?.toLowerCase() ?? ''; // Removed
-    // final role = user?.role?.toLowerCase() ?? ''; // Removed
     final canApprove = user?.canApprove ?? false;
 
-    final menuItems = <Map<String, dynamic>>[
+    final List<Map<String, dynamic>> menuItems = [
       {
         'icon': 'assets/icons/payslip.png',
         'isAsset': true,
@@ -2357,25 +2056,27 @@ class _HomeScreenState extends State<HomeScreen> {
         'gradient': [const Color(0xFF84FAB0), const Color(0xFF8FD3F4)],
         'onTap': () => Navigator.pushNamed(context, '/submission/create', arguments: 'Dinas'),
       },
-      if (canApprove)
-        {
-          'icon': Icons.verified_rounded,
-          'isAsset': false,
-          'label': 'Approval',
-          'subtitle': _pendingApprovalsCount > 0
-              ? '$_pendingApprovalsCount pending'
-              : 'Persetujuan',
-          'gradient': [const Color(0xFFA18CD1), const Color(0xFFFBC2EB)],
-          'badge': _pendingApprovalsCount,
-          'onTap': () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ApprovalListScreen()),
-            );
-            _loadPendingApprovals();
-          },
-        },
     ];
+
+    if (canApprove) {
+      menuItems.add({
+        'icon': Icons.verified_rounded,
+        'isAsset': false,
+        'label': 'Approval',
+        'subtitle': _pendingApprovalsCount > 0
+            ? '$_pendingApprovalsCount pending'
+            : 'Persetujuan',
+        'gradient': [const Color(0xFFA18CD1), const Color(0xFFFBC2EB)],
+        'badge': _pendingApprovalsCount,
+        'onTap': () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ApprovalListScreen()),
+          );
+          _loadPendingApprovals();
+        },
+      });
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2777,6 +2478,90 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildNewPayrollCard() {
+    if (_isLoadingPayroll) {
+      return SlipGajiCard(
+        data: SlipGajiData(
+          periode: 'Memuat...',
+          status: SlipGajiStatus.belumAda,
+        ),
+      );
+    }
+
+    if (_lastPayroll == null) {
+      return SlipGajiCard(
+        data: SlipGajiData(
+          periode: 'Belum ada data',
+          status: SlipGajiStatus.belumAda,
+          onDetail: () => Navigator.pushNamed(context, '/payroll'),
+        ),
+      );
+    }
+
+    final period = (_lastPayroll!['period'] ?? _lastPayroll!['period_start'] ?? '').toString();
+    String formattedPeriod = period;
+    try {
+      if (period.contains('-')) {
+        final date = DateTime.parse('$period-01');
+        formattedPeriod = DateFormat('MMMM yyyy', 'id_ID').format(date);
+      }
+    } catch (_) {}
+
+    final status = _lastPayroll!['status'] == 'selesai' || _lastPayroll!['status'] == 'paid'
+        ? SlipGajiStatus.selesai
+        : SlipGajiStatus.proses;
+
+    return SlipGajiCard(
+      data: SlipGajiData(
+        periode: formattedPeriod,
+        gajiPokok: _lastPayroll!['basic_salary']?.toString(),
+        tunjangan: _lastPayroll!['allowance']?.toString(),
+        total: _lastPayroll!['net_salary']?.toString() ?? _lastPayroll!['total_salary']?.toString(),
+        status: status,
+        updatedAt: _lastPayroll!['updated_at'] != null 
+            ? DateFormat('d MMM HH:mm', 'id_ID').format(DateTime.parse(_lastPayroll!['updated_at']))
+            : '',
+        onUnduh: () => PayrollService().downloadSlip(
+          _lastPayroll!['id'],
+          'Slip_Gaji_$period.pdf',
+          division: _lastPayroll!['division'],
+        ),
+        onDetail: () => Navigator.pushNamed(context, '/payroll'),
+      ),
+    );
+  }
+
+  Widget _buildNewThrCard() {
+    if (_isLoadingThr) {
+      return SlipThrCard(
+        data: SlipThrData(
+          tahun: '...',
+        ),
+      );
+    }
+
+    if (_lastThr == null) {
+      return SlipThrCard(
+        data: SlipThrData(
+          tahun: DateTime.now().year.toString(),
+          isAvailable: false,
+          onDetail: () => Navigator.pushNamed(context, '/payroll/thr'),
+        ),
+      );
+    }
+
+    return SlipThrCard(
+      data: SlipThrData(
+        tahun: _lastThr!['year']?.toString() ?? '',
+        isAvailable: _lastThr!['status'] == 'paid',
+        updatedAt: _lastThr!['paid_at'] != null
+            ? DateFormat('d MMM yyyy', 'id_ID').format(DateTime.parse(_lastThr!['paid_at']))
+            : '',
+        onDetail: () => Navigator.pushNamed(context, '/payroll/thr'),
       ),
     );
   }

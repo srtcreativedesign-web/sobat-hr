@@ -1,328 +1,397 @@
+// Modernized Submission Menu Screen
 import 'package:flutter/material.dart';
-import '../../config/theme.dart';
-import '../../l10n/app_localizations.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../services/request_service.dart';
 
-class SubmissionMenuScreen extends StatelessWidget {
+class SubmissionMenuScreen extends StatefulWidget {
   const SubmissionMenuScreen({super.key});
+
+  @override
+  State<SubmissionMenuScreen> createState() => _SubmissionMenuScreenState();
+}
+
+class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
+  int _leaveBalance = 0;
+  bool _isLoadingBalance = true;
+  final RequestService _requestService = RequestService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLeaveBalance();
+  }
+
+  Future<void> _loadLeaveBalance() async {
+    try {
+      final data = await _requestService.getLeaveBalance();
+      if (mounted) {
+        setState(() {
+          _leaveBalance = data['balance'] ?? 0;
+          _isLoadingBalance = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingBalance = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB), // Cool Gray 50
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: BackButton(color: AppTheme.textDark),
-        centerTitle: true,
-        title: Text(
-          AppLocalizations.of(context)!.submissions,
-          style: const TextStyle(
-            color: AppTheme.textDark,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
+      backgroundColor: const Color(0xFFF7F6F2),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            _buildHeroSection(context),
+            _buildWhiteSheet(context),
+          ],
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+    );
+  }
+
+  Widget _buildHeroSection(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment(0.0, -1.0),
+          end: Alignment(0.0, 1.0),
+          colors: [Color(0xFF1A1640), Color(0xFF2D2680), Color(0xFF4A3FA0)],
+          stops: [0.0, 0.45, 1.0],
+        ),
+      ),
+      child: Stack(
         children: [
-          // Header
-          const Text(
-            'Layanan\nMandiri',
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              color: AppTheme.textDark,
-              height: 1.1,
-              letterSpacing: -1.0,
+          // Decorative Blobs
+          Positioned(
+            right: -30,
+            top: -20,
+            child: _buildBlob(160, const Color(0x597F77DD)),
+          ),
+          Positioned(
+            left: -20,
+            bottom: 20,
+            child: _buildBlob(120, const Color(0x4D534AB7)),
+          ),
+          Positioned(
+            right: 30,
+            bottom: -10,
+            child: _buildBlob(90, const Color(0x33AFA9EC)),
+          ),
+
+          // Content
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 52),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Topbar
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildTopButton(
+                        Icons.chevron_left_rounded,
+                        onTap: () => Navigator.pop(context),
+                      ),
+                      const Text(
+                        'Submissions',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xB2EEEDFE),
+                          letterSpacing: 0.1,
+                        ),
+                      ),
+                      _buildTopButton(Icons.search_rounded),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  // Hero Text
+                  const Text(
+                    'LAYANAN MANDIRI',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFFAFA9EC),
+                      letterSpacing: 1.1,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Kelola kebutuhan\nkerja kamu',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFEEEDFE),
+                      letterSpacing: -0.8,
+                      height: 1.15,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      _buildInfoBadge(Icons.calendar_today_rounded, '7 layanan'),
+                      const SizedBox(width: 12),
+                      Container(
+                        width: 4,
+                        height: 4,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF3C3489),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      _buildInfoBadge(
+                        Icons.access_time_rounded,
+                        DateFormat('EEEE, d MMM', 'id_ID').format(DateTime.now()),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Kelola kebutuhan kerja Anda dengan mudah.',
-            style: TextStyle(
-              fontSize: 15,
-              color: AppTheme.textDark, // Uses darkened text color
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 32),
-
-          // Section 1: Kehadiran (Colored Cards)
-          _buildSectionTitle('KEHADIRAN & WAKTU'),
-          const SizedBox(height: 16),
-          GridView.count(
-            physics: const NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.0, // Square-ish cards
-            children: [
-              _buildModernCard(
-                context,
-                AppLocalizations.of(context)!.leave,
-                Icons.calendar_month_rounded,
-                const LinearGradient(
-                  colors: [Color(0xFFF97316), Color(0xFFEA580C)], // Orange
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  '/submission/create',
-                  arguments: 'Cuti',
-                ),
-              ),
-              _buildModernCard(
-                context,
-                AppLocalizations.of(context)!.sick,
-                Icons.medication_rounded,
-                const LinearGradient(
-                  colors: [Color(0xFFF43F5E), Color(0xFFE11D48)], // Rose
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  '/submission/create',
-                  arguments: 'Sakit',
-                ),
-              ),
-              _buildModernCard(
-                context,
-                AppLocalizations.of(context)!.overtime,
-                Icons.timer_rounded,
-                const LinearGradient(
-                  colors: [Color(0xFF3B82F6), Color(0xFF2563EB)], // Blue
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  '/submission/create',
-                  arguments: 'Lembur',
-                ),
-              ),
-              _buildModernCard(
-                context,
-                AppLocalizations.of(context)!.history,
-                Icons.history_rounded,
-                const LinearGradient(
-                  colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)], // Violet
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                onTap: () =>
-                    Navigator.pushNamed(context, '/attendance/history'),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 32),
-
-          // Section 2: Administrasi (Clean Light Cards)
-          _buildSectionTitle('ADMINISTRASI & LAINNYA'),
-          const SizedBox(height: 16),
-          _buildUtilityCard(
-            context,
-            'Slip THR',
-            'Tunjangan Hari Raya',
-            Icons.card_giftcard_rounded,
-            const Color(0xFF06B6D4),
-            onTap: () => Navigator.pushNamed(context, '/payroll/thr'),
-          ),
-          const SizedBox(height: 12),
-          _buildUtilityCard(
-            context,
-            'Perjalanan Dinas',
-            'Business Trip',
-            Icons.flight_takeoff_rounded,
-            AppTheme.colorEggplant,
-          ),
-          const SizedBox(height: 12),
-          /*
-          _buildUtilityCard(
-            context,
-            'Reimbursement',
-            'Klaim Biaya',
-            Icons.receipt_long_rounded,
-            const Color(0xFF059669),
-          ),
-          const SizedBox(height: 12),
-          _buildUtilityCard(
-            context,
-            'Pengajuan Aset',
-            'Pinjam Barang',
-            Icons.devices_rounded,
-            const Color(0xFF7C3AED),
-          ),
-          const SizedBox(height: 12),
-          _buildUtilityCard(
-            context,
-            'Resign',
-            'Pengunduran Diri',
-            Icons.logout_rounded,
-            AppTheme.textLight,
-          ),
-          */
-          const SizedBox(height: 48),
         ],
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.bold,
-        color: AppTheme.textLight,
-        letterSpacing: 1.2,
-      ),
-    );
-  }
-
-  Widget _buildModernCard(
-    BuildContext context,
-    String label,
-    IconData icon,
-    Gradient gradient, {
-    VoidCallback? onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap:
-            onTap ??
-            () => Navigator.pushNamed(
-              context,
-              '/submission/create',
-              arguments: label,
-            ),
-        borderRadius: BorderRadius.circular(24),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: gradient,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: (gradient.colors.first).withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(icon, color: Colors.white, size: 28),
-                ),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
+  Widget _buildBlob(double size, Color color) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [color, Colors.transparent],
+          stops: const [0.0, 0.7],
         ),
       ),
     );
   }
 
-  Widget _buildUtilityCard(
-    BuildContext context,
-    String label,
-    String subLabel,
-    IconData icon,
-    Color color, {
+  Widget _buildTopButton(IconData icon, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 0.5),
+        ),
+        child: Icon(icon, color: const Color(0xFFEEEDFE), size: 18),
+      ),
+    );
+  }
+
+  Widget _buildInfoBadge(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 13, color: const Color(0xFF7F77DD)),
+        const SizedBox(width: 5),
+        Text(
+          text,
+          style: const TextStyle(fontSize: 11, color: Color(0xFF7F77DD)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWhiteSheet(BuildContext context) {
+    return Container(
+      transform: Matrix4.translationValues(0, -28, 0),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+      decoration: const BoxDecoration(
+        color: Color(0xFFF7F6F2),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader('Kehadiran & Waktu', '4 layanan'),
+          const SizedBox(height: 14),
+          _buildMenuItem(
+            context,
+            icon: Icons.calendar_month_rounded,
+            iconColor: const Color(0xFF534AB7),
+            bgColor: const Color(0xFFEEEDFE),
+            title: 'Leave',
+            subtitle: 'Ajukan cuti tahunan atau izin',
+            trailingText: _isLoadingBalance ? '...' : '$_leaveBalance hari',
+            isFirst: true,
+            onTap:
+                () => Navigator.pushNamed(
+                  context,
+                  '/submission/create',
+                  arguments: 'Cuti',
+                ),
+          ),
+          _buildMenuItem(
+            context,
+            icon: Icons.medication_rounded,
+            iconColor: const Color(0xFFA32D2D),
+            bgColor: const Color(0xFFFFE4E4),
+            title: 'Sick Leave',
+            subtitle: 'Cuti sakit',
+            onTap:
+                () => Navigator.pushNamed(
+                  context,
+                  '/submission/create',
+                  arguments: 'Sakit',
+                ),
+          ),
+          _buildMenuItem(
+            context,
+            icon: Icons.timer_rounded,
+            iconColor: const Color(0xFF854F0B),
+            bgColor: const Color(0xFFFAEEDA),
+            title: 'Overtime',
+            subtitle: 'Ajukan lembur',
+            onTap:
+                () => Navigator.pushNamed(
+                  context,
+                  '/submission/create',
+                  arguments: 'Lembur',
+                ),
+          ),
+          _buildMenuItem(
+            context,
+            icon: Icons.history_rounded,
+            iconColor: const Color(0xFF3B6D11),
+            bgColor: const Color(0xFFEAF3DE),
+            title: 'History',
+            subtitle: 'Riwayat pengajuan',
+            isLast: true,
+            onTap: () => Navigator.pushNamed(context, '/attendance/history'),
+          ),
+          const SizedBox(height: 24),
+          _buildSectionHeader('Administrasi', '3 layanan'),
+          const SizedBox(height: 14),
+          _buildMenuItem(
+            context,
+            icon: Icons.card_giftcard_rounded,
+            iconColor: const Color(0xFF854F0B),
+            bgColor: const Color(0xFFFAEEDA),
+            title: 'Slip THR',
+            subtitle: 'Tunjangan Hari Raya',
+            trailingText: 'Baru',
+            isFirst: true,
+            onTap: () => Navigator.pushNamed(context, '/payroll/thr'),
+          ),
+          _buildMenuItem(
+            context,
+            icon: Icons.flight_takeoff_rounded,
+            iconColor: const Color(0xFF3B6D11),
+            bgColor: const Color(0xFFEAF3DE),
+            title: 'Perjalanan Dinas',
+            subtitle: 'Business Trip',
+          ),
+          _buildMenuItem(
+            context,
+            icon: Icons.payments_rounded,
+            iconColor: const Color(0xFF534AB7),
+            bgColor: const Color(0xFFEEEDFE),
+            title: 'Reimbursement',
+            subtitle: 'Klaim pengeluaran',
+            isLast: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, String count) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2C2C2A)),
+        ),
+        Text(count, style: const TextStyle(fontSize: 11, color: Color(0xFF534AB7))),
+      ],
+    );
+  }
+
+  Widget _buildMenuItem(
+    BuildContext context, {
+    required IconData icon,
+    required Color iconColor,
+    required Color bgColor,
+    required String title,
+    required String subtitle,
+    String? trailingText,
+    bool isFirst = false,
+    bool isLast = false,
     VoidCallback? onTap,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap:
-            onTap ??
-            () => Navigator.pushNamed(
-              context,
-              '/submission/create',
-              arguments: label,
+    return InkWell(
+      onTap: onTap ?? () {},
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: const Color(0xFFD3D1C7), width: 0.5),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(isFirst ? 16 : 4),
+            bottom: Radius.circular(isLast ? 16 : 4),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(14)),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.grey.shade200,
-            ), // Adjusted from shade100
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 5,
-                offset: const Offset(0, 2),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2C2C2A),
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF888780))),
+                ],
               ),
-            ],
-          ),
-          child: Row(
-            children: [
+            ),
+            if (trailingText != null)
               Container(
-                width: 48,
-                height: 48,
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(99),
                 ),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textDark,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subLabel,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppTheme.textLight,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  trailingText,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: iconColor,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              const Icon(
-                // Fixed const
-                Icons.chevron_right_rounded,
-                color: AppTheme.textLight, // Fixed color
-                size: 20,
-              ),
-            ],
-          ),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFFB4B2A9), size: 14),
+          ],
         ),
       ),
     );
