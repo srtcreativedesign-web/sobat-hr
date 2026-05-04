@@ -96,7 +96,7 @@ class AttendanceController extends Controller
             'location_address' => 'nullable|string',
             'attendance_type' => 'nullable|in:office,field',
             'field_notes' => 'nullable|string|required_if:attendance_type,field',
-            'track_type' => 'nullable|in:operational,head_office,office',
+            'track_type' => 'nullable|in:operational,head_office',
             'is_shifting' => 'nullable|boolean',
         ]);
 
@@ -368,7 +368,7 @@ class AttendanceController extends Controller
             'attendance_type' => 'nullable|in:office,field',
             'field_notes' => 'nullable|string',
             'photo' => 'required_with:check_out|image|mimes:jpg,jpeg,png|max:5120',
-            'track_type' => 'nullable|in:operational,head_office,office',
+            'track_type' => 'nullable|in:operational,head_office',
             'qr_code_data' => 'nullable|string', // QR code for operational checkout validation
         ]);
 
