@@ -103,7 +103,7 @@ class AttendanceController extends Controller
         $employee = Employee::find($validated['employee_id']);
         $attendanceType = $validated['attendance_type'] ?? 'office';
         // ✓ ENFORCE employee's track from database, not from request
-        $trackType = $employee->track_type ?? 'head_office';
+        $trackType = $employee->track ?? 'head_office';
         \Log::info("Attendance Store - Employee: {$employee->full_name}, Track: {$trackType}, Type: {$attendanceType}");
 
         // Geolocation Validation (Mandatory for Head Office / Office track)
