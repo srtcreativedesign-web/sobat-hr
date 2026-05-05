@@ -27,9 +27,9 @@ class AttendanceController extends Controller
         // EAGER LOADING: employee
         $query = Attendance::with(['employee.division']);
 
-        $isMobile = $request->header('X-Platform') === 'mobile' || 
-                    !$request->hasHeader('Origin') || 
-                    str_contains($request->userAgent(), 'Dart');
+        $isMobile = $request->header('X-Platform') === 'mobile' ||
+            !$request->hasHeader('Origin') ||
+            str_contains($request->userAgent(), 'Dart');
 
         // Filter for self-view only if NOT in Admin roles OR if accessed via Mobile
         if (!$isAdmin || $isMobile) {
@@ -49,7 +49,7 @@ class AttendanceController extends Controller
         if ($request->has('end_date') && $request->end_date) {
             $query->whereDate('date', '<=', $request->end_date);
         }
-        
+
         // Backward compatibility or exact date match if needed
         if (!$request->has('start_date') && $request->has('date')) {
             $query->whereDate('date', $request->date);
@@ -171,11 +171,11 @@ class AttendanceController extends Controller
                 // Get employee shift
                 $shift = $employee->shift;
                 $defaultStartTime = '08:00:00';
-                
+
                 if ($shift) {
                     // Use shift start time if available
-                    $startTimeStr = $shift->start_time instanceof Carbon 
-                        ? $shift->start_time->format('H:i:s') 
+                    $startTimeStr = $shift->start_time instanceof Carbon
+                        ? $shift->start_time->format('H:i:s')
                         : Carbon::parse($shift->start_time)->format('H:i:s');
                     $workStartTime = Carbon::parse($validated['date'] . ' ' . $startTimeStr);
                 } else {
@@ -210,8 +210,8 @@ class AttendanceController extends Controller
             $defaultEndTime = '17:00:00';
 
             if ($shift) {
-                $endTimeStr = $shift->end_time instanceof Carbon 
-                    ? $shift->end_time->format('H:i:s') 
+                $endTimeStr = $shift->end_time instanceof Carbon
+                    ? $shift->end_time->format('H:i:s')
                     : Carbon::parse($shift->end_time)->format('H:i:s');
                 $workEndTime = Carbon::parse($validated['date'] . ' ' . $endTimeStr);
             } else {
@@ -235,7 +235,7 @@ class AttendanceController extends Controller
             if ($verificationResult['status'] === 'mismatch') {
                 // Delete the photo as it's not valid
                 Storage::disk('public')->delete($validated['photo_path']);
-                
+
                 return response()->json([
                     'message' => 'Verifikasi wajah gagal: wajah tidak cocok. Pastikan Anda melakukan absensi sendiri.',
                     'distance' => $verificationResult['distance'] ?? null
@@ -278,7 +278,7 @@ class AttendanceController extends Controller
     private function resizeAndSaveImage($sourcePath, $destinationPath, $maxWidth, $quality)
     {
         list($width, $height, $type) = getimagesize($sourcePath);
-        
+
         // Load image based on type
         switch ($type) {
             case IMAGETYPE_JPEG:
@@ -330,7 +330,7 @@ class AttendanceController extends Controller
     public function show(string $id)
     {
         $attendance = Attendance::with('employee')->findOrFail($id);
-        
+
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
@@ -381,7 +381,7 @@ class AttendanceController extends Controller
         // Handle Checkout Photo Upload (with compression)
         if ($request->hasFile('photo')) {
             $photo = $request->file('photo');
-            
+
             // Generate filename unique
             $filename = 'out_' . uniqid() . '_' . time() . '.jpg';
             $path = 'attendance_photos/' . $filename;
@@ -394,7 +394,7 @@ class AttendanceController extends Controller
 
             // Compress and Resize Image (Consistent with check-in)
             $this->resizeAndSaveImage($photo->getPathname(), $fullPath, 800, 80);
-            
+
             $validated['checkout_photo_path'] = $path;
         }
 
@@ -405,10 +405,10 @@ class AttendanceController extends Controller
 
             $checkIn = Carbon::parse($checkInTime);
             $checkOut = Carbon::parse($checkOutTime);
-            
+
             if ($checkOutTime) {
                 // Calculate Work Hours
-            $validated['work_hours'] = $checkIn->floatDiffInHours($checkOut);
+                $validated['work_hours'] = $checkIn->floatDiffInHours($checkOut);
 
                 // Calculate Overtime based on Shift
                 $shift = $attendance->employee->shift;
@@ -416,8 +416,8 @@ class AttendanceController extends Controller
                 $dateVal = $attendance->date instanceof Carbon ? $attendance->date->format('Y-m-d') : $attendance->date;
 
                 if ($shift) {
-                    $endTimeStr = $shift->end_time instanceof Carbon 
-                        ? $shift->end_time->format('H:i:s') 
+                    $endTimeStr = $shift->end_time instanceof Carbon
+                        ? $shift->end_time->format('H:i:s')
                         : Carbon::parse($shift->end_time)->format('H:i:s');
                     $workEndTime = Carbon::parse($dateVal . ' ' . $endTimeStr);
                 } else {
@@ -425,7 +425,7 @@ class AttendanceController extends Controller
                 }
 
                 $clockOutDateTime = Carbon::parse($dateVal . ' ' . $checkOutTime);
-                
+
                 if ($clockOutDateTime->gt($workEndTime)) {
                     $validated['overtime_duration'] = $clockOutDateTime->diffInMinutes($workEndTime);
                 } else {
@@ -451,7 +451,7 @@ class AttendanceController extends Controller
         $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR]);
 
         if (!$isAdmin) {
-             return response()->json(['message' => 'Hanya Admin/HR yang dapat menghapus data absensi.'], 403);
+            return response()->json(['message' => 'Hanya Admin/HR yang dapat menghapus data absensi.'], 403);
         }
 
         // Cleanup: Delete associated photos from storage before deleting the record
@@ -479,7 +479,7 @@ class AttendanceController extends Controller
 
         // TODO: Implement actual fingerprint sync logic
         // This will be handled by a Job/Queue in production
-        
+
         return response()->json([
             'message' => 'Fingerprint sync queued successfully',
             'job_id' => 'sync_' . time(),
@@ -543,7 +543,7 @@ class AttendanceController extends Controller
 
         if ($request->has('month') && $request->has('year')) {
             $query->whereMonth('date', $request->month)
-                  ->whereYear('date', $request->year);
+                ->whereYear('date', $request->year);
         }
 
         $history = $query->orderBy('date', 'desc')->get();
@@ -673,8 +673,8 @@ class AttendanceController extends Controller
         }
 
         return [
-            'status' => 'mismatch', 
-            'match' => false, 
+            'status' => 'mismatch',
+            'match' => false,
             'distance' => $result['distance'] ?? null,
             'message' => $result['message'] ?? 'Face mismatch'
         ];

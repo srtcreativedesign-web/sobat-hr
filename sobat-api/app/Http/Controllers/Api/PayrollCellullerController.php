@@ -82,7 +82,7 @@ class PayrollCellullerController extends Controller
 
         try {
             $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
-            $reader->setReadDataOnly(true);
+            $reader->setReadDataOnly(false); // false = calculate formulas (gross_salary, etc. are formulas)
             $spreadsheet = $reader->load($file->getRealPath());
             $sheet = $spreadsheet->getActiveSheet();
             

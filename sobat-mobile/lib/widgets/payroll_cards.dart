@@ -300,7 +300,7 @@ class SlipThrCard extends StatelessWidget {
               height: 110,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.07),
+                color: Colors.white.withValues(alpha: 0.07),
               ),
             ),
           ),
@@ -312,7 +312,7 @@ class SlipThrCard extends StatelessWidget {
               height: 70,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -330,7 +330,7 @@ class SlipThrCard extends StatelessWidget {
                         'TUNJANGAN HARI RAYA',
                         style: TextStyle(
                           fontSize: 10,
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.9,
                         ),
@@ -395,7 +395,7 @@ class SlipThrCard extends StatelessWidget {
                 '*Ketuk untuk melihat riwayat',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.white.withOpacity(0.55),
+                  color: Colors.white.withValues(alpha: 0.55),
                 ),
               ),
               const SizedBox(height: 16),
@@ -504,10 +504,10 @@ class _OutlineButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: isDisabled ? _C.gray100.withOpacity(0.3) : _C.cream,
+          color: isDisabled ? _C.gray100.withValues(alpha: 0.3) : _C.cream,
           borderRadius: BorderRadius.circular(99),
           border: Border.all(
-            color: isDisabled ? _C.gray300.withOpacity(0.3) : _C.gray100,
+            color: isDisabled ? _C.gray300.withValues(alpha: 0.3) : _C.gray100,
             width: 0.5,
           ),
         ),
@@ -566,9 +566,12 @@ class _GlassBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
+        color: Colors.white.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(99),
-        border: Border.all(color: Colors.white.withOpacity(0.18), width: 0.5),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.18),
+          width: 0.5,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -588,7 +591,7 @@ class _GlassBadge extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 11,
-              color: Colors.white.withOpacity(0.85),
+              color: Colors.white.withValues(alpha: 0.85),
             ),
           ),
         ],

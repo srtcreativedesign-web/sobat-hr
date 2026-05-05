@@ -55,7 +55,7 @@ def compare_faces(known_image_path, unknown_image_path):
 
         # Compare faces
         # tolerance=0.6 is default, lower is stricter
-        results = face_recognition.compare_faces([known_encoding], unknown_encoding, tolerance=0.4)
+        results = face_recognition.compare_faces([known_encoding], unknown_encoding, tolerance=0.7)
         face_distance = face_recognition.face_distance([known_encoding], unknown_encoding)
 
         return {

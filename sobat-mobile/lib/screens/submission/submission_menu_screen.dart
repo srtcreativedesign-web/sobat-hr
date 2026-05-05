@@ -222,7 +222,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           const SizedBox(height: 14),
           _buildMenuItem(
             context,
-            icon: Icons.calendar_month_rounded,
+            assetIcon: 'assets/icons/leave.png',
             iconColor: const Color(0xFF534AB7),
             bgColor: const Color(0xFFEEEDFE),
             title: 'Leave',
@@ -252,7 +252,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           ),
           _buildMenuItem(
             context,
-            icon: Icons.timer_rounded,
+            assetIcon: 'assets/icons/overtime.png',
             iconColor: const Color(0xFF854F0B),
             bgColor: const Color(0xFFFAEEDA),
             title: 'Overtime',
@@ -266,7 +266,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           ),
           _buildMenuItem(
             context,
-            icon: Icons.history_rounded,
+            assetIcon: 'assets/icons/history.png',
             iconColor: const Color(0xFF3B6D11),
             bgColor: const Color(0xFFEAF3DE),
             title: 'History',
@@ -279,7 +279,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           const SizedBox(height: 14),
           _buildMenuItem(
             context,
-            icon: Icons.card_giftcard_rounded,
+            assetIcon: 'assets/icons/payslip.png',
             iconColor: const Color(0xFF854F0B),
             bgColor: const Color(0xFFFAEEDA),
             title: 'Slip THR',
@@ -290,7 +290,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           ),
           _buildMenuItem(
             context,
-            icon: Icons.flight_takeoff_rounded,
+            assetIcon: 'assets/icons/bussines-trip.png',
             iconColor: const Color(0xFF3B6D11),
             bgColor: const Color(0xFFEAF3DE),
             title: 'Perjalanan Dinas',
@@ -325,7 +325,8 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
 
   Widget _buildMenuItem(
     BuildContext context, {
-    required IconData icon,
+    IconData? icon,
+    String? assetIcon,
     required Color iconColor,
     required Color bgColor,
     required String title,
@@ -349,11 +350,21 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
         ),
         child: Row(
           children: [
-            Container(
+            SizedBox(
               width: 44,
               height: 44,
-              decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(14)),
-              child: Icon(icon, color: iconColor, size: 20),
+              child: assetIcon != null
+                  ? Image.asset(
+                      assetIcon,
+                      width: 44,
+                      height: 44,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Icon(Icons.error_outline_rounded, color: iconColor, size: 24),
+                    )
+                  : Container(
+                      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(14)),
+                      child: Icon(icon, color: iconColor, size: 20),
+                    ),
             ),
             const SizedBox(width: 12),
             Expanded(
