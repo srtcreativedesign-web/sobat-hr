@@ -432,7 +432,10 @@ export default function PayrollPage() {
     if (selectedDivision === 'wrapping') {
       return parseFloat(payroll.total_salary_gross) || 0;
     }
-    if (['fnb', 'tungtau', 'maximum', 'minimarket', 'reflexiology', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) {
+    if (selectedDivision === 'cellular') {
+      return parseFloat(payroll.gross_salary) || 0;
+    }
+    if (['fnb', 'tungtau', 'maximum', 'minimarket', 'reflexiology', 'hans', 'money_changer'].includes(selectedDivision)) {
       // For FnB/MM/Ref, use total_salary_2 which includes everything
       return parseFloat(payroll.total_salary_2) || 0;
     }
