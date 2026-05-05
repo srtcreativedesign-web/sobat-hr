@@ -1052,7 +1052,7 @@ export default function PayrollPage() {
                             if (!numValue || numValue === 0) return null;
                             
                             // Skip EWA/Stafbook from general deductions as it's shown at the end
-                            if (key.toLowerCase().includes('ewa') || key.toLowerCase().includes('stafbook') || key.toLowerCase() === 'pinjaman') return null;
+                            if (key.toLowerCase().includes('ewa') || key.toLowerCase().includes('stafbook')) return null;
 
 
                             return (
