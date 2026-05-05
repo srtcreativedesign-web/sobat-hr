@@ -666,6 +666,18 @@ class PayrollMmController extends Controller
             'BPJS TK' => $payroll->deduction_bpjs_tk,
         ];
         
+        $formatted['thp'] = $payroll->net_salary + $payroll->ewa_amount;
+        
+        $formatted['attendance'] = [
+            'Total Hari' => $payroll->days_total,
+            'Off' => $payroll->days_off,
+            'Sakit' => $payroll->days_sick,
+            'Ijin' => $payroll->days_permission,
+            'Alfa' => $payroll->days_alpha,
+            'Cuti' => $payroll->days_leave,
+            'Hadir' => $payroll->days_present,
+        ];
+        
         return $formatted;
     }
 }

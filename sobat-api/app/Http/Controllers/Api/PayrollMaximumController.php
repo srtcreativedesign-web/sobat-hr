@@ -104,7 +104,7 @@ class PayrollMaximumController extends Controller
             
             // Add extra fields
             $formatted['ewa_amount'] = $payroll->stafbook_loan;
-            $formatted['thp'] = $payroll->thp;
+            $formatted['thp'] = $payroll->net_salary + $payroll->stafbook_loan;
             
             // Add attendance data
             $formatted['attendance'] = [
@@ -575,7 +575,7 @@ class PayrollMaximumController extends Controller
         
         // Add extra fields
         $formatted['ewa_amount'] = $payroll->stafbook_loan;
-        $formatted['thp'] = $payroll->thp;
+        $formatted['thp'] = $payroll->net_salary + $payroll->stafbook_loan;
         
         // Add attendance data
         $formatted['attendance'] = [

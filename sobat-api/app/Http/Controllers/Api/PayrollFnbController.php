@@ -102,7 +102,7 @@ class PayrollFnbController extends Controller
             ];
             
             // Add extra fields
-            $formatted['thp'] = $payroll->thp;
+            $formatted['thp'] = $payroll->net_salary + $payroll->ewa_amount;
             
             // Add attendance data
             $formatted['attendance'] = [
@@ -569,7 +569,7 @@ class PayrollFnbController extends Controller
         ];
         
         // Add extra fields
-        $formatted['thp'] = $payroll->thp;
+        $formatted['thp'] = $payroll->net_salary + $payroll->ewa_amount;
         
         // Add attendance data
         $formatted['attendance'] = [
