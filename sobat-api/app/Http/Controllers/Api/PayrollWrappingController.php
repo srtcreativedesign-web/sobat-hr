@@ -106,6 +106,8 @@ class PayrollWrappingController extends Controller
             'BPJS TK' => $payroll->deduction_bpjs_tk,
         ];
         
+        $formatted['thp'] = $payroll->net_salary + $payroll->ewa_amount;
+        
          // Add attendance data for Mobile App
         $formatted['attendance'] = [
             'Total Hari' => $payroll->days_total,

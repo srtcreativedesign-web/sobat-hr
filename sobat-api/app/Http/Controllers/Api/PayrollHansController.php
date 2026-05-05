@@ -601,6 +601,8 @@ if ($headerRowIndex === -1) {
             'BPJS TK' => $payroll->deduction_bpjs_tk,
         ];
         
+        $formatted['thp'] = $payroll->net_salary + $payroll->ewa_amount;
+        
         // Add new extras to array
         $formatted['days_long_shift'] = $payroll->days_long_shift;
         $formatted['years_of_service'] = $payroll->years_of_service;
