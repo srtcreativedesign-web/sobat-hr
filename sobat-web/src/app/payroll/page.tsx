@@ -1102,7 +1102,11 @@ export default function PayrollPage() {
                       <div className="flex items-center justify-between border-b border-white/20 pb-4">
                         <div>
                           <p className="text-indigo-100 text-xs font-medium uppercase tracking-wider">Total Pendapatan (THP)</p>
-                          <p className="text-2xl font-bold">{formatCurrency(Number(selectedPayroll.thp || 0))}</p>
+                          <p className="text-2xl font-bold">{formatCurrency(Number(
+                            selectedDivision === 'cellular'
+                              ? (selectedPayroll.net_salary || selectedPayroll.thp || 0)
+                              : (selectedPayroll.thp || 0)
+                          ))}</p>
                         </div>
                       </div>
                       {parseFloat(String(selectedPayroll.ewa_amount || 0)) > 0 && (
