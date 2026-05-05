@@ -828,15 +828,6 @@ class PayrollController extends Controller
         $ids = $request->input('ids');
         $division = $request->input('division', 'office');
 
-        $updateData = ['status' => 'approved'];
-
-        if ($request->has('approval_signature')) {
-            $updateData['approval_signature'] = $request->approval_signature;
-            $updateData['signer_name'] = $request->signer_name;
-            $updateData['notes'] = $request->notes;
-            $updateData['approved_by'] = auth()->id();
-        }
-
         $model = Payroll::class;
         if ($division === 'fnb') $model = \App\Models\PayrollFnb::class;
         if ($division === 'minimarket') $model = \App\Models\PayrollMm::class;
@@ -847,6 +838,28 @@ class PayrollController extends Controller
         if ($division === 'money_changer') $model = \App\Models\PayrollMoneyChanger::class;
         if ($division === 'tungtau') $model = \App\Models\PayrollTungtau::class;
         if ($division === 'maximum') $model = \App\Models\PayrollMaximum::class;
+        
+        $modelInstance = new $model;
+        $table = $modelInstance->getTable();
+
+        $updateData = ['status' => 'approved'];
+
+        if ($request->has('approval_signature')) {
+            if (\Illuminate\Support\Facades\Schema::hasColumn($table, 'approval_signature')) {
+                $updateData['approval_signature'] = $request->approval_signature;
+            }
+            if (\Illuminate\Support\Facades\Schema::hasColumn($table, 'signer_name')) {
+                $updateData['signer_name'] = $request->signer_name;
+            }
+            if (\Illuminate\Support\Facades\Schema::hasColumn($table, 'notes')) {
+                $updateData['notes'] = $request->notes;
+            }
+            if (\Illuminate\Support\Facades\Schema::hasColumn($table, 'approved_by')) {
+                $updateData['approved_by'] = auth()->id();
+            }
+        }
+
+
 
         // Pending status varies: 'draft' or 'pending'
         // Generic uses 'draft', others use 'pending'. Let's handle both or check model.
