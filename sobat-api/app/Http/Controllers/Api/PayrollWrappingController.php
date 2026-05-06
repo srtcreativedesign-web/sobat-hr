@@ -183,6 +183,13 @@ class PayrollWrappingController extends Controller
                     Log::warning("Formula error in cell {$col}{$row}: " . $e->getMessage());
                     $val = $sheet->getCell($col . $row)->getValue();
                     if (is_numeric($val)) return (float)$val;
+                    
+                    // Handle potential time-formatted cells for overtime hours
+                    if ($val instanceof \DateTimeInterface || (is_numeric($val) && $val < 1 && $val > 0)) {
+                        // If it's a small decimal, it might be an Excel time value (1 = 24h)
+                        return (float)$val * 24;
+                    }
+                    
                     return 0;
                 }
             };
@@ -225,6 +232,9 @@ class PayrollWrappingController extends Controller
                 'total gaji & bonus' => 'total_salary_gross',
                 'total gaji' => 'subtotal',
                 'insentif lebaran' => 'bonus',
+                'insentif' => 'bonus',
+                'lebaran' => 'bonus',
+                'thr' => 'bonus',
                 'bonus' => 'bonus',
                 'lembur' => 'overtime_rate_header',
                 'target koli' => 'target_koli',
@@ -253,6 +263,8 @@ class PayrollWrappingController extends Controller
                 'jumlah' => null, // handled contextually
                 '/ jam' => 'overtime_rate',
                 'jam' => 'overtime_hours',
+                'lembur (jam)' => 'overtime_hours',
+                'lembur jam' => 'overtime_hours',
                 'absen 1x' => 'deduction_absent',
                 'terlambat' => 'deduction_late',
                 'tidak hadir' => 'deduction_alpha',
