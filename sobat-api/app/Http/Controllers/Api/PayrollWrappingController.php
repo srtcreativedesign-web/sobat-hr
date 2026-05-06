@@ -165,7 +165,7 @@ class PayrollWrappingController extends Controller
             }
             
             $highestRow = $sheet->getHighestRow();
-            $highestColIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($sheet->getHighestColumn());
+            $highestColumnIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($sheet->getHighestColumn());
             
             // Helper with safety net for formulas
             $getCellValue = function($col, $row) use ($sheet) {
@@ -187,14 +187,17 @@ class PayrollWrappingController extends Controller
                 }
             };
             
-            // --- DYNAMIC HEADER DETECTION ---
-            // Find the header row containing "Nama Karyawan" in column B
+            // Find the header row containing "Nama Karyawan"
             $headerRowIndex = -1;
+            
             for ($row = 1; $row <= min(15, $highestRow); $row++) {
-                $cellValue = $sheet->getCell('B' . $row)->getValue();
-                if ($cellValue && stripos($cellValue, 'Nama Karyawan') !== false) {
-                    $headerRowIndex = $row;
-                    break;
+                for ($colIdx = 1; $colIdx <= $highestColumnIndex; $colIdx++) {
+                    $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIdx);
+                    $cellValue = (string)$sheet->getCell($col . $row)->getValue();
+                    if ($cellValue && stripos($cellValue, 'Nama Karyawan') !== false) {
+                        $headerRowIndex = $row;
+                        break 2;
+                    }
                 }
             }
             
@@ -232,6 +235,7 @@ class PayrollWrappingController extends Controller
                 'potongan' => 'deductions_header',
                 'grand total' => 'thp',
                 'pinjaman ewa' => 'ewa_amount',
+                'pinjaman' => 'ewa_amount', // Map generic 'Pinjaman' to EWA to prevent it being a regular THP deduction
                 'payroll' => 'net_salary',
                 'indisipliner' => 'deduction_late', // Mapping disciplinary to late deduction as a generic bucket
             ];
@@ -252,14 +256,12 @@ class PayrollWrappingController extends Controller
                 'absen 1x' => 'deduction_absent',
                 'terlambat' => 'deduction_late',
                 'tidak hadir' => 'deduction_alpha',
-                'pinjaman' => 'deduction_loan',
                 'adm bank' => 'deduction_admin_fee',
                 'bpjs tk' => 'deduction_bpjs_tk',
             ];
             
-            // Scan header row
-            for ($colIndex = 1; $colIndex <= min(45, $highestColIndex); $colIndex++) {
-                $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
+            for ($colIdx = 1; $colIdx <= $highestColumnIndex; $colIdx++) {
+                $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIdx);
                 $headerVal = strtolower(trim((string)$sheet->getCell($col . $headerRowIndex)->getValue()));
                 $subHeaderVal = strtolower(trim((string)$sheet->getCell($col . ($headerRowIndex + 1))->getValue()));
                 
@@ -296,21 +298,21 @@ class PayrollWrappingController extends Controller
                         // Check if this col is right after meal_rate_header
                         $mealCol = $columnMap['meal_rate_header'];
                         $mealIdx = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($mealCol);
-                        if ($colIndex === $mealIdx + 1) {
+                        if ($colIdx === $mealIdx + 1) {
                             $columnMap['meal_amount'] = $col;
                         }
                     }
                     if (!isset($columnMap['transport_amount']) && isset($columnMap['transport_rate_header'])) {
                         $transCol = $columnMap['transport_rate_header'];
                         $transIdx = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($transCol);
-                        if ($colIndex === $transIdx + 1) {
+                        if ($colIdx === $transIdx + 1) {
                             $columnMap['transport_amount'] = $col;
                         }
                     }
                     if (!isset($columnMap['overtime_amount']) && isset($columnMap['overtime_rate_header'])) {
                         $overCol = $columnMap['overtime_rate_header'];
                         $overIdx = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($overCol);
-                        if ($colIndex === $overIdx + 2) {
+                        if ($colIdx === $overIdx + 2) {
                             $columnMap['overtime_amount'] = $col;
                         }
                     }
