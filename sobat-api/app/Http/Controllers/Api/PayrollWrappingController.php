@@ -464,8 +464,23 @@ class PayrollWrappingController extends Controller
                     'net_salary' => $getMappedValue('net_salary', $row),
                     'ewa_amount' => $getMappedValue('ewa_amount', $row),
                 ];
+
+                // Auto-Bonus Logic: If total_salary_gross is higher than the sum of mapped components,
+                // the difference is likely an unmapped bonus or incentive.
+                $calculatedGross = ($payrollData['basic_salary'] + $payrollData['training_salary'] + $payrollData['meal_amount'] + $payrollData['transport_amount'] + $payrollData['attendance_allowance'] + $payrollData['health_allowance'] + $payrollData['overtime_amount'] + $payrollData['target_koli'] + $payrollData['fee_aksesoris']);
+                $excelGross = $getMappedValue('total_salary_gross', $row);
+                $mappedBonus = $getMappedValue('bonus', $row);
                 
-                $dataRows[] = $parsed;
+                if ($excelGross > ($calculatedGross + $mappedBonus + 10)) {
+                    $payrollData['bonus'] = $mappedBonus + ($excelGross - ($calculatedGross + $mappedBonus));
+                } else {
+                    $payrollData['bonus'] = $mappedBonus;
+                }
+
+                $payrollData['total_salary_gross'] = $excelGross;
+                $payrollData['period'] = $detectedPeriod;
+                
+                $dataRows[] = $payrollData;
             }
             
             Log::info("Wrapping Import - Parsed " . count($dataRows) . " employee rows.");
