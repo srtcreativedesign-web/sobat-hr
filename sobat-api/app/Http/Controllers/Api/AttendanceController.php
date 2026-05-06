@@ -515,6 +515,7 @@ class AttendanceController extends Controller
     }
     /**
      * Get today's attendance for the authenticated user
+     * Also checks for unclosed attendance from previous days (forgot to clock out)
      */
     public function today(Request $request)
     {
@@ -523,11 +524,37 @@ class AttendanceController extends Controller
             return response()->json(['message' => 'Employee record not found'], 404);
         }
 
-        $attendance = Attendance::where('employee_id', $user->employee->id)
-            ->where('date', Carbon::today()->toDateString())
+        $employeeId = $user->employee->id;
+        $today = Carbon::today()->toDateString();
+
+        // 1. Check for today's record first
+        $todayAttendance = Attendance::where('employee_id', $employeeId)
+            ->where('date', $today)
             ->first();
 
-        return response()->json($attendance);
+        if ($todayAttendance) {
+            return response()->json($todayAttendance);
+        }
+
+        // 2. If no record for today, check for unclosed attendance from previous days
+        //    (user forgot to clock out yesterday or earlier)
+        $unclosedAttendance = Attendance::where('employee_id', $employeeId)
+            ->whereNull('check_out')
+            ->where('date', '<', $today)
+            ->orderBy('date', 'desc')
+            ->first();
+
+        if ($unclosedAttendance) {
+            // Return the unclosed record with a flag so the mobile app knows
+            // this is a cross-day pending checkout
+            $data = $unclosedAttendance->toArray();
+            $data['is_previous_day'] = true;
+            $data['original_date'] = $unclosedAttendance->date;
+            return response()->json($data);
+        }
+
+        // 3. No record at all — user can clock in fresh
+        return response()->json(null);
     }
     /**
      * Get attendance history for the authenticated user
