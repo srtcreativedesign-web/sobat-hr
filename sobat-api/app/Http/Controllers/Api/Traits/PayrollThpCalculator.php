@@ -19,7 +19,7 @@ trait PayrollThpCalculator
         $netSalary = (float)($payroll->net_salary ?? 0);
         $ewaAmount = (float)($payroll->ewa_amount ?? 0);
 
-        // Always calculate from individual components to use as fallbacks for gross salary
+        // Always calculate from individual components
         $totalIncome = 0;
         foreach ($incomeFields as $field) {
             $totalIncome += (float)($payroll->$field ?? 0);
@@ -31,20 +31,24 @@ trait PayrollThpCalculator
         }
 
         $thpCalculated = $totalIncome - $totalDeductions;
+        $dbThp = $netSalary + $ewaAmount;
 
-        // Primary: use stored values if valid, but still provide the calculated income/deductions
-        if ($netSalary > 0 || $ewaAmount > 0) {
+        // If DB has 0 or if there is a significant miscalculation in the uploaded Excel (> Rp 100 difference),
+        // we forcefully override it with the correct mathematical calculation from the components.
+        // Users should use 'adjustment' for manual tweaks, not overwrite the net_salary cell directly.
+        if ($netSalary <= 0 || abs($thpCalculated - $dbThp) > 100) {
             return [
-                'thp' => $netSalary + $ewaAmount,
-                'net_salary' => null, // no override needed
+                'thp' => $thpCalculated,
+                'net_salary' => $thpCalculated - $ewaAmount,
                 'total_income' => $totalIncome,
                 'total_deductions' => $totalDeductions,
             ];
         }
 
+        // If the DB value is correct (matches calculation), no need to override net_salary
         return [
-            'thp' => $thpCalculated,
-            'net_salary' => $thpCalculated - $ewaAmount,
+            'thp' => $dbThp,
+            'net_salary' => null,
             'total_income' => $totalIncome,
             'total_deductions' => $totalDeductions,
         ];
