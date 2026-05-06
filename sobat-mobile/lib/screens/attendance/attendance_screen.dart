@@ -469,6 +469,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
     // 2. Submit Checkout
     _showLoading();
+    final bool wasPreviousDay = _todayAttendance?['is_previous_day'] == true;
 
     try {
       await _attendanceService.checkOut(
@@ -481,11 +482,21 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       );
 
       _fieldNotesController.clear();
+      
+      // If this was a cross-day checkout, clear the state so user can clock-in for today
+      if (wasPreviousDay) {
+        setState(() {
+          _todayAttendance = null;
+        });
+      }
+      
       await _fetchTodayAttendance(); // Refresh status
 
       if (!mounted) return;
       Navigator.pop(context); // Pop loading
-      _showSuccessSnackBar('Check Out Berhasil!');
+      _showSuccessSnackBar(wasPreviousDay
+          ? 'Clock Out kemarin berhasil! Silakan Clock In untuk hari ini.'
+          : 'Check Out Berhasil!');
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context); // Pop loading
@@ -598,7 +609,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     // Logic for Buttons
     bool hasCheckedIn = _todayAttendance != null;
     bool hasCheckedOut = hasCheckedIn && _todayAttendance!['check_out'] != null;
+    bool isPreviousDay = hasCheckedIn && _todayAttendance!['is_previous_day'] == true;
 
+    // Cross-day logic: if this is a previous day record, force checkout first
     bool canCheckIn = !hasCheckedIn;
     bool canCheckOut = hasCheckedIn && !hasCheckedOut;
 
@@ -606,6 +619,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     bool isLateRestricted = false;
     if (hasCheckedIn &&
         !hasCheckedOut &&
+        !isPreviousDay &&
         _todayAttendance!['check_in'] != null) {
       String statusStr =
           _todayAttendance!['status']?.toString().toLowerCase() ?? '';
@@ -1157,6 +1171,44 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                             ),
                             const SizedBox(height: 20),
                           ],
+                        ],
+
+                        // Cross-day warning banner
+                        if (isPreviousDay) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.shade700,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.orange.shade300,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.warning_amber_rounded,
+                                  size: 20,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Anda belum Clock Out tanggal ${_todayAttendance?['date'] ?? 'kemarin'}. Silakan Clock Out terlebih dahulu.',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
 
                         // Show Active Check-in Type if already Checked In
