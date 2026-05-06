@@ -13,6 +13,7 @@ use App\Services\GroqAiService;
 
 class PayrollWrappingController extends Controller
 {
+    use Traits\PayrollThpCalculator;
     private function isAdmin(): bool
     {
         $user = auth()->user();
@@ -106,7 +107,15 @@ class PayrollWrappingController extends Controller
             'BPJS TK' => $payroll->deduction_bpjs_tk,
         ];
         
-        $formatted['thp'] = $payroll->net_salary + $payroll->ewa_amount;
+        // Dynamic THP calculation with fallback for import anomalies
+        $thpResult = $this->calculateThp($payroll, 
+            ['basic_salary', 'training_salary', 'attendance_allowance', 'transport_amount', 'meal_amount', 'health_allowance', 'overtime_amount', 'bonus', 'target_koli', 'fee_aksesoris', 'adj_bpjs'],
+            ['deduction_absent', 'deduction_late', 'deduction_alpha', 'deduction_loan', 'deduction_admin_fee', 'deduction_bpjs_tk']
+        );
+        $formatted['thp'] = $thpResult['thp'];
+        if ($thpResult['net_salary'] !== null) {
+            $formatted['net_salary'] = $thpResult['net_salary'];
+        }
         
          // Add attendance data for Mobile App
         $formatted['attendance'] = [

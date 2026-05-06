@@ -14,6 +14,7 @@ use App\Services\GroqAiService;
 
 class PayrollMoneyChangerController extends Controller
 {
+    use Traits\PayrollThpCalculator;
     /**
      * Display a listing of Money Changer payrolls
      */
@@ -598,7 +599,15 @@ if ($headerRowIndex === -1) {
             'BPJS TK' => $payroll->deduction_bpjs_tk,
         ];
         
-        $formatted['thp'] = $payroll->net_salary + $payroll->ewa_amount;
+        // Dynamic THP calculation with fallback for import anomalies
+        $thpResult = $this->calculateThp($payroll, 
+            ['basic_salary', 'position_allowance', 'meal_amount', 'transport_amount', 'attendance_allowance', 'health_allowance', 'overtime_amount', 'bonus', 'holiday_allowance', 'adjustment', 'incentive', 'policy_ho'],
+            ['deduction_absent', 'deduction_late', 'deduction_so_shortage', 'deduction_loan', 'deduction_admin_fee', 'deduction_bpjs_tk']
+        );
+        $formatted['thp'] = $thpResult['thp'];
+        if ($thpResult['net_salary'] !== null) {
+            $formatted['net_salary'] = $thpResult['net_salary'];
+        }
         
         $formatted['years_of_service'] = $payroll->years_of_service;
         $formatted['notes'] = $payroll->notes;

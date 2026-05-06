@@ -13,6 +13,7 @@ use App\Services\GroqAiService;
 
 class PayrollFnbController extends Controller
 {
+    use Traits\PayrollThpCalculator;
     private function isAdmin(): bool
     {
         $user = auth()->user();
@@ -101,8 +102,15 @@ class PayrollFnbController extends Controller
                 'BPJS TK' => $payroll->deduction_bpjs_tk,
             ];
             
-            // Add extra fields
-            $formatted['thp'] = $payroll->net_salary + $payroll->ewa_amount;
+            // Dynamic THP calculation with fallback for import anomalies
+            $thpResult = $this->calculateThp($payroll, 
+                ['basic_salary', 'attendance_amount', 'transport_amount', 'health_allowance', 'position_allowance', 'overtime_amount', 'holiday_allowance', 'adjustment', 'policy_ho'],
+                ['deduction_absent', 'deduction_late', 'deduction_shortage', 'deduction_loan', 'deduction_admin_fee', 'deduction_bpjs_tk']
+            );
+            $formatted['thp'] = $thpResult['thp'];
+            if ($thpResult['net_salary'] !== null) {
+                $formatted['net_salary'] = $thpResult['net_salary'];
+            }
             
             // Add attendance data
             $formatted['attendance'] = [
@@ -568,8 +576,15 @@ class PayrollFnbController extends Controller
             'BPJS TK' => $payroll->deduction_bpjs_tk,
         ];
         
-        // Add extra fields
-        $formatted['thp'] = $payroll->net_salary + $payroll->ewa_amount;
+        // Dynamic THP calculation with fallback for import anomalies
+        $thpResult = $this->calculateThp($payroll, 
+            ['basic_salary', 'attendance_amount', 'transport_amount', 'health_allowance', 'position_allowance', 'overtime_amount', 'holiday_allowance', 'adjustment', 'policy_ho'],
+            ['deduction_absent', 'deduction_late', 'deduction_shortage', 'deduction_loan', 'deduction_admin_fee', 'deduction_bpjs_tk']
+        );
+        $formatted['thp'] = $thpResult['thp'];
+        if ($thpResult['net_salary'] !== null) {
+            $formatted['net_salary'] = $thpResult['net_salary'];
+        }
         
         // Add attendance data
         $formatted['attendance'] = [

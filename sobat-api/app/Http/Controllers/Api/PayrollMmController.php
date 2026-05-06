@@ -15,6 +15,7 @@ use App\Services\GroqAiService;
 
 class PayrollMmController extends Controller
 {
+    use Traits\PayrollThpCalculator;
     private function isAdmin(): bool
     {
         $user = auth()->user();
@@ -666,7 +667,15 @@ class PayrollMmController extends Controller
             'BPJS TK' => $payroll->deduction_bpjs_tk,
         ];
         
-        $formatted['thp'] = $payroll->net_salary + $payroll->ewa_amount;
+        // Dynamic THP calculation with fallback for import anomalies
+        $thpResult = $this->calculateThp($payroll, 
+            ['basic_salary', 'meal_amount', 'transport_amount', 'attendance_amount', 'health_allowance', 'position_allowance', 'overtime_amount', 'bonus', 'incentive', 'holiday_allowance', 'policy_ho'],
+            ['deduction_absent', 'deduction_alpha', 'deduction_shortage', 'deduction_loan', 'deduction_admin_fee', 'deduction_bpjs_tk']
+        );
+        $formatted['thp'] = $thpResult['thp'];
+        if ($thpResult['net_salary'] !== null) {
+            $formatted['net_salary'] = $thpResult['net_salary'];
+        }
         
         $formatted['attendance'] = [
             'Total Hari' => $payroll->days_total,

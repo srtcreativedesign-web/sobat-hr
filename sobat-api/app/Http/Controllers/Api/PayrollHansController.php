@@ -15,6 +15,7 @@ use App\Services\GroqAiService;
 
 class PayrollHansController extends Controller
 {
+    use Traits\PayrollThpCalculator;
     /**
      * Display a listing of Hans payrolls
      */
@@ -601,7 +602,15 @@ if ($headerRowIndex === -1) {
             'BPJS TK' => $payroll->deduction_bpjs_tk,
         ];
         
-        $formatted['thp'] = $payroll->net_salary + $payroll->ewa_amount;
+        // Dynamic THP calculation with fallback for import anomalies
+        $thpResult = $this->calculateThp($payroll, 
+            ['basic_salary', 'meal_amount', 'transport_amount', 'attendance_amount', 'health_allowance', 'position_allowance', 'overtime_amount', 'bonus', 'incentive', 'holiday_allowance', 'adjustment', 'policy_ho'],
+            ['deduction_absent', 'deduction_late', 'deduction_so_shortage', 'deduction_alpha', 'deduction_loan', 'deduction_admin_fee', 'deduction_bpjs_tk']
+        );
+        $formatted['thp'] = $thpResult['thp'];
+        if ($thpResult['net_salary'] !== null) {
+            $formatted['net_salary'] = $thpResult['net_salary'];
+        }
         
         // Add new extras to array
         $formatted['days_long_shift'] = $payroll->days_long_shift;
