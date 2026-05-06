@@ -225,12 +225,15 @@ class PayrollWrappingController extends Controller
                 'bonus' => 'bonus',
                 'lembur' => 'overtime_rate_header',
                 'target koli' => 'target_koli',
+                'taget koli' => 'target_koli',
                 'fee aksesoris' => 'fee_aksesoris',
                 'adj gaji' => 'adj_bpjs',
+                'kebijakan ho' => 'adj_bpjs',
                 'potongan' => 'deductions_header',
                 'grand total' => 'thp',
                 'pinjaman ewa' => 'ewa_amount',
                 'payroll' => 'net_salary',
+                'indisipliner' => 'deduction_late', // Mapping disciplinary to late deduction as a generic bucket
             ];
             
             // Subheader labels (Row headerRowIndex+1)
