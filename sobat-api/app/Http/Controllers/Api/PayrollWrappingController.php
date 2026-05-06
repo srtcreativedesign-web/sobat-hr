@@ -152,7 +152,8 @@ class PayrollWrappingController extends Controller
             
             $sheet = null;
             foreach ($sheetNames as $name) {
-                if (stripos($name, 'gaji') !== false) {
+                $lowerName = strtolower($name);
+                if (stripos($lowerName, 'gaji revisi') !== false || stripos($lowerName, 'gaji') !== false) {
                     $sheet = $spreadsheet->getSheetByName($name);
                     Log::info("Wrapping Import - Using sheet: {$name}");
                     break;
@@ -242,6 +243,11 @@ class PayrollWrappingController extends Controller
                 'fee aksesoris' => 'fee_aksesoris',
                 'adj gaji' => 'adj_bpjs',
                 'kebijakan ho' => 'adj_bpjs',
+                'adj kekurangan gaji' => 'adj_bpjs',
+                'tunj. jabatan' => 'bonus',
+                'tunjangan jabatan' => 'bonus',
+                'tugas luar kota' => 'bonus',
+                'lembur wajib' => 'overtime_amount',
                 'potongan' => 'deductions_header',
                 'grand total' => 'thp',
                 'pinjaman ewa' => 'ewa_amount',
@@ -270,6 +276,8 @@ class PayrollWrappingController extends Controller
                 'tidak hadir' => 'deduction_alpha',
                 'adm bank' => 'deduction_admin_fee',
                 'bpjs tk' => 'deduction_bpjs_tk',
+                'selisih so' => 'deduction_late', // Map generic disciplinary/SO to late bucket
+                'indisipliner' => 'deduction_late',
             ];
             
             for ($colIdx = 1; $colIdx <= $highestColumnIndex; $colIdx++) {
