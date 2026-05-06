@@ -410,7 +410,7 @@ class PayrollWrappingController extends Controller
                 
                 $accountCol = $getCol('account_number') ?? 'C';
                 
-                $parsed = [
+                $payrollData = [
                     'employee_name' => $name,
                     'period' => $detectedPeriod,
                     'account_number' => $sheet->getCell($accountCol . $row)->getValue(),
