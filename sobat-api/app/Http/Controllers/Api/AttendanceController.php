@@ -96,7 +96,7 @@ class AttendanceController extends Controller
             'location_address' => 'nullable|string',
             'attendance_type' => 'nullable|in:office,field',
             'field_notes' => 'nullable|string|required_if:attendance_type,field',
-            'track_type' => 'nullable|in:operational,head_office',
+            'track_type' => 'nullable|in:operational,head_office,office',
             'is_shifting' => 'nullable|boolean',
         ]);
 
@@ -104,7 +104,10 @@ class AttendanceController extends Controller
         $attendanceType = $validated['attendance_type'] ?? 'office';
         // ✓ ENFORCE employee's track from database, not from request
         $trackType = $employee->track_type ?? ($employee->track ?? 'head_office');
-        // Ensure track_type is valid enum value
+        // Normalize track_type: 'office' => 'head_office'
+        if ($trackType === 'office') {
+            $trackType = 'head_office';
+        }
         if (!in_array($trackType, ['head_office', 'operational'])) {
             $trackType = 'head_office';
         }
@@ -372,7 +375,7 @@ class AttendanceController extends Controller
             'attendance_type' => 'nullable|in:office,field',
             'field_notes' => 'nullable|string',
             'photo' => 'required_with:check_out|image|mimes:jpg,jpeg,png|max:5120',
-            'track_type' => 'nullable|in:operational,head_office',
+            'track_type' => 'nullable|in:operational,head_office,office',
             'qr_code_data' => 'nullable|string', // QR code for operational checkout validation
         ]);
 

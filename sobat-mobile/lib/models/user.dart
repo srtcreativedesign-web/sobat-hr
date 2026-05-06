@@ -232,8 +232,12 @@ class User {
     };
   }
 
-  // New helper for track selection (HO vs Operational)
-  String get trackType => track ?? 'head_office';
+  // Normalize track: 'office' => 'head_office' for backend compatibility
+  String get trackType {
+    final t = track ?? 'head_office';
+    if (t == 'office') return 'head_office';
+    return t;
+  }
 
   // Helper method untuk check role
   bool get isAdmin => role == 'admin';
