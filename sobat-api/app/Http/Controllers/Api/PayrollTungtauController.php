@@ -114,6 +114,10 @@ class PayrollTungtauController extends Controller
         if ($thpResult['net_salary'] !== null) {
             $formatted['net_salary'] = $thpResult['net_salary'];
         }
+        
+        // Fallback for gross salary if it's 0 or missing in DB
+        $gross = (float)($payroll->total_salary_2 ?? 0);
+        $formatted['total_salary_2'] = $gross > 0 ? $gross : $thpResult['total_income'];
             
             // Add attendance data
             $formatted['attendance'] = [
@@ -578,6 +582,10 @@ class PayrollTungtauController extends Controller
             $formatted['net_salary'] = $thpResult['net_salary'];
         }
         
+        // Fallback for gross salary if it's 0 or missing in DB
+        $gross = (float)($payroll->total_salary_2 ?? 0);
+        $formatted['total_salary_2'] = $gross > 0 ? $gross : $thpResult['total_income'];
+        
         // Add attendance data
         $formatted['attendance'] = [
             'Total Hari' => $payroll->days_total,
@@ -701,6 +709,21 @@ class PayrollTungtauController extends Controller
                 'Cuti' => $payroll->days_leave,
                 'Hadir' => $payroll->days_present,
             ];
+            
+            // Dynamic THP calculation with fallback
+            $thpResult = $this->calculateThp($payroll, 
+                ['basic_salary', 'attendance_amount', 'transport_amount', 'health_allowance', 'position_allowance', 'overtime_amount', 'attendance_incentive', 'backup_allowance', 'holiday_allowance', 'adjustment', 'policy_ho'],
+                ['deduction_absent', 'deduction_late', 'deduction_shortage', 'deduction_loan', 'deduction_admin_fee', 'deduction_bpjs_tk']
+            );
+            $payroll->thp = $thpResult['thp'];
+            if ($thpResult['net_salary'] !== null) {
+                $payroll->net_salary = $thpResult['net_salary'];
+                $payroll->final_payment = $thpResult['net_salary'];
+            }
+            $gross = (float)($payroll->total_salary_2 ?? 0);
+            if ($gross <= 0) {
+                $payroll->total_salary_2 = $thpResult['total_income'];
+            }
             
             // Generate AI-powered personalized message
             $aiMessage = null;

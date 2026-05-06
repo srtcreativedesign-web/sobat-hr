@@ -117,6 +117,10 @@ class PayrollWrappingController extends Controller
             $formatted['net_salary'] = $thpResult['net_salary'];
         }
         
+        // Fallback for gross salary if it's 0 or missing in DB
+        $gross = (float)($payroll->total_salary_gross ?? 0);
+        $formatted['total_salary_gross'] = $gross > 0 ? $gross : $thpResult['total_income'];
+        
          // Add attendance data for Mobile App
         $formatted['attendance'] = [
             'Total Hari' => $payroll->days_total,

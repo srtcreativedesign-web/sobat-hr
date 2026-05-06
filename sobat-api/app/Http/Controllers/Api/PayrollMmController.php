@@ -593,6 +593,10 @@ class PayrollMmController extends Controller
             }
             
             $formatted = $this->formatPayroll($payroll); 
+            unset($formatted['employee']);
+            foreach ($formatted as $key => $val) {
+                $payroll->$key = $val;
+            }
             
             // Generate AI-powered personalized message
             $aiMessage = null;
@@ -676,6 +680,10 @@ class PayrollMmController extends Controller
         if ($thpResult['net_salary'] !== null) {
             $formatted['net_salary'] = $thpResult['net_salary'];
         }
+        
+        // Fallback for gross salary if it's 0 or missing in DB
+        $gross = (float)($payroll->total_salary_2 ?? 0);
+        $formatted['total_salary_2'] = $gross > 0 ? $gross : $thpResult['total_income'];
         
         $formatted['attendance'] = [
             'Total Hari' => $payroll->days_total,

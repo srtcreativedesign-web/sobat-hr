@@ -13,6 +13,8 @@ use App\Services\GroqAiService;
 
 class PayrollMaximumController extends Controller
 {
+    use Traits\PayrollThpCalculator;
+
     private function isAdmin(): bool
     {
         $user = auth()->user();
@@ -104,7 +106,20 @@ class PayrollMaximumController extends Controller
             
             // Add extra fields
             $formatted['ewa_amount'] = $payroll->stafbook_loan;
-            $formatted['thp'] = $payroll->net_salary + $payroll->stafbook_loan;
+            
+            // Dynamic THP calculation with fallback for import anomalies
+            $thpResult = $this->calculateThp($payroll, 
+                ['basic_salary', 'attendance_amount', 'transport_amount', 'health_allowance', 'position_allowance', 'overtime_amount', 'holiday_allowance', 'insentif', 'adjustment', 'policy_ho'],
+                ['deduction_absent', 'deduction_late', 'deduction_shortage', 'deduction_loan', 'deduction_admin_fee', 'deduction_bpjs_tk']
+            );
+            $formatted['thp'] = $thpResult['thp'];
+            if ($thpResult['net_salary'] !== null) {
+                $formatted['net_salary'] = $thpResult['net_salary'];
+            }
+            
+            // Fallback for gross salary if it's 0 or missing in DB
+            $gross = (float)($payroll->total_salary_2 ?? 0);
+            $formatted['total_salary_2'] = $gross > 0 ? $gross : $thpResult['total_income'];
             
             // Add attendance data
             $formatted['attendance'] = [
@@ -575,7 +590,20 @@ class PayrollMaximumController extends Controller
         
         // Add extra fields
         $formatted['ewa_amount'] = $payroll->stafbook_loan;
-        $formatted['thp'] = $payroll->net_salary + $payroll->stafbook_loan;
+        
+        // Dynamic THP calculation with fallback for import anomalies
+        $thpResult = $this->calculateThp($payroll, 
+            ['basic_salary', 'attendance_amount', 'transport_amount', 'health_allowance', 'position_allowance', 'overtime_amount', 'holiday_allowance', 'insentif', 'adjustment', 'policy_ho'],
+            ['deduction_absent', 'deduction_late', 'deduction_shortage', 'deduction_loan', 'deduction_admin_fee', 'deduction_bpjs_tk']
+        );
+        $formatted['thp'] = $thpResult['thp'];
+        if ($thpResult['net_salary'] !== null) {
+            $formatted['net_salary'] = $thpResult['net_salary'];
+        }
+        
+        // Fallback for gross salary if it's 0 or missing in DB
+        $gross = (float)($payroll->total_salary_2 ?? 0);
+        $formatted['total_salary_2'] = $gross > 0 ? $gross : $thpResult['total_income'];
         
         // Add attendance data
         $formatted['attendance'] = [
@@ -699,6 +727,20 @@ class PayrollMaximumController extends Controller
                 'Cuti' => $payroll->days_leave,
                 'Hadir' => $payroll->days_present,
             ];
+            
+            // Dynamic THP calculation with fallback
+            $thpResult = $this->calculateThp($payroll, 
+                ['basic_salary', 'attendance_amount', 'transport_amount', 'health_allowance', 'position_allowance', 'overtime_amount', 'holiday_allowance', 'insentif', 'adjustment', 'policy_ho'],
+                ['deduction_absent', 'deduction_late', 'deduction_shortage', 'deduction_loan', 'deduction_admin_fee', 'deduction_bpjs_tk']
+            );
+            $payroll->thp = $thpResult['thp'];
+            if ($thpResult['net_salary'] !== null) {
+                $payroll->net_salary = $thpResult['net_salary'];
+            }
+            $gross = (float)($payroll->total_salary_2 ?? 0);
+            if ($gross <= 0) {
+                $payroll->total_salary_2 = $thpResult['total_income'];
+            }
             
             // Generate AI-powered personalized message
             $aiMessage = null;

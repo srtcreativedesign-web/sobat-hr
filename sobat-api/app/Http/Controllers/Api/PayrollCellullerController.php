@@ -339,6 +339,10 @@ class PayrollCellullerController extends Controller
             }
             
             $formatted = $this->formatPayroll($payroll); 
+            unset($formatted['employee']);
+            foreach ($formatted as $key => $val) {
+                $payroll->$key = $val;
+            }
             
             // Generate AI-powered personalized message
             $aiMessage = null;
@@ -423,6 +427,10 @@ class PayrollCellullerController extends Controller
         if ($thpResult['net_salary'] !== null) {
             $formatted['net_salary'] = $thpResult['net_salary'];
         }
+        
+        // Fallback for gross salary if it's 0 or missing in DB
+        $gross = (float)($payroll->gross_salary ?? 0);
+        $formatted['gross_salary'] = $gross > 0 ? $gross : $thpResult['total_income'];
         
         // Add attendance data for Mobile App
         $formatted['attendance'] = [

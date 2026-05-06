@@ -527,6 +527,13 @@ if ($headerRowIndex === -1) {
                  }
             }
             
+            // Apply formatPayroll and inject its result to model
+            $formatted = $this->formatPayroll($payroll); 
+            unset($formatted['employee']);
+            foreach ($formatted as $key => $val) {
+                $payroll->$key = $val;
+            }
+            
             // Generate AI-powered personalized message
             $aiMessage = null;
             try {
@@ -608,6 +615,10 @@ if ($headerRowIndex === -1) {
         if ($thpResult['net_salary'] !== null) {
             $formatted['net_salary'] = $thpResult['net_salary'];
         }
+        
+        // Fallback for gross salary if it's 0 or missing in DB
+        $gross = (float)($payroll->total_salary_2 ?? 0);
+        $formatted['total_salary_2'] = $gross > 0 ? $gross : $thpResult['total_income'];
         
         $formatted['years_of_service'] = $payroll->years_of_service;
         $formatted['notes'] = $payroll->notes;

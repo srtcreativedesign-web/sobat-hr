@@ -19,15 +19,7 @@ trait PayrollThpCalculator
         $netSalary = (float)($payroll->net_salary ?? 0);
         $ewaAmount = (float)($payroll->ewa_amount ?? 0);
 
-        // Primary: use stored values if valid
-        if ($netSalary > 0 || $ewaAmount > 0) {
-            return [
-                'thp' => $netSalary + $ewaAmount,
-                'net_salary' => null, // no override needed
-            ];
-        }
-
-        // Fallback: calculate from individual components
+        // Always calculate from individual components to use as fallbacks for gross salary
         $totalIncome = 0;
         foreach ($incomeFields as $field) {
             $totalIncome += (float)($payroll->$field ?? 0);
@@ -38,11 +30,23 @@ trait PayrollThpCalculator
             $totalDeductions += (float)($payroll->$field ?? 0);
         }
 
-        $thp = $totalIncome - $totalDeductions;
+        $thpCalculated = $totalIncome - $totalDeductions;
+
+        // Primary: use stored values if valid, but still provide the calculated income/deductions
+        if ($netSalary > 0 || $ewaAmount > 0) {
+            return [
+                'thp' => $netSalary + $ewaAmount,
+                'net_salary' => null, // no override needed
+                'total_income' => $totalIncome,
+                'total_deductions' => $totalDeductions,
+            ];
+        }
 
         return [
-            'thp' => $thp,
-            'net_salary' => $thp - $ewaAmount,
+            'thp' => $thpCalculated,
+            'net_salary' => $thpCalculated - $ewaAmount,
+            'total_income' => $totalIncome,
+            'total_deductions' => $totalDeductions,
         ];
     }
 }
