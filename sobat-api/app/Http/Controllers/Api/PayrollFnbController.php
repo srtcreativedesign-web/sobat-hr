@@ -228,8 +228,7 @@ class PayrollFnbController extends Controller
                 'insentif' => ['Insentif '], // Added for Max 600
                 'total_gaji_bonus' => ['Total Gaji    (Rp)', 'Total Gaji & Bonus'],
                 'kebijakan_ho' => ['Kebijakan'],
-                'absen_count' => ['Absen 1x'],
-                'absen' => ['Absen 1X'],
+                'absen' => ['Absen 1X', 'Absen 1x'],
                 'terlambat_menit' => ['terlambat (menit)'],
                 'terlambat' => ['Terlambat'],
                 'selisih' => ['Selisih SO', 'Selisih'],
@@ -241,7 +240,7 @@ class PayrollFnbController extends Controller
                 'ewa' => ['EWA', 'Pinjaman ke Stafbook', 'Pinjaman stafbook'],
                 'potongan_ewa' => ['Potongan EWA'],
                 'payroll' => ['Total Gaji Ditransfer', 'Payroll', 'THP'],
-                'adjustment' => ['Adj', 'Penyesuaian'],
+                'adjustment' => ['Adj', 'Penyesuaian', 'Kekurangan Gaji'],
             ];
             
             // Build header lookup (supports merged cells)
@@ -264,51 +263,58 @@ class PayrollFnbController extends Controller
             $lastHeader = '';
             $usedColumns = []; // Track used columns to prevent double-mapping (like U for both rate and jam)
             
-            foreach ($colOrder as $idx => $col) {
-                $headerValue = $allHeaders[$col];
-                $unitsValue = $allSubs[$col];
+            foreach ($headerPatterns as $key => $patterns) {
+                $alternativePatterns = is_array($patterns) ? $patterns : [$patterns];
                 
-                // Proper merged cell resolution
-                if (!empty($headerValue)) {
-                    $lastHeader = $headerValue;
-                    $effectiveHeader = $headerValue;
-                } else {
-                    $effectiveHeader = $lastHeader;
-                }
-                
-                foreach ($headerPatterns as $key => $patterns) {
-                    if (isset($columnMapping[$key])) continue;
+                foreach ($alternativePatterns as $pattern) {
+                    $matched = false;
                     
-                    $alternativePatterns = is_array($patterns) ? $patterns : [$patterns];
-                    
-                    foreach ($alternativePatterns as $pattern) {
+                    foreach ($colOrder as $col) {
+                        if (in_array($col, $usedColumns)) continue;
+                        
+                        $headerValue = $allHeaders[$col];
+                        $unitsValue = $allSubs[$col];
+                        
+                        // Proper merged cell resolution
+                        $effectiveHeader = '';
+                        if (!empty($headerValue)) {
+                            $effectiveHeader = $headerValue;
+                        } else {
+                            // Find the last non-empty header before this col
+                            foreach ($colOrder as $c) {
+                                if (!empty($allHeaders[$c])) $effectiveHeader = $allHeaders[$c];
+                                if ($c === $col) break;
+                            }
+                        }
+                        
                         if (is_array($pattern)) {
-                            // Multi-row header check (merged cell aware)
                             $headerMatch = $effectiveHeader && stripos($effectiveHeader, $pattern[0]) !== false;
                             $unitsMatch = $unitsValue && stripos($unitsValue, $pattern[1]) !== false;
                             
-                            // Prevent 'Jam' matching '/ Jam' by checking exact match if pattern is exactly 'Jam'
+                            // Prevent 'Jam' matching '/ Jam' by checking exact match
                             if ($pattern[1] === 'Jam' && $unitsMatch && stripos($unitsValue, '/ Jam') !== false) {
-                                $unitsMatch = false; // It's '/ Jam', not 'Jam'
+                                $unitsMatch = false; 
                             }
                             
-                            if ($headerMatch && $unitsMatch && !in_array($col, $usedColumns)) {
+                            if ($headerMatch && $unitsMatch) {
                                 $columnMapping[$key] = $col;
                                 $usedColumns[] = $col;
+                                $matched = true;
                                 break;
                             }
                         } else {
-                            // Single check: header OR sub-header
                             $matchedHeader = $effectiveHeader && stripos($effectiveHeader, $pattern) !== false;
                             $matchedSub = $unitsValue && stripos($unitsValue, $pattern) !== false;
                             
-                            if (($matchedHeader || $matchedSub) && !in_array($col, $usedColumns)) {
+                            if ($matchedHeader || $matchedSub) {
                                 $columnMapping[$key] = $col;
                                 $usedColumns[] = $col;
+                                $matched = true;
                                 break;
                             }
                         }
                     }
+                    if ($matched) break; // Move to next key in headerPatterns
                 }
             }
             
