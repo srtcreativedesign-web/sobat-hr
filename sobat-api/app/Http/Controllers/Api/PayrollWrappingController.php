@@ -88,6 +88,7 @@ class PayrollWrappingController extends Controller
             ],
             'Tunjangan Kesehatan' => $payroll->health_allowance,
             'Lembur' => [
+                'rate' => $payroll->overtime_rate,
                 'hours' => $payroll->overtime_hours,
                 'amount' => $payroll->overtime_amount,
             ],
@@ -303,6 +304,17 @@ class PayrollWrappingController extends Controller
                             $columnMap['transport_amount'] = $col;
                         }
                     }
+                    if (!isset($columnMap['overtime_amount']) && isset($columnMap['overtime_rate_header'])) {
+                        $overCol = $columnMap['overtime_rate_header'];
+                        $overIdx = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($overCol);
+                        if ($colIndex === $overIdx + 2) {
+                            $columnMap['overtime_amount'] = $col;
+                        }
+                    }
+                    if (!isset($columnMap['deduction_total']) && isset($columnMap['deductions_header'])) {
+                        // Assuming total potongan is the last column under Potongan
+                        $columnMap['deduction_total'] = $col;
+                    }
                 }
                 
                 // Handle "/ Hari" subheaders (rate columns for meal/transport)
@@ -410,6 +422,7 @@ class PayrollWrappingController extends Controller
                     'bonus' => $getMappedValue('bonus', $row),
                     
                     // Overtime
+                    'overtime_rate' => $getMappedValue('overtime_rate', $row),
                     'overtime_hours' => $getMappedValue('overtime_hours', $row),
                     'overtime_amount' => $getMappedValue('overtime_amount', $row), 
                     
