@@ -444,18 +444,13 @@ class PayrollMmController extends Controller
                     $parsed['deduction_total'] = $parsed['deduction_absent'] + $parsed['deduction_alpha'] + $parsed['deduction_shortage'] + $parsed['deduction_loan'] + $parsed['deduction_admin_fee'] + $parsed['deduction_bpjs_tk'];
                 }
                 
-                // Hardcode specific columns for MM (AK = Grand Total/THP, AL = EWA, AM = Net Salary) if missing
-                if (!$parsed['ewa_amount']) {
-                    $valAL = $getCellValue('AL', $row);
-                    if (is_numeric($valAL)) $parsed['ewa_amount'] = (float)$valAL;
-                }
                 if (!$parsed['grand_total']) {
                     $valAK = $getCellValue('AK', $row);
                     if (is_numeric($valAK)) $parsed['grand_total'] = (float)$valAK;
                 }
                 if (!$parsed['net_salary']) {
-                    $valAM = $getCellValue('AM', $row);
-                    if (is_numeric($valAM)) $parsed['net_salary'] = (float)$valAM;
+                    $valAL = $getCellValue('AL', $row);
+                    if (is_numeric($valAL)) $parsed['net_salary'] = (float)$valAL;
                 }
 
                 // Recalculate THP universally just in case
@@ -468,6 +463,11 @@ class PayrollMmController extends Controller
                 $calculatedDeductions = (float)$parsed['deduction_absent'] + (float)$parsed['deduction_alpha'] + 
                                         (float)$parsed['deduction_shortage'] + (float)$parsed['deduction_loan'] + 
                                         (float)$parsed['deduction_admin_fee'] + (float)$parsed['deduction_bpjs_tk'];
+
+                // Reconstruct overtime if amount is 0 but hours/rate exist
+                if (!$parsed['overtime_amount'] && $parsed['overtime_hours'] > 0 && $parsed['overtime_rate'] > 0) {
+                    $parsed['overtime_amount'] = $parsed['overtime_hours'] * $parsed['overtime_rate'];
+                }
 
                 // Critical: Ensure we use the excel provided grand total if it's sane, otherwise fallback to components
                 $excelGrandTotal = $getMappedValue('grand_total', $row);

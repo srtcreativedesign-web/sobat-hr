@@ -353,7 +353,8 @@ export default function PayrollPage() {
           parseValue(allowances['Transport']) +
           parseValue(allowances['Tunjangan Kesehatan']) +
           parseValue(allowances['Tunjangan Jabatan']) +
-          parseValue(allowances['Lembur']) +
+          // Exclude Lembur from Total Allowances if it's shown in its own column
+          (selectedDivision === 'minimarket' || selectedDivision === 'fnb' || selectedDivision === 'wrapping' ? 0 : parseValue(allowances['Lembur'])) +
           parseValue(allowances['Insentif Lebaran'] || allowances['THR']) +
           parseValue(allowances['Adjustment']) +
           parseValue(allowances['Kebijakan HO']) +
@@ -376,7 +377,8 @@ export default function PayrollPage() {
         (parseFloat(payroll.transport_amount) || 0) +
         (parseFloat(payroll.health_allowance) || 0) +
         (parseFloat(payroll.position_allowance) || 0) +
-        (parseFloat(payroll.overtime_amount) || 0) +
+        // Exclude overtime_amount if shown separately
+        (selectedDivision === 'minimarket' || selectedDivision === 'fnb' || selectedDivision === 'wrapping' ? 0 : (parseFloat(payroll.overtime_amount) || 0)) +
         (parseFloat(payroll.holiday_allowance) || 0) +
         (parseFloat(payroll.adjustment) || 0) +
         (parseFloat(payroll.policy_ho) || 0) +
