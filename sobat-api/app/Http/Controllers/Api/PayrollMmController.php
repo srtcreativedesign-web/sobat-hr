@@ -262,7 +262,6 @@ class PayrollMmController extends Controller
                         $columnMap['deduction_total'] = $col;
                     }
                     
-                    // Merged header context fallback
                     if (!isset($columnMap['meal_amount']) && isset($columnMap['meal_rate_header']) && $colIndex === (\PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($columnMap['meal_rate_header']) + 1)) {
                         $columnMap['meal_amount'] = $col;
                     }
@@ -271,6 +270,10 @@ class PayrollMmController extends Controller
                     }
                     if (!isset($columnMap['attendance_amount']) && isset($columnMap['attendance_allowance_header']) && $colIndex === (\PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($columnMap['attendance_allowance_header']) + 1)) {
                         $columnMap['attendance_amount'] = $col;
+                    }
+                    // Prevent 'Jumlah' under 'Potongan' from being mapped to ewa_amount or something else
+                    if (stripos($headerVal, 'potongan') !== false) {
+                        $columnMap['deduction_total'] = $col;
                     }
                 }
                 
@@ -457,19 +460,38 @@ class PayrollMmController extends Controller
 
                 // Recalculate THP universally just in case
                 // If net_salary is 0 or negative but total_income components exist, reconstruct it
-                $calculatedIncome = $parsed['basic_salary'] + $parsed['meal_amount'] + $parsed['transport_amount'] + 
-                                   $parsed['attendance_amount'] + $parsed['health_allowance'] + $parsed['position_allowance'] + 
-                                   $parsed['overtime_amount'] + $parsed['bonus'] + $parsed['incentive'] + 
-                                   $parsed['holiday_allowance'] + $parsed['policy_ho'];
+                $calculatedIncome = (float)$parsed['basic_salary'] + (float)$parsed['meal_amount'] + (float)$parsed['transport_amount'] + 
+                                   (float)$parsed['attendance_amount'] + (float)$parsed['health_allowance'] + (float)$parsed['position_allowance'] + 
+                                   (float)$parsed['overtime_amount'] + (float)$parsed['bonus'] + (float)$parsed['incentive'] + 
+                                   (float)$parsed['holiday_allowance'] + (float)$parsed['policy_ho'];
                 
-                $calculatedDeductions = $parsed['deduction_absent'] + $parsed['deduction_alpha'] + 
-                                        $parsed['deduction_shortage'] + $parsed['deduction_loan'] + 
-                                        $parsed['deduction_admin_fee'] + $parsed['deduction_bpjs_tk'];
+                $calculatedDeductions = (float)$parsed['deduction_absent'] + (float)$parsed['deduction_alpha'] + 
+                                        (float)$parsed['deduction_shortage'] + (float)$parsed['deduction_loan'] + 
+                                        (float)$parsed['deduction_admin_fee'] + (float)$parsed['deduction_bpjs_tk'];
 
-                if (($parsed['net_salary'] <= 0 || $parsed['grand_total'] <= 0) && $calculatedIncome > 0) {
+                // Critical: Ensure we use the excel provided grand total if it's sane, otherwise fallback to components
+                $excelGrandTotal = $getMappedValue('grand_total', $row);
+                $excelNetSalary = $getMappedValue('net_salary', $row);
+                $ewa = (float)$parsed['ewa_amount'];
+
+                if ($excelGrandTotal > 1000) {
+                    $parsed['grand_total'] = $excelGrandTotal;
+                    $parsed['net_salary'] = $excelNetSalary ?: ($parsed['grand_total'] - $ewa);
+                } else if ($calculatedIncome > 0) {
                     $parsed['grand_total'] = $calculatedIncome - $calculatedDeductions;
-                    $parsed['net_salary'] = $parsed['grand_total'] - $parsed['ewa_amount'];
+                    $parsed['net_salary'] = $parsed['grand_total'] - $ewa;
                     Log::info("MM Import - Reconstructed totals for {$employeeName} due to zero/negative values");
+                }
+
+                // Final safety check: if net_salary is still suspiciously low but grand_total is high
+                if ($parsed['net_salary'] < 1000 && $parsed['grand_total'] > 1000000 && $ewa > ($parsed['grand_total'] * 0.8)) {
+                    // EWA is more than 80% of salary, likely a mapping error if not usual. 
+                    // Let's re-verify column AL/AM for net_salary
+                    $fallbackNet = $getCellValue('AL', $row); // Often AL is Payroll in MM
+                    if ($fallbackNet > 100000) {
+                        $parsed['net_salary'] = $fallbackNet;
+                        $parsed['ewa_amount'] = $parsed['grand_total'] - $parsed['net_salary'];
+                    }
                 }
 
                 $parsed['thp'] = $parsed['net_salary'] + $parsed['ewa_amount'];
