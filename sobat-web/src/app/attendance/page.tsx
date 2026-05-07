@@ -64,7 +64,7 @@ export default function AttendancePage() {
 
     const fetchOrganizations = async () => {
         try {
-            const response = await apiClient.get('/organizations');
+            const response = await apiClient.get('/divisions');
             const data = response.data.data || response.data;
             setOrganizations(Array.isArray(data) ? data : []);
         } catch (error) {
