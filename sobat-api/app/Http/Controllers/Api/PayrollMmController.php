@@ -120,16 +120,37 @@ class PayrollMmController extends Controller
             $getCellValue = function($col, $row) use ($sheet) {
                 try {
                     $cell = $sheet->getCell($col . $row);
+                    
+                    // Try to get calculated value first
                     $val = $cell->getCalculatedValue();
                     
+                    // If it's a formula and returned 0, error, or empty but it IS a formula,
+                    // try to get the "Old Calculated Value" (the value saved in the file)
+                    if (($val === 0 || $val === null || $val === '#REF!' || $val === '#NAME?') && $cell->isFormula()) {
+                        $oldVal = $cell->getOldCalculatedValue();
+                        if ($oldVal !== null && $oldVal !== 0 && $oldVal !== '#REF!') {
+                            $val = $oldVal;
+                        }
+                    }
+
                     if (is_numeric($val)) return (float)$val;
                     if (is_string($val)) {
                         $cleaned = preg_replace('/[^0-9\.\,\-]/', '', $val);
+                        if (str_contains($cleaned, '-') && strlen($cleaned) > 1 && strpos($cleaned, '-') === 0) {
+                            // Valid negative number
+                            return (float)$cleaned;
+                        }
                         return is_numeric($cleaned) ? (float)$cleaned : 0;
                     }
                     return 0;
                 } catch (\Exception $e) {
                     Log::warning("Formula error in cell {$col}{$row}: " . $e->getMessage());
+                    // Last resort fallback to old calculated value
+                    try {
+                        $oldVal = $sheet->getCell($col . $row)->getOldCalculatedValue();
+                        if (is_numeric($oldVal)) return (float)$oldVal;
+                    } catch (\Exception $e2) {}
+                    
                     $val = $sheet->getCell($col . $row)->getValue();
                     if (is_numeric($val)) return (float)$val;
                     return 0;
@@ -176,6 +197,7 @@ class PayrollMmController extends Controller
                 'bonus' => 'bonus',
                 'kebijakan' => 'policy_ho',
                 'adj' => 'policy_ho',
+                'kekurangan' => 'policy_ho',
                 'potongan' => 'deductions_header',
                 'grand total' => 'grand_total',
                 'pinjaman ewa' => 'ewa_amount',
@@ -434,23 +456,23 @@ class PayrollMmController extends Controller
                 }
 
                 // Recalculate THP universally just in case
-                $parsed['thp'] = $parsed['net_salary'] + $parsed['ewa_amount'];
+                // If net_salary is 0 or negative but total_income components exist, reconstruct it
+                $calculatedIncome = $parsed['basic_salary'] + $parsed['meal_amount'] + $parsed['transport_amount'] + 
+                                   $parsed['attendance_amount'] + $parsed['health_allowance'] + $parsed['position_allowance'] + 
+                                   $parsed['overtime_amount'] + $parsed['bonus'] + $parsed['incentive'] + 
+                                   $parsed['holiday_allowance'] + $parsed['policy_ho'];
+                
+                $calculatedDeductions = $parsed['deduction_absent'] + $parsed['deduction_alpha'] + 
+                                        $parsed['deduction_shortage'] + $parsed['deduction_loan'] + 
+                                        $parsed['deduction_admin_fee'] + $parsed['deduction_bpjs_tk'];
 
-                // Fallback for grand total and net salary if header is missing (like in 04. Gaji Bekal.xlsx format)
-                if (!$parsed['grand_total'] || !$parsed['net_salary']) {
-                    // Try to guess from the last column if it contains a formula for total
-                    $guessedGrandTotal = $getCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($highestColIndex), $row);
-                    $guessedNet = $getCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($highestColIndex), $row);
-                    
-                    if ($parsed['total_salary_2']) {
-                        $calculatedTotal = $parsed['total_salary_2'] + $parsed['policy_ho'] - $parsed['deduction_total'];
-                        $parsed['grand_total'] = $parsed['grand_total'] ?: $calculatedTotal;
-                        $parsed['net_salary'] = $parsed['net_salary'] ?: ($parsed['grand_total'] - $parsed['ewa_amount']);
-                    } elseif ($guessedGrandTotal > 0) {
-                         $parsed['grand_total'] = $parsed['grand_total'] ?: $guessedGrandTotal;
-                         $parsed['net_salary'] = $parsed['net_salary'] ?: $guessedNet;
-                    }
+                if (($parsed['net_salary'] <= 0 || $parsed['grand_total'] <= 0) && $calculatedIncome > 0) {
+                    $parsed['grand_total'] = $calculatedIncome - $calculatedDeductions;
+                    $parsed['net_salary'] = $parsed['grand_total'] - $parsed['ewa_amount'];
+                    Log::info("MM Import - Reconstructed totals for {$employeeName} due to zero/negative values");
                 }
+
+                $parsed['thp'] = $parsed['net_salary'] + $parsed['ewa_amount'];
                 
                 $dataRows[] = $parsed;
             }
