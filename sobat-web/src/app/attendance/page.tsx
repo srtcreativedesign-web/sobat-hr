@@ -65,7 +65,8 @@ export default function AttendancePage() {
     const fetchOrganizations = async () => {
         try {
             const response = await apiClient.get('/organizations');
-            setOrganizations(response.data.data || response.data);
+            const data = response.data.data || response.data;
+            setOrganizations(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error('Failed to fetch organizations:', error);
         }
@@ -321,9 +322,6 @@ export default function AttendancePage() {
                             >
                                 <option value="">Semua Divisi</option>
                                 {organizations
-                                    .filter(org => !['CEO', 'Chief Executive Officer', 'COO', 'CFO', 'CMO', 'CTO'].includes(org.name))
-                                    .filter(org => !org.name.toLowerCase().startsWith('direktur'))
-                                    .filter(org => !org.name.toLowerCase().includes('holding'))
                                     .map((org) => (
                                         <option key={org.id} value={org.id}>
                                             {org.name}
