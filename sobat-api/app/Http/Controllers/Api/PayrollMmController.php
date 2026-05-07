@@ -89,7 +89,8 @@ class PayrollMmController extends Controller
 
         try {
             $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
-            $reader->setReadDataOnly(true);
+            // Disabled ReadDataOnly to ensure formula caches and internal structures are fully loaded
+            // $reader->setReadDataOnly(true); 
             $spreadsheet = $reader->load($file->getRealPath());
             
             // --- TARGET THE SHEET ---
@@ -135,11 +136,18 @@ class PayrollMmController extends Controller
 
                     if (is_numeric($val)) return (float)$val;
                     if (is_string($val)) {
-                        $cleaned = preg_replace('/[^0-9\.\,\-]/', '', $val);
-                        if (str_contains($cleaned, '-') && strlen($cleaned) > 1 && strpos($cleaned, '-') === 0) {
-                            // Valid negative number
-                            return (float)$cleaned;
+                        // Normalize Indonesian number format (e.g. 1.500.000,00)
+                        $clean = $val;
+                        // If it contains both dot and comma, or just many dots, it's likely formatted
+                        if ((str_contains($clean, '.') && str_contains($clean, ',')) || substr_count($clean, '.') > 1) {
+                            $clean = str_replace('.', '', $clean); // Remove thousand separator
+                            $clean = str_replace(',', '.', $clean); // Change decimal separator
+                        } elseif (str_contains($clean, ',') && !str_contains($clean, '.')) {
+                             // Likely decimal comma only
+                             $clean = str_replace(',', '.', $clean);
                         }
+                        
+                        $cleaned = preg_replace('/[^0-9\.\-]/', '', $clean);
                         return is_numeric($cleaned) ? (float)$cleaned : 0;
                     }
                     return 0;
