@@ -540,10 +540,15 @@ class AttendanceController extends Controller
         }
 
         // 2. If no record for today, check for unclosed attendance from previous days
-        //    (user forgot to clock out yesterday or earlier)
+        //    (user forgot to clock out yesterday or earlier).
+        //    Optimization: We only care about records where they actually clocked in,
+        //    are not older than 3 days, and have a status that expects a clock-out.
         $unclosedAttendance = Attendance::where('employee_id', $employeeId)
+            ->whereNotNull('check_in')
             ->whereNull('check_out')
             ->where('date', '<', $today)
+            ->where('date', '>=', Carbon::now()->subDays(3)->toDateString())
+            ->whereIn('status', ['present', 'late', 'pending'])
             ->orderBy('date', 'desc')
             ->first();
 
