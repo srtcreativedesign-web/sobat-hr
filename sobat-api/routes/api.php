@@ -75,6 +75,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/attendance/locations', [App\Http\Controllers\Api\AttendanceController::class, 'getLocations']);
     Route::get('/attendance/pending-count', [App\Http\Controllers\Api\AttendanceController::class, 'getPendingCount']);
     Route::get('/attendance/today', [App\Http\Controllers\Api\AttendanceController::class, 'today']);
+    Route::get('/attendance/unclosed', [App\Http\Controllers\Api\AttendanceController::class, 'getUnclosedAttendance']);
     Route::get('/attendance/history', [App\Http\Controllers\Api\AttendanceController::class, 'history']); // New History Route
     Route::get('/attendances/export', [App\Http\Controllers\Api\AttendanceController::class, 'export']); // Export Route
     Route::get('/attendances', [App\Http\Controllers\Api\AttendanceController::class, 'index']); // Added for Web Admin

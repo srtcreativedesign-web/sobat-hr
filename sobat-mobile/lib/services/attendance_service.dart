@@ -108,6 +108,23 @@ class AttendanceService extends BaseService {
     }
   }
 
+  /// Get unclosed attendance records (forgot to checkout)
+  /// Returns records from last 3 days that have check_in but no check_out
+  Future<List<dynamic>> getUnclosedAttendance() async {
+    try {
+      final response = await dio.get('attendance/unclosed');
+      final data = response.data;
+      return data is List ? data : [];
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return [];
+      debugPrint('Failed to fetch unclosed attendance: $e');
+      return [];
+    } catch (e) {
+      debugPrint('Error fetching unclosed attendance: $e');
+      return [];
+    }
+  }
+
   /// Fetch all configured attendance locations from server
   Future<List<Map<String, dynamic>>> getAttendanceLocations() async {
     try {

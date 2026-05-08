@@ -515,7 +515,7 @@ class AttendanceController extends Controller
     }
     /**
      * Get today's attendance for the authenticated user
-     * Also checks for unclosed attendance from previous days (forgot to clock out)
+     * Only returns today's record. Does NOT block on previous unclosed records.
      */
     public function today(Request $request)
     {
@@ -527,40 +527,41 @@ class AttendanceController extends Controller
         $employeeId = $user->employee->id;
         $today = Carbon::today()->toDateString();
 
-        // 1. Check for today's record first
+        // Only check for today's record
         $todayAttendance = Attendance::where('employee_id', $employeeId)
             ->where('date', $today)
             ->first();
 
-        if ($todayAttendance) {
-            return response()->json($todayAttendance);
+        return response()->json($todayAttendance);
+    }
+
+    /**
+     * Get unclosed attendance records (forgot to checkout)
+     * Returns records from last 3 days that have check_in but no check_out
+     */
+    public function getUnclosedAttendance(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->employee) {
+            return response()->json(['message' => 'Employee record not found'], 404);
         }
 
-        // 2. If no record for today, check for unclosed attendance from previous days
-        //    (user forgot to clock out yesterday or earlier).
-        //    Optimization: We only care about records where they actually clocked in,
-        //    are not older than 3 days, and have a status that expects a clock-out.
-        $unclosedAttendance = Attendance::where('employee_id', $employeeId)
+        $employeeId = $user->employee->id;
+        $today = Carbon::today()->toDateString();
+
+        // Find records from last 3 days that need checkout
+        $unclosed = Attendance::where('employee_id', $employeeId)
             ->whereNotNull('check_in')
             ->whereNull('check_out')
             ->where('date', '<', $today)
             ->where('date', '>=', Carbon::now()->subDays(3)->toDateString())
             ->whereIn('status', ['present', 'late', 'pending'])
             ->orderBy('date', 'desc')
-            ->first();
+            ->get();
 
-        if ($unclosedAttendance) {
-            // Return the unclosed record with a flag so the mobile app knows
-            // this is a cross-day pending checkout
-            $data = $unclosedAttendance->toArray();
-            $data['is_previous_day'] = true;
-            $data['original_date'] = $unclosedAttendance->date;
-            return response()->json($data);
-        }
-
-        // 3. No record at all — user can clock in fresh
-        return response()->json(null);
+        return response()->json($unclosed);
     }
+
     /**
      * Get attendance history for the authenticated user
      */

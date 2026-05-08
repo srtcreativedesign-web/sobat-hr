@@ -82,7 +82,6 @@ class StaffInvitationController extends Controller
                     'division_input' => trim($divisionInput),
                     'job_level' => trim($jobLevel),
                     'track' => trim($track),
-                    'track' => trim($track),
                     'division_id' => $matchedDiv ? $matchedDiv->id : null,
                     'division_name' => $matchedDiv ? $matchedDiv->name : null,
                     // Legacy support removed

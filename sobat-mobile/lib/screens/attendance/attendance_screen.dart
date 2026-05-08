@@ -605,21 +605,18 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
   @override
   Widget build(BuildContext context) {
-    // ... (Keep existing var declarations)
     // Logic for Buttons
     bool hasCheckedIn = _todayAttendance != null;
     bool hasCheckedOut = hasCheckedIn && _todayAttendance!['check_out'] != null;
-    bool isPreviousDay = hasCheckedIn && _todayAttendance!['is_previous_day'] == true;
 
-    // Cross-day logic: if this is a previous day record, force checkout first
-    bool canCheckIn = !hasCheckedIn;
+    // Decoupled logic: can check in if no record today OR already checked out
+    bool canCheckIn = !hasCheckedIn || hasCheckedOut;
     bool canCheckOut = hasCheckedIn && !hasCheckedOut;
 
     // Check Late Logic
     bool isLateRestricted = false;
     if (hasCheckedIn &&
         !hasCheckedOut &&
-        !isPreviousDay &&
         _todayAttendance!['check_in'] != null) {
       String statusStr =
           _todayAttendance!['status']?.toString().toLowerCase() ?? '';
@@ -1171,44 +1168,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                             ),
                             const SizedBox(height: 20),
                           ],
-                        ],
-
-                        // Cross-day warning banner
-                        if (isPreviousDay) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 10,
-                              horizontal: 12,
-                            ),
-                            margin: const EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.shade700,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.orange.shade300,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.warning_amber_rounded,
-                                  size: 20,
-                                  color: Colors.white,
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    'Anda belum Clock Out tanggal ${_todayAttendance?['date'] ?? 'kemarin'}. Silakan Clock Out terlebih dahulu.',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
                         ],
 
                         // Show Active Check-in Type if already Checked In

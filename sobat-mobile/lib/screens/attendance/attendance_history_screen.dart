@@ -1,9 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../config/theme.dart';
 import '../../services/attendance_service.dart';
 import '../../widgets/attendance_badge.dart';
 import 'attendance_screen.dart';
+import 'selfie_screen.dart';
+import 'package:awesome_dialog/awesome_dialog.dart';
 
 class AttendanceHistoryScreen extends StatefulWidget {
   const AttendanceHistoryScreen({super.key});
@@ -17,6 +20,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   final AttendanceService _attendanceService = AttendanceService();
   bool _isLoading = true;
   List<dynamic> _history = [];
+  List<dynamic> _unclosedAttendance = [];
 
   // Filter
   int _selectedMonth = DateTime.now().month;
@@ -35,8 +39,12 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         month: _selectedMonth,
         year: _selectedYear,
       );
+
+      final unclosed = await _attendanceService.getUnclosedAttendance();
+
       setState(() {
         _history = data;
+        _unclosedAttendance = unclosed;
         _isLoading = false;
       });
     } catch (e) {
@@ -52,17 +60,83 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     }
   }
 
+  bool _needsCheckout(Map<String, dynamic> item) {
+    if (item['check_out'] != null) return false;
+    final status = item['status']?.toString().toLowerCase() ?? '';
+    return status == 'present' || status == 'late' || status == 'pending';
+  }
+
   Future<void> _navigateToClockIn() async {
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const AttendanceScreen()),
     );
-    _loadHistory(); // Refresh after return
+    _loadHistory();
+  }
+
+  Future<void> _navigateToCheckout(Map<String, dynamic> attendance) async {
+    final String? photoPath = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SelfieScreen(
+          address: attendance['location_address'] ?? '',
+          shiftName: 'Regular Morning',
+          isShifting: false,
+          status: 'Clock Out Susulan',
+        ),
+      ),
+    );
+
+    if (photoPath == null || !mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await _attendanceService.checkOut(
+        attendanceId: attendance['id'],
+        checkOutTime: DateFormat('HH:mm:ss').format(DateTime.now()),
+        photo: File(photoPath),
+        status: 'present',
+        attendanceType: attendance['attendance_type'],
+        fieldNotes: attendance['field_notes'],
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.success,
+        animType: AnimType.scale,
+        title: 'Berhasil!',
+        desc: 'Clock Out Susulan berhasil!',
+        btnOkColor: Colors.green,
+        btnOkOnPress: () {},
+      ).show();
+
+      _loadHistory();
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.error,
+        animType: AnimType.scale,
+        title: 'Gagal!',
+        desc: e.toString(),
+        btnOkColor: Colors.red,
+        btnOkOnPress: () {},
+      ).show();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Check if today is weekend
     final now = DateTime.now();
     final isWeekend =
         now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
@@ -87,6 +161,48 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       ),
       body: Column(
         children: [
+          // Unclosed Attendance Banner
+          if (_unclosedAttendance.isNotEmpty)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded,
+                      color: Colors.orange.shade700, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${_unclosedAttendance.length} absensi belum checkout',
+                          style: TextStyle(
+                            color: Colors.orange.shade900,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        Text(
+                          'Klik tombol "Clock Out Susulan" di bawah untuk menyelesaikannya',
+                          style: TextStyle(
+                            color: Colors.orange.shade700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           // Filter Section
           Container(
             padding: const EdgeInsets.all(16),
@@ -221,9 +337,9 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         ? item['check_out'].toString().substring(0, 5)
         : '-';
 
-    // Status color
-    Color statusColor;
+    final needsCheckout = _needsCheckout(item);
 
+    Color statusColor;
     switch (item['status']) {
       case 'present':
         statusColor = Colors.green;
@@ -249,6 +365,9 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: needsCheckout
+            ? Border.all(color: Colors.orange.shade300, width: 2)
+            : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -257,89 +376,117 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Date Box
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  date.day.toString(),
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: statusColor,
-                  ),
+          Row(
+            children: [
+              // Date Box
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                Text(
-                  DateFormat('MMM', 'id_ID').format(date),
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: statusColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      DateFormat('EEEE, d MMMM y', 'id_ID').format(date),
-                      style: const TextStyle(
+                      date.day.toString(),
+                      style: TextStyle(
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.textDark,
-                        fontSize: 14,
+                        color: statusColor,
                       ),
                     ),
-                    AttendanceBadge(
-                      status: item['status'] == 'late' 
-                        ? AttendanceStatus.late 
-                        : (item['status'] == 'absent' ? AttendanceStatus.absent : AttendanceStatus.onTime),
+                    Text(
+                      DateFormat('MMM', 'id_ID').format(date),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: statusColor,
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Row(
+              ),
+              const SizedBox(width: 16),
+              // Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.login, size: 14, color: Colors.grey.shade400),
-                    const SizedBox(width: 4),
-                    Text(
-                      checkIn,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textDark,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          DateFormat('EEEE, d MMMM y', 'id_ID').format(date),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textDark,
+                            fontSize: 14,
+                          ),
+                        ),
+                        AttendanceBadge(
+                          status: item['status'] == 'late'
+                              ? AttendanceStatus.late
+                              : (item['status'] == 'absent'
+                                  ? AttendanceStatus.absent
+                                  : AttendanceStatus.onTime),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 16),
-                    Icon(Icons.logout, size: 14, color: Colors.grey.shade400),
-                    const SizedBox(width: 4),
-                    Text(
-                      checkOut,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textDark,
-                      ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.login,
+                            size: 14, color: Colors.grey.shade400),
+                        const SizedBox(width: 4),
+                        Text(
+                          checkIn,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textDark,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Icon(Icons.logout,
+                            size: 14, color: Colors.grey.shade400),
+                        const SizedBox(width: 4),
+                        Text(
+                          checkOut,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textDark,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+          if (needsCheckout) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _navigateToCheckout(item),
+                icon: const Icon(Icons.logout, size: 18),
+                label: const Text('Clock Out Susulan'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

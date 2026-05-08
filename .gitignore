@@ -51,3 +51,19 @@ sobat-api/storage/app/firebase/service-account.json
 
 # Large Dump Files
 *.hprof
+
+# Test and Debug Files
+scratch/
+test_*.php
+inspect_*.php
+check_*.php
+debug_*.php
+dump_*.php
+scan_*.php
+list_*.php
+query_*.php
+patch_*.php
+compare_*.php
+create_*.php
+*.tsv
+inspect_*.py
