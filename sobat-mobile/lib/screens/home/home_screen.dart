@@ -8,6 +8,7 @@ import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/custom_navbar.dart';
 import '../../models/user.dart';
+import '../../l10n/app_localizations.dart';
 
 import '../../services/payroll_service.dart'; // Restored
 import '../../services/attendance_service.dart';
@@ -445,8 +446,8 @@ class _HomeScreenState extends State<HomeScreen> {
             activities.add({
               'type': 'attendance',
               'date': DateTime.parse('${item['date']} ${item['check_in']}'),
-              'title': 'Absen Masuk',
-              'desc': 'Anda melakukan absen masuk pada ${item['check_in']}',
+              'title': AppLocalizations.of(context)!.attendanceCheckIn,
+              'desc': AppLocalizations.of(context)!.attendanceCheckInDesc(item['check_in'] ?? ''),
               'status': 'success',
             });
           }
@@ -454,8 +455,8 @@ class _HomeScreenState extends State<HomeScreen> {
             activities.add({
               'type': 'attendance',
               'date': DateTime.parse('${item['date']} ${item['check_out']}'),
-              'title': 'Absen Keluar',
-              'desc': 'Anda melakukan absen keluar pada ${item['check_out']}',
+              'title': AppLocalizations.of(context)!.attendanceCheckOut,
+              'desc': AppLocalizations.of(context)!.attendanceCheckOutDesc(item['check_out'] ?? ''),
               'status': 'neutral',
             });
           }
@@ -471,8 +472,7 @@ class _HomeScreenState extends State<HomeScreen> {
           final date = DateTime.parse(item['created_at']);
           String status = item['status'] ?? 'pending';
           String type = item['type'] ?? 'Request';
-          String title =
-              '$type ${status == 'approved' ? 'Disetujui' : (status == 'rejected' ? 'Ditolak' : 'Diajukan')}';
+          String title = '$type ${status == 'approved' ? AppLocalizations.of(context)!.approved : (status == 'rejected' ? AppLocalizations.of(context)!.rejected : AppLocalizations.of(context)!.submitted)}';
 
           String formattedDate = '-';
           try {
@@ -489,7 +489,7 @@ class _HomeScreenState extends State<HomeScreen> {
             'type': 'request',
             'date': date,
             'title': title,
-            'desc': 'Pengajuan $type tanggal $formattedDate',
+            'desc': AppLocalizations.of(context)!.submissionOf(type, formattedDate),
             'status': status == 'approved'
                 ? 'success'
                 : (status == 'rejected' ? 'error' : 'warning'),
@@ -517,8 +517,8 @@ class _HomeScreenState extends State<HomeScreen> {
             activities.add({
               'type': 'payroll',
               'date': date,
-              'title': 'Gaji Bulan ${DateFormat('MMMM', 'id_ID').format(date)}',
-              'desc': 'Slip gaji telah diterbitkan.',
+              'title': AppLocalizations.of(context)!.salaryTitle(DateFormat('MMMM', 'id_ID').format(date)),
+              'desc': AppLocalizations.of(context)!.payslipPublished,
               'status': 'info',
             });
           }
@@ -593,16 +593,14 @@ class _HomeScreenState extends State<HomeScreen> {
           context: context,
           barrierDismissible: true,
           builder: (ctx) => AlertDialog(
-            title: const Text('Registrasi Wajah Diperlukan'),
-            content: const Text(
-              'Untuk melakukan absensi, Anda wajib mendaftarkan wajah terlebih dahulu.',
-            ),
+            title: Text(AppLocalizations.of(context)!.faceEnrollTitle),
+            content: Text(AppLocalizations.of(context)!.faceEnrollDesc),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text(
-                  'Nanti',
-                  style: TextStyle(color: Colors.grey),
+                child: Text(
+                  AppLocalizations.of(context)!.faceEnrollLater,
+                  style: const TextStyle(color: Colors.grey),
                 ),
               ),
               TextButton(
@@ -620,7 +618,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
                   });
                 },
-                child: const Text('Daftarkan Sekarang'),
+                child: Text(AppLocalizations.of(context)!.faceEnrollNow),
               ),
             ],
           ),
@@ -631,14 +629,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 11) {
-      return 'Selamat Pagi';
-    } else if (hour < 15) {
-      return 'Selamat Siang';
-    } else if (hour < 18) {
-      return 'Selamat Sore';
+    if (hour < 12) {
+      return AppLocalizations.of(context)!.goodMorning;
+    } else if (hour < 17) {
+      return AppLocalizations.of(context)!.goodAfternoon;
     } else {
-      return 'Selamat Malam';
+      return AppLocalizations.of(context)!.goodEvening;
     }
   }
 
@@ -850,7 +846,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         fontFamily: 'Manrope',
                                       ),
                                       children: [
-                                        const TextSpan(text: 'Halo, '),
+                                        TextSpan(text: '${AppLocalizations.of(context)!.greetingHello} '),
                                         TextSpan(
                                           text:
                                               user?.name.split(' ').first ??
@@ -1106,7 +1102,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ).format(now); // Full month name
 
     // Determine Status
-    String buttonText = 'Clock In Sekarang';
+    String buttonText = AppLocalizations.of(context)!.clockInNow;
     IconData buttonIcon = Icons.login;
     bool isButtonDisabled = false;
 
@@ -1115,7 +1111,7 @@ class _HomeScreenState extends State<HomeScreen> {
         (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday);
     if (isWeekend) {
       isButtonDisabled = true;
-      buttonText = 'Libur';
+      buttonText = AppLocalizations.of(context)!.dayOff;
     }
 
     if (_isLoadingAttendance) {
@@ -1132,7 +1128,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (_todayAttendance != null) {
       if (_todayAttendance!['check_out'] != null) {
-        buttonText = 'Absen Selesai';
+        buttonText = AppLocalizations.of(context)!.attendanceDone;
         isButtonDisabled = true;
         buttonIcon = Icons.check_circle;
       } else if (_todayAttendance!['check_in'] != null) {
@@ -1158,21 +1154,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
         if (statusStr == 'pending') {
           if (isLate) {
-            buttonText = 'Menunggu Approval';
+            buttonText = AppLocalizations.of(context)!.waitingApproval;
             buttonIcon = Icons.timer;
             isButtonDisabled = true;
           } else {
-            buttonText = 'Clock Out Sekarang';
+            buttonText = AppLocalizations.of(context)!.clockOutNow;
             buttonIcon = Icons.logout;
             isButtonDisabled = false;
           }
         } else if (statusStr == 'rejected') {
-          buttonText = 'Ditolak';
+          buttonText = AppLocalizations.of(context)!.attendanceRejected;
           isButtonDisabled = true;
           buttonIcon = Icons.cancel;
         } else {
           // Present / Approved
-          buttonText = 'Clock Out Sekarang';
+          buttonText = AppLocalizations.of(context)!.clockOutNow;
           buttonIcon = Icons.logout;
           isButtonDisabled = false;
         }
@@ -1194,10 +1190,17 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    // Shift Times
-    final shiftStart = parseShiftTime(user.shiftStartTime, DateTime(now.year, now.month, now.day, 8, 0));
-    final shiftEnd = parseShiftTime(user.shiftEndTime, DateTime(now.year, now.month, now.day, 17, 0));
-    final shiftLabel = "Shift ${user.shiftStartTime?.substring(0, 5) ?? '08:00'} - ${user.shiftEndTime?.substring(0, 5) ?? '17:00'}";
+    // Shift Times (only for office users)
+    final bool hasShift = user.track != 'operational' && user.shiftStartTime != null && user.shiftEndTime != null;
+    final shiftStart = hasShift
+        ? parseShiftTime(user.shiftStartTime, DateTime(now.year, now.month, now.day, 8, 0))
+        : DateTime(now.year, now.month, now.day, 8, 0);
+    final shiftEnd = hasShift
+        ? parseShiftTime(user.shiftEndTime, DateTime(now.year, now.month, now.day, 17, 0))
+        : DateTime(now.year, now.month, now.day, 17, 0);
+    final shiftLabel = hasShift
+        ? "${AppLocalizations.of(context)!.shiftLabel} ${user.shiftStartTime!.substring(0, 5)} - ${user.shiftEndTime!.substring(0, 5)}"
+        : '';
 
     // Attendance Data
     DateTime? checkInTime;
@@ -1212,13 +1215,13 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // Work Duration Calculation
-    String durationLabel = "0j 0m";
+    String durationLabel = AppLocalizations.of(context)!.durationHourMinute(0, 0);
     if (checkInTime != null) {
       final endTime = checkOutTime ?? now;
       final diff = endTime.difference(checkInTime);
       final hours = diff.inHours;
       final minutes = diff.inMinutes % 60;
-      durationLabel = "${hours}j ${minutes}m";
+      durationLabel = AppLocalizations.of(context)!.durationHourMinute(hours, minutes);
     }
 
     return Container(
@@ -1280,7 +1283,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           children: [
                             Text(
-                              'Durasi kerja',
+                              AppLocalizations.of(context)!.workDuration,
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.6),
                                 fontSize: 10,
@@ -1301,8 +1304,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 30),
                 
-                // Timeline
-                _buildAttendanceTimeline(shiftStart, shiftEnd, checkInTime, checkOutTime),
+                // Timeline (only for office with shifts)
+                if (hasShift)
+                  _buildAttendanceTimeline(shiftStart, shiftEnd, checkInTime, checkOutTime),
               ],
             ),
           ),
@@ -1323,20 +1327,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _buildAttendanceStatusBadge(isWeekend),
-                    Row(
-                      children: [
-                        Icon(Icons.access_time, size: 14, color: Colors.grey.shade500),
-                        const SizedBox(width: 4),
-                        Text(
-                          shiftLabel,
-                          style: TextStyle(
-                            color: Colors.grey.shade500,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                    if (hasShift)
+                      Row(
+                        children: [
+                          Icon(Icons.access_time, size: 14, color: Colors.grey.shade500),
+                          const SizedBox(width: 4),
+                          Text(
+                            shiftLabel,
+                            style: TextStyle(
+                              color: Colors.grey.shade500,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
                   ],
                 ),
                 
@@ -1440,8 +1445,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _timelineLabelV2('Masuk', checkIn != null ? DateFormat('HH:mm').format(checkIn) : '--:--', checkIn != null ? const Color(0xFF97C459) : null),
-                _timelineLabelV2('Keluar', checkOut != null ? DateFormat('HH:mm').format(checkOut) : (checkIn != null ? DateFormat('HH:mm').format(DateTime.now()) : '--:--'), checkIn != null ? const Color(0xFFFBB03B) : null),
+                _timelineLabelV2(AppLocalizations.of(context)!.checkIn, checkIn != null ? DateFormat('HH:mm').format(checkIn) : '--:--', checkIn != null ? const Color(0xFF97C459) : null),
+                _timelineLabelV2(AppLocalizations.of(context)!.checkOut, checkOut != null ? DateFormat('HH:mm').format(checkOut) : (checkIn != null ? DateFormat('HH:mm').format(DateTime.now()) : '--:--'), checkIn != null ? const Color(0xFFFBB03B) : null),
                 _timelineLabelV2('Selesai', DateFormat('HH:mm').format(end), Colors.white.withValues(alpha: 0.3)),
               ],
             ),
@@ -1603,7 +1608,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'SISA CUTI',
+                    AppLocalizations.of(context)!.leaveBalanceLabel.toUpperCase(),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -1701,7 +1706,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Text(
                 _isEligibleLeave
-                    ? 'Total jatah: $_leaveQuota hari'
+                    ? AppLocalizations.of(context)!.leaveTotal(_leaveQuota)
                     : 'Belum Eligible',
                 style: TextStyle(fontSize: 12, color: AppTheme.textLight),
               ),
@@ -1718,7 +1723,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   });
                 },
                 child: Text(
-                  'Ajukan →',
+                  '${AppLocalizations.of(context)!.applyLeave} →',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -2012,7 +2017,7 @@ class _HomeScreenState extends State<HomeScreen> {
       {
         'icon': 'assets/icons/payslip.png',
         'isAsset': true,
-        'label': 'Slip Gaji',
+        'label': AppLocalizations.of(context)!.payslip,
         'subtitle': 'Lihat slip',
         'gradient': [const Color(0xFF667EEA), const Color(0xFF764BA2)],
         'onTap': _navigateToPayroll,
@@ -2020,8 +2025,8 @@ class _HomeScreenState extends State<HomeScreen> {
       {
         'icon': 'assets/icons/leave.png',
         'isAsset': true,
-        'label': _isLoadingLeave ? 'Cuti' : 'Cuti ($_leaveBalance)',
-        'subtitle': 'Ajukan cuti',
+        'label': _isLoadingLeave ? AppLocalizations.of(context)!.leave : '${AppLocalizations.of(context)!.leave} ($_leaveBalance)',
+        'subtitle': AppLocalizations.of(context)!.applyLeave,
         'gradient': [const Color(0xFF43E97B), const Color(0xFF38F9D7)],
         'onTap': () async {
           await Navigator.pushNamed(
@@ -2035,23 +2040,23 @@ class _HomeScreenState extends State<HomeScreen> {
       {
         'icon': 'assets/icons/history.png',
         'isAsset': true,
-        'label': 'Riwayat',
-        'subtitle': 'Kehadiran',
+        'label': AppLocalizations.of(context)!.history,
+        'subtitle': AppLocalizations.of(context)!.attendance,
         'gradient': [const Color(0xFFF6D365), const Color(0xFFFDA085)],
         'onTap': () => Navigator.pushNamed(context, '/attendance/history'),
       },
       {
         'icon': 'assets/icons/overtime.png',
         'isAsset': true,
-        'label': 'Lembur',
-        'subtitle': 'Ajukan lembur',
+        'label': AppLocalizations.of(context)!.overtime,
+        'subtitle': AppLocalizations.of(context)!.applyOvertime,
         'gradient': [const Color(0xFFFF9A9E), const Color(0xFFFAD0C4)],
         'onTap': () => Navigator.pushNamed(context, '/submission/create', arguments: 'Lembur'),
       },
       {
         'icon': 'assets/icons/bussines-trip.png',
         'isAsset': true,
-        'label': 'Dinas',
+        'label': AppLocalizations.of(context)!.businessTrip,
         'subtitle': 'Perjalanan',
         'gradient': [const Color(0xFF84FAB0), const Color(0xFF8FD3F4)],
         'onTap': () => Navigator.pushNamed(context, '/submission/create', arguments: 'Dinas'),

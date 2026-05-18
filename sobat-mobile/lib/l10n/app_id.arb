@@ -4,6 +4,21 @@
   "emailLabel": "Alamat Email",
   "passwordLabel": "Kata Sandi",
   "loginButton": "Masuk",
+  "emailHint": "Masukkan email anda",
+  "emailRequired": "Wajib diisi",
+  "emailInvalid": "Email tidak valid",
+  "passwordHint": "Masukkan password anda",
+  "passwordRequired": "Wajib diisi",
+  "forgotPassword": "Lupa Password?",
+  "offlineBannerLogin": "Mode Offline — Login memerlukan koneksi internet",
+  "activationAccount": "Aktivasi Akun",
+  "invitationTitle": "Masukkan Link Undangan",
+  "invitationDescription": "Tempel link yang Anda terima dari Admin untuk mengaktifkan akun Anda.",
+  "invitationHint": "https://...",
+  "proceed": "Lanjutkan",
+  "welcomeTitle": "Mudah Kelola Karirmu",
+  "welcomeSubtitle": "Manajemen HR yang lebih simpel,\nefisien, dan transparan.",
+  "startNow": "Mulai Sekarang",
   "homeTitle": "Beranda",
   "attendance": "Absensi",
   "history": "Riwayat",
@@ -41,6 +56,68 @@
   "goodMorning": "Selamat Pagi",
   "goodAfternoon": "Selamat Siang",
   "goodEvening": "Selamat Malam",
+  "greetingHello": "Halo,",
+  "clockInNow": "Clock In",
+  "clockOutNow": "Clock Out",
+  "attendanceDone": "Selesai",
+  "waitingApproval": "Menunggu Approval",
+  "attendanceRejected": "Ditolak",
+  "dayOff": "Libur",
+  "workDuration": "Durasi Kerja",
+  "shiftLabel": "Shift",
+  "leaveBalance": "Sisa Cuti",
+  "salary": "Gaji",
+  "thr": "THR",
+  "faceEnrollTitle": "Registrasi Wajah Diperlukan",
+  "faceEnrollDesc": "Untuk melakukan absensi, Anda wajib mendaftarkan wajah terlebih dahulu.",
+  "faceEnrollLater": "Nanti",
+  "faceEnrollNow": "Daftarkan Sekarang",
+  "attendanceCheckIn": "Absen Masuk",
+  "attendanceCheckOut": "Absen Keluar",
+  "attendanceCheckInDesc": "Anda melakukan absen masuk pada {time}",
+  "@attendanceCheckInDesc": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "attendanceCheckOutDesc": "Anda melakukan absen keluar pada {time}",
+  "@attendanceCheckOutDesc": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "payslipPublished": "Slip gaji telah diterbitkan.",
+  "submitted": "Diajukan",
+  "applyLeave": "Ajukan cuti",
+  "applyOvertime": "Ajukan lembur",
+  "businessTrip": "Dinas",
+  "submissionOf": "Pengajuan {type} tanggal {date}",
+  "@submissionOf": {
+    "placeholders": {
+      "type": {},
+      "date": {}
+    }
+  },
+  "salaryTitle": "Gaji Bulan {month}",
+  "@salaryTitle": {
+    "placeholders": {
+      "month": {}
+    }
+  },
+  "leaveTotal": "Total jatah: {quota} hari",
+  "@leaveTotal": {
+    "placeholders": {
+      "quota": {}
+    }
+  },
+  "leaveBalanceLabel": "Sisa Cuti",
+  "durationHourMinute": "{hours}j {minutes}m",
+  "@durationHourMinute": {
+    "placeholders": {
+      "hours": {},
+      "minutes": {}
+    }
+  },
   "quickActions": "Aksi Cepat",
   "leave": "Cuti",
   "sick": "Sakit",

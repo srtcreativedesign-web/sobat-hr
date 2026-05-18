@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
 import '../../services/connectivity_service.dart';
+import '../../l10n/app_localizations.dart';
 import 'login_screen.dart';
 import 'invitation_screen.dart';
 
@@ -59,13 +60,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   color: Colors.orange.shade700,
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.wifi_off_rounded, color: Colors.white, size: 18),
-                      SizedBox(width: 8),
+                      const Icon(Icons.wifi_off_rounded, color: Colors.white, size: 18),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Mode Offline — Login memerlukan koneksi internet',
+                          AppLocalizations.of(context)!.offlineBannerLogin,
                           style: TextStyle(color: Colors.white, fontSize: 13),
                         ),
                       ),
@@ -103,20 +104,20 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 ),
 
                 // 4. Welcome Text
-                const Text(
-                  'Mudah Kelola Karirmu',
+                Text(
+                  AppLocalizations.of(context)!.welcomeTitle,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.textDark,
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Manajemen HR yang lebih simpel,\nefisien, dan transparan.',
+                Text(
+                  AppLocalizations.of(context)!.welcomeSubtitle,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 15,
                     color: AppTheme.textLight,
                     height: 1.5,
@@ -143,14 +144,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text('Mulai Sekarang'),
+                  child: Text(AppLocalizations.of(context)!.startNow),
                 ),
                 const SizedBox(height: 16),
                 TextButton(
                   onPressed: () => _showInvitationDialog(context),
-                  child: const Text(
-                    'Aktivasi Akun',
-                    style: TextStyle(
+                  child: Text(
+                    AppLocalizations.of(context)!.activationAccount,
+                    style: const TextStyle(
                       color: AppTheme.colorPrimary,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -190,9 +191,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Enter Invitation Link',
-              style: TextStyle(
+            Text(
+              AppLocalizations.of(context)!.invitationTitle,
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: AppTheme.colorEggplant,
@@ -200,16 +201,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Paste the link you received from your Admin to activate your account.',
-              style: TextStyle(fontSize: 14, color: Colors.black54),
+            Text(
+              AppLocalizations.of(context)!.invitationDescription,
+              style: const TextStyle(fontSize: 14, color: Colors.black54),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             TextField(
               controller: linkController,
               decoration: InputDecoration(
-                hintText: 'https://...',
+                hintText: AppLocalizations.of(context)!.invitationHint,
                 filled: true,
                 fillColor: Colors.grey[100],
                 border: OutlineInputBorder(
@@ -242,7 +243,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Continue'),
+              child: Text(AppLocalizations.of(context)!.proceed),
             ),
             const SizedBox(height: 24),
           ],

@@ -267,7 +267,10 @@ class OfflineSyncController extends Controller
     }
 
     /**
-     * Process base64 photo and save to storage
+     * Process base64 photo with layer 2 validation:
+     * 1. Valid MIME image type (JPEG/PNG only)
+     * 2. Minimum dimension check (400px width)
+     * 3. Resize to max 800px width
      */
     protected function processPhoto(string $photoBase64, int $employeeId): string
     {
@@ -283,12 +286,59 @@ class OfflineSyncController extends Controller
             throw new \Exception('Invalid base64 photo data');
         }
 
+        // Layer 2: Validate image using GD
+        $imageInfo = @getimagesizefromstring($photoData);
+        if ($imageInfo === false) {
+            throw new \Exception('Data foto tidak valid atau bukan format gambar yang didukung');
+        }
+
+        [$width, $height, $imageType] = $imageInfo;
+
+        // Only allow JPEG and PNG
+        if (!in_array($imageType, [IMAGETYPE_JPEG, IMAGETYPE_PNG], true)) {
+            throw new \Exception('Hanya format foto JPG dan PNG yang diperbolehkan');
+        }
+
+        // Minimum dimension check
+        if ($width < 400) {
+            throw new \Exception('Foto terlalu kecil. Minimal lebar 400 piksel');
+        }
+
         // Generate filename
         $filename = 'offline_' . $employeeId . '_' . time() . '_' . uniqid() . '.jpg';
         $path = 'attendance_photos/offline/' . $filename;
+        $fullPath = storage_path('app/public/' . $path);
 
-        // Save to storage
-        Storage::disk('public')->put($path, $photoData);
+        // Ensure directory exists
+        $directory = dirname($fullPath);
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        // Layer 2: Resize using GD (same as online AttendanceController)
+        $sourceImage = imagecreatefromstring($photoData);
+
+        $maxWidth = 800;
+        if ($width > $maxWidth) {
+            $newWidth = $maxWidth;
+            $newHeight = (int)(($height / $width) * $newWidth);
+        } else {
+            $newWidth = $width;
+            $newHeight = $height;
+        }
+
+        $newImage = imagecreatetruecolor($newWidth, $newHeight);
+
+        if ($imageType === IMAGETYPE_PNG) {
+            imagealphablending($newImage, false);
+            imagesavealpha($newImage, true);
+        }
+
+        imagecopyresampled($newImage, $sourceImage, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+        imagejpeg($newImage, $fullPath, 80);
+
+        imagedestroy($sourceImage);
+        imagedestroy($newImage);
 
         return $path;
     }

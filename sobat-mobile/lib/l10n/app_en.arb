@@ -4,6 +4,21 @@
   "emailLabel": "Email Address",
   "passwordLabel": "Password",
   "loginButton": "Login",
+  "emailHint": "Enter your email",
+  "emailRequired": "Required",
+  "emailInvalid": "Invalid email",
+  "passwordHint": "Enter your password",
+  "passwordRequired": "Required",
+  "forgotPassword": "Forgot Password?",
+  "offlineBannerLogin": "Offline Mode — Login requires internet connection",
+  "activationAccount": "Account Activation",
+  "invitationTitle": "Enter Invitation Link",
+  "invitationDescription": "Paste the link you received from your Admin to activate your account.",
+  "invitationHint": "https://...",
+  "proceed": "Continue",
+  "welcomeTitle": "Easily Manage Your Career",
+  "welcomeSubtitle": "HR management that's simpler,\nefficient, and transparent.",
+  "startNow": "Get Started Now",
   "homeTitle": "Home",
   "attendance": "Attendance",
   "history": "History",
@@ -41,6 +56,68 @@
   "goodMorning": "Good Morning",
   "goodAfternoon": "Good Afternoon",
   "goodEvening": "Good Evening",
+  "greetingHello": "Hello,",
+  "clockInNow": "Clock In",
+  "clockOutNow": "Clock Out",
+  "attendanceDone": "Done",
+  "waitingApproval": "Awaiting Approval",
+  "attendanceRejected": "Rejected",
+  "dayOff": "Day Off",
+  "workDuration": "Work Duration",
+  "shiftLabel": "Shift",
+  "leaveBalance": "Leave Balance",
+  "salary": "Salary",
+  "thr": "THR Bonus",
+  "faceEnrollTitle": "Face Registration Required",
+  "faceEnrollDesc": "To perform attendance, you need to register your face first.",
+  "faceEnrollLater": "Later",
+  "faceEnrollNow": "Register Now",
+  "attendanceCheckIn": "Check In",
+  "attendanceCheckOut": "Check Out",
+  "attendanceCheckInDesc": "You checked in at {time}",
+  "@attendanceCheckInDesc": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "attendanceCheckOutDesc": "You checked out at {time}",
+  "@attendanceCheckOutDesc": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "payslipPublished": "Payslip has been published.",
+  "submitted": "Submitted",
+  "applyLeave": "Apply Leave",
+  "applyOvertime": "Apply Overtime",
+  "businessTrip": "Business Trip",
+  "submissionOf": "Submission of {type} on {date}",
+  "@submissionOf": {
+    "placeholders": {
+      "type": {},
+      "date": {}
+    }
+  },
+  "salaryTitle": "Salary for {month}",
+  "@salaryTitle": {
+    "placeholders": {
+      "month": {}
+    }
+  },
+  "leaveTotal": "Total quota: {quota} days",
+  "@leaveTotal": {
+    "placeholders": {
+      "quota": {}
+    }
+  },
+  "leaveBalanceLabel": "Leave Balance",
+  "durationHourMinute": "{hours}h {minutes}m",
+  "@durationHourMinute": {
+    "placeholders": {
+      "hours": {},
+      "minutes": {}
+    }
+  },
   "quickActions": "Quick Actions",
   "leave": "Leave",
   "sick": "Sick Leave",

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import apiClient from '@/lib/api-client';
 import { Organization } from '@/types';
 import { 
@@ -11,21 +12,18 @@ import {
   Plus, 
   Edit3, 
   Trash2, 
-  Map as MapIcon,
   Loader2,
-  ExternalLink,
-  Navigation,
-  Target,
-  ChevronRight,
   Monitor,
   LayoutGrid,
-  Filter
+  Filter,
+  QrCode
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import OutletForm from './OutletForm';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const OutletManagement = () => {
+    const router = useRouter();
     const [outlets, setOutlets] = useState<Organization[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -116,7 +114,6 @@ const OutletManagement = () => {
     const stats = [
         { label: 'Total Outlets', value: outlets.length, color: 'indigo', icon: Building2 },
         { label: 'Active Regions', value: [...new Set(outlets.map(o => o.parent_id))].length, color: 'blue', icon: LayoutGrid },
-        { label: 'GPS Secured', value: outlets.filter(o => o.latitude).length, color: 'emerald', icon: MapPin },
     ];
 
     return (
@@ -194,8 +191,8 @@ const OutletManagement = () => {
                             <tr className="bg-slate-50/50 border-b border-slate-100">
                                 <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Cabang & Brand</th>
                                 <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Logistic Info</th>
-                                <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">GPS Mapping</th>
-                                <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Precision Radius</th>
+                                <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Radius</th>
+                                <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">QR Code</th>
                                 <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Settings</th>
                             </tr>
                         </thead>
@@ -273,24 +270,6 @@ const OutletManagement = () => {
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6">
-                                                {outlet.latitude && outlet.longitude ? (
-                                                    <a 
-                                                        href={`https://www.google.com/maps?q=${outlet.latitude},${outlet.longitude}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-indigo-50 text-indigo-700 text-[11px] font-black hover:bg-indigo-600 hover:text-white transition-all shadow-sm group/map"
-                                                    >
-                                                        <Navigation className="w-3.5 h-3.5 group-hover/map:scale-110 transition-transform" />
-                                                        {outlet.latitude.toFixed(4)}, {outlet.longitude.toFixed(4)}
-                                                        <ExternalLink className="w-3 h-3 ml-1 opacity-50 group-hover/map:opacity-100" />
-                                                    </a>
-                                                ) : (
-                                                    <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 text-slate-300 text-[10px] font-bold italic border border-dashed border-slate-200">
-                                                        Not mapped
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td className="px-8 py-6">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
                                                         <motion.div 
@@ -304,6 +283,16 @@ const OutletManagement = () => {
                                                         <span className="text-[10px] font-black text-slate-400">meters</span>
                                                     </div>
                                                 </div>
+                                            </td>
+                                            <td className="px-8 py-6 text-center">
+                                                <button 
+                                                    onClick={() => router.push(`/attendance/qr-generator?outlet=${outlet.id}`)}
+                                                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-50 text-cyan-700 text-[11px] font-black hover:bg-cyan-600 hover:text-white transition-all shadow-sm border border-cyan-100"
+                                                    title="Kelola QR Code"
+                                                >
+                                                    <QrCode className="w-4 h-4" />
+                                                    QR
+                                                </button>
                                             </td>
                                             <td className="px-8 py-6 text-right">
                                                 <div className="flex items-center justify-end gap-3 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">

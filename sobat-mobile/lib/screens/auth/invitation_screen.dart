@@ -18,7 +18,7 @@ class _InvitationScreenState extends State<InvitationScreen> {
   // Get dev host from --dart-define or fallback to default
   static const String _devHost = String.fromEnvironment(
     'DEV_HOST',
-    defaultValue: '192.168.1.11',
+    defaultValue: '192.168.1.27',
   );
 
   @override

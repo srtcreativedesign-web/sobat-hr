@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/connectivity_service.dart';
+import '../../l10n/app_localizations.dart';
+import 'invitation_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -64,6 +66,87 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _showForgotPasswordDialog() {
     Navigator.pushNamed(context, '/forgot-password');
+  }
+
+  void _showInvitationDialog(BuildContext context) {
+    final linkController = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 24,
+          right: 24,
+          top: 24,
+        ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              AppLocalizations.of(context)!.invitationTitle,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.colorEggplant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              AppLocalizations.of(context)!.invitationDescription,
+              style: const TextStyle(fontSize: 14, color: Colors.black54),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            TextField(
+              controller: linkController,
+              decoration: InputDecoration(
+                hintText: AppLocalizations.of(context)!.invitationHint,
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.all(16),
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                if (linkController.text.isNotEmpty) {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          InvitationScreen(url: linkController.text.trim()),
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.colorCyan,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(AppLocalizations.of(context)!.proceed),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showHelpOptions() {
@@ -204,13 +287,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   color: Colors.orange.shade700,
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.wifi_off_rounded, color: Colors.white, size: 18),
-                      SizedBox(width: 8),
+                      const Icon(Icons.wifi_off_rounded, color: Colors.white, size: 18),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Mode Offline — Login memerlukan koneksi internet',
+                          AppLocalizations.of(context)!.offlineBannerLogin,
                           style: TextStyle(color: Colors.white, fontSize: 13),
                         ),
                       ),
@@ -260,10 +343,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Padding(
-                              padding: EdgeInsets.only(left: 4, bottom: 8),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 4, bottom: 8),
                               child: Text(
-                                'Email',
+                                AppLocalizations.of(context)!.emailLabel,
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -275,7 +358,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
                               decoration: InputDecoration(
-                                hintText: 'Masukkan email anda',
+                                hintText: AppLocalizations.of(context)!.emailHint,
                                 filled: true,
                                 fillColor: Colors.white,
                                 border: OutlineInputBorder(
@@ -289,19 +372,19 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Wajib diisi';
+                                  return AppLocalizations.of(context)!.emailRequired;
                                 }
                                 if (!value.contains('@')) {
-                                  return 'Email tidak valid';
+                                  return AppLocalizations.of(context)!.emailInvalid;
                                 }
                                 return null;
                               },
                             ),
                             const SizedBox(height: 24),
-                            const Padding(
-                              padding: EdgeInsets.only(left: 4, bottom: 8),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 4, bottom: 8),
                               child: Text(
-                                'Password',
+                                AppLocalizations.of(context)!.passwordLabel,
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -313,7 +396,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               controller: _passwordController,
                               obscureText: _obscurePassword,
                               decoration: InputDecoration(
-                                hintText: 'Masukkan password anda',
+                                hintText: AppLocalizations.of(context)!.passwordHint,
                                 filled: true,
                                 fillColor: Colors.white,
                                 border: OutlineInputBorder(
@@ -339,15 +422,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               validator: (value) => value == null || value.isEmpty
-                                  ? 'Wajib diisi'
+                                  ? AppLocalizations.of(context)!.passwordRequired
                                   : null,
                             ),
                             Align(
                               alignment: Alignment.center,
                               child: TextButton(
-                                onPressed: _showForgotPasswordDialog,
-                                child: const Text(
-                                  'Forget Password?',
+                                  onPressed: _showForgotPasswordDialog,
+                                child: Text(
+                                  AppLocalizations.of(context)!.forgotPassword,
                                   style: TextStyle(
                                     color: AppTheme.textLight,
                                     fontStyle: FontStyle.italic,
@@ -386,8 +469,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                               strokeWidth: 2,
                                             ),
                                           )
-                                        : const Text(
-                                            'Login',
+                                        : Text(
+                                            AppLocalizations.of(context)!.loginButton,
                                             style: TextStyle(
                                               fontSize: 18,
                                               fontWeight: FontWeight.bold,
@@ -429,7 +512,22 @@ class _LoginScreenState extends State<LoginScreen> {
                                 return const SizedBox.shrink();
                               },
                             ),
-                            const SizedBox(height: 40),
+                            const SizedBox(height: 24),
+                            Align(
+                              alignment: Alignment.center,
+                              child: TextButton(
+                                onPressed: () => _showInvitationDialog(context),
+                                child: Text(
+                                  AppLocalizations.of(context)!.activationAccount,
+                                  style: TextStyle(
+                                    color: AppTheme.colorPrimary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
                           ],
                         ),
                       ),

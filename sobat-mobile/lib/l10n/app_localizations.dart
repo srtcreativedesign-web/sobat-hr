@@ -128,6 +128,96 @@ abstract class AppLocalizations {
   /// **'Login'**
   String get loginButton;
 
+  /// No description provided for @emailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email'**
+  String get emailHint;
+
+  /// No description provided for @emailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Required'**
+  String get emailRequired;
+
+  /// No description provided for @emailInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email'**
+  String get emailInvalid;
+
+  /// No description provided for @passwordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password'**
+  String get passwordHint;
+
+  /// No description provided for @passwordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Required'**
+  String get passwordRequired;
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot Password?'**
+  String get forgotPassword;
+
+  /// No description provided for @offlineBannerLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline Mode — Login requires internet connection'**
+  String get offlineBannerLogin;
+
+  /// No description provided for @activationAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Account Activation'**
+  String get activationAccount;
+
+  /// No description provided for @invitationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Invitation Link'**
+  String get invitationTitle;
+
+  /// No description provided for @invitationDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the link you received from your Admin to activate your account.'**
+  String get invitationDescription;
+
+  /// No description provided for @invitationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'https://...'**
+  String get invitationHint;
+
+  /// No description provided for @proceed.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get proceed;
+
+  /// No description provided for @welcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Easily Manage Your Career'**
+  String get welcomeTitle;
+
+  /// No description provided for @welcomeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'HR management that\'s simpler,\nefficient, and transparent.'**
+  String get welcomeSubtitle;
+
+  /// No description provided for @startNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started Now'**
+  String get startNow;
+
   /// No description provided for @homeTitle.
   ///
   /// In en, this message translates to:
@@ -349,6 +439,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Good Evening'**
   String get goodEvening;
+
+  /// No description provided for @greetingHello.
+  ///
+  /// In en, this message translates to:
+  /// **'Hello,'**
+  String get greetingHello;
+
+  /// No description provided for @clockInNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Clock In'**
+  String get clockInNow;
+
+  /// No description provided for @clockOutNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Clock Out'**
+  String get clockOutNow;
+
+  /// No description provided for @attendanceDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get attendanceDone;
+
+  /// No description provided for @waitingApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting Approval'**
+  String get waitingApproval;
+
+  /// No description provided for @attendanceRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get attendanceRejected;
+
+  /// No description provided for @dayOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Day Off'**
+  String get dayOff;
+
+  /// No description provided for @workDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Work Duration'**
+  String get workDuration;
+
+  /// No description provided for @shiftLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Shift'**
+  String get shiftLabel;
+
+  /// No description provided for @leaveBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Balance'**
+  String get leaveBalance;
+
+  /// No description provided for @salary.
+  ///
+  /// In en, this message translates to:
+  /// **'Salary'**
+  String get salary;
+
+  /// No description provided for @thr.
+  ///
+  /// In en, this message translates to:
+  /// **'THR Bonus'**
+  String get thr;
+
+  /// No description provided for @faceEnrollTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Face Registration Required'**
+  String get faceEnrollTitle;
+
+  /// No description provided for @faceEnrollDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'To perform attendance, you need to register your face first.'**
+  String get faceEnrollDesc;
+
+  /// No description provided for @faceEnrollLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get faceEnrollLater;
+
+  /// No description provided for @faceEnrollNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Register Now'**
+  String get faceEnrollNow;
+
+  /// No description provided for @attendanceCheckIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Check In'**
+  String get attendanceCheckIn;
+
+  /// No description provided for @attendanceCheckOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Check Out'**
+  String get attendanceCheckOut;
+
+  /// No description provided for @attendanceCheckInDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'You checked in at {time}'**
+  String attendanceCheckInDesc(Object time);
+
+  /// No description provided for @attendanceCheckOutDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'You checked out at {time}'**
+  String attendanceCheckOutDesc(Object time);
+
+  /// No description provided for @payslipPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Payslip has been published.'**
+  String get payslipPublished;
+
+  /// No description provided for @submitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted'**
+  String get submitted;
+
+  /// No description provided for @applyLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Leave'**
+  String get applyLeave;
+
+  /// No description provided for @applyOvertime.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Overtime'**
+  String get applyOvertime;
+
+  /// No description provided for @businessTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Business Trip'**
+  String get businessTrip;
+
+  /// No description provided for @submissionOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Submission of {type} on {date}'**
+  String submissionOf(Object type, Object date);
+
+  /// No description provided for @salaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Salary for {month}'**
+  String salaryTitle(Object month);
+
+  /// No description provided for @leaveTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total quota: {quota} days'**
+  String leaveTotal(Object quota);
+
+  /// No description provided for @leaveBalanceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Balance'**
+  String get leaveBalanceLabel;
+
+  /// No description provided for @durationHourMinute.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h {minutes}m'**
+  String durationHourMinute(Object hours, Object minutes);
 
   /// No description provided for @quickActions.
   ///
@@ -595,12 +865,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Payroll'**
   String get payroll;
-
-  /// No description provided for @salary.
-  ///
-  /// In en, this message translates to:
-  /// **'Salary'**
-  String get salary;
 
   /// No description provided for @payslip.
   ///

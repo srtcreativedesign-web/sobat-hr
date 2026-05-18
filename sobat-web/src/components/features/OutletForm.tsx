@@ -5,7 +5,7 @@ import apiClient from '@/lib/api-client';
 import { 
   Loader2, 
   X, 
-  MapPin, 
+  MapPin,
   Building, 
   Globe, 
   Navigation,
@@ -43,8 +43,6 @@ export default function OutletForm({ isOpen, onClose, onSuccess, initialData }: 
         division_id: '',
         location_code: '',
         address: '',
-        latitude: '',
-        longitude: '',
         radius_meters: '100',
     });
     const [loading, setLoading] = useState(false);
@@ -68,8 +66,6 @@ export default function OutletForm({ isOpen, onClose, onSuccess, initialData }: 
                 division_id: initialData.parent_id?.toString() || '',
                 location_code: locationCode || initialData.code,
                 address: initialData.address || '',
-                latitude: initialData.latitude?.toString() || '',
-                longitude: initialData.longitude?.toString() || '',
                 radius_meters: initialData.radius_meters?.toString() || '100',
             });
         } else {
@@ -78,8 +74,6 @@ export default function OutletForm({ isOpen, onClose, onSuccess, initialData }: 
                 division_id: '',
                 location_code: '',
                 address: '',
-                latitude: '',
-                longitude: '',
                 radius_meters: '100',
             });
         }
@@ -89,7 +83,7 @@ export default function OutletForm({ isOpen, onClose, onSuccess, initialData }: 
     const fetchDivisions = async () => {
         setFetchingDivisions(true);
         try {
-            const response = await apiClient.get('/divisions');
+            const response = await apiClient.get('/organizations/divisions');
             // Assuming response.data contains the list of divisions
             setDivisions(response.data.data || response.data);
         } catch (err) {
@@ -112,8 +106,6 @@ export default function OutletForm({ isOpen, onClose, onSuccess, initialData }: 
             type: 'branch',
             parent_id: formData.division_id ? parseInt(formData.division_id) : null,
             address: formData.address || null,
-            latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-            longitude: formData.longitude ? parseFloat(formData.longitude) : null,
             radius_meters: parseInt(formData.radius_meters),
         };
 
@@ -261,37 +253,10 @@ export default function OutletForm({ isOpen, onClose, onSuccess, initialData }: 
 
                             {/* Geo Data Card */}
                             <div className="relative group p-6 rounded-[2rem] bg-indigo-50/30 border border-indigo-100/50 overflow-hidden">
-                                <div className="absolute top-0 right-0 p-4 opacity-10 group-focus-within:opacity-20 transition-opacity">
-                                    <MapPin className="w-24 h-24 -mr-8 -mt-8 text-indigo-600" />
-                                </div>
-                                
                                 <div className="relative space-y-4">
                                     <div className="flex items-center gap-2 text-indigo-600 font-black text-[10px] uppercase tracking-tighter">
                                         <Target className="w-3.5 h-3.5" />
-                                        Precise Geo-Fencing Configuration
-                                    </div>
-                                    
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-1.5">
-                                            <input
-                                                type="number"
-                                                step="any"
-                                                className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-indigo-100 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all text-xs font-bold text-slate-800"
-                                                value={formData.latitude}
-                                                onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
-                                                placeholder="Latitude (-6.2088)"
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <input
-                                                type="number"
-                                                step="any"
-                                                className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-indigo-100 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all text-xs font-bold text-slate-800"
-                                                value={formData.longitude}
-                                                onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
-                                                placeholder="Longitude (106.8456)"
-                                            />
-                                        </div>
+                                        Radius Pengawasan
                                     </div>
                                     
                                     <div className="flex items-center gap-4">
@@ -308,7 +273,7 @@ export default function OutletForm({ isOpen, onClose, onSuccess, initialData }: 
                                         </div>
                                         <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-100/50 text-indigo-600 text-[10px] font-bold border border-indigo-200/50 max-w-[120px]">
                                             <Info className="w-3.5 h-3.5 shrink-0" />
-                                            Optimal radius is between 50-200m
+                                            Pengaturan radius pantauan
                                         </div>
                                     </div>
                                 </div>

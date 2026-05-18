@@ -24,6 +24,54 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginButton => 'Login';
 
   @override
+  String get emailHint => 'Enter your email';
+
+  @override
+  String get emailRequired => 'Required';
+
+  @override
+  String get emailInvalid => 'Invalid email';
+
+  @override
+  String get passwordHint => 'Enter your password';
+
+  @override
+  String get passwordRequired => 'Required';
+
+  @override
+  String get forgotPassword => 'Forgot Password?';
+
+  @override
+  String get offlineBannerLogin =>
+      'Offline Mode — Login requires internet connection';
+
+  @override
+  String get activationAccount => 'Account Activation';
+
+  @override
+  String get invitationTitle => 'Enter Invitation Link';
+
+  @override
+  String get invitationDescription =>
+      'Paste the link you received from your Admin to activate your account.';
+
+  @override
+  String get invitationHint => 'https://...';
+
+  @override
+  String get proceed => 'Continue';
+
+  @override
+  String get welcomeTitle => 'Easily Manage Your Career';
+
+  @override
+  String get welcomeSubtitle =>
+      'HR management that\'s simpler,\nefficient, and transparent.';
+
+  @override
+  String get startNow => 'Get Started Now';
+
+  @override
   String get homeTitle => 'Home';
 
   @override
@@ -133,6 +181,109 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get goodEvening => 'Good Evening';
+
+  @override
+  String get greetingHello => 'Hello,';
+
+  @override
+  String get clockInNow => 'Clock In';
+
+  @override
+  String get clockOutNow => 'Clock Out';
+
+  @override
+  String get attendanceDone => 'Done';
+
+  @override
+  String get waitingApproval => 'Awaiting Approval';
+
+  @override
+  String get attendanceRejected => 'Rejected';
+
+  @override
+  String get dayOff => 'Day Off';
+
+  @override
+  String get workDuration => 'Work Duration';
+
+  @override
+  String get shiftLabel => 'Shift';
+
+  @override
+  String get leaveBalance => 'Leave Balance';
+
+  @override
+  String get salary => 'Salary';
+
+  @override
+  String get thr => 'THR Bonus';
+
+  @override
+  String get faceEnrollTitle => 'Face Registration Required';
+
+  @override
+  String get faceEnrollDesc =>
+      'To perform attendance, you need to register your face first.';
+
+  @override
+  String get faceEnrollLater => 'Later';
+
+  @override
+  String get faceEnrollNow => 'Register Now';
+
+  @override
+  String get attendanceCheckIn => 'Check In';
+
+  @override
+  String get attendanceCheckOut => 'Check Out';
+
+  @override
+  String attendanceCheckInDesc(Object time) {
+    return 'You checked in at $time';
+  }
+
+  @override
+  String attendanceCheckOutDesc(Object time) {
+    return 'You checked out at $time';
+  }
+
+  @override
+  String get payslipPublished => 'Payslip has been published.';
+
+  @override
+  String get submitted => 'Submitted';
+
+  @override
+  String get applyLeave => 'Apply Leave';
+
+  @override
+  String get applyOvertime => 'Apply Overtime';
+
+  @override
+  String get businessTrip => 'Business Trip';
+
+  @override
+  String submissionOf(Object type, Object date) {
+    return 'Submission of $type on $date';
+  }
+
+  @override
+  String salaryTitle(Object month) {
+    return 'Salary for $month';
+  }
+
+  @override
+  String leaveTotal(Object quota) {
+    return 'Total quota: $quota days';
+  }
+
+  @override
+  String get leaveBalanceLabel => 'Leave Balance';
+
+  @override
+  String durationHourMinute(Object hours, Object minutes) {
+    return '${hours}h ${minutes}m';
+  }
 
   @override
   String get quickActions => 'Quick Actions';
@@ -256,9 +407,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get payroll => 'Payroll';
-
-  @override
-  String get salary => 'Salary';
 
   @override
   String get payslip => 'Payslip';

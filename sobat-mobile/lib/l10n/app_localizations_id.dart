@@ -24,6 +24,54 @@ class AppLocalizationsId extends AppLocalizations {
   String get loginButton => 'Masuk';
 
   @override
+  String get emailHint => 'Masukkan email anda';
+
+  @override
+  String get emailRequired => 'Wajib diisi';
+
+  @override
+  String get emailInvalid => 'Email tidak valid';
+
+  @override
+  String get passwordHint => 'Masukkan password anda';
+
+  @override
+  String get passwordRequired => 'Wajib diisi';
+
+  @override
+  String get forgotPassword => 'Lupa Password?';
+
+  @override
+  String get offlineBannerLogin =>
+      'Mode Offline — Login memerlukan koneksi internet';
+
+  @override
+  String get activationAccount => 'Aktivasi Akun';
+
+  @override
+  String get invitationTitle => 'Masukkan Link Undangan';
+
+  @override
+  String get invitationDescription =>
+      'Tempel link yang Anda terima dari Admin untuk mengaktifkan akun Anda.';
+
+  @override
+  String get invitationHint => 'https://...';
+
+  @override
+  String get proceed => 'Lanjutkan';
+
+  @override
+  String get welcomeTitle => 'Mudah Kelola Karirmu';
+
+  @override
+  String get welcomeSubtitle =>
+      'Manajemen HR yang lebih simpel,\nefisien, dan transparan.';
+
+  @override
+  String get startNow => 'Mulai Sekarang';
+
+  @override
   String get homeTitle => 'Beranda';
 
   @override
@@ -133,6 +181,109 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get goodEvening => 'Selamat Malam';
+
+  @override
+  String get greetingHello => 'Halo,';
+
+  @override
+  String get clockInNow => 'Clock In';
+
+  @override
+  String get clockOutNow => 'Clock Out';
+
+  @override
+  String get attendanceDone => 'Selesai';
+
+  @override
+  String get waitingApproval => 'Menunggu Approval';
+
+  @override
+  String get attendanceRejected => 'Ditolak';
+
+  @override
+  String get dayOff => 'Libur';
+
+  @override
+  String get workDuration => 'Durasi Kerja';
+
+  @override
+  String get shiftLabel => 'Shift';
+
+  @override
+  String get leaveBalance => 'Sisa Cuti';
+
+  @override
+  String get salary => 'Gaji';
+
+  @override
+  String get thr => 'THR';
+
+  @override
+  String get faceEnrollTitle => 'Registrasi Wajah Diperlukan';
+
+  @override
+  String get faceEnrollDesc =>
+      'Untuk melakukan absensi, Anda wajib mendaftarkan wajah terlebih dahulu.';
+
+  @override
+  String get faceEnrollLater => 'Nanti';
+
+  @override
+  String get faceEnrollNow => 'Daftarkan Sekarang';
+
+  @override
+  String get attendanceCheckIn => 'Absen Masuk';
+
+  @override
+  String get attendanceCheckOut => 'Absen Keluar';
+
+  @override
+  String attendanceCheckInDesc(Object time) {
+    return 'Anda melakukan absen masuk pada $time';
+  }
+
+  @override
+  String attendanceCheckOutDesc(Object time) {
+    return 'Anda melakukan absen keluar pada $time';
+  }
+
+  @override
+  String get payslipPublished => 'Slip gaji telah diterbitkan.';
+
+  @override
+  String get submitted => 'Diajukan';
+
+  @override
+  String get applyLeave => 'Ajukan cuti';
+
+  @override
+  String get applyOvertime => 'Ajukan lembur';
+
+  @override
+  String get businessTrip => 'Dinas';
+
+  @override
+  String submissionOf(Object type, Object date) {
+    return 'Pengajuan $type tanggal $date';
+  }
+
+  @override
+  String salaryTitle(Object month) {
+    return 'Gaji Bulan $month';
+  }
+
+  @override
+  String leaveTotal(Object quota) {
+    return 'Total jatah: $quota hari';
+  }
+
+  @override
+  String get leaveBalanceLabel => 'Sisa Cuti';
+
+  @override
+  String durationHourMinute(Object hours, Object minutes) {
+    return '${hours}j ${minutes}m';
+  }
 
   @override
   String get quickActions => 'Aksi Cepat';
@@ -256,9 +407,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get payroll => 'Penggajian';
-
-  @override
-  String get salary => 'Gaji';
 
   @override
   String get payslip => 'Slip Gaji';

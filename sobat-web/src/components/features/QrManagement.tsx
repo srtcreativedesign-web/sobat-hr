@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import apiClient from '@/lib/api-client';
 import { Organization } from '@/types';
 import { QRCodeSVG } from 'qrcode.react';
@@ -8,14 +9,14 @@ import {
   QrCode, 
   RotateCw, 
   Printer, 
-  Download, 
   CheckCircle2, 
   XCircle, 
   Loader2,
   Search,
-  MapPin,
   Calendar,
-  Info
+  Info,
+  Layers,
+  MapPin
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -32,17 +33,38 @@ interface QrCodeLocation {
 }
 
 const QrManagement = () => {
+  const searchParams = useSearchParams();
   const [outlets, setOutlets] = useState<Organization[]>([]);
   const [qrCodes, setQrCodes] = useState<QrCodeLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedQr, setSelectedQr] = useState<QrCodeLocation | null>(null);
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [generateOutletId, setGenerateOutletId] = useState<number | null>(null);
+  const [generateFloor, setGenerateFloor] = useState(1);
+  const [generateLocation, setGenerateLocation] = useState('');
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    const outletParam = searchParams.get('outlet');
+    if (outletParam && outlets.length > 0) {
+      const id = parseInt(outletParam);
+      const outlet = outlets.find(o => o.id === id);
+      if (outlet) {
+        const qr = getOutletQr(id);
+        if (!qr) {
+          openGenerateModal(id);
+        } else {
+          setSelectedQr(qr);
+        }
+      }
+    }
+  }, [searchParams, outlets]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -65,10 +87,20 @@ const QrManagement = () => {
     }
   };
 
-  const handleGenerate = async (outletId: number, floor: number = 1) => {
+  const openGenerateModal = (outletId: number) => {
+    const outlet = outlets.find(o => o.id === outletId);
+    setGenerateOutletId(outletId);
+    setGenerateFloor(1);
+    setGenerateLocation(outlet ? `Pintu Masuk Lantai 1 - ${outlet.name}` : 'Pintu Masuk Lantai 1');
+    setShowGenerateModal(true);
+  };
+
+  const handleGenerateWithInput = async () => {
+    if (!generateOutletId) return;
+
     const result = await Swal.fire({
       title: 'Konfirmasi Pembuatan QR',
-      text: 'Ini akan membuat QR Code baru dan menonaktifkan yang lama jika ada. Lanjutkan?',
+      text: `Buat QR untuk lantai ${generateFloor}? QR lama yang aktif akan dinonaktifkan.`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Ya, Buat QR',
@@ -78,12 +110,13 @@ const QrManagement = () => {
 
     if (!result.isConfirmed) return;
 
-    setProcessingId(outletId);
+    setProcessingId(generateOutletId);
+    setShowGenerateModal(false);
     try {
       const res = await apiClient.post('/attendance/qr-codes/generate-single', {
-        organization_id: outletId,
-        floor_number: floor,
-        location_name: `Pintu Masuk Lantai ${floor}`
+        organization_id: generateOutletId,
+        floor_number: generateFloor,
+        location_name: generateLocation
       });
 
       if (res.data.success) {
@@ -105,6 +138,10 @@ const QrManagement = () => {
     } finally {
       setProcessingId(null);
     }
+  };
+
+  const handleGenerate = (outletId: number) => {
+    openGenerateModal(outletId);
   };
 
   const handlePrint = () => {
@@ -294,54 +331,102 @@ const QrManagement = () => {
       {/* QR Modal Preview */}
       {selectedQr && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setSelectedQr(null)} />
-          <div className="relative bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl scale-in-center">
-            <div className="p-6 text-center border-b border-gray-100">
-              <h3 className="text-xl font-bold flex items-center justify-center gap-2 text-gray-800">
-                <QrCode className="w-5 h-5 text-cyan-600" />
+          <div className="absolute inset-0 bg-black/40" onClick={() => setSelectedQr(null)} />
+          <div className="relative bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-xl">
+            <div className="p-4 text-center border-b border-gray-100">
+              <h3 className="text-base font-bold flex items-center justify-center gap-2 text-gray-800">
+                <QrCode className="w-4 h-4 text-cyan-600" />
                 QR Code Absensi
               </h3>
-              <div className="mt-2">
-                <p className="text-gray-900 font-black text-lg">{selectedQr.organization?.name || 'Outlet'}</p>
-                <p className="text-cyan-600 font-mono text-xs font-bold tracking-widest uppercase">{selectedQr.organization?.code}</p>
-              </div>
+              <p className="mt-1 text-gray-900 font-bold text-sm">{selectedQr.organization?.name || 'Outlet'}</p>
+              <p className="text-cyan-600 font-mono text-[10px] font-bold tracking-widest uppercase">{selectedQr.organization?.code}</p>
             </div>
             
-            <div className="p-10 flex flex-col items-center">
-              <div className="p-4 bg-white border-4 border-gray-50 rounded-2xl shadow-inner mb-6">
+            <div className="p-5 flex flex-col items-center">
+              <div className="p-3 bg-white border-2 border-gray-50 rounded-xl shadow-inner mb-4">
                 <QRCodeSVG 
                   value={selectedQr.qr_code}
-                  size={200}
+                  size={180}
                   level="H"
                   includeMargin={true}
                 />
               </div>
               
-              <div className="bg-cyan-50 rounded-xl p-4 w-full flex items-start gap-3 mb-6">
-                <Info className="w-5 h-5 text-cyan-600 shrink-0 mt-0.5" />
-                <div className="text-left">
-                  <p className="text-xs font-semibold text-cyan-900">Petunjuk Pemasangan:</p>
-                  <p className="text-[11px] text-cyan-700 leading-relaxed mt-1">
-                    Cetak QR Code ini dan tempelkan di area outlet yang terjangkau oleh CCTV. Pastikan pencahayaan cukup agar mudah discan oleh aplikasi karyawan.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-3 w-full">
+              <div className="flex gap-2 w-full">
                 <button 
                   onClick={() => setSelectedQr(null)}
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-all"
+                  className="flex-1 px-3 py-2 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-all"
                 >
                   Tutup
                 </button>
                 <button 
                   onClick={handlePrint}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-cyan-600 text-white font-medium hover:bg-cyan-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/20"
+                  className="flex-1 px-3 py-2 rounded-xl bg-cyan-600 text-white text-sm font-medium hover:bg-cyan-700 transition-all flex items-center justify-center gap-2"
                 >
-                  <Printer className="w-4 h-4" />
-                  Cetak QR
+                  <Printer className="w-3.5 h-3.5" />
+                  Cetak
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Generate QR Modal */}
+      {showGenerateModal && generateOutletId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowGenerateModal(false)} />
+          <div className="relative bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-xl">
+            <div className="p-4 border-b border-gray-100">
+              <h3 className="text-base font-bold text-gray-800">Generate QR Code</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Atur lantai dan lokasi pemasangan QR</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div>
+                <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Lantai</label>
+                <input
+                  type="number"
+                  min={1}
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all text-sm font-bold text-gray-800"
+                  value={generateFloor}
+                  onChange={(e) => {
+                    const floor = parseInt(e.target.value) || 1;
+                    setGenerateFloor(floor);
+                    const outlet = outlets.find(o => o.id === generateOutletId);
+                    setGenerateLocation(`Pintu Masuk Lantai ${floor}${outlet ? ` - ${outlet.name}` : ''}`);
+                  }}
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Nama Lokasi</label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all text-sm font-bold text-gray-800"
+                  value={generateLocation}
+                  onChange={(e) => setGenerateLocation(e.target.value)}
+                  placeholder="Pintu Masuk Lantai 1"
+                />
+              </div>
+            </div>
+            <div className="px-4 pb-4 flex gap-2">
+              <button
+                onClick={() => setShowGenerateModal(false)}
+                className="flex-1 px-3 py-2 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-all"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleGenerateWithInput}
+                disabled={processingId !== null}
+                className="flex-1 px-3 py-2 rounded-xl bg-cyan-600 text-white text-sm font-medium hover:bg-cyan-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {processingId === generateOutletId ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <QrCode className="w-3.5 h-3.5" />
+                )}
+                Generate
+              </button>
             </div>
           </div>
         </div>
