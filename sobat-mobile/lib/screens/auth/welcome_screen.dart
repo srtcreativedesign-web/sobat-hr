@@ -1,10 +1,36 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
+import '../../services/connectivity_service.dart';
 import 'login_screen.dart';
 import 'invitation_screen.dart';
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
+
+  @override
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  final _connectivity = ConnectivityService();
+  bool _isOnline = true;
+  StreamSubscription? _subscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _isOnline = _connectivity.isOnline;
+    _subscription = _connectivity.onlineStatusStream.listen((online) {
+      if (mounted) setState(() => _isOnline = online);
+    });
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,12 +51,34 @@ class WelcomeScreen extends StatelessWidget {
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-            child: Column(
-              children: [
-                // 2. Logo / Title
-                const SizedBox(height: 20),
+          child: Column(
+            children: [
+              // Offline Banner
+              if (!_isOnline)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  color: Colors.orange.shade700,
+                  child: const Row(
+                    children: [
+                      Icon(Icons.wifi_off_rounded, color: Colors.white, size: 18),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Mode Offline — Login memerlukan koneksi internet',
+                          style: TextStyle(color: Colors.white, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                  child: Column(
+                    children: [
+                      // 2. Logo / Title
+                      const SizedBox(height: 20),
                 const Text(
                   'SOBAT HR',
                   style: TextStyle(
@@ -109,9 +157,12 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
-              ],
-            ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -3,6 +3,7 @@ import '../models/user.dart';
 import '../services/auth_service.dart';
 import '../services/storage_service.dart';
 import '../services/notification_service.dart';
+import '../services/connectivity_service.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -43,8 +44,15 @@ class AuthProvider with ChangeNotifier {
         }
       }
     } catch (e) {
-      _isAuthenticated = false;
-      _user = null;
+      final cachedUser = await StorageService.getUser();
+      final token = await StorageService.getToken();
+      if (cachedUser != null && token != null) {
+        _user = User.fromJson(cachedUser);
+        _isAuthenticated = true;
+      } else {
+        _isAuthenticated = false;
+        _user = null;
+      }
     }
 
     _isLoading = false;
@@ -52,6 +60,14 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<bool> login(String email, String password) async {
+    final isOnline = ConnectivityService().isOnline;
+    if (!isOnline) {
+      _errorMessage = 'Tidak ada koneksi internet. Login memerlukan koneksi internet yang aktif.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();

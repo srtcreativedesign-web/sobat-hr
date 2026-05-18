@@ -117,8 +117,17 @@ class AuthService extends BaseService {
     final token = await StorageService.getToken();
     if (token == null) return false;
 
-    final user = await getProfile();
-    return user != null;
+    try {
+      final response = await dio.get(ApiConfig.profile);
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        await StorageService.saveUser(response.data['data']);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      final cachedUser = await StorageService.getUser();
+      return cachedUser != null;
+    }
   }
 
   Future<Map<String, dynamic>?> getCurrentUser() async {
