@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 use App\Models\User;
+use App\Models\UserDevice;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -24,7 +23,7 @@ class AuthController extends Controller
 
             $user = User::where('email', $request->email)->first();
 
-            if (!$user || !Hash::check($request->password, $user->password)) {
+            if (! $user || ! Hash::check($request->password, $user->password)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Email atau password salah',
@@ -40,7 +39,7 @@ class AuthController extends Controller
             // DEVICE BINDING LOGIC
             // Hanya berlaku untuk user dengan role 'employee'
             if ($user->role && $user->role->name === \App\Models\Role::EMPLOYEE) {
-                if ($request->has('device_id') && !empty($request->device_id)) {
+                if ($request->has('device_id') && ! empty($request->device_id)) {
                     if (is_null($user->device_id)) {
                         // Bind to this new device
                         $user->device_id = $request->device_id;
@@ -48,11 +47,11 @@ class AuthController extends Controller
                             $user->device_name = $request->device_name;
                         }
                         $user->save();
-                    } else if ($user->device_id !== $request->device_id) {
+                    } elseif ($user->device_id !== $request->device_id) {
                         // Device mismatch
                         return response()->json([
                             'success' => false,
-                            'message' => 'Akun Anda telah terkait dengan perangkat lain (' . ($user->device_name ?? 'Unknown Device') . '). Hubungi Admin HR untuk melakukan Reset Device.',
+                            'message' => 'Akun Anda telah terkait dengan perangkat lain ('.($user->device_name ?? 'Unknown Device').'). Hubungi Admin HR untuk melakukan Reset Device.',
                         ], 403);
                     }
                 }
@@ -68,12 +67,12 @@ class AuthController extends Controller
                     'access_token' => $token,
                     'token_type' => 'Bearer',
                     'user' => new \App\Http\Resources\UserResource($user),
-                ]
+                ],
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+                'message' => 'Terjadi kesalahan: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -91,8 +90,8 @@ class AuthController extends Controller
 
         // Solve 1: Hardcode role to 'employee' to prevent role escalation
         $employeeRole = \App\Models\Role::where('name', \App\Models\Role::EMPLOYEE)->first();
-        
-        if (!$employeeRole) {
+
+        if (! $employeeRole) {
             return response()->json(['message' => 'System configuration error: Employee role not found.'], 500);
         }
 
@@ -121,7 +120,7 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
-            'message' => 'Successfully logged out'
+            'message' => 'Successfully logged out',
         ]);
     }
 
@@ -139,6 +138,7 @@ class AuthController extends Controller
             'data' => new \App\Http\Resources\UserResource($user),
         ]);
     }
+
     /**
      * Update user profile (Name & Email)
      */
@@ -148,7 +148,7 @@ class AuthController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'email' => 'required|email|max:255|unique:users,email,'.$user->id,
         ]);
 
         $user->update([
@@ -158,7 +158,7 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Profile updated successfully',
-            'user' => $user
+            'user' => $user,
         ]);
     }
 
@@ -174,18 +174,18 @@ class AuthController extends Controller
 
         $user = $request->user();
 
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             return response()->json([
-                'message' => 'Password saat ini salah'
+                'message' => 'Password saat ini salah',
             ], 422);
         }
 
         $user->update([
-            'password' => Hash::make($request->new_password)
+            'password' => Hash::make($request->new_password),
         ]);
 
         return response()->json([
-            'message' => 'Password berhasil diubah'
+            'message' => 'Password berhasil diubah',
         ]);
     }
 
@@ -196,11 +196,27 @@ class AuthController extends Controller
     {
         $request->validate([
             'fcm_token' => 'required|string',
+            'device_name' => 'nullable|string',
+            'device_id' => 'nullable|string',
         ]);
 
-        $request->user()->update([
-            'fcm_token' => $request->fcm_token,
-        ]);
+        $user = $request->user();
+
+        // Keep legacy single-token column for backward compatibility
+        $user->update(['fcm_token' => $request->fcm_token]);
+
+        // Register device for multi-device support
+        UserDevice::updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'device_id' => $request->device_id ?? $request->fcm_token,
+            ],
+            [
+                'fcm_token' => $request->fcm_token,
+                'device_name' => $request->device_name ?? $request->header('User-Agent'),
+                'last_active_at' => now(),
+            ]
+        );
 
         return response()->json([
             'success' => true,

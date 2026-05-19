@@ -9,12 +9,14 @@ use Illuminate\Support\Facades\Log;
 class FcmService
 {
     protected $client;
+
     protected $projectId;
+
     protected $serviceAccountPath;
 
     public function __construct()
     {
-        $this->client = new Client();
+        $this->client = new Client;
         $this->projectId = env('FIREBASE_PROJECT_ID');
         $this->serviceAccountPath = storage_path('app/firebase/service-account.json');
     }
@@ -24,65 +26,108 @@ class FcmService
      */
     public function sendNotification($token, $title, $body, $data = [])
     {
-        if (!$token) return false;
+        if (! $token) {
+            return false;
+        }
 
         try {
             $accessToken = $this->getAccessToken();
-            if (!$accessToken) {
+            if (! $accessToken) {
                 Log::error('FCM: Failed to get access token');
+
                 return false;
             }
 
             $url = "https://fcm.googleapis.com/v1/projects/{$this->projectId}/messages:send";
 
-            $payload = [
-                'message' => [
-                    'token' => $token,
+            $message = [
+                'token' => $token,
+                'notification' => [
+                    'title' => $title,
+                    'body' => $body,
+                ],
+                'android' => [
+                    'priority' => 'high',
                     'notification' => [
-                        'title' => $title,
-                        'body' => $body,
+                        'sound' => 'default',
                     ],
-                    'data' => (object)$data,
-                    'android' => [
-                        'priority' => 'high',
-                        'notification' => [
-                            'sound' => 'default',
-                        ],
-                    ],
-                ]
+                ],
             ];
+
+            if (! empty($data)) {
+                $message['data'] = $data;
+            }
+
+            $payload = ['message' => $message];
 
             $response = $this->client->post($url, [
                 'headers' => [
-                    'Authorization' => 'Bearer ' . $accessToken,
+                    'Authorization' => 'Bearer '.$accessToken,
                     'Content-Type' => 'application/json',
                 ],
                 'json' => $payload,
             ]);
 
-            $isSuccess = $response->getStatusCode() === 200;
-            Log::info("FCM Send to $token: " . ($isSuccess ? 'Success' : 'Failed (' . $response->getStatusCode() . ')'));
+            $statusCode = $response->getStatusCode();
+            $body = $response->getBody()->getContents();
+            Log::info("FCM Send to $token: Status=$statusCode, Body=" . substr($body, 0, 200));
 
-            return $isSuccess;
+            return $statusCode === 200;
         } catch (\Exception $e) {
-            Log::error('FCM Error: ' . $e->getMessage());
+            Log::error('FCM Error: '.$e->getMessage());
             if (method_exists($e, 'getResponse') && $e->getResponse()) {
-                Log::error('FCM Error Body: ' . $e->getResponse()->getBody()->getContents());
+                Log::error('FCM Error Body: '.$e->getResponse()->getBody()->getContents());
             }
+
             return false;
         }
     }
 
     /**
-     * Send notification to all users who have an FCM token
+     * Send notification to all devices of a specific user
+     */
+    public function sendToUser($user, $title, $body, $data = []): int
+    {
+        if (! $user) {
+            return 0;
+        }
+
+        $tokens = $user->devices()->whereNotNull('fcm_token')->pluck('fcm_token')->toArray();
+
+        // Fallback to legacy single token
+        if (empty($tokens) && $user->fcm_token) {
+            $tokens = [$user->fcm_token];
+        }
+
+        $successCount = 0;
+        foreach ($tokens as $token) {
+            if ($this->sendNotification($token, $title, $body, $data)) {
+                $successCount++;
+            }
+        }
+
+        return $successCount;
+    }
+
+    /**
+     * Send notification to all user devices
      */
     public function broadcastNotification($title, $body, $data = [])
     {
-        $users = User::whereNotNull('fcm_token')->get();
+        $tokens = \App\Models\UserDevice::whereNotNull('fcm_token')
+            ->pluck('fcm_token')
+            ->toArray();
+
+        // Include legacy tokens too
+        $legacyTokens = User::whereNotNull('fcm_token')
+            ->pluck('fcm_token')
+            ->toArray();
+
+        $allTokens = array_unique(array_merge($tokens, $legacyTokens));
         $successCount = 0;
 
-        foreach ($users as $user) {
-            if ($this->sendNotification($user->fcm_token, $title, $body, $data)) {
+        foreach ($allTokens as $token) {
+            if ($this->sendNotification($token, $title, $body, $data)) {
                 $successCount++;
             }
         }
@@ -96,8 +141,9 @@ class FcmService
      */
     protected function getAccessToken()
     {
-        if (!file_exists($this->serviceAccountPath)) {
-            Log::warning('FCM: Service account file not found at ' . $this->serviceAccountPath);
+        if (! file_exists($this->serviceAccountPath)) {
+            Log::warning('FCM: Service account file not found at '.$this->serviceAccountPath);
+
             return null;
         }
 
@@ -105,14 +151,15 @@ class FcmService
             // If the package google/auth is not installed, we can suggest it.
             // For now, assume it's or provide a simple implementation if possible.
             // Recommendation: composer require google/auth
-            
+
             // This is a simplified logic, usually we use Google\Client
-            if (!class_exists('\Google\Client')) {
-                 Log::error('FCM: Google Client library not found. Run: composer require google/apiclient');
-                 return null;
+            if (! class_exists('\Google\Client')) {
+                Log::error('FCM: Google Client library not found. Run: composer require google/apiclient');
+
+                return null;
             }
 
-            $client = new \Google\Client();
+            $client = new \Google\Client;
             $client->setAuthConfig($this->serviceAccountPath);
             $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
             $client->fetchAccessTokenWithAssertion();
@@ -120,7 +167,8 @@ class FcmService
 
             return $token['access_token'] ?? null;
         } catch (\Exception $e) {
-            Log::error('FCM Token Error: ' . $e->getMessage());
+            Log::error('FCM Token Error: '.$e->getMessage());
+
             return null;
         }
     }

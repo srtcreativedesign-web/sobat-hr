@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\RequestModel;
 use App\Models\Approval;
+use App\Models\RequestModel;
 use App\Models\Role;
-use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\DB;
 use App\Notifications\RequestNotification;
+use App\Services\FcmService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class RequestController extends Controller
 {
@@ -19,18 +19,18 @@ class RequestController extends Controller
         $user = $request->user();
         // EAGER LOADING: employee and approvals
         $query = RequestModel::with(['employee.division', 'approvals']);
-        
+
         // Check Role
         $roleName = $user->role ? $user->role->name : '';
         $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD, Role::ADMIN]);
-        
+
         \Illuminate\Support\Facades\Log::info('User Info:', ['id' => $user->id, 'role' => $roleName, 'isAdmin' => $isAdmin]);
 
-        $isMobile = $request->header('X-Platform') === 'mobile' || 
-                    !$request->hasHeader('Origin') || 
+        $isMobile = $request->header('X-Platform') === 'mobile' ||
+                    ! $request->hasHeader('Origin') ||
                     str_contains($request->userAgent(), 'Dart');
-        if (!$isAdmin || $isMobile) {
-            if (!$user->employee) {
+        if (! $isAdmin || $isMobile) {
+            if (! $user->employee) {
                 return response()->json([]);
             }
             $query->where('employee_id', $user->employee->id);
@@ -46,16 +46,16 @@ class RequestController extends Controller
 
         if ($request->has('department')) {
             $dept = $request->department;
-            $query->whereHas('employee', function($q) use ($dept) {
+            $query->whereHas('employee', function ($q) use ($dept) {
                 $q->where('department', $dept);
             });
         }
 
         if ($request->has('search')) {
             $search = $request->search;
-            $query->whereHas('employee', function($q) use ($search) {
+            $query->whereHas('employee', function ($q) use ($search) {
                 $q->where('full_name', 'like', "%{$search}%")
-                  ->orWhere('employee_code', 'like', "%{$search}%");
+                    ->orWhere('employee_code', 'like', "%{$search}%");
             });
         }
 
@@ -67,7 +67,7 @@ class RequestController extends Controller
                 $query->where('status', $status);
             }
         }
-        
+
         $requests = $query->orderBy('created_at', 'desc')->paginate(20);
 
         return response()->json($requests);
@@ -76,8 +76,8 @@ class RequestController extends Controller
     public function store(Request $request, \App\Services\ApprovalService $approvalService)
     {
         $user = $request->user();
-        if (!$user->employee) {
-             return response()->json(['message' => 'User is not linked to an employee record'], 403);
+        if (! $user->employee) {
+            return response()->json(['message' => 'User is not linked to an employee record'], 403);
         }
 
         // Merge employee_id
@@ -111,11 +111,11 @@ class RequestController extends Controller
         ]);
 
         // Prevent Double Submission using Atomic Lock
-        $lockKey = 'submit_request_' . $user->id;
+        $lockKey = 'submit_request_'.$user->id;
         $lock = \Illuminate\Support\Facades\Cache::lock($lockKey, 10); // Lock for 10 seconds
 
-        if (!$lock->get()) {
-             return response()->json(['message' => 'Sedang memproses permintaan sebelumnya. Mohon tunggu.'], 429);
+        if (! $lock->get()) {
+            return response()->json(['message' => 'Sedang memproses permintaan sebelumnya. Mohon tunggu.'], 429);
         }
 
         try {
@@ -131,7 +131,7 @@ class RequestController extends Controller
                     // Populate summary fields for backward compatibility (List View)
                     'start_date' => $validated['start_date'] ?? $validated['date'] ?? null,
                     'end_date' => $validated['end_date'] ?? $validated['date'] ?? null,
-                    'amount' => $validated['amount'] ?? $validated['budget'] ?? (($validated['duration'] ?? 0) ? ($validated['duration']/60) : null), 
+                    'amount' => $validated['amount'] ?? $validated['budget'] ?? (($validated['duration'] ?? 0) ? ($validated['duration'] / 60) : null),
                     'attachments' => $validated['attachments'] ?? null,
                 ];
 
@@ -141,7 +141,7 @@ class RequestController extends Controller
                 switch ($validated['type']) {
                     case 'leave':
                         // 1. Check Eligibility (1 Year Service)
-                        if (!$user->employee->join_date || $user->employee->join_date->diffInYears(now()) < 1) {
+                        if (! $user->employee->join_date || $user->employee->join_date->diffInYears(now()) < 1) {
                             throw new \Illuminate\Validation\ValidationException(\Illuminate\Support\Facades\Validator::make([], [
                                 'type' => 'Anda belum bekerja selama 1 tahun, belum berhak mengajukan cuti tahunan.',
                             ]));
@@ -160,12 +160,16 @@ class RequestController extends Controller
                             ->whereYear('start_date', now()->year)
                             ->get()
                             ->sum(function ($req) {
-                                if ($req->amount > 0) return $req->amount;
+                                if ($req->amount > 0) {
+                                    return $req->amount;
+                                }
                                 if ($req->start_date && $req->end_date) {
                                     $s = \Carbon\Carbon::parse($req->start_date);
                                     $e = \Carbon\Carbon::parse($req->end_date);
+
                                     return $s->diffInDays($e) + 1;
                                 }
+
                                 return 0;
                             });
 
@@ -176,8 +180,8 @@ class RequestController extends Controller
                                     'quota' => $quota,
                                     'used' => $used,
                                     'requested' => $duration,
-                                    'remaining' => max(0, $quota - $used)
-                                ]
+                                    'remaining' => max(0, $quota - $used),
+                                ],
                             ], 422);
                         }
 
@@ -192,10 +196,10 @@ class RequestController extends Controller
                             'reason' => $request->description,
                         ]);
                         break;
-                    
+
                     case 'sick_leave':
-                        if (!$request->attachments) {
-                             throw new \Illuminate\Validation\ValidationException(\Illuminate\Support\Facades\Validator::make([], [
+                        if (! $request->attachments) {
+                            throw new \Illuminate\Validation\ValidationException(\Illuminate\Support\Facades\Validator::make([], [
                                 'attachments' => 'Surat dokter wajib diupload untuk pengajuan sakit.',
                             ]));
                         }
@@ -231,7 +235,7 @@ class RequestController extends Controller
                         break;
 
                     case 'reimbursement': // Reimburse Medis/Transport/Etc
-                         \App\Models\ReimbursementDetail::create([
+                        \App\Models\ReimbursementDetail::create([
                             'request_id' => $requestModel->id,
                             // 'type' removed from schema, rely on title for now or add subtype later if needed
                             'date' => $request->date ?? $request->start_date,
@@ -243,7 +247,7 @@ class RequestController extends Controller
                         break;
 
                     case 'asset': // Pengajuan Aset
-                         \App\Models\AssetDetail::create([
+                        \App\Models\AssetDetail::create([
                             'request_id' => $requestModel->id,
                             'brand' => $request->brand,
                             'specification' => $request->specification,
@@ -253,12 +257,12 @@ class RequestController extends Controller
                             'attachment' => $request->attachments ? json_decode($request->attachments, true) : null,
                         ]);
                         break;
-                    
+
                     case 'resignation':
-                         \App\Models\ResignationDetail::create([
+                        \App\Models\ResignationDetail::create([
                             'request_id' => $requestModel->id,
                             'last_working_date' => $request->last_working_date,
-                             // Default to normal for now, can be expanded later
+                            // Default to normal for now, can be expanded later
                             'resign_type' => 'normal',
                         ]);
                         break;
@@ -268,27 +272,30 @@ class RequestController extends Controller
                 $approverIds = $approvalService->determineApprovers($user->employee, $requestModel);
 
                 if (empty($approverIds)) {
-                     // Fallback 1: Super Admin
-                     $superAdmins = \App\Models\User::whereHas('role', function($q){
-                         $q->where('name', Role::SUPER_ADMIN);
-                     })->with('employee')->get()->pluck('employee.id')->filter()->toArray();
-                     
-                     if (!empty($superAdmins)) {
-                         $approverIds = array_unique($superAdmins);
-                     }
+                    // Fallback 1: Super Admin
+                    $superAdmins = \App\Models\User::whereHas('role', function ($q) {
+                        $q->where('name', Role::SUPER_ADMIN);
+                    })->with('employee')->get()->pluck('employee.id')->filter()->toArray();
+
+                    if (! empty($superAdmins)) {
+                        $approverIds = array_unique($superAdmins);
+                    }
                 }
 
                 // Fallback 2: Force assign to HRD or COO if specific IDs known (from Seeder)
                 if (empty($approverIds)) {
                     $hrdCode = \App\Models\Employee::where('employee_code', 'HRD001')->value('id');
-                    if ($hrdCode) $approverIds[] = $hrdCode;
-                    else {
+                    if ($hrdCode) {
+                        $approverIds[] = $hrdCode;
+                    } else {
                         $cooCode = \App\Models\Employee::where('employee_code', 'COO001')->value('id');
-                        if ($cooCode) $approverIds[] = $cooCode;
+                        if ($cooCode) {
+                            $approverIds[] = $cooCode;
+                        }
                     }
                 }
 
-                if (!empty($approverIds)) {
+                if (! empty($approverIds)) {
                     $approvalService->createApprovalSteps($requestModel, $approverIds);
                     $requestModel->status = 'pending';
                     $requestModel->submitted_at = now();
@@ -296,7 +303,7 @@ class RequestController extends Controller
                     // Critical Failure: No approvers could be determined.
                     // Revert to DRAFT so user knows it failed to submit.
                     // Or throw error? Throwing error rolls back transaction, which is better.
-                    throw new \Exception("Gagal mengirim pengajuan: Tidak dapat menentukan approver (Penyetuju). Silakan hubungi HRD.");
+                    throw new \Exception('Gagal mengirim pengajuan: Tidak dapat menentukan approver (Penyetuju). Silakan hubungi HRD.');
                 }
 
                 $requestModel->save();
@@ -304,7 +311,7 @@ class RequestController extends Controller
                 return response()->json($requestModel->load('approvals'), 201);
             });
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Gagal mengirim pengajuan: ' . $e->getMessage()], 500);
+            return response()->json(['message' => 'Gagal mengirim pengajuan: '.$e->getMessage()], 500);
         } finally {
             $lock->release();
         }
@@ -313,13 +320,13 @@ class RequestController extends Controller
     public function show(string $id)
     {
         $requestModel = RequestModel::with(['employee', 'approvals.approver'])->findOrFail($id);
-        
+
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? $user->role->name : '';
         $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD, Role::ADMIN]);
 
-        if (!$isAdmin && $requestModel->employee_id !== $user->employee?->id) {
+        if (! $isAdmin && $requestModel->employee_id !== $user->employee?->id) {
             return response()->json(['message' => 'Anda tidak memiliki akses ke data pengajuan ini.'], 403);
         }
 
@@ -339,7 +346,7 @@ class RequestController extends Controller
         // Only allow updates if status is draft
         if ($requestModel->status !== 'draft') {
             return response()->json([
-                'message' => 'Cannot update request that has been submitted'
+                'message' => 'Cannot update request that has been submitted',
             ], 422);
         }
 
@@ -360,23 +367,23 @@ class RequestController extends Controller
     public function destroy(string $id)
     {
         $requestModel = RequestModel::with([
-            'leaveDetail', 'sickLeaveDetail', 'overtimeDetail', 
-            'businessTripDetail', 'reimbursementDetail', 'assetDetail'
+            'leaveDetail', 'sickLeaveDetail', 'overtimeDetail',
+            'businessTripDetail', 'reimbursementDetail', 'assetDetail',
         ])->findOrFail($id);
-        
+
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? $user->role->name : '';
         $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD, Role::ADMIN]);
 
-        if (!$isAdmin && $requestModel->employee_id !== $user->employee?->id) {
-             return response()->json(['message' => 'Anda tidak memiliki akses untuk menghapus pengajuan ini.'], 403);
+        if (! $isAdmin && $requestModel->employee_id !== $user->employee?->id) {
+            return response()->json(['message' => 'Anda tidak memiliki akses untuk menghapus pengajuan ini.'], 403);
         }
 
         // Only allow deletion if status is draft or rejected
-        if (!in_array($requestModel->status, ['draft', 'rejected'])) {
+        if (! in_array($requestModel->status, ['draft', 'rejected'])) {
             return response()->json([
-                'message' => 'Cannot delete request in current status'
+                'message' => 'Cannot delete request in current status',
             ], 422);
         }
 
@@ -386,7 +393,9 @@ class RequestController extends Controller
         // Check main request attachments field
         if ($requestModel->attachments) {
             $decoded = $requestModel->attachments; // Already cast to array in Model
-            if (is_array($decoded)) $attachments = array_merge($attachments, $decoded);
+            if (is_array($decoded)) {
+                $attachments = array_merge($attachments, $decoded);
+            }
         }
 
         // Check specific detail attachments
@@ -397,7 +406,7 @@ class RequestController extends Controller
                 $attachments[] = $requestModel->sickLeaveDetail->attachment;
             }
         }
-        
+
         if ($requestModel->reimbursementDetail && $requestModel->reimbursementDetail->attachment) {
             if (is_array($requestModel->reimbursementDetail->attachment)) {
                 $attachments = array_merge($attachments, $requestModel->reimbursementDetail->attachment);
@@ -429,14 +438,14 @@ class RequestController extends Controller
     public function exportProof($id)
     {
         $requestModel = RequestModel::with(['employee', 'approvals.approver', 'businessTripDetail', 'leaveDetail', 'reimbursementDetail', 'assetDetail', 'overtimeDetail'])->findOrFail($id);
-        
+
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? $user->role->name : '';
         $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD, Role::ADMIN]);
 
-        if (!$isAdmin && $requestModel->employee_id !== $user->employee?->id) {
-             return response()->json(['message' => 'Anda tidak memiliki akses ke dokumen ini.'], 403);
+        if (! $isAdmin && $requestModel->employee_id !== $user->employee?->id) {
+            return response()->json(['message' => 'Anda tidak memiliki akses ke dokumen ini.'], 403);
         }
 
         if ($requestModel->type == 'asset') {
@@ -448,6 +457,7 @@ class RequestController extends Controller
         } else {
             $pdf = Pdf::loadView('pdf.approval_proof', ['request' => $requestModel]);
         }
+
         return $pdf->download("Proof-REQ-{$id}.pdf");
     }
 
@@ -466,16 +476,16 @@ class RequestController extends Controller
 
         if ($requestModel->status !== 'draft') {
             return response()->json([
-                'message' => 'Request has already been submitted'
+                'message' => 'Request has already been submitted',
             ], 422);
         }
 
         // Determine Approvers Logic - Use ApprovalService for role-based approval chain
         $employee = $requestModel->employee;
         $approverIds = $approvalService->determineApprovers($employee, $requestModel);
-        
+
         if (empty($approverIds)) {
-             return response()->json(['message' => 'System configuration error: No approvers found.'], 500);
+            return response()->json(['message' => 'System configuration error: No approvers found.'], 500);
         }
 
         $requestModel->status = 'pending';
@@ -499,16 +509,17 @@ class RequestController extends Controller
         $requestModel = RequestModel::findOrFail($id);
         $user = $request->user();
 
-        if (!$user->employee) {
-             return response()->json(['message' => 'User is not linked to an employee record'], 403);
+        if (! $user->employee) {
+            return response()->json(['message' => 'User is not linked to an employee record'], 403);
         }
 
         try {
             $updatedRequest = $approvalService->approve($requestModel, $user->employee, $request->input('signature'), $request->input('notes'));
-            
+
             // Notify User if fully approved
             if ($updatedRequest->status == 'approved' && $requestModel->employee && $requestModel->employee->user) {
-                // $requestModel->employee->user->notify(new RequestNotification($updatedRequest, 'approved'));
+                $requestModel->employee->user->notify(new RequestNotification($updatedRequest, 'approved'));
+                $this->sendFcmToUser($requestModel->employee->user, 'Pengajuan Disetujui', 'Pengajuan '.($updatedRequest->type ?? '').' Anda telah disetujui.');
             }
 
             return response()->json([
@@ -533,16 +544,17 @@ class RequestController extends Controller
             'reason' => 'required|string',
         ]);
 
-        if (!$user->employee) {
-             return response()->json(['message' => 'User is not linked to an employee record'], 403);
+        if (! $user->employee) {
+            return response()->json(['message' => 'User is not linked to an employee record'], 403);
         }
 
         try {
             $updatedRequest = $approvalService->reject($requestModel, $user->employee, $validated['reason']);
-            
-             // Notify User
+
+            // Notify User
             if ($requestModel->employee && $requestModel->employee->user) {
-                // $requestModel->employee->user->notify(new RequestNotification($updatedRequest, 'rejected'));
+                $requestModel->employee->user->notify(new RequestNotification($updatedRequest, 'rejected'));
+                $this->sendFcmToUser($requestModel->employee->user, 'Pengajuan Ditolak', 'Pengajuan '.($updatedRequest->type ?? '').' Anda telah ditolak.');
             }
 
             return response()->json([
@@ -551,9 +563,10 @@ class RequestController extends Controller
             ]);
 
         } catch (\Exception $e) {
-             return response()->json(['message' => $e->getMessage()], 403);
+            return response()->json(['message' => $e->getMessage()], 403);
         }
     }
+
     /**
      * Get leave balance for current user
      */
@@ -562,17 +575,17 @@ class RequestController extends Controller
         $user = $request->user();
         $employee = $user->employee;
 
-        if (!$employee->join_date) {
-             // Handle case where join_date is missing. Assume eligible? Or not?
-             // User requirement says criteria is join date. If missing, safer to say not eligible or ask admin.
-             // For now, return 0 eligible.
-             return response()->json([
+        if (! $employee->join_date) {
+            // Handle case where join_date is missing. Assume eligible? Or not?
+            // User requirement says criteria is join date. If missing, safer to say not eligible or ask admin.
+            // For now, return 0 eligible.
+            return response()->json([
                 'eligible' => false,
                 'message' => 'Tanggal bergabung belum diatur',
                 'quota' => 0,
                 'used' => 0,
                 'balance' => 0,
-                'years_of_service' => 0
+                'years_of_service' => 0,
             ]);
         }
 
@@ -585,7 +598,7 @@ class RequestController extends Controller
                 'quota' => 0,
                 'used' => 0,
                 'balance' => 0,
-                'years_of_service' => $yearsOfService
+                'years_of_service' => $yearsOfService,
             ]);
         }
 
@@ -599,12 +612,16 @@ class RequestController extends Controller
             ->whereYear('start_date', now()->year)
             ->get()
             ->sum(function ($req) {
-                if ($req->amount > 0) return $req->amount;
+                if ($req->amount > 0) {
+                    return $req->amount;
+                }
                 if ($req->start_date && $req->end_date) {
                     $s = \Carbon\Carbon::parse($req->start_date);
                     $e = \Carbon\Carbon::parse($req->end_date);
+
                     return $s->diffInDays($e) + 1;
                 }
+
                 return 0;
             });
 
@@ -614,10 +631,9 @@ class RequestController extends Controller
             'quota' => $quota,
             'used' => $used,
             'balance' => max(0, $quota - $used), // No negative balance
-            'years_of_service' => $yearsOfService
+            'years_of_service' => $yearsOfService,
         ]);
     }
-
 
     /**
      * Determine approval steps based on employee level and department
@@ -627,47 +643,48 @@ class RequestController extends Controller
         $steps = [];
         $jobLevel = strtolower($requester->job_level ?? '');
         // Determine Track: Operational vs Office
-        // Based on user request: 
+        // Based on user request:
         // Operational: crew, spv, manager divisi, HRD
         // Office: staff, spv, manager, deputy manager, HRD
         $isOperational = in_array($jobLevel, ['crew']); // Simple heuristic
-        
+
         // Helper to find employee by level
-        $findApprover = function($level, $sameDepartment = true) use ($requester) {
+        $findApprover = function ($level, $sameDepartment = true) use ($requester) {
             $query = \App\Models\Employee::where('job_level', $level)
-                        ->where('status', 'active');
-            
+                ->where('status', 'active');
+
             if ($sameDepartment && $requester->department) {
                 // Try same department first
                 $query->where('department', $requester->department);
             }
-            
+
             $approver = $query->inRandomOrder()->value('id');
-            
+
             // If failed to find in department, fallback to any active employee of that level?
             // User implies strict hierarchy, but let's be safe.
-            if (!$approver && $sameDepartment) {
-                 $approver = \App\Models\Employee::where('job_level', $level)
-                            ->where('status', 'active')
-                            ->inRandomOrder()
-                            ->value('id');
+            if (! $approver && $sameDepartment) {
+                $approver = \App\Models\Employee::where('job_level', $level)
+                    ->where('status', 'active')
+                    ->inRandomOrder()
+                    ->value('id');
             }
+
             return $approver;
         };
 
         // HRD is always the final step
         // HRD is always the final step
         $hrdId = $findApprover('hrd', false); // Any HRD
-        if (!$hrdId) {
-             // Fallback: Find Manager of HRD department if no explicit 'hrd' level
-             $hrdId = \App\Models\Employee::where('department', 'HRD')
-                        ->whereIn('job_level', ['manager', 'manager_divisi'])
-                        ->value('id');
+        if (! $hrdId) {
+            // Fallback: Find Manager of HRD department if no explicit 'hrd' level
+            $hrdId = \App\Models\Employee::where('department', 'HRD')
+                ->whereIn('job_level', ['manager', 'manager_divisi'])
+                ->value('id');
         }
         // User Requirement: Super Admin must be HRD (Fallback)
-        if (!$hrdId) {
-            $superAdmin = \App\Models\User::whereHas('role', fn($q) => $q->where('name', 'super_admin'))
-                            ->with('employee')->first();
+        if (! $hrdId) {
+            $superAdmin = \App\Models\User::whereHas('role', fn ($q) => $q->where('name', 'super_admin'))
+                ->with('employee')->first();
             $hrdId = $superAdmin?->employee?->id;
         }
 
@@ -679,59 +696,91 @@ class RequestController extends Controller
             if ($isOperational) {
                 // Operational: Manager Divisi
                 $managerId = $findApprover('manager_divisi', true);
-                 // Fallback if no manager_divisi, try 'manager'
-                if (!$managerId) $managerId = $findApprover('manager', true);
+                // Fallback if no manager_divisi, try 'manager'
+                if (! $managerId) {
+                    $managerId = $findApprover('manager', true);
+                }
             } else {
                 // Office: Manager or Deputy Manager
                 $managerId = $findApprover('manager', true);
-                if (!$managerId) $managerId = $findApprover('deputy_manager', true);
+                if (! $managerId) {
+                    $managerId = $findApprover('deputy_manager', true);
+                }
             }
-            if ($managerId) $steps[] = $managerId;
+            if ($managerId) {
+                $steps[] = $managerId;
+            }
 
             // Step 2: HRD / Super Admin (Final)
-            if ($hrdId) $steps[] = $hrdId;
+            if ($hrdId) {
+                $steps[] = $hrdId;
+            }
         }
 
         // 2. If Requester is Manager (or Manager Divisi, Deputy Manager)
-        else if (in_array($jobLevel, ['manager', 'manager_divisi', 'deputy_manager'])) {
+        elseif (in_array($jobLevel, ['manager', 'manager_divisi', 'deputy_manager'])) {
             // Step 1: HRD / Super Admin (Direct)
-            if ($hrdId) $steps[] = $hrdId;
+            if ($hrdId) {
+                $steps[] = $hrdId;
+            }
         }
 
         // 3. Current Default Logic (Crew, Staff, Team Leader, etc)
-        else if (in_array($jobLevel, ['crew', 'staff', 'team_leader'])) {
+        elseif (in_array($jobLevel, ['crew', 'staff', 'team_leader'])) {
             // Step 1: SPV
-             $spvId = $findApprover('spv', true);
-             if ($spvId) $steps[] = $spvId;
+            $spvId = $findApprover('spv', true);
+            if ($spvId) {
+                $steps[] = $spvId;
+            }
 
-             // Step 2: Manager
-             if ($isOperational) {
+            // Step 2: Manager
+            if ($isOperational) {
                 $managerId = $findApprover('manager_divisi', true);
-                if (!$managerId) $managerId = $findApprover('manager', true); // Fallback
+                if (! $managerId) {
+                    $managerId = $findApprover('manager', true);
+                } // Fallback
             } else {
                 $managerId = $findApprover('manager', true);
-                if (!$managerId) $managerId = $findApprover('deputy_manager', true);
+                if (! $managerId) {
+                    $managerId = $findApprover('deputy_manager', true);
+                }
             }
-            if ($managerId) $steps[] = $managerId;
+            if ($managerId) {
+                $steps[] = $managerId;
+            }
 
             // Step 3: HRD (Final)
-             if ($hrdId) $steps[] = $hrdId;
+            if ($hrdId) {
+                $steps[] = $hrdId;
+            }
         }
-        
+
         // 4. Fallback for others (Director, etc) - Direct to HRD
         else {
-             if ($hrdId) $steps[] = $hrdId;
+            if ($hrdId) {
+                $steps[] = $hrdId;
+            }
         }
 
         // Remove duplicates and self-approval
         $steps = array_unique($steps);
-        $steps = array_filter($steps, fn($id) => $id != $requester->id);
+        $steps = array_filter($steps, fn ($id) => $id != $requester->id);
 
         return array_values($steps);
     }
 
     public function exportOvertime(Request $request)
     {
-        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\OvertimeExport($request), 'overtime-report-' . now()->format('YmdHis') . '.xlsx');
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\OvertimeExport($request), 'overtime-report-'.now()->format('YmdHis').'.xlsx');
+    }
+
+    private function sendFcmToUser($user, string $title, string $body): void
+    {
+        try {
+            $fcmService = app(FcmService::class);
+            $fcmService->sendToUser($user, $title, $body);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("FCM send failed to user {$user->id}: {$e->getMessage()}");
+        }
     }
 }

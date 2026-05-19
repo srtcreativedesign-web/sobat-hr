@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-
 // Public routes
 Route::middleware(['throttle:login'])->group(function () {
     Route::post('/auth/login', [App\Http\Controllers\Api\AuthController::class, 'login'])->name('login');
@@ -85,10 +84,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/attendances/{id}', [App\Http\Controllers\Api\AttendanceController::class, 'update']); // Checkout Route
     Route::post('/attendances/sync', [App\Http\Controllers\Api\AttendanceController::class, 'syncFingerprint']);
     Route::get('/attendances/report/{month}/{year}', [App\Http\Controllers\Api\AttendanceController::class, 'monthlyReport']);
-    
+
     // Offline Attendance Sync
     Route::post('/attendance/offline-sync', [App\Http\Controllers\Api\OfflineSyncController::class, 'sync']);
-    
+    Route::get('/attendance/resolve-qr', [App\Http\Controllers\Api\OfflineSyncController::class, 'resolveQrCode']);
+
     // Offline Attendance Admin Routes
     Route::middleware('role:super_admin,admin_cabang,hr')->group(function () {
         Route::get('/attendance/offline-submissions', [App\Http\Controllers\Api\OfflineSyncController::class, 'getOfflineSubmissions']);
@@ -110,7 +110,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/requests/{id}/submit', [App\Http\Controllers\Api\RequestController::class, 'submit']);
     Route::post('/requests/{id}/approve', [App\Http\Controllers\Api\RequestController::class, 'approve']);
     Route::post('/requests/{id}/reject', [App\Http\Controllers\Api\RequestController::class, 'reject']);
-    
+
     // Manager-level request print routes (for offline COO approval)
     Route::get('/requests/{id}/print', [App\Http\Controllers\Api\RequestPrintController::class, 'printForApproval']);
     Route::get('/requests/{id}/can-print', [App\Http\Controllers\Api\RequestPrintController::class, 'canPrint']);
@@ -250,7 +250,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{id}/approve', [App\Http\Controllers\Api\ThrController::class, 'approve']);
         Route::get('/{id}', [App\Http\Controllers\Api\ThrController::class, 'show']);
         Route::match(['get', 'post'], '/{id}/slip', [App\Http\Controllers\Api\ThrController::class, 'generateSlip']);
-        
+
         // HO & Operational specific
         Route::prefix('ho')->group(function () {
             Route::post('/import', [App\Http\Controllers\Api\ThrHoController::class, 'import']);
@@ -283,7 +283,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard/contract-expiring', [App\Http\Controllers\Api\DashboardController::class, 'contractExpiring']);
         Route::get('/dashboard/recent-activity', [App\Http\Controllers\Api\DashboardController::class, 'recentActivity']);
         Route::post('/contracts/generate-pdf/{id}', [App\Http\Controllers\Api\ContractController::class, 'generatePdf']);
-        
+
         // Contract Template
         Route::get('/contract-templates', [App\Http\Controllers\Api\ContractTemplateController::class, 'index']);
         Route::put('/contract-templates', [App\Http\Controllers\Api\ContractTemplateController::class, 'update']);
@@ -291,8 +291,6 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // AI Context Route
-
-
 
     // Staff Invitation routes (Admin only)
     Route::middleware('role:super_admin,admin_cabang')->group(function () {

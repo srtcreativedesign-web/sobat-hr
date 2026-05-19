@@ -6,19 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\QrCodeLocation;
-use App\Services\QrCodeValidationService;
 use App\Services\GeofenceValidationService;
+use App\Services\QrCodeValidationService;
 use App\Services\TimestampTamperingDetectionService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-use Carbon\Carbon;
 
 class OfflineSyncController extends Controller
 {
     protected QrCodeValidationService $qrValidationService;
+
     protected GeofenceValidationService $geofenceService;
+
     protected TimestampTamperingDetectionService $tamperingService;
 
     public function __construct(
@@ -33,7 +34,7 @@ class OfflineSyncController extends Controller
 
     /**
      * Sync offline attendance submission
-     * 
+     *
      * Expected payload:
      * {
      *   "employee_id": 123,
@@ -71,8 +72,9 @@ class OfflineSyncController extends Controller
 
             // 1. Device ID Lock Validation
             $deviceLockResult = $this->validateDeviceLock($employee, $validated['device_id']);
-            if (!$deviceLockResult['valid']) {
+            if (! $deviceLockResult['valid']) {
                 DB::rollBack();
+
                 return response()->json([
                     'success' => false,
                     'message' => $deviceLockResult['message'],
@@ -83,8 +85,9 @@ class OfflineSyncController extends Controller
             $locationValidation = null;
             if ($validated['track_type'] === 'operational') {
                 // QR Code validation for operational track
-                if (!$request->has('qr_code_data')) {
+                if (! $request->has('qr_code_data')) {
                     DB::rollBack();
+
                     return response()->json([
                         'success' => false,
                         'message' => 'QR code data is required for operational track',
@@ -92,9 +95,10 @@ class OfflineSyncController extends Controller
                 }
 
                 $locationValidation = $this->qrValidationService->validate($request->qr_code_data);
-                
-                if (!$locationValidation['valid']) {
+
+                if (! $locationValidation['valid']) {
                     DB::rollBack();
+
                     return response()->json([
                         'success' => false,
                         'message' => $locationValidation['message'],
@@ -102,8 +106,9 @@ class OfflineSyncController extends Controller
                 }
             } else {
                 // GPS validation for head_office track
-                if (!$request->has('gps_coordinates')) {
+                if (! $request->has('gps_coordinates')) {
                     DB::rollBack();
+
                     return response()->json([
                         'success' => false,
                         'message' => 'GPS coordinates are required for head office track',
@@ -111,9 +116,10 @@ class OfflineSyncController extends Controller
                 }
 
                 $gpsCoords = $request->gps_coordinates;
-                
-                if (!isset($gpsCoords['latitude']) || !isset($gpsCoords['longitude'])) {
+
+                if (! isset($gpsCoords['latitude']) || ! isset($gpsCoords['longitude'])) {
                     DB::rollBack();
+
                     return response()->json([
                         'success' => false,
                         'message' => 'Invalid GPS coordinates format',
@@ -124,6 +130,7 @@ class OfflineSyncController extends Controller
                 if ($gpsCoords['latitude'] < -90 || $gpsCoords['latitude'] > 90 ||
                     $gpsCoords['longitude'] < -180 || $gpsCoords['longitude'] > 180) {
                     DB::rollBack();
+
                     return response()->json([
                         'success' => false,
                         'message' => 'GPS coordinates out of valid range',
@@ -136,8 +143,9 @@ class OfflineSyncController extends Controller
                     $gpsCoords['longitude']
                 );
 
-                if (!$locationValidation['valid']) {
+                if (! $locationValidation['valid']) {
                     DB::rollBack();
+
                     return response()->json([
                         'success' => false,
                         'message' => $locationValidation['message'],
@@ -226,7 +234,7 @@ class OfflineSyncController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Offline Sync Failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -234,7 +242,7 @@ class OfflineSyncController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to sync attendance: ' . $e->getMessage(),
+                'message' => 'Failed to sync attendance: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -295,7 +303,7 @@ class OfflineSyncController extends Controller
         [$width, $height, $imageType] = $imageInfo;
 
         // Only allow JPEG and PNG
-        if (!in_array($imageType, [IMAGETYPE_JPEG, IMAGETYPE_PNG], true)) {
+        if (! in_array($imageType, [IMAGETYPE_JPEG, IMAGETYPE_PNG], true)) {
             throw new \Exception('Hanya format foto JPG dan PNG yang diperbolehkan');
         }
 
@@ -305,13 +313,13 @@ class OfflineSyncController extends Controller
         }
 
         // Generate filename
-        $filename = 'offline_' . $employeeId . '_' . time() . '_' . uniqid() . '.jpg';
-        $path = 'attendance_photos/offline/' . $filename;
-        $fullPath = storage_path('app/public/' . $path);
+        $filename = 'offline_'.$employeeId.'_'.time().'_'.uniqid().'.jpg';
+        $path = 'attendance_photos/offline/'.$filename;
+        $fullPath = storage_path('app/public/'.$path);
 
         // Ensure directory exists
         $directory = dirname($fullPath);
-        if (!file_exists($directory)) {
+        if (! file_exists($directory)) {
             mkdir($directory, 0755, true);
         }
 
@@ -321,7 +329,7 @@ class OfflineSyncController extends Controller
         $maxWidth = 800;
         if ($width > $maxWidth) {
             $newWidth = $maxWidth;
-            $newHeight = (int)(($height / $width) * $newWidth);
+            $newHeight = (int) (($height / $width) * $newWidth);
         } else {
             $newWidth = $width;
             $newHeight = $height;
@@ -354,15 +362,15 @@ class OfflineSyncController extends Controller
         }
 
         $checkIn = Carbon::parse($checkInTime);
-        $workStart = Carbon::parse($checkIn->format('Y-m-d') . ' 08:00:00');
+        $workStart = Carbon::parse($checkIn->format('Y-m-d').' 08:00:00');
 
         if ($checkIn->gt($workStart)) {
             $lateMinutes = abs($checkIn->diffInMinutes($workStart));
-            
+
             if ($lateMinutes > 5) {
                 return 'pending'; // Late more than 5 minutes, needs approval
             }
-            
+
             return 'late'; // Late but within 5 minutes
         }
 
@@ -428,10 +436,10 @@ class OfflineSyncController extends Controller
         ]);
 
         $attendance->review_status = $validated['review_status'];
-        
+
         if (isset($validated['review_notes'])) {
-            $existingNotes = $attendance->review_notes ? $attendance->review_notes . "\n" : "";
-            $attendance->review_notes = $existingNotes . "[Admin Review]: " . $validated['review_notes'];
+            $existingNotes = $attendance->review_notes ? $attendance->review_notes."\n" : '';
+            $attendance->review_notes = $existingNotes.'[Admin Review]: '.$validated['review_notes'];
         }
 
         // If approved, ensure status is valid
@@ -520,8 +528,8 @@ class OfflineSyncController extends Controller
      */
     public function generateQrCodes(Request $request)
     {
-        $qrService = new QrCodeValidationService();
-        
+        $qrService = new QrCodeValidationService;
+
         try {
             $generated = $qrService->batchGenerateForOutlets();
 
@@ -537,7 +545,7 @@ class OfflineSyncController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to generate QR codes: ' . $e->getMessage(),
+                'message' => 'Failed to generate QR codes: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -555,7 +563,7 @@ class OfflineSyncController extends Controller
         ]);
 
         try {
-            $qrService = new QrCodeValidationService();
+            $qrService = new QrCodeValidationService;
             $qrLocation = $qrService->createQrCodeLocation(
                 $validated['organization_id'],
                 $validated['floor_number'] ?? 1,
@@ -576,9 +584,23 @@ class OfflineSyncController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to generate QR code: ' . $e->getMessage(),
+                'message' => 'Failed to generate QR code: '.$e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Resolve a QR code to outlet/organization info (for mobile display)
+     */
+    public function resolveQrCode(Request $request)
+    {
+        $validated = $request->validate([
+            'qr_code' => 'required|string',
+        ]);
+
+        $result = $this->qrValidationService->validate($validated['qr_code']);
+
+        return response()->json($result);
     }
 
     /**

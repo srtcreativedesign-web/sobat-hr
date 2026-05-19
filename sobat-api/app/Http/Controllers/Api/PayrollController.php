@@ -3,15 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\Payroll;
-use App\Models\Employee;
-use App\Models\Role;
-use Barryvdh\DomPDF\Facade\Pdf;
-use App\Services\GroqAiService;
-use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\Log;
 use App\Jobs\ProcessPayrollImport;
+use App\Models\Employee;
+use App\Models\Payroll;
+use App\Services\GroqAiService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PayrollController extends Controller
 {
@@ -19,11 +18,10 @@ class PayrollController extends Controller
     {
         $query = Payroll::with(['employee']);
 
-        
         // Filter by search name
-        if ($request->has('search') && !empty($request->search)) {
-            $query->whereHas('employee', function($q) use ($request) {
-                $q->where('full_name', 'like', '%' . $request->search . '%');
+        if ($request->has('search') && ! empty($request->search)) {
+            $query->whereHas('employee', function ($q) use ($request) {
+                $q->where('full_name', 'like', '%'.$request->search.'%');
             });
         }
 
@@ -38,7 +36,7 @@ class PayrollController extends Controller
         // --- SECURE PLATFORM CHECK (BROWSER FINGERPRINT) ---
         // Modern browsers (Web Admin) ALWAYS send 'Sec-Fetch-Site' or 'Referer'.
         // Mobile apps (Dio) NEVER send 'Sec-Fetch-Site' by default.
-        $isMobile = !$request->hasHeader('Sec-Fetch-Site');
+        $isMobile = ! $request->hasHeader('Sec-Fetch-Site');
 
         // IF MOBILE: Force self-view permanently, no matter who is logging in.
         if ($isMobile) {
@@ -49,17 +47,17 @@ class PayrollController extends Controller
             } else {
                 return response()->json(['data' => []]);
             }
-        } 
+        }
         // IF WEB: Admin can see everything, others are filtered.
         else {
             $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR, Role::HRD, Role::ADMIN_CABANG]);
-            if (!$isAdmin) {
-                 $query->where('employee_id', $user->employee?->id);
-                 $query->whereIn('status', ['approved', 'paid']);
+            if (! $isAdmin) {
+                $query->where('employee_id', $user->employee?->id);
+                $query->whereIn('status', ['approved', 'paid']);
             }
-            
+
             // Allow admin on web to filter by specific employee_id if provided
-            if ($isAdmin && $request->has('employee_id') && !empty($request->employee_id)) {
+            if ($isAdmin && $request->has('employee_id') && ! empty($request->employee_id)) {
                 $query->where('employee_id', $request->employee_id);
             }
         }
@@ -72,7 +70,7 @@ class PayrollController extends Controller
         }
         // Filter by year only
         elseif ($request->has('year')) {
-            $query->where('period', 'like', $request->year . '-%');
+            $query->where('period', 'like', $request->year.'-%');
         }
 
         $payrolls = $query->orderBy('period', 'desc')
@@ -81,7 +79,7 @@ class PayrollController extends Controller
         return response()->json([
             'data' => $payrolls->map(function ($payroll) {
                 // Parse period (YYYY-MM format)
-                $periodDate = $payroll->period . '-01';
+                $periodDate = $payroll->period.'-01';
                 $periodStart = date('Y-m-01', strtotime($periodDate));
                 $periodEnd = date('Y-m-t', strtotime($periodDate));
 
@@ -141,7 +139,7 @@ class PayrollController extends Controller
         $roleName = $user->role ? strtolower($user->role->name) : '';
         $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR]);
 
-        if (!$isAdmin && $payroll->employee_id !== $user->employee?->id) {
+        if (! $isAdmin && $payroll->employee_id !== $user->employee?->id) {
             return response()->json(['message' => 'Anda tidak memiliki akses ke data payroll ini.'], 403);
         }
 
@@ -157,7 +155,7 @@ class PayrollController extends Controller
         $roleName = $user->role ? strtolower($user->role->name) : '';
         $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR]);
 
-        if (!$isAdmin) {
+        if (! $isAdmin) {
             return response()->json(['message' => 'Hanya Admin/HR yang dapat mengubah data payroll.'], 403);
         }
 
@@ -187,7 +185,7 @@ class PayrollController extends Controller
         $roleName = $user->role ? strtolower($user->role->name) : '';
         $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR]);
 
-        if (!$isAdmin) {
+        if (! $isAdmin) {
             return response()->json(['message' => 'Hanya Admin/HR yang dapat menghapus data payroll.'], 403);
         }
 
@@ -208,15 +206,15 @@ class PayrollController extends Controller
         $roleName = $user->role ? strtolower($user->role->name) : '';
         $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR]);
 
-        if (!$isAdmin && $payroll->employee_id !== $user->employee?->id) {
+        if (! $isAdmin && $payroll->employee_id !== $user->employee?->id) {
             return response()->json(['message' => 'Anda tidak memiliki akses ke slip gaji ini.'], 403);
         }
 
         // Generate AI-powered personalized message
-        $groqService = new GroqAiService();
+        $groqService = new GroqAiService;
         $aiMessage = $groqService->generatePayslipMessage([
             'employee_name' => $payroll->employee->full_name,
-            'period' => date('F Y', strtotime($payroll->period . '-01')),
+            'period' => date('F Y', strtotime($payroll->period.'-01')),
             'basic_salary' => $payroll->basic_salary,
             'overtime' => $payroll->overtime_pay,
             'net_salary' => $payroll->net_salary,
@@ -232,7 +230,7 @@ class PayrollController extends Controller
 
         $pdf->setPaper('a4', 'portrait');
 
-        $filename = 'Slip_Gaji_' . $payroll->employee->employee_code . '_' . $payroll->period . '.pdf';
+        $filename = 'Slip_Gaji_'.$payroll->employee->employee_code.'_'.$payroll->period.'.pdf';
 
         return $pdf->download($filename);
     }
@@ -281,7 +279,7 @@ class PayrollController extends Controller
             'BPJS Employment',
             'Tax PPh21',
             'Other Deductions',
-            'Net Salary'
+            'Net Salary',
         ];
 
         $callback = function () use ($headers) {
@@ -302,22 +300,21 @@ class PayrollController extends Controller
                 '200000',
                 '50000',
                 '0',
-                '5150000'
+                '5150000',
             ]);
 
             fclose($file);
         };
 
         return response()->stream($callback, 200, [
-            "Content-Type" => "text/csv",
-            "Content-Disposition" => "attachment; filename=template_import_payroll.csv",
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename=template_import_payroll.csv',
         ]);
     }
 
     /**
      * Import payroll from Excel/CSV file
      */
-
     public function import(Request $request)
     {
         $request->validate([
@@ -333,38 +330,41 @@ class PayrollController extends Controller
             $reader->setReadDataOnly(true); // READ CALCULATED VALUES, NOT FORMULAS
             $spreadsheet = $reader->load($file->getRealPath());
             $sheet = $spreadsheet->getActiveSheet();
-            
+
             $highestRow = $sheet->getHighestRow();
             $highestColumn = $sheet->getHighestColumn();
-            
+
             // Helper function to get calculated value from cell
-            $getCellValue = function($col, $row) use ($sheet) {
-                if (!$col) return 0; // Return 0 if column mapping not found
-                
+            $getCellValue = function ($col, $row) use ($sheet) {
+                if (! $col) {
+                    return 0;
+                } // Return 0 if column mapping not found
+
                 try {
-                    $cell = $sheet->getCell($col . $row);
+                    $cell = $sheet->getCell($col.$row);
                     $value = $cell->getCalculatedValue();
-                    
+
                     // Clean numeric values
                     if (is_numeric($value)) {
                         return (float) $value;
                     }
-                    
+
                     // Clean string numeric values (remove currency symbols, etc)
                     if (is_string($value)) {
                         $cleaned = preg_replace('/[^0-9\.\,\-]/', '', $value);
                         if ($cleaned !== '' && is_numeric($cleaned)) {
                             return (float) $cleaned;
                         }
+
                         return $value; // Return as string if not numeric
                     }
-                    
+
                     return $value ?? 0;
                 } catch (\Exception $e) {
                     return 0;
                 }
             };
-            
+
             // Detect header row (look for "Nama Karyawan")
             $headerRowIndex = -1;
             for ($row = 1; $row <= min(10, $highestRow); $row++) {
@@ -372,22 +372,22 @@ class PayrollController extends Controller
                 $rowIterator = $sheet->getRowIterator($row, $row)->current();
                 $cellIterator = $rowIterator->getCellIterator('A', $highestColumn);
                 $cellIterator->setIterateOnlyExistingCells(false);
-                
+
                 foreach ($cellIterator as $cell) {
                     $cellValue = $cell->getValue();
-                    
+
                     if ($cellValue && stripos($cellValue, 'Nama Karyawan') !== false) {
                         $headerRowIndex = $row;
-                        Log::info("Header found at row $row, col " . $cell->getColumn());
+                        Log::info("Header found at row $row, col ".$cell->getColumn());
                         break 2;
                     }
                 }
             }
-            
+
             if ($headerRowIndex === -1) {
                 return response()->json(['message' => 'Format tidak dikenali. Pastikan ada kolom "Nama Karyawan".'], 422);
             }
-            
+
             // BUILD COLUMN MAPPING based on header names
             $columnMapping = [];
             $headerPatterns = [
@@ -428,48 +428,50 @@ class PayrollController extends Controller
                 'payroll' => ['Payroll', 'THP'],
                 'jml_hr_masuk' => ['JML HR', 'Jumlah Hari'],
             ];
-            
+
             // Use cell iterator to support columns beyond Z (AA, AB, etc.)
             // ALSO build a lookup of all header values for merged cell detection
             $allHeaders = []; // col => headerValue
             $allSubs = [];    // col => subValue
             $colOrder = [];   // ordered list of column letters
-            
+
             $headerRow = $sheet->getRowIterator($headerRowIndex, $headerRowIndex)->current();
             $cellIterator = $headerRow->getCellIterator('A', $highestColumn);
             $cellIterator->setIterateOnlyExistingCells(false);
-            
+
             foreach ($cellIterator as $cell) {
                 $col = $cell->getColumn();
                 $colOrder[] = $col;
                 $allHeaders[$col] = $cell->getValue();
-                $allSubs[$col] = $sheet->getCell($col . ($headerRowIndex + 1))->getValue();
+                $allSubs[$col] = $sheet->getCell($col.($headerRowIndex + 1))->getValue();
             }
-            
+
             // Now iterate and map
             foreach ($colOrder as $idx => $col) {
                 $headerValue = $allHeaders[$col];
                 $unitsValue = $allSubs[$col];
-                
+
                 // For merged cell support: if header is empty, inherit from previous column
                 $effectiveHeader = $headerValue;
                 if (empty($effectiveHeader) && $idx > 0) {
                     $prevCol = $colOrder[$idx - 1];
                     $effectiveHeader = $allHeaders[$prevCol];
                 }
-                
+
                 foreach ($headerPatterns as $key => $patterns) {
                     // Skip if already mapped
-                    if (isset($columnMapping[$key])) continue;
-                    
+                    if (isset($columnMapping[$key])) {
+                        continue;
+                    }
+
                     $alternativePatterns = is_array($patterns) ? $patterns : [$patterns];
-                    
+
                     foreach ($alternativePatterns as $pattern) {
                         if (is_array($pattern)) {
                             // Multi-row header check: use effectiveHeader (merged cell aware)
                             $headerMatch = $effectiveHeader && stripos($effectiveHeader, $pattern[0]) !== false;
                             $unitsMatch = $unitsValue && stripos($unitsValue, $pattern[1]) !== false;
-                            
+
                             if ($headerMatch && $unitsMatch) {
                                 $columnMapping[$key] = $col;
                                 break;
@@ -478,7 +480,7 @@ class PayrollController extends Controller
                             // Single check: header row OR sub-header row
                             $matchedHeader = $headerValue && stripos($headerValue, $pattern) !== false;
                             $matchedSub = $unitsValue && stripos($unitsValue, $pattern) !== false;
-                            
+
                             if ($matchedHeader || $matchedSub) {
                                 $columnMapping[$key] = $col;
                                 break;
@@ -487,9 +489,9 @@ class PayrollController extends Controller
                     }
                 }
             }
-            
+
             Log::info('Column Mapping Detected', $columnMapping);
-            
+
             // Debug: log first data row values for critical fields
             $debugRow = $headerRowIndex + 2;
             $debugData = [];
@@ -499,12 +501,12 @@ class PayrollController extends Controller
                 $debugData[$debugKey] = "Col=$debugCol Val=$debugVal";
             }
             Log::info('DEBUG FIRST ROW VALUES', $debugData);
-            
+
             // Detect Outlet Name and Type
             $firstCell = $sheet->getCell('A1')->getValue();
             $outletName = null;
             $type = 'fnb'; // Default
-            
+
             if (stripos($firstCell, 'Tung Tau') !== false) {
                 $outletName = 'Tung Tau';
                 $type = 'fnb';
@@ -519,27 +521,31 @@ class PayrollController extends Controller
             $dataRows = [];
             // Data starts after header row (usually header is row 2, units row 3, data starts row 4)
             $startDataRow = $headerRowIndex + 2;
-            
+
             for ($row = $startDataRow; $row <= $highestRow; $row++) {
                 // Get employee name
                 $namaCol = $columnMapping['nama_karyawan'] ?? null;
-                if (!$namaCol) continue;
-                
+                if (! $namaCol) {
+                    continue;
+                }
+
                 $employeeName = $getCellValue($namaCol, $row);
-                
+
                 // Skip if no employee name
-                if (empty($employeeName) || !is_string($employeeName)) continue;
-                
+                if (empty($employeeName) || ! is_string($employeeName)) {
+                    continue;
+                }
+
                 // Read values using mapped columns
                 $periode = $getCellValue($columnMapping['periode'] ?? null, $row);
                 $accountNumber = $getCellValue($columnMapping['no_rekening'] ?? null, $row);
-                
+
                 // Basic Salary
                 $basicSalary = $getCellValue($columnMapping['gaji_pokok'] ?? null, $row);
-                
+
                 // Days present (JML HR MASUK)
                 $daysPresent = $getCellValue($columnMapping['jml_hr_masuk'] ?? null, $row);
-                
+
                 // Allowances
                 $kehadiranAllowance = $getCellValue($columnMapping['kehadiran_jumlah'] ?? null, $row);
                 $kehadiranRate = $getCellValue($columnMapping['kehadiran_rate'] ?? null, $row);
@@ -547,12 +553,12 @@ class PayrollController extends Controller
                 $transportRate = $getCellValue($columnMapping['transport_rate'] ?? null, $row);
                 $healthAllowance = $getCellValue($columnMapping['kesehatan_jumlah'] ?? null, $row);
                 $positionAllowance = $getCellValue($columnMapping['tunj_jabatan'] ?? null, $row);
-                
+
                 // Overtime
                 $overtimeHours = $getCellValue($columnMapping['lembur_jam'] ?? null, $row);
                 $overtimePay = $getCellValue($columnMapping['lembur_jumlah'] ?? null, $row);
                 $overtimeRate = $getCellValue($columnMapping['lembur_rate'] ?? null, $row);
-                
+
                 // Other Income
                 $holidayAllowance = $getCellValue($columnMapping['insentif'] ?? null, $row);
                 $insentifLuarKota = $getCellValue($columnMapping['insentif_luar_kota'] ?? null, $row);
@@ -561,11 +567,11 @@ class PayrollController extends Controller
                 $backup = $getCellValue($columnMapping['backup'] ?? null, $row);
                 $adjustment = $getCellValue($columnMapping['adjustment'] ?? null, $row);
                 $piketUmSabtu = $getCellValue($columnMapping['piket_um_sabtu'] ?? null, $row);
-                
+
                 // Totals
                 $totalGaji = $getCellValue($columnMapping['total_gaji'] ?? null, $row);
                 $totalGajiBonus = $getCellValue($columnMapping['total_gaji_bonus'] ?? null, $row);
-                
+
                 // Deductions Breakdown
                 $absen = $getCellValue($columnMapping['absen'] ?? null, $row);
                 $alfa = $getCellValue($columnMapping['alfa'] ?? null, $row);
@@ -575,24 +581,24 @@ class PayrollController extends Controller
                 $kasbon = $getCellValue($columnMapping['kasbon'] ?? null, $row);
                 $admBank = $getCellValue($columnMapping['adm_bank'] ?? null, $row);
                 $bpjsTK = $getCellValue($columnMapping['bpjs_tk'] ?? null, $row);
-                
+
                 // Total Deductions
                 $totalDeductions = $getCellValue($columnMapping['jumlah_potongan'] ?? null, $row);
-                
+
                 // Grand Total and Final Net Salary
                 $grandTotal = $getCellValue($columnMapping['grand_total'] ?? null, $row);
                 $ewa = $getCellValue($columnMapping['ewa'] ?? null, $row);
                 $potEwa = $getCellValue($columnMapping['potongan_ewa'] ?? null, $row);
                 $netSalary = $getCellValue($columnMapping['payroll'] ?? null, $row);
-                
+
                 // Logic: If netSalary is 0 but grandTotal exists, use grandTotal
                 if ($netSalary <= 0 && $grandTotal > 0) {
                     $netSalary = $grandTotal;
                 }
-                
+
                 // Calculate total allowances for storage
                 $allowancesTotal = $kehadiranAllowance + $transportAllowance + $healthAllowance + $positionAllowance;
-                
+
                 // Use the best available gross salary value
                 // Priority: Total Gaji & Bonus > Total Gaji > Calculate
                 if ($totalGajiBonus > 0) {
@@ -602,7 +608,7 @@ class PayrollController extends Controller
                 } else {
                     $grossSalary = $basicSalary + $allowancesTotal + $overtimePay + $holidayAllowance + $adjustment + $insentifLebaran + $backup;
                 }
-                
+
                 // Details for JSON storage
                 $details = [
                     'account_number' => $accountNumber,
@@ -635,7 +641,7 @@ class PayrollController extends Controller
                     'ewa' => $potEwa > 0 ? $potEwa : $ewa,
                     'grand_total' => $grandTotal,
                 ];
-                
+
                 $parsed = [
                     'employee_name' => $employeeName,
                     'period' => $request->period ?? date('Y-m'),
@@ -649,7 +655,7 @@ class PayrollController extends Controller
                     'gross_salary' => $grossSalary,
                     'details' => $details,
                 ];
-                
+
                 $dataRows[] = $parsed;
             }
 
@@ -661,7 +667,7 @@ class PayrollController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+            return response()->json(['message' => 'Error: '.$e->getMessage()], 500);
         }
     }
 
@@ -685,8 +691,8 @@ class PayrollController extends Controller
         $rows = $request->input('rows');
         $adminId = auth()->id();
 
-        Log::info("Dispatching Payroll Import Job. Rows: " . count($rows));
-        
+        Log::info('Dispatching Payroll Import Job. Rows: '.count($rows));
+
         // Dispatch Background Job
         ProcessPayrollImport::dispatch($rows, $adminId);
 
@@ -769,7 +775,7 @@ class PayrollController extends Controller
         ]);
 
         $payroll = Payroll::findOrFail($id);
-        
+
         $payroll->status = $request->status;
 
         if ($request->status === 'approved' && $request->has('approval_signature')) {
@@ -798,9 +804,16 @@ class PayrollController extends Controller
 
         $periodString = sprintf('%04d-%02d', $request->year, $request->month);
 
-        $updated = Payroll::where('period', $periodString)
+        $payrolls = Payroll::where('period', $periodString)
             ->where('status', 'draft')
-            ->update(['status' => 'approved']);
+            ->get();
+
+        $updated = count($payrolls);
+
+        foreach ($payrolls as $payroll) {
+            $payroll->status = 'approved';
+            $payroll->save();
+        }
 
         return response()->json([
             'message' => "Successfully approved {$updated} payrolls for period {$periodString}",
@@ -823,22 +836,40 @@ class PayrollController extends Controller
             'approval_signature' => 'nullable|string',
             'notes' => 'nullable|string',
             'signer_name' => 'nullable|string',
-                    ]);
+        ]);
 
         $ids = $request->input('ids');
         $division = $request->input('division', 'office');
 
         $model = Payroll::class;
-        if ($division === 'fnb') $model = \App\Models\PayrollFnb::class;
-        if ($division === 'minimarket') $model = \App\Models\PayrollMm::class;
-        if ($division === 'reflexiology') $model = \App\Models\PayrollRef::class;
-        if ($division === 'wrapping') $model = \App\Models\PayrollWrapping::class;
-        if ($division === 'hans') $model = \App\Models\PayrollHans::class;
-        if ($division === 'cellular') $model = \App\Models\PayrollCelluller::class;
-        if ($division === 'money_changer') $model = \App\Models\PayrollMoneyChanger::class;
-        if ($division === 'tungtau') $model = \App\Models\PayrollTungtau::class;
-        if ($division === 'maximum') $model = \App\Models\PayrollMaximum::class;
-        
+        if ($division === 'fnb') {
+            $model = \App\Models\PayrollFnb::class;
+        }
+        if ($division === 'minimarket') {
+            $model = \App\Models\PayrollMm::class;
+        }
+        if ($division === 'reflexiology') {
+            $model = \App\Models\PayrollRef::class;
+        }
+        if ($division === 'wrapping') {
+            $model = \App\Models\PayrollWrapping::class;
+        }
+        if ($division === 'hans') {
+            $model = \App\Models\PayrollHans::class;
+        }
+        if ($division === 'cellular') {
+            $model = \App\Models\PayrollCelluller::class;
+        }
+        if ($division === 'money_changer') {
+            $model = \App\Models\PayrollMoneyChanger::class;
+        }
+        if ($division === 'tungtau') {
+            $model = \App\Models\PayrollTungtau::class;
+        }
+        if ($division === 'maximum') {
+            $model = \App\Models\PayrollMaximum::class;
+        }
+
         $modelInstance = new $model;
         $table = $modelInstance->getTable();
 
@@ -859,18 +890,25 @@ class PayrollController extends Controller
             }
         }
 
-
-
         // Pending status varies: 'draft' or 'pending'
         // Generic uses 'draft', others use 'pending'. Let's handle both or check model.
         // FnB/MM/Ref/Wrapping/Hans usually use 'pending' as initial status after import?
         // Let's rely on the frontend sending correct IDs for 'pending' items.
-        // We will update where status is NOT approved/paid to be safe? 
-        // Or simpler: Update whereIn ids. 
-        
-        $updated = $model::whereIn('id', $ids)
-             ->whereIn('status', ['draft', 'pending'])
-             ->update($updateData);
+        // We will update where status is NOT approved/paid to be safe?
+        // Or simpler: Update whereIn ids.
+
+        $payrolls = $model::whereIn('id', $ids)
+            ->whereIn('status', ['draft', 'pending'])
+            ->get();
+
+        $updated = 0;
+        foreach ($payrolls as $payroll) {
+            foreach ($updateData as $field => $value) {
+                $payroll->$field = $value;
+            }
+            $payroll->save();
+            $updated++;
+        }
 
         return response()->json([
             'message' => "Successfully approved {$updated} selected payrolls for {$division}",
@@ -888,16 +926,17 @@ class PayrollController extends Controller
         // Generate AI-powered personalized message
         $aiMessage = null;
         try {
-            $groqService = new GroqAiService();
+            $groqService = new GroqAiService;
             $aiMessage = $groqService->generatePayslipMessage([
                 'employee_name' => $payroll->employee->full_name,
-                'period' => date('F Y', strtotime($payroll->period . '-01')),
+                'period' => date('F Y', strtotime($payroll->period.'-01')),
                 'basic_salary' => $payroll->basic_salary,
                 'overtime' => $payroll->overtime_pay ?? 0,
                 'net_salary' => $payroll->net_salary,
                 'join_date' => $payroll->employee->join_date,
             ]);
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+        }
 
         $pdf = Pdf::loadView('payslips.ho', [
             'payroll' => $payroll,
@@ -907,7 +946,7 @@ class PayrollController extends Controller
 
         $pdf->setPaper('a4', 'portrait');
 
-        $filename = 'Slip_Gaji_HO_' . str_replace(' ', '_', $payroll->employee->full_name) . '_' . $payroll->period . '.pdf';
+        $filename = 'Slip_Gaji_HO_'.str_replace(' ', '_', $payroll->employee->full_name).'_'.$payroll->period.'.pdf';
 
         return $pdf->download($filename);
     }
@@ -950,7 +989,7 @@ class PayrollController extends Controller
             $string = str_replace('.', '', $string);
         }
         // Single dot - ambiguous case
-        elseif (str_contains($string, '.') && !str_contains($string, ',')) {
+        elseif (str_contains($string, '.') && ! str_contains($string, ',')) {
             // Try removing dot and see if result >= 1000
             $temp = str_replace('.', '', $string);
             if (is_numeric($temp) && (float) $temp >= 1000) {
@@ -983,14 +1022,14 @@ class PayrollController extends Controller
                 // Determine query based on model structure
                 $query = $modelClass::with('employee')->where('period', $period);
                 $payrolls = $query->get();
-                
-                $groqService = new GroqAiService();
+
+                $groqService = new GroqAiService;
 
                 foreach ($payrolls as $payroll) {
-                    
+
                     // Specific Logic for specific models
                     if (str_contains($modelClass, 'PayrollHans')) {
-                       $payroll->allowances = [
+                        $payroll->allowances = [
                             'Uang Makan' => ['rate' => $payroll->meal_rate, 'amount' => $payroll->meal_amount],
                             'Transport' => ['rate' => $payroll->transport_rate, 'amount' => $payroll->transport_amount],
                             'Kehadiran' => ['rate' => $payroll->attendance_rate, 'amount' => $payroll->attendance_amount],
@@ -1002,16 +1041,16 @@ class PayrollController extends Controller
                             'THR' => $payroll->holiday_allowance,
                             'Adj Kekurangan Gaji' => $payroll->adjustment,
                             'Kebijakan HO' => $payroll->policy_ho,
-                       ];
-                       $payroll->deductions = [
-                           'Absen 1X' => $payroll->deduction_absent,
-                           'Terlambat' => $payroll->deduction_late,
-                           'Selisih SO' => $payroll->deduction_so_shortage,
-                           'Tidak Hadir' => $payroll->deduction_alpha,
-                           'Pinjaman' => $payroll->deduction_loan,
-                           'Adm Bank' => $payroll->deduction_admin_fee,
-                           'BPJS TK' => $payroll->deduction_bpjs_tk,
-                       ];
+                        ];
+                        $payroll->deductions = [
+                            'Absen 1X' => $payroll->deduction_absent,
+                            'Terlambat' => $payroll->deduction_late,
+                            'Selisih SO' => $payroll->deduction_so_shortage,
+                            'Tidak Hadir' => $payroll->deduction_alpha,
+                            'Pinjaman' => $payroll->deduction_loan,
+                            'Adm Bank' => $payroll->deduction_admin_fee,
+                            'BPJS TK' => $payroll->deduction_bpjs_tk,
+                        ];
                     } elseif (str_contains($modelClass, 'PayrollFnb')) {
                         // FnB logic
                         $payroll->allowances = [
@@ -1056,33 +1095,33 @@ class PayrollController extends Controller
                             'Adm Bank' => $payroll->deduction_admin_fee,
                             'BPJS TK' => $payroll->deduction_bpjs_tk,
                         ];
-                     }
-                     // Celluller Logic
-                     elseif (str_contains($modelClass, 'PayrollCelluller')) {
+                    }
+                    // Celluller Logic
+                    elseif (str_contains($modelClass, 'PayrollCelluller')) {
                         $payroll->allowances = [
-                             'Uang Makan' => ['rate' => $payroll->meal_rate, 'amount' => $payroll->meal_amount],
-                             'Transport' => ['rate' => $payroll->transport_rate, 'amount' => $payroll->transport_amount],
-                             'Lembur Wajib' => ['rate' => $payroll->mandatory_overtime_rate, 'amount' => $payroll->mandatory_overtime_amount],
-                             'Tunjangan Kehadiran' => $payroll->attendance_allowance,
-                             'Tunjangan Kesehatan' => $payroll->health_allowance,
-                             'Tunjangan Jabatan' => $payroll->position_allowance,
-                             'Lembur Tambahan' => ['rate' => $payroll->overtime_rate, 'hours' => $payroll->overtime_hours, 'amount' => $payroll->overtime_amount],
-                             'Bonus' => $payroll->bonus,
-                             'Insentif Lebaran' => $payroll->holiday_allowance,
-                             'Adj Kekurangan Gaji' => $payroll->adjustment,
-                             'Kebijakan HO' => $payroll->policy_ho,
+                            'Uang Makan' => ['rate' => $payroll->meal_rate, 'amount' => $payroll->meal_amount],
+                            'Transport' => ['rate' => $payroll->transport_rate, 'amount' => $payroll->transport_amount],
+                            'Lembur Wajib' => ['rate' => $payroll->mandatory_overtime_rate, 'amount' => $payroll->mandatory_overtime_amount],
+                            'Tunjangan Kehadiran' => $payroll->attendance_allowance,
+                            'Tunjangan Kesehatan' => $payroll->health_allowance,
+                            'Tunjangan Jabatan' => $payroll->position_allowance,
+                            'Lembur Tambahan' => ['rate' => $payroll->overtime_rate, 'hours' => $payroll->overtime_hours, 'amount' => $payroll->overtime_amount],
+                            'Bonus' => $payroll->bonus,
+                            'Insentif Lebaran' => $payroll->holiday_allowance,
+                            'Adj Kekurangan Gaji' => $payroll->adjustment,
+                            'Kebijakan HO' => $payroll->policy_ho,
                         ];
                         $payroll->deductions = [
                             'Absen 1X' => $payroll->deduction_absent,
-                            'Terlambat' => $payroll->deduction_late, 
+                            'Terlambat' => $payroll->deduction_late,
                             'Selisih SO' => $payroll->deduction_so_shortage,
                             'Pinjaman' => $payroll->deduction_loan,
                             'Adm Bank' => $payroll->deduction_admin_fee,
                             'BPJS TK' => $payroll->deduction_bpjs_tk,
                         ];
-                     }
-                     // MM & Ref - Assuming identical to FnB 
-                     elseif (str_contains($modelClass, 'PayrollMm') || str_contains($modelClass, 'PayrollRef')) {
+                    }
+                    // MM & Ref - Assuming identical to FnB
+                    elseif (str_contains($modelClass, 'PayrollMm') || str_contains($modelClass, 'PayrollRef')) {
                         $payroll->allowances = [
                             'Kehadiran' => ['rate' => $payroll->attendance_rate, 'amount' => $payroll->attendance_amount],
                             'Transport' => ['rate' => $payroll->transport_rate, 'amount' => $payroll->transport_amount],
@@ -1101,9 +1140,9 @@ class PayrollController extends Controller
                             'Adm Bank' => $payroll->deduction_admin_fee,
                             'BPJS TK' => $payroll->deduction_bpjs_tk,
                         ];
-                     }
-                     // Money Changer
-                     elseif (str_contains($modelClass, 'PayrollMoneyChanger')) {
+                    }
+                    // Money Changer
+                    elseif (str_contains($modelClass, 'PayrollMoneyChanger')) {
                         $payroll->allowances = [
                             'Tunjangan Jabatan' => $payroll->position_allowance,
                             'Uang Makan' => ['rate' => $payroll->meal_rate, 'amount' => $payroll->meal_amount],
@@ -1124,29 +1163,29 @@ class PayrollController extends Controller
                             'Adm Bank' => $payroll->deduction_admin_fee,
                             'BPJS TK' => $payroll->deduction_bpjs_tk,
                         ];
-                     }
-
+                    }
 
                     // Generate AI Message
                     $aiMessage = null;
-                     try {
+                    try {
                         $aiMessage = $groqService->generatePayslipMessage([
                             'employee_name' => $payroll->employee->full_name,
-                            'period' => date('F Y', strtotime($period . '-01')),
+                            'period' => date('F Y', strtotime($period.'-01')),
                             'basic_salary' => $payroll->basic_salary,
                             'overtime' => $payroll->overtime_amount ?? ($payroll->overtime_pay ?? 0),
                             'net_salary' => $payroll->net_salary,
                             'join_date' => $payroll->employee->join_date,
                         ]);
-                    } catch (\Exception $e) {}
+                    } catch (\Exception $e) {
+                    }
 
                     $pdf = Pdf::loadView($viewName, [
                         'payroll' => $payroll,
                         'aiMessage' => $aiMessage,
-                        'employee' => $payroll->employee
+                        'employee' => $payroll->employee,
                     ]);
-                    
-                    $filename = $prefix . '_' . str_replace(' ', '_', $payroll->employee->full_name) . '.pdf';
+
+                    $filename = $prefix.'_'.str_replace(' ', '_', $payroll->employee->full_name).'.pdf';
                     $files[$filename] = $pdf->output();
                 }
             };
@@ -1165,13 +1204,13 @@ class PayrollController extends Controller
                 $processDivision(\App\Models\PayrollFnb::class, 'payslips.fnb', 'FnB');
             }
             if ($division === 'all' || $division === 'mm') {
-                $processDivision(\App\Models\PayrollMm::class, 'payslips.mm', 'MM'); 
+                $processDivision(\App\Models\PayrollMm::class, 'payslips.mm', 'MM');
             }
             if ($division === 'all' || $division === 'ref') {
-                 $processDivision(\App\Models\PayrollRef::class, 'payslips.ref', 'Reflexy');
+                $processDivision(\App\Models\PayrollRef::class, 'payslips.ref', 'Reflexy');
             }
             if ($division === 'all' || $division === 'wrapping') {
-                 $processDivision(\App\Models\PayrollWrapping::class, 'payslips.wrapping', 'Wrapping');
+                $processDivision(\App\Models\PayrollWrapping::class, 'payslips.wrapping', 'Wrapping');
             }
             if ($division === 'all' || $division === 'office') {
                 $processDivision(Payroll::class, 'payslips.ho', 'HO');
@@ -1188,16 +1227,16 @@ class PayrollController extends Controller
             }
 
             // Create ZIP
-            $zipFileName = "Payrolls_{$division}_{$period}_" . time() . ".zip";
+            $zipFileName = "Payrolls_{$division}_{$period}_".time().'.zip';
             $zipPath = storage_path("app/public/{$zipFileName}");
-            
+
             // Ensure directory exists
-            if (!file_exists(dirname($zipPath))) {
+            if (! file_exists(dirname($zipPath))) {
                 mkdir(dirname($zipPath), 0755, true);
             }
 
             $zip = new \ZipArchive;
-            if ($zip->open($zipPath, \ZipArchive::CREATE) === TRUE) {
+            if ($zip->open($zipPath, \ZipArchive::CREATE) === true) {
                 foreach ($files as $name => $content) {
                     $zip->addFromString($name, $content);
                 }
@@ -1209,7 +1248,8 @@ class PayrollController extends Controller
             return response()->download($zipPath)->deleteFileAfterSend(true);
 
         } catch (\Exception $e) {
-            Log::error("Bulk Download Error: " . $e->getMessage());
+            Log::error('Bulk Download Error: '.$e->getMessage());
+
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
