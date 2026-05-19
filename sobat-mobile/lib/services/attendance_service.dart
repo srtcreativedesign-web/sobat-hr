@@ -125,6 +125,20 @@ class AttendanceService extends BaseService {
     }
   }
 
+  /// Resolve QR code to outlet/organization info
+  Future<Map<String, dynamic>?> resolveQrCode(String qrCode) async {
+    try {
+      final response = await dio.get(
+        ApiConfig.resolveQr,
+        queryParameters: {'qr_code': qrCode},
+      );
+      return response.data;
+    } catch (e) {
+      debugPrint('QR resolve error: $e');
+      return null;
+    }
+  }
+
   /// Fetch all configured attendance locations from server
   Future<List<Map<String, dynamic>>> getAttendanceLocations() async {
     try {

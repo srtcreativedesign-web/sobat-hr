@@ -93,46 +93,31 @@ class NotificationService {
 
       // 5. Handle foreground messages
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        if (kDebugMode) {
-          print('Got a message whilst in the foreground!');
-        }
-
-        RemoteNotification? notification = message.notification;
-        AndroidNotification? android = message.notification?.android;
-
-        // Show local notification if it contains a notification object
-        if (notification != null) {
-          _localNotifications.show(
-            id: notification.hashCode,
-            title: notification.title,
-            body: notification.body,
-            notificationDetails: NotificationDetails(
-              android: android != null
-                  ? AndroidNotificationDetails(
-                      _channel.id,
-                      _channel.name,
-                      channelDescription: _channel.description,
-                      icon: android.smallIcon,
-                      importance: Importance.max,
-                      priority: Priority.high,
-                      ticker: 'ticker',
-                    )
-                  : null,
-              iOS: const DarwinNotificationDetails(
-                presentAlert: true,
-                presentBadge: true,
-                presentSound: true,
-              ),
-            ),
-            payload: message.data.toString(),
-          );
-        }
+        _showLocalNotification(message);
       });
 
       // 6. Handle message open app from background
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
         if (kDebugMode) {
-          print('A new onMessageOpenedApp event was published!');
+          print('App opened from notification: ${message.messageId}');
+        }
+      });
+
+      // 7. Listen for FCM token refresh
+      _fcm.onTokenRefresh.listen((String newToken) async {
+        if (kDebugMode) {
+          print('FCM token refreshed');
+        }
+        final token = await StorageService.getToken();
+        if (token != null) {
+          try {
+            await _addAuthHeader();
+            await _dio.post(ApiConfig.fcmToken, data: {'fcm_token': newToken});
+          } catch (e) {
+            if (kDebugMode) {
+              print('Failed to sync refreshed FCM token: $e');
+            }
+          }
         }
       });
 
@@ -142,6 +127,38 @@ class NotificationService {
         print('Error during NotificationService initialization: $e');
       }
       _isInitialized = false;
+    }
+  }
+
+  void _showLocalNotification(RemoteMessage message) {
+    RemoteNotification? notification = message.notification;
+    AndroidNotification? android = message.notification?.android;
+
+    if (notification != null) {
+      _localNotifications.show(
+        id: notification.hashCode,
+        title: notification.title,
+        body: notification.body,
+        notificationDetails: NotificationDetails(
+          android: android != null
+              ? AndroidNotificationDetails(
+                  _channel.id,
+                  _channel.name,
+                  channelDescription: _channel.description,
+                  icon: android.smallIcon,
+                  importance: Importance.max,
+                  priority: Priority.high,
+                  ticker: 'ticker',
+                )
+              : null,
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+        payload: message.data.toString(),
+      );
     }
   }
 
@@ -205,5 +222,63 @@ class NotificationService {
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   if (kDebugMode) {
     print('Handling a background message: ${message.messageId}');
+  }
+
+  final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/launcher_icon');
+
+  const DarwinInitializationSettings initializationSettingsIOS =
+      DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
+
+  const InitializationSettings initializationSettings = InitializationSettings(
+    android: initializationSettingsAndroid,
+    iOS: initializationSettingsIOS,
+  );
+
+  await flutterLocalNotificationsPlugin.initialize(
+    settings: initializationSettings,
+  );
+
+  final androidChannel = AndroidNotificationChannel(
+    'high_importance_channel',
+    'High Importance Notifications',
+    description: 'This channel is used for important notifications.',
+    importance: Importance.max,
+  );
+
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin
+      >()
+      ?.createNotificationChannel(androidChannel);
+
+  final RemoteNotification? notification = message.notification;
+  if (notification != null) {
+    await flutterLocalNotificationsPlugin.show(
+      id: notification.hashCode,
+      title: notification.title,
+      body: notification.body,
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          androidChannel.id,
+          androidChannel.name,
+          channelDescription: androidChannel.description,
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+      payload: message.data.toString(),
+    );
   }
 }

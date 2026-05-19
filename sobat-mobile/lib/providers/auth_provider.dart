@@ -228,7 +228,7 @@ class AuthProvider with ChangeNotifier {
   Future<void> syncFcmToken() async {
     final token = await _notificationService.getToken();
     if (token != null) {
-      await _authService.updateFcmToken(token);
+      await _authService.updateFcmToken(token, deviceId: token);
     }
   }
 }

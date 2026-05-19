@@ -296,9 +296,13 @@ class AuthService extends BaseService {
     }
   }
 
-  Future<void> updateFcmToken(String token) async {
+  Future<void> updateFcmToken(String token, {String? deviceId, String? deviceName}) async {
     try {
-      await dio.post(ApiConfig.fcmToken, data: {'fcm_token': token});
+      await dio.post(ApiConfig.fcmToken, data: {
+        'fcm_token': token,
+        'device_id': deviceId,
+        'device_name': deviceName,
+      });
     } catch (e) {
       // Silently fail, not critical for app usage
     }

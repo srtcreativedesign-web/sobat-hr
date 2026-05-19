@@ -87,6 +87,7 @@ class ApiConfig {
   static const String attendanceCheckIn = 'attendance/check-in';
   static const String attendanceCheckOut = 'attendance/check-out';
   static const String attendanceLocations = 'attendance/locations';
+  static const String resolveQr = 'attendance/resolve-qr';
 
   // Leave Requests
   static const String leaveRequests = 'leave-requests';

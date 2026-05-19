@@ -300,7 +300,7 @@ class OfflineAttendanceHandler {
         }
 
         // Show confirmation popup with outlet data
-        _showOutletConfirmation(
+        await _showOutletConfirmation(
           qrCodeData: qrCodeData,
           gpsLatitude: lat,
           gpsLongitude: lng,
@@ -518,37 +518,45 @@ class OfflineAttendanceHandler {
   }
 
   /// Show confirmation dialog for operational track
-  void _showOutletConfirmation({
+  Future<void> _showOutletConfirmation({
     required String qrCodeData,
     double? gpsLatitude,
     double? gpsLongitude,
-  }) {
+  }) async {
     String outletName = 'Outlet Tidak Diketahui';
     String outletCode = '-';
 
     try {
-      // Simple parsing logic (supports JSON or simple string)
-      if (qrCodeData.startsWith('{')) {
-        final data = jsonDecode(qrCodeData);
-        outletName = data['name'] ?? data['outlet_name'] ?? qrCodeData;
-        outletCode = data['code'] ?? data['outlet_code'] ?? '-';
-      } else if (qrCodeData.contains('|')) {
-        final parts = qrCodeData.split('|');
-        for (var p in parts) {
-          if (p.toLowerCase().contains('name:')) {
-            outletName = p.split(':')[1].trim();
-          }
-          if (p.toLowerCase().contains('code:')) {
-            outletCode = p.split(':')[1].trim();
-          }
-        }
+      // Try to resolve QR code via API first
+      final resolved = await _attendanceService.resolveQrCode(qrCodeData);
+      if (resolved != null && resolved['valid'] == true && resolved['data'] != null) {
+        outletName = resolved['data']['organization_name'] ?? resolved['data']['location_name'] ?? qrCodeData;
+        outletCode = qrCodeData;
       } else {
-        outletName = qrCodeData;
+        // Fallback: simple parsing logic (supports JSON or simple string)
+        if (qrCodeData.startsWith('{')) {
+          final data = jsonDecode(qrCodeData);
+          outletName = data['name'] ?? data['outlet_name'] ?? qrCodeData;
+          outletCode = data['code'] ?? data['outlet_code'] ?? '-';
+        } else if (qrCodeData.contains('|')) {
+          final parts = qrCodeData.split('|');
+          for (var p in parts) {
+            if (p.toLowerCase().contains('name:')) {
+              outletName = p.split(':')[1].trim();
+            }
+            if (p.toLowerCase().contains('code:')) {
+              outletCode = p.split(':')[1].trim();
+            }
+          }
+        } else {
+          outletName = qrCodeData;
+        }
       }
     } catch (e) {
       outletName = qrCodeData;
     }
 
+    if (!context.mounted) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

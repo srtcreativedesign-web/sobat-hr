@@ -76,13 +76,13 @@ class SlipGajiCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
           _buildBreakdown(),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           _buildActions(context),
           if (data.status == SlipGajiStatus.proses ||
               data.updatedAt.isNotEmpty) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             _buildStatusBadge(),
           ],
         ],

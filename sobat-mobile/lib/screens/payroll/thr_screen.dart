@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:screen_protector/screen_protector.dart';
 import '../../config/theme.dart';
 import '../../services/thr_service.dart';
 import '../../providers/auth_provider.dart';
@@ -25,10 +27,25 @@ class _ThrScreenState extends State<ThrScreen> {
   @override
   void initState() {
     super.initState();
+    _enableScreenshotProtection();
     // Show PIN screen after build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showPinVerification();
     });
+  }
+
+  Future<void> _enableScreenshotProtection() async {
+    if (Platform.isAndroid) {
+      await ScreenProtector.preventScreenshotOn();
+    }
+  }
+
+  @override
+  void dispose() {
+    if (Platform.isAndroid) {
+      ScreenProtector.preventScreenshotOff();
+    }
+    super.dispose();
   }
 
   void _showPinVerification() {
