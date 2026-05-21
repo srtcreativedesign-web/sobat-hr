@@ -66,7 +66,7 @@ class ForgotPasswordController extends Controller
         $message = "*SOBAT HRIS SYSTEM*\n\nKode OTP untuk reset password Anda adalah: *{$otpCode}*.\n\nKode ini berlaku selama 5 menit. JANGAN berikan kode ini kepada siapapun termasuk pihak administrasi.";
 
         try {
-            $response = Http::post('http://127.0.0.1:3333/send-otp', [
+            $response = Http::post('http://127.0.0.1:3334/send-otp', [
                 'number' => $phone,
                 'message' => $message
             ]);

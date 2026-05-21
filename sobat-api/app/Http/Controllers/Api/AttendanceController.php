@@ -25,7 +25,11 @@ class AttendanceController extends Controller
         $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::HRD, \App\Models\Role::ADMIN_CABANG]);
 
         // EAGER LOADING: employee
-        $query = Attendance::with(['employee.division']);
+        $with = ['employee.division'];
+        if ($request->track_type === 'operational') {
+            $with[] = 'outlet';
+        }
+        $query = Attendance::with($with);
 
         $isMobile = $request->header('X-Platform') === 'mobile' ||
             !$request->hasHeader('Origin') ||
@@ -55,11 +59,15 @@ class AttendanceController extends Controller
             $query->whereDate('date', $request->date);
         }
 
-        // Division Filter (Matches UI 'Organizations' name against Employee 'department' string)
+        // Division Filter
         if ($request->has('division_id') && $request->division_id) {
             $query->whereHas('employee', function ($q) use ($request) {
                 $q->where('division_id', $request->division_id);
             });
+        }
+
+        if ($request->has('track_type') && $request->track_type) {
+            $query->where('track_type', $request->track_type);
         }
 
         if ($request->has('status')) {
@@ -253,6 +261,10 @@ class AttendanceController extends Controller
 
         // Store the employee's actual track_type in the attendance record for auditing
         $validated['track_type'] = $trackType;
+
+        // Auto-set validation method based on track type
+        $validated['validation_method'] = $trackType === 'operational' ? 'qr_code' : 'gps';
+        \Log::info("Attendance Store - validation_method set to: {$validated['validation_method']} for track: {$trackType}");
 
         // Wrap in transaction for data consistency under concurrent writes
         $attendance = DB::transaction(function () use ($validated) {

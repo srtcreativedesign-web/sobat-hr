@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:screen_protector/screen_protector.dart';
+import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../services/payroll_service.dart';
+import '../../providers/auth_provider.dart';
+import '../security/pin_screen.dart';
 import 'package:intl/intl.dart';
 
 class PayrollScreen extends StatefulWidget {
@@ -15,17 +18,17 @@ class PayrollScreen extends StatefulWidget {
 class _PayrollScreenState extends State<PayrollScreen> {
   final PayrollService _payrollService = PayrollService();
   bool _isLoading = true;
+  bool _pinVerified = false;
   List<dynamic> _payrolls = [];
   int? _selectedYear; // Null means "All Years"
-
-  // Selected payroll for detail view in bottom sheet
-  // Map<String, dynamic>? _selectedPayroll;
 
   @override
   void initState() {
     super.initState();
     _enableScreenshotProtection();
-    _loadPayrolls();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showPinVerification();
+    });
   }
 
   Future<void> _enableScreenshotProtection() async {
@@ -42,6 +45,25 @@ class _PayrollScreenState extends State<PayrollScreen> {
     super.dispose();
   }
 
+  void _showPinVerification() {
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    if (user == null) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PinScreen(
+          mode: user.hasPin ? PinMode.verify : PinMode.setup,
+          onSuccess: () {
+            Navigator.pop(context);
+            setState(() => _pinVerified = true);
+            _loadPayrolls();
+          },
+        ),
+      ),
+    );
+  }
+
   Future<void> _loadPayrolls() async {
     setState(() => _isLoading = true);
     try {
@@ -51,7 +73,6 @@ class _PayrollScreenState extends State<PayrollScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      // Error handled by AppErrorHandler in service
       setState(() => _isLoading = false);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -111,7 +132,43 @@ class _PayrollScreenState extends State<PayrollScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: Stack(
+      body: !_pinVerified
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.lock_outline,
+                    size: 64,
+                    color: Colors.grey.shade300,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Verifikasi PIN diperlukan',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _showPinVerification,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.colorEggplant,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Masukkan PIN',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : Stack(
         children: [
           // Background Header
           Column(

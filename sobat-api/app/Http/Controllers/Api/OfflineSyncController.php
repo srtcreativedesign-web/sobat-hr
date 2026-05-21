@@ -413,6 +413,13 @@ class OfflineSyncController extends Controller
             $query->where('employee_id', $request->employee_id);
         }
 
+        // Filter by division
+        if ($request->has('division_id')) {
+            $query->whereHas('employee', function ($q) use ($request) {
+                $q->where('division_id', $request->division_id);
+            });
+        }
+
         // Sort by device timestamp (when employee actually clocked in)
         $sortBy = $request->get('sort_by', 'device_timestamp');
         $sortDir = $request->get('sort_dir', 'desc');

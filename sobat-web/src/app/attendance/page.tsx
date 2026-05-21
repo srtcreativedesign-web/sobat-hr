@@ -77,7 +77,7 @@ export default function AttendancePage() {
     const fetchAttendances = async () => {
         try {
             setLoading(true);
-            const params = new URLSearchParams();
+            const params = new URLSearchParams({ track_type: 'head_office' });
             if (filterStartDate) params.append('start_date', filterStartDate);
             if (filterEndDate) params.append('end_date', filterEndDate);
             if (filterStatus) params.append('status', filterStatus);

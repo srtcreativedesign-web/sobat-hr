@@ -24,7 +24,7 @@ export default function Sidebar() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['Employees']);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(['Employees', 'Attendance']);
   const [pendingAttendanceCount, setPendingAttendanceCount] = useState(0);
 
   // Fetch Pending Count on Mount
@@ -181,7 +181,7 @@ export default function Sidebar() {
       ]
     },
     {
-      name: 'Attendance Log',
+      name: 'Attendance',
       href: '/attendance',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -189,6 +189,18 @@ export default function Sidebar() {
         </svg>
       ),
       roles: ['super_admin', 'admin_cabang', 'hr'],
+      subItems: [
+        {
+          name: 'Head Office',
+          href: '/attendance',
+          icon: null
+        },
+        {
+          name: 'Operasional',
+          href: '/attendance/operasional',
+          icon: null
+        }
+      ]
     },
 
     {
@@ -358,7 +370,7 @@ export default function Sidebar() {
           const hasSubItems = item.subItems && item.subItems.length > 0;
 
           // Badge Logic
-          const showBadge = item.name === 'Attendance Log' && pendingAttendanceCount > 0;
+          const showBadge = item.name === 'Attendance' && pendingAttendanceCount > 0;
 
           return (
             <div key={item.name}>

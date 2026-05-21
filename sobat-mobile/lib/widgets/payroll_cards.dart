@@ -76,13 +76,13 @@ class SlipGajiCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(),
-          const SizedBox(height: 16),
-          _buildBreakdown(),
           const SizedBox(height: 12),
+          _buildBreakdown(),
+          const SizedBox(height: 8),
           _buildActions(context),
           if (data.status == SlipGajiStatus.proses ||
               data.updatedAt.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             _buildStatusBadge(),
           ],
         ],
@@ -174,14 +174,14 @@ class SlipGajiCard extends StatelessWidget {
             fontWeight: isTotal ? FontWeight.w500 : FontWeight.w400,
           ),
         ),
-        // Skeleton shimmer when null
         value != null
             ? Text(
-                value,
+                '*** ***',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                   color: isTotal ? _C.purple600 : _C.gray900,
+                  letterSpacing: 2,
                 ),
               )
             : _SkeletonBox(
