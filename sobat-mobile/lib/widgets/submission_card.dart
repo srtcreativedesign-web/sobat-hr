@@ -5,7 +5,7 @@ class SubmissionCard extends StatelessWidget {
   final String title;
   final String date;
   final String status; // 'pending', 'approved', 'rejected'
-  final IconData icon;
+  final Widget iconWidget;
   final Color iconColor;
   final Color iconBgColor;
   final String detailLabel;
@@ -16,7 +16,7 @@ class SubmissionCard extends StatelessWidget {
     required this.title,
     required this.date,
     required this.status,
-    required this.icon,
+    required this.iconWidget,
     required this.iconColor,
     required this.iconBgColor,
     required this.detailLabel,
@@ -85,7 +85,7 @@ class SubmissionCard extends StatelessWidget {
                         color: iconBgColor,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(icon, color: iconColor, size: 24),
+                      child: iconWidget,
                     ),
                     const SizedBox(width: 16),
                     // Title & Date

@@ -238,7 +238,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           ),
           _buildMenuItem(
             context,
-            icon: Icons.medication_rounded,
+            assetIcon: 'assets/icons/sick.png',
             iconColor: const Color(0xFFA32D2D),
             bgColor: const Color(0xFFFFE4E4),
             title: 'Sick Leave',
@@ -298,7 +298,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           ),
           _buildMenuItem(
             context,
-            icon: Icons.payments_rounded,
+            assetIcon: 'assets/icons/reimburse.png',
             iconColor: const Color(0xFF534AB7),
             bgColor: const Color(0xFFEEEDFE),
             title: 'Reimbursement',

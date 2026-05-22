@@ -104,6 +104,8 @@ flutter:
     - assets/icons/overtime.png
     - assets/icons/bussines-trip.png
     - assets/icons/payslip.png
+    - assets/icons/sick.png
+    - assets/icons/reimburse.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

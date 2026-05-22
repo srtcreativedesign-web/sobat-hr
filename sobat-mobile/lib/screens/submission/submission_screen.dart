@@ -127,7 +127,7 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
             item['created_at'],
           ),
           status: _mapStatusToLabel(item['status']),
-          icon: _mapTypeToIcon(item['type']),
+          iconWidget: _mapTypeToIcon(item['type']),
           iconColor: _mapStatusToColor(item['status']),
           iconBgColor: _mapStatusToColor(item['status']).withValues(alpha: 0.1),
           detailLabel: item['reason'] ?? '-',
@@ -155,12 +155,17 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
     return type?.replaceAll('_', ' ').toUpperCase() ?? 'PENGAJUAN';
   }
 
-  IconData _mapTypeToIcon(String? type) {
-    if (type == 'leave') return Icons.calendar_month;
-    if (type == 'permit') return Icons.assignment_outlined;
-    if (type == 'sick') return Icons.local_hospital_outlined;
-    if (type == 'business_trip') return Icons.flight_takeoff;
-    return Icons.description_outlined;
+  Widget _mapTypeToIcon(String? type) {
+    if (type == 'sick') {
+      return Padding(
+        padding: const EdgeInsets.all(8),
+        child: Image.asset('assets/icons/sick.png', fit: BoxFit.contain),
+      );
+    }
+    if (type == 'leave') return Icon(Icons.calendar_month, size: 24);
+    if (type == 'permit') return Icon(Icons.assignment_outlined, size: 24);
+    if (type == 'business_trip') return Icon(Icons.flight_takeoff, size: 24);
+    return Icon(Icons.description_outlined, size: 24);
   }
 
   String _mapStatusToLabel(String? status) {

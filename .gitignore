@@ -37,6 +37,8 @@ sobat-wa-service/.wwebjs_cache/
 *~
 
 # Documentation and Reports
+debug/
+docs/
 *.md
 *.xlsx
 *.xls
