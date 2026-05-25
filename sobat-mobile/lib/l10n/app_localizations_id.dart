@@ -636,4 +636,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get feedbackOther => 'Lainnya';
+
+  @override
+  String get rememberMe => 'Ingat Saya';
 }

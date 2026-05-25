@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/connectivity_service.dart';
+import '../../services/storage_service.dart';
 import '../../l10n/app_localizations.dart';
 import 'invitation_screen.dart';
 
@@ -19,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _rememberMe = false;
   bool _isOnline = true;
   StreamSubscription? _connectivitySub;
 
@@ -29,6 +31,18 @@ class _LoginScreenState extends State<LoginScreen> {
     _connectivitySub = ConnectivityService().onlineStatusStream.listen((online) {
       if (mounted) setState(() => _isOnline = online);
     });
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final creds = await StorageService.getCredentials();
+    if (creds != null && mounted) {
+      setState(() {
+        _emailController.text = creds['email']!;
+        _passwordController.text = creds['password']!;
+        _rememberMe = true;
+      });
+    }
   }
 
   @override
@@ -46,6 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final success = await authProvider.login(
         _emailController.text.trim(),
         _passwordController.text,
+        rememberMe: _rememberMe,
       );
 
       if (success && mounted) {
@@ -436,6 +451,36 @@ class _LoginScreenState extends State<LoginScreen> {
                                     fontStyle: FontStyle.italic,
                                   ),
                                 ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: Checkbox(
+                                      value: _rememberMe,
+                                      onChanged: (value) {
+                                        setState(() => _rememberMe = value ?? false);
+                                      },
+                                      activeColor: AppTheme.colorPrimary,
+                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    onTap: () => setState(() => _rememberMe = !_rememberMe),
+                                    child: Text(
+                                      AppLocalizations.of(context)!.rememberMe,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: AppTheme.textDark,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(height: 12),

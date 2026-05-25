@@ -636,4 +636,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feedbackOther => 'Other';
+
+  @override
+  String get rememberMe => 'Remember Me';
 }

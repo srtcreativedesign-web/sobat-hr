@@ -21,7 +21,8 @@ const client = new Client({
             '--no-first-run',
             '--no-zygote',
             '--single-process',
-            '--disable-gpu'
+            '--disable-gpu',
+            '--disable-background-networking'
         ]
     }
 });
@@ -52,7 +53,21 @@ client.on('auth_failure', (msg) => {
     console.error('Gagal autentikasi:', msg);
 });
 
-client.initialize();
+// Retry init on crash
+async function startClient(maxRetries = 3) {
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            await client.initialize();
+            return;
+        } catch (err) {
+            console.error(`Init gagal (percobaan ${i + 1}/${maxRetries}):`, err.message);
+            if (i < maxRetries - 1) {
+                await new Promise(r => setTimeout(r, 5000));
+            }
+        }
+    }
+}
+startClient();
 
 // Endpoint untuk cek status koneksi
 app.get('/status', (req, res) => {
@@ -90,7 +105,7 @@ app.post('/send-otp', async (req, res) => {
     }
 });
 
-const PORT = 3333;
+const PORT = 3334;
 app.listen(PORT, '127.0.0.1', () => {
     console.log(`\n🚀 SOBAT WA Microservice berjalan di internal port ${PORT}`);
 });

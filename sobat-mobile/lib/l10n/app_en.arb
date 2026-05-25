@@ -235,5 +235,6 @@
   "feedbackFeature": "Feature Request",
   "feedbackComplaint": "Complaint",
   "feedbackQuestion": "Question",
-  "feedbackOther": "Other"
+  "feedbackOther": "Other",
+  "rememberMe": "Remember Me"
 }

@@ -69,7 +69,44 @@ class StorageService {
     }
   }
 
-  // Clear all data
+  // Credentials Keys
+  static const String _savedEmailKey = 'saved_email';
+  static const String _savedPasswordKey = 'saved_password';
+
+  static Future<void> saveCredentials(String email, String password) async {
+    try {
+      await _secureStorage.write(key: _savedEmailKey, value: email);
+      await _secureStorage.write(key: _savedPasswordKey, value: password);
+    } catch (e) {
+      await _secureStorage.deleteAll();
+      await _secureStorage.write(key: _savedEmailKey, value: email);
+      await _secureStorage.write(key: _savedPasswordKey, value: password);
+    }
+  }
+
+  static Future<Map<String, String>?> getCredentials() async {
+    try {
+      final email = await _secureStorage.read(key: _savedEmailKey);
+      final password = await _secureStorage.read(key: _savedPasswordKey);
+      if (email != null && password != null) {
+        return {'email': email, 'password': password};
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<void> clearCredentials() async {
+    try {
+      await _secureStorage.delete(key: _savedEmailKey);
+      await _secureStorage.delete(key: _savedPasswordKey);
+    } catch (e) {
+      // Ignore
+    }
+  }
+
+  // Clear session data (token + user), but NOT remembered credentials
   static Future<void> clearAll() async {
     await deleteToken();
     await deleteUser();

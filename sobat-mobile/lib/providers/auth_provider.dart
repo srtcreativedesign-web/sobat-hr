@@ -59,7 +59,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> login(String email, String password) async {
+  Future<bool> login(String email, String password, {bool rememberMe = false}) async {
     final isOnline = ConnectivityService().isOnline;
     if (!isOnline) {
       _errorMessage = 'Tidak ada koneksi internet. Login memerlukan koneksi internet yang aktif.';
@@ -79,6 +79,12 @@ class AuthProvider with ChangeNotifier {
         _user = result['user'] as User;
         _isAuthenticated = true;
         _isLoading = false;
+
+        if (rememberMe) {
+          await StorageService.saveCredentials(email, password);
+        } else {
+          await StorageService.clearCredentials();
+        }
 
         // Sync FCM Token
         syncFcmToken();
