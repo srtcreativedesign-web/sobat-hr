@@ -295,6 +295,12 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
             bgColor: const Color(0xFFEAF3DE),
             title: 'Perjalanan Dinas',
             subtitle: 'Business Trip',
+            onTap:
+                () => Navigator.pushNamed(
+                  context,
+                  '/submission/create',
+                  arguments: 'Perjalanan Dinas',
+                ),
           ),
           _buildMenuItem(
             context,
@@ -304,6 +310,12 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
             title: 'Reimbursement',
             subtitle: 'Klaim pengeluaran',
             isLast: true,
+            onTap:
+                () => Navigator.pushNamed(
+                  context,
+                  '/submission/create',
+                  arguments: 'Reimbursement',
+                ),
           ),
         ],
       ),

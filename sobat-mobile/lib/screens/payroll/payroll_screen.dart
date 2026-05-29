@@ -18,7 +18,6 @@ class PayrollScreen extends StatefulWidget {
 class _PayrollScreenState extends State<PayrollScreen> {
   final PayrollService _payrollService = PayrollService();
   bool _isLoading = true;
-  bool _pinVerified = false;
   List<dynamic> _payrolls = [];
   int? _selectedYear; // Null means "All Years"
 
@@ -27,7 +26,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
     super.initState();
     _enableScreenshotProtection();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showPinVerification();
+      _loadPayrolls();
     });
   }
 
@@ -43,25 +42,6 @@ class _PayrollScreenState extends State<PayrollScreen> {
       ScreenProtector.preventScreenshotOff();
     }
     super.dispose();
-  }
-
-  void _showPinVerification() {
-    final user = Provider.of<AuthProvider>(context, listen: false).user;
-    if (user == null) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PinScreen(
-          mode: user.hasPin ? PinMode.verify : PinMode.setup,
-          onSuccess: () {
-            Navigator.pop(context);
-            setState(() => _pinVerified = true);
-            _loadPayrolls();
-          },
-        ),
-      ),
-    );
   }
 
   Future<void> _loadPayrolls() async {
@@ -81,6 +61,25 @@ class _PayrollScreenState extends State<PayrollScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  Future<void> _verifyPinThenDownload(int id, String period, {String? division}) async {
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    if (user == null) return;
+
+    final pinVerified = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PinScreen(
+          mode: user.hasPin ? PinMode.verify : PinMode.setup,
+          onSuccess: () => Navigator.pop(context, true),
+        ),
+      ),
+    );
+
+    if (pinVerified == true) {
+      _downloadSlip(id, period, division: division);
     }
   }
 
@@ -132,43 +131,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: !_pinVerified
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.lock_outline,
-                    size: 64,
-                    color: Colors.grey.shade300,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Verifikasi PIN diperlukan',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _showPinVerification,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.colorEggplant,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Masukkan PIN',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : Stack(
+      body: Stack(
         children: [
           // Background Header
           Column(
@@ -971,7 +934,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
                       final dateStr = periodStr.toString().length == 7
                           ? '$periodStr-01'
                           : periodStr.toString();
-                      _downloadSlip(
+                      _verifyPinThenDownload(
                         payroll['id'],
                         DateFormat(
                           'MMM_yyyy',

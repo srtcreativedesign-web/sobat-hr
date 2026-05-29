@@ -546,36 +546,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _navigateToPayroll() {
-    final user = Provider.of<AuthProvider>(context, listen: false).user;
-    if (user == null) return;
-
-    if (user.hasPin) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => PinScreen(
-            mode: PinMode.verify,
-            onSuccess: () {
-              Navigator.pop(context); // Close PIN Screen
-              Navigator.pushNamed(context, '/payroll');
-            },
-          ),
-        ),
-      );
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => PinScreen(
-            mode: PinMode.setup,
-            onSuccess: () {
-              Navigator.pop(context); // Close PIN Screen
-              Navigator.pushNamed(context, '/payroll');
-            },
-          ),
-        ),
-      );
-    }
+    Navigator.pushNamed(context, '/payroll');
   }
 
   void _checkFaceEnrollment() {
@@ -881,7 +852,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ],
                                   ),
                                   child: const Text(
-                                    '✨',
+                                    '🤗',
                                     style: TextStyle(fontSize: 20),
                                   ),
                                 ),
@@ -2059,7 +2030,7 @@ class _HomeScreenState extends State<HomeScreen> {
         'label': AppLocalizations.of(context)!.businessTrip,
         'subtitle': 'Perjalanan',
         'gradient': [const Color(0xFF84FAB0), const Color(0xFF8FD3F4)],
-        'onTap': () => Navigator.pushNamed(context, '/submission/create', arguments: 'Dinas'),
+        'onTap': () => Navigator.pushNamed(context, '/submission/create', arguments: 'Perjalanan Dinas'),
       },
     ];
 
@@ -2302,7 +2273,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               Column(
                 children: _recentActivities.map((activity) {
-                  IconData icon;
+                  IconData? icon;
+                  String? assetIcon;
                   Color color;
 
                   switch (activity['type']) {
@@ -2316,15 +2288,33 @@ class _HomeScreenState extends State<HomeScreen> {
                       }
                       break;
                     case 'request':
-                      icon = Icons.description;
-                      color = activity['status'] == 'success'
-                          ? Colors.green
-                          : (activity['status'] == 'error'
-                                ? Colors.red
-                                : Colors.blue);
+                      final reqType = (activity['title'] ?? '').toLowerCase();
+                      if (reqType.contains('cuti') || reqType.contains('leave')) {
+                        assetIcon = 'assets/icons/leave.png';
+                        color = const Color(0xFF534AB7);
+                      } else if (reqType.contains('sakit') || reqType.contains('sick')) {
+                        assetIcon = 'assets/icons/sick.png';
+                        color = const Color(0xFFA32D2D);
+                      } else if (reqType.contains('lembur') || reqType.contains('overtime')) {
+                        assetIcon = 'assets/icons/overtime.png';
+                        color = const Color(0xFF854F0B);
+                      } else if (reqType.contains('perjalanan dinas') || reqType.contains('business_trip')) {
+                        assetIcon = 'assets/icons/bussines-trip.png';
+                        color = const Color(0xFF3B6D11);
+                      } else if (reqType.contains('reimbursement')) {
+                        assetIcon = 'assets/icons/reimburse.png';
+                        color = const Color(0xFF534AB7);
+                      } else {
+                        icon = Icons.description;
+                        color = activity['status'] == 'success'
+                            ? Colors.green
+                            : (activity['status'] == 'error'
+                                  ? Colors.red
+                                  : Colors.blue);
+                      }
                       break;
                     case 'payroll':
-                      icon = Icons.payments;
+                      assetIcon = 'assets/icons/payslip.png';
                       color = Colors.purple;
                       break;
                     default:
@@ -2334,26 +2324,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // Format time relative or absolute
                   final date = activity['date'] as DateTime;
-                  final timeStr = DateFormat(
-                    'dd MMM, HH:mm',
-                    'id_ID',
-                  ).format(date);
+                  final timeStr = activity['type'] == 'payroll'
+                      ? DateFormat('dd MMM yyyy', 'id_ID').format(date)
+                      : DateFormat('dd MMM, HH:mm', 'id_ID').format(date);
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Icon Circle
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: color.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(icon, color: color, size: 20),
-                        ),
+                        assetIcon != null
+                            ? SizedBox(
+                                width: 40,
+                                height: 40,
+                                child: Image.asset(assetIcon, fit: BoxFit.contain),
+                              )
+                            : Icon(icon, color: color, size: 24),
                         const SizedBox(width: 16),
                         // Content
                         Expanded(
@@ -2530,11 +2516,28 @@ class _HomeScreenState extends State<HomeScreen> {
         updatedAt: _lastPayroll!['updated_at'] != null 
             ? DateFormat('d MMM HH:mm', 'id_ID').format(DateTime.parse(_lastPayroll!['updated_at']))
             : '',
-        onUnduh: () => PayrollService().downloadSlip(
-          _lastPayroll!['id'],
-          'Slip_Gaji_$period.pdf',
-          division: _lastPayroll!['division'],
-        ),
+        onUnduh: () async {
+          final user = Provider.of<AuthProvider>(context, listen: false).user;
+          if (user == null) return;
+
+          final pinVerified = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PinScreen(
+                mode: user.hasPin ? PinMode.verify : PinMode.setup,
+                onSuccess: () => Navigator.pop(context, true),
+              ),
+            ),
+          );
+
+          if (pinVerified == true) {
+            await PayrollService().downloadSlip(
+              _lastPayroll!['id'],
+              'Slip_Gaji_$period.pdf',
+              division: _lastPayroll!['division'],
+            );
+          }
+        },
         onDetail: () => Navigator.pushNamed(context, '/payroll'),
       ),
     );

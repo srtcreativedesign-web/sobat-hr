@@ -348,7 +348,7 @@ class _FinanceComingSoonScreenState extends State<FinanceComingSoonScreen> {
                               ),
                             ),
                             Text(
-                              '20%',
+                              '50%',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w900,
@@ -369,7 +369,7 @@ class _FinanceComingSoonScreenState extends State<FinanceComingSoonScreen> {
                               ),
                               Container(
                                 height: 6,
-                                width: 280 * 0.20,
+                                width: 280 * 0.50,
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF005EB6),
                                   borderRadius: BorderRadius.circular(100),
