@@ -74,7 +74,8 @@ class AttendanceController extends Controller
             $query->where('status', $request->status);
         }
 
-        $attendances = $query->orderBy('date', 'desc')->paginate(31);
+        $perPage = $request->input('per_page', 20);
+        $attendances = $query->orderBy('date', 'desc')->paginate($perPage);
 
         return response()->json($attendances);
     }

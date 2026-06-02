@@ -52,15 +52,18 @@ export default function AttendancePage() {
     const [bulkStatus, setBulkStatus] = useState<'late' | 'present'>('late');
     const [bulkNote, setBulkNote] = useState('');
     const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [lastPage, setLastPage] = useState(1);
+    const [totalData, setTotalData] = useState(0);
+    const [perPage, setPerPage] = useState(20);
+    const [hasFiltered, setHasFiltered] = useState(false);
 
     useEffect(() => {
         checkAuth();
     }, [checkAuth]);
 
     useEffect(() => {
-        // Only fetch if authenticated (guaranteed by layout, but good practice to keep logic clean)
         fetchOrganizations();
-        fetchAttendances();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -74,7 +77,7 @@ export default function AttendancePage() {
         }
     };
 
-    const fetchAttendances = async () => {
+    const fetchAttendances = async (page = 1) => {
         try {
             setLoading(true);
             const params = new URLSearchParams({ track_type: 'head_office' });
@@ -83,11 +86,17 @@ export default function AttendancePage() {
             if (filterStatus) params.append('status', filterStatus);
             if (filterDivision) params.append('division_id', filterDivision);
             if (filterOffline) params.append('is_offline', filterOffline);
+            params.append('page', String(page));
+            params.append('per_page', '20');
 
             const response = await apiClient.get(`/attendances?${params.toString()}`);
-            // Pagination handling might be needed, assuming API returns paginated data structure
-            const data = response.data.data || response.data;
-            setAttendances(Array.isArray(data) ? data : []);
+            const res = response.data;
+            setAttendances(Array.isArray(res.data) ? res.data : []);
+            setCurrentPage(res.current_page || 1);
+            setLastPage(res.last_page || 1);
+            setTotalData(res.total || 0);
+            setPerPage(res.per_page || 20);
+            setHasFiltered(true);
         } catch (error) {
             console.error('Failed to fetch attendance:', error);
         } finally {
@@ -97,7 +106,14 @@ export default function AttendancePage() {
 
     const handleFilter = (e: React.FormEvent) => {
         e.preventDefault();
-        fetchAttendances();
+        setCurrentPage(1);
+        fetchAttendances(1);
+    };
+
+    const goToPage = (page: number) => {
+        if (page < 1 || page > lastPage) return;
+        setCurrentPage(page);
+        fetchAttendances(page);
     };
 
     const handleExport = async () => {
@@ -361,7 +377,8 @@ export default function AttendancePage() {
                         </div>
                         <button
                             type="submit"
-                            className="px-6 py-2 bg-[#60A5FA] text-[#1C3ECA] rounded-lg hover:bg-[#93C5FD] transition-colors font-medium"
+                            disabled={!filterStartDate}
+                            className={`px-6 py-2 rounded-lg transition-colors font-medium ${!filterStartDate ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#60A5FA] text-[#1C3ECA] hover:bg-[#93C5FD]'}`}
                         >
                             Filter
                         </button>
@@ -400,89 +417,141 @@ export default function AttendancePage() {
                         </div>
                     ) : attendances.length === 0 ? (
                         <div className="p-12 text-center">
-                            <p className="text-gray-600">Tidak ada data kehadiran.</p>
+                            {!hasFiltered ? (
+                                <div>
+                                    <svg className="mx-auto h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <p className="text-gray-500 text-lg font-medium mb-2">Belum ada data ditampilkan</p>
+                                    <p className="text-gray-400">Silakan pilih rentang tanggal dan klik <strong>Filter</strong> untuk menampilkan data kehadiran.</p>
+                                </div>
+                            ) : (
+                                <p className="text-gray-600">Tidak ada data kehadiran untuk rentang tanggal tersebut.</p>
+                            )}
                         </div>
                     ) : (
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-4 py-3 text-left">
-                                            <input
-                                                type="checkbox"
-                                                className="rounded border-gray-300 text-[#1C3ECA] focus:ring-[#1C3ECA]"
-                                                checked={attendances.length > 0 && selectedIds.length === attendances.length}
-                                                onChange={toggleSelectAll}
-                                            />
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Karyawan</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Masuk</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Keluar</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe/Mode</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lokasi</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {attendances.map((att) => (
-                                        <tr key={att.id} className={`hover:bg-gray-50 ${selectedIds.includes(att.id) ? 'bg-blue-50' : ''}`}>
-                                            <td className="px-4 py-4 whitespace-nowrap">
+                        <>
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-4 py-3 text-left">
                                                 <input
                                                     type="checkbox"
                                                     className="rounded border-gray-300 text-[#1C3ECA] focus:ring-[#1C3ECA]"
-                                                    checked={selectedIds.includes(att.id)}
-                                                    onChange={() => toggleSelectOne(att.id)}
+                                                    checked={attendances.length > 0 && selectedIds.length === attendances.length}
+                                                    onChange={toggleSelectAll}
                                                 />
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                <div className="text-sm font-medium text-gray-900">{att.employee?.full_name || '-'}</div>
-                                                <div className="text-xs text-gray-500">{att.employee?.employee_code}</div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {formatDate(att.date)}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                                                {att.check_in ? att.check_in.substring(0, 5) : '-'}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                                                {att.check_out ? att.check_out.substring(0, 5) : '-'}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex flex-col gap-1">
-                                                    <span className={`px-2 py-0.5 inline-flex text-[10px] leading-4 font-bold rounded-full w-fit ${att.attendance_type === 'field' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
-                                                        {att.attendance_type === 'field' ? 'DINAS LUAR' : 'KANTOR'}
-                                                    </span>
-                                                    {att.is_offline && (
-                                                        <span className="px-2 py-0.5 inline-flex text-[10px] leading-4 font-bold rounded-full bg-orange-100 text-orange-800 w-fit ring-1 ring-orange-200">
-                                                            OFFLINE
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(att.status)}`}>
-                                                    {att.status.toUpperCase()}
-                                                </span>
-                                                {att.notes && <div className="text-xs text-gray-500 mt-1 max-w-[150px] truncate">{att.notes}</div>}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-[200px] truncate">
-                                                {att.location_address || '-'}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <button
-                                                    onClick={() => setSelectedAttendance(att)}
-                                                    className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-md transition-colors"
-                                                >
-                                                    Detail
-                                                </button>
-                                            </td>
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Karyawan</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Masuk</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Keluar</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe/Mode</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lokasi</th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {attendances.map((att) => (
+                                            <tr key={att.id} className={`hover:bg-gray-50 ${selectedIds.includes(att.id) ? 'bg-blue-50' : ''}`}>
+                                                <td className="px-4 py-4 whitespace-nowrap">
+                                                    <input
+                                                        type="checkbox"
+                                                        className="rounded border-gray-300 text-[#1C3ECA] focus:ring-[#1C3ECA]"
+                                                        checked={selectedIds.includes(att.id)}
+                                                        onChange={() => toggleSelectOne(att.id)}
+                                                    />
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    <div className="text-sm font-medium text-gray-900">{att.employee?.full_name || '-'}</div>
+                                                    <div className="text-xs text-gray-500">{att.employee?.employee_code}</div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {formatDate(att.date)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+                                                    {att.check_in ? att.check_in.substring(0, 5) : '-'}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+                                                    {att.check_out ? att.check_out.substring(0, 5) : '-'}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className={`px-2 py-0.5 inline-flex text-[10px] leading-4 font-bold rounded-full w-fit ${att.attendance_type === 'field' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
+                                                            {att.attendance_type === 'field' ? 'DINAS LUAR' : 'KANTOR'}
+                                                        </span>
+                                                        {att.is_offline && (
+                                                            <span className="px-2 py-0.5 inline-flex text-[10px] leading-4 font-bold rounded-full bg-orange-100 text-orange-800 w-fit ring-1 ring-orange-200">
+                                                                OFFLINE
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(att.status)}`}>
+                                                        {att.status.toUpperCase()}
+                                                    </span>
+                                                    {att.notes && <div className="text-xs text-gray-500 mt-1 max-w-[150px] truncate">{att.notes}</div>}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-[200px] truncate">
+                                                    {att.location_address || '-'}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                    <button
+                                                        onClick={() => setSelectedAttendance(att)}
+                                                        className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-md transition-colors"
+                                                    >
+                                                        Detail
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Pagination */}
+                            <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
+                                <div className="text-sm text-gray-600">
+                                    Menampilkan <span className="font-medium">{(currentPage - 1) * perPage + 1}</span> sampai <span className="font-medium">{Math.min(currentPage * perPage, totalData)}</span> dari <span className="font-medium">{totalData}</span> data
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => goToPage(1)}
+                                        disabled={currentPage <= 1}
+                                        className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        First
+                                    </button>
+                                    <button
+                                        onClick={() => goToPage(currentPage - 1)}
+                                        disabled={currentPage <= 1}
+                                        className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Prev
+                                    </button>
+                                    <span className="px-3 py-1.5 text-sm font-medium text-gray-700">
+                                        Halaman {currentPage} dari {lastPage}
+                                    </span>
+                                    <button
+                                        onClick={() => goToPage(currentPage + 1)}
+                                        disabled={currentPage >= lastPage}
+                                        className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Next
+                                    </button>
+                                    <button
+                                        onClick={() => goToPage(lastPage)}
+                                        disabled={currentPage >= lastPage}
+                                        className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Last
+                                    </button>
+                                </div>
+                            </div>
+                        </>
                     )}
                 </div>
             </div>

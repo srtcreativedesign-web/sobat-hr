@@ -45,6 +45,11 @@ export default function OperasionalAttendancePage() {
   const [filterDivision, setFilterDivision] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [selectedAttendance, setSelectedAttendance] = useState<Attendance | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [totalData, setTotalData] = useState(0);
+  const [perPage, setPerPage] = useState(20);
+  const [hasFiltered, setHasFiltered] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -52,7 +57,6 @@ export default function OperasionalAttendancePage() {
 
   useEffect(() => {
     fetchDivisions();
-    fetchAttendances();
   }, []);
 
   const fetchDivisions = async () => {
@@ -65,7 +69,7 @@ export default function OperasionalAttendancePage() {
     }
   };
 
-  const fetchAttendances = useCallback(async () => {
+  const fetchAttendances = useCallback(async (page = 1) => {
     try {
       setLoading(true);
       const params = new URLSearchParams({ track_type: 'operational' });
@@ -73,10 +77,17 @@ export default function OperasionalAttendancePage() {
       if (endDate) params.append('end_date', endDate);
       if (filterDivision) params.append('division_id', filterDivision);
       if (filterStatus) params.append('status', filterStatus);
+      params.append('page', String(page));
+      params.append('per_page', '20');
 
       const response = await apiClient.get(`/attendances?${params.toString()}`);
-      const data = response.data.data || response.data;
-      setAttendances(Array.isArray(data) ? data : []);
+      const res = response.data;
+      setAttendances(Array.isArray(res.data) ? res.data : []);
+      setCurrentPage(res.current_page || 1);
+      setLastPage(res.last_page || 1);
+      setTotalData(res.total || 0);
+      setPerPage(res.per_page || 20);
+      setHasFiltered(true);
     } catch (error) {
       console.error('Failed to fetch attendances:', error);
     } finally {
@@ -86,7 +97,14 @@ export default function OperasionalAttendancePage() {
 
   const handleFilter = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchAttendances();
+    setCurrentPage(1);
+    fetchAttendances(1);
+  };
+
+  const goToPage = (page: number) => {
+    if (page < 1 || page > lastPage) return;
+    setCurrentPage(page);
+    fetchAttendances(page);
   };
 
   const getPhotoUrl = (path: string | null) => {
@@ -246,71 +264,118 @@ export default function OperasionalAttendancePage() {
                 <option value="pending">Pending</option>
               </select>
             </div>
-            <button type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors">
+            <button type="submit" disabled={!startDate}
+              className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${!startDate ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
               Filter
             </button>
           </form>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Karyawan</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Tanggal</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Check In</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Outlet</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Validasi</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Status</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {loading ? (
-                  <tr><td colSpan={7} className="text-center py-12 text-gray-400">Memuat data...</td></tr>
-                ) : attendances.length === 0 ? (
-                  <tr><td colSpan={7} className="text-center py-12 text-gray-400">Tidak ada data absensi operasional</td></tr>
-                ) : attendances.map(att => (
-                  <tr key={att.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-gray-800">{att.employee?.full_name || '-'}</div>
-                      <div className="text-xs text-gray-400">{att.employee?.employee_code || ''}</div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{formatDate(att)}</td>
-                    <td className="px-4 py-3 text-gray-600">{formatDateTime(att.check_in || att.device_timestamp)}</td>
-                    <td className="px-4 py-3">
-                      <div className="text-gray-800">{att.outlet?.name || '-'}</div>
-                      {att.floor_number && <div className="text-xs text-gray-400">LT-{att.floor_number}</div>}
-                    </td>
-                    <td className="px-4 py-3">
-                      {att.validation_method ? (
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                          att.validation_method === 'qr_code' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
-                        }`}>
-                          {att.validation_method === 'qr_code' ? 'QR Code' : 'GPS'}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-gray-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusBadge(att.status)}`}>
-                        {att.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <button onClick={() => setSelectedAttendance(att)}
-                        className="px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                        Detail
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {loading ? (
+            <div className="p-12 text-center">
+              <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent"></div>
+              <p className="mt-3 text-gray-400">Memuat data...</p>
+            </div>
+          ) : attendances.length === 0 ? (
+            <div className="p-12 text-center">
+              {!hasFiltered ? (
+                <div>
+                  <svg className="mx-auto h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="text-gray-500 text-lg font-medium mb-2">Belum ada data ditampilkan</p>
+                  <p className="text-gray-400">Silakan pilih rentang tanggal dan klik <strong>Filter</strong> untuk menampilkan data absensi operasional.</p>
+                </div>
+              ) : (
+                <p className="text-gray-400">Tidak ada data absensi operasional untuk rentang tanggal tersebut.</p>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Karyawan</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Tanggal</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Check In</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Outlet</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Validasi</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Status</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {attendances.map(att => (
+                      <tr key={att.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-gray-800">{att.employee?.full_name || '-'}</div>
+                          <div className="text-xs text-gray-400">{att.employee?.employee_code || ''}</div>
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">{formatDate(att)}</td>
+                        <td className="px-4 py-3 text-gray-600">{formatDateTime(att.check_in || att.device_timestamp)}</td>
+                        <td className="px-4 py-3">
+                          <div className="text-gray-800">{att.outlet?.name || '-'}</div>
+                          {att.floor_number && <div className="text-xs text-gray-400">LT-{att.floor_number}</div>}
+                        </td>
+                        <td className="px-4 py-3">
+                          {att.validation_method ? (
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                              att.validation_method === 'qr_code' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                            }`}>
+                              {att.validation_method === 'qr_code' ? 'QR Code' : 'GPS'}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusBadge(att.status)}`}>
+                            {att.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <button onClick={() => setSelectedAttendance(att)}
+                            className="px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                            Detail
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
+                <div className="text-sm text-gray-600">
+                  Menampilkan <span className="font-medium">{(currentPage - 1) * perPage + 1}</span> sampai <span className="font-medium">{Math.min(currentPage * perPage, totalData)}</span> dari <span className="font-medium">{totalData}</span> data
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => goToPage(1)} disabled={currentPage <= 1}
+                    className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    First
+                  </button>
+                  <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage <= 1}
+                    className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    Prev
+                  </button>
+                  <span className="px-3 py-1.5 text-sm font-medium text-gray-700">
+                    Halaman {currentPage} dari {lastPage}
+                  </span>
+                  <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= lastPage}
+                    className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    Next
+                  </button>
+                  <button onClick={() => goToPage(lastPage)} disabled={currentPage >= lastPage}
+                    className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    Last
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
