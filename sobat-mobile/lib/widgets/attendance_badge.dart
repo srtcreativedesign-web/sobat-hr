@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 
 // ─────────────────────────────────────────────
 //  Enum status absensi
@@ -24,42 +25,42 @@ class AttendanceBadge extends StatelessWidget {
     this.showDot = true,
   });
 
-  _BadgeStyle get _style {
+  _BadgeStyle _style(BuildContext context) {
     switch (status) {
       case AttendanceStatus.onTime:
         return _BadgeStyle(
           bg:   const Color(0xFFD6EFBA),
           dot:  const Color(0xFF97C459),
           text: const Color(0xFF27500A),
-          label: 'Tepat Waktu',
+          label: AppLocalizations.of(context)!.onTimeLabel,
         );
       case AttendanceStatus.earlyLeave:
         return _BadgeStyle(
           bg:   const Color(0xFFFAEEDA),
           dot:  const Color(0xFFEF9F27),
           text: const Color(0xFF854F0B),
-          label: 'Keluar Lebih Awal',
+          label: AppLocalizations.of(context)!.earlyLeaveLabel,
         );
       case AttendanceStatus.late:
         return _BadgeStyle(
           bg:   const Color(0xFFFFE4E4),
           dot:  const Color(0xFFF08080),
           text: const Color(0xFFA32D2D),
-          label: 'Terlambat',
+          label: AppLocalizations.of(context)!.lateLabel,
         );
       case AttendanceStatus.absent:
         return _BadgeStyle(
           bg:   const Color(0xFFF1EFE8),
           dot:  const Color(0xFFB4B2A9),
           text: const Color(0xFF5F5E5A),
-          label: 'Tidak Hadir',
+          label: AppLocalizations.of(context)!.absentLabel,
         );
       case AttendanceStatus.inProgress:
         return _BadgeStyle(
           bg:   const Color(0xFFEEEDFE),
           dot:  const Color(0xFF7F77DD),
           text: const Color(0xFF3C3489),
-          label: 'Sedang Berlangsung',
+          label: AppLocalizations.of(context)!.inProgressLabel,
           animateDot: true,
         );
     }
@@ -67,7 +68,7 @@ class AttendanceBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = _style;
+    final s = _style(context);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

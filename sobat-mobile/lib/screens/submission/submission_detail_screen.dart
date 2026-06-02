@@ -1,12 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert'; // Added for base64Decode
+import 'dart:convert'; // Added for base64Encode
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../config/theme.dart';
 import '../../config/api_config.dart';
+import '../../l10n/app_localizations.dart';
 
 class SubmissionDetailScreen extends StatefulWidget {
   final Map<String, dynamic> submission;
@@ -19,6 +20,25 @@ class SubmissionDetailScreen extends StatefulWidget {
 
 class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
   bool _isDownloading = false;
+
+  String _mapTypeToTitle(BuildContext context, String? type) {
+    if (type == 'leave') return AppLocalizations.of(context)!.leave;
+    if (type == 'permit') return AppLocalizations.of(context)!.permitLabel;
+    if (type == 'sick' || type == 'sick_leave') return AppLocalizations.of(context)!.sick;
+    if (type == 'reimbursement') return AppLocalizations.of(context)!.reimbursement;
+    if (type == 'business_trip') return AppLocalizations.of(context)!.businessTrip;
+    if (type == 'overtime') return AppLocalizations.of(context)!.overtime;
+    if (type == 'asset') return AppLocalizations.of(context)!.assetLabel;
+    if (type == 'resignation') return AppLocalizations.of(context)!.resignationLabel;
+    return type?.replaceAll('_', ' ').toUpperCase() ?? AppLocalizations.of(context)!.submissions.toUpperCase();
+  }
+
+  String _mapStatusToLabel(BuildContext context, String? status) {
+    status = status?.toLowerCase();
+    if (status == 'approved') return AppLocalizations.of(context)!.approved;
+    if (status == 'rejected') return AppLocalizations.of(context)!.rejected;
+    return AppLocalizations.of(context)!.pending;
+  }
 
   Future<void> _downloadProof() async {
     setState(() => _isDownloading = true);
@@ -51,7 +71,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal mengunduh: $e'),
+            content: Text(AppLocalizations.of(context)!.downloadFailed(e.toString())),
             backgroundColor: Colors.red,
           ),
         );
@@ -77,13 +97,11 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localeName = Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US';
+
     // Extract data
-    final type =
-        widget.submission['type']
-            ?.toString()
-            .replaceAll('_', ' ')
-            .toUpperCase() ??
-        'PENGAJUAN';
+    final rawType = widget.submission['type']?.toString().toLowerCase() ?? '';
+    final typeStr = _mapTypeToTitle(context, rawType);
     final status =
         widget.submission['status']?.toString().toLowerCase() ?? 'pending';
     final reason =
@@ -102,7 +120,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
         final end = DateTime.parse(widget.submission['end_date']);
         final dayDiff = end.difference(start).inDays + 1;
         duration =
-            '${DateFormat('d MMM y', 'id_ID').format(start)} - ${DateFormat('d MMM y', 'id_ID').format(end)} ($dayDiff Hari)';
+            '${DateFormat('d MMM y', localeName).format(start)} - ${DateFormat('d MMM y', localeName).format(end)} (${AppLocalizations.of(context)!.daysCount(dayDiff.toString())})';
       } catch (_) {
         duration =
             '${widget.submission['start_date']} - ${widget.submission['end_date']}';
@@ -111,7 +129,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
       try {
         duration = DateFormat(
           'd MMM y',
-          'id_ID',
+          localeName,
         ).format(DateTime.parse(widget.submission['start_date']));
       } catch (_) {
         duration = widget.submission['start_date'];
@@ -122,7 +140,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
     String amount = '';
     if (widget.submission['amount'] != null) {
       amount = NumberFormat.currency(
-        locale: 'id_ID',
+        locale: localeName,
         symbol: 'Rp ',
         decimalDigits: 0,
       ).format(double.tryParse(widget.submission['amount'].toString()) ?? 0);
@@ -133,21 +151,21 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
     String statusLabel;
     if (status == 'approved') {
       statusColor = AppTheme.colorCyan;
-      statusLabel = 'Disetujui';
+      statusLabel = AppLocalizations.of(context)!.approved;
     } else if (status == 'rejected') {
       statusColor = Colors.red;
-      statusLabel = 'Ditolak';
+      statusLabel = AppLocalizations.of(context)!.rejected;
     } else {
       statusColor = Colors.orange;
-      statusLabel = 'Menunggu';
+      statusLabel = AppLocalizations.of(context)!.pending;
     }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text(
-          'Detail Pengajuan',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        title: Text(
+          AppLocalizations.of(context)!.submissionDetailTitle,
+          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -209,7 +227,9 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                         )
                       : const Icon(Icons.download),
                   label: Text(
-                    _isDownloading ? 'Mengunduh...' : 'Download Bukti Approval',
+                    _isDownloading
+                        ? AppLocalizations.of(context)!.downloading
+                        : AppLocalizations.of(context)!.downloadProofButton,
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.colorCyan,
@@ -225,42 +245,43 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
 
             const SizedBox(height: 32),
 
-            _buildDetailRow('Jenis Pengajuan', type),
+            _buildDetailRow(AppLocalizations.of(context)!.submissionType, typeStr),
             const SizedBox(height: 16),
-            _buildDetailRow('Tanggal', duration),
+            _buildDetailRow(AppLocalizations.of(context)!.date, duration),
             if (amount.isNotEmpty &&
                 ![
-                  'LEAVE',
-                  'SICK LEAVE',
-                  'BUSINESS TRIP',
-                  'OVERTIME',
-                ].contains(type)) ...[
+                  'leave',
+                  'sick',
+                  'sick_leave',
+                  'business_trip',
+                  'overtime',
+                ].contains(rawType)) ...[
               const SizedBox(height: 16),
-              _buildDetailRow('Nominal', amount),
+              _buildDetailRow(AppLocalizations.of(context)!.nominalLabel, amount),
             ],
             const SizedBox(height: 16),
-            _buildDetailRow('Keterangan', reason),
+            _buildDetailRow(AppLocalizations.of(context)!.description, reason),
 
             // Asset Details
             if (widget.submission['type'] == 'asset' &&
                 widget.submission['detail'] != null) ...[
               const SizedBox(height: 16),
               _buildDetailRow(
-                'Barang / Merek',
+                AppLocalizations.of(context)!.brandOrMake,
                 widget.submission['detail']['brand'] ?? '-',
               ),
               const SizedBox(height: 16),
               _buildDetailRow(
-                'Spesifikasi',
+                AppLocalizations.of(context)!.specification,
                 widget.submission['detail']['specification'] ?? '-',
               ),
               const SizedBox(height: 16),
               _buildDetailRow(
-                'Urgensi',
+                AppLocalizations.of(context)!.urgency,
                 (widget.submission['detail']['is_urgent'] == true ||
                         widget.submission['detail']['is_urgent'] == 1)
-                    ? 'Mendesak (Urgent)'
-                    : 'Normal',
+                    ? AppLocalizations.of(context)!.urgencyUrgent
+                    : AppLocalizations.of(context)!.urgencyNormal,
               ),
             ],
 
@@ -269,9 +290,9 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                 widget.submission['detail'] != null) ...[
               const SizedBox(height: 16),
               _buildDetailRow(
-                'Tanggal Terakhir Bekerja',
+                AppLocalizations.of(context)!.lastWorkingDate,
                 (widget.submission['detail']['last_working_date'] != null)
-                    ? DateFormat('d MMM y', 'id_ID').format(
+                    ? DateFormat('d MMM y', localeName).format(
                         DateTime.parse(
                           widget.submission['detail']['last_working_date'],
                         ),
@@ -279,15 +300,15 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                     : '-',
               ),
               const SizedBox(height: 16),
-              _buildDetailRow('Tipe Resign', 'Normal One Month Notice'),
+              _buildDetailRow(AppLocalizations.of(context)!.resignationType, AppLocalizations.of(context)!.resignationDefaultType),
             ],
 
             // Attachments
             if (attachments.isNotEmpty) ...[
               const SizedBox(height: 24),
-              const Text(
-                'Lampiran',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              Text(
+                AppLocalizations.of(context)!.attachment,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 12),
               SizedBox(
@@ -362,9 +383,9 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
 
             const SizedBox(height: 32),
             if (approvals.isNotEmpty) ...[
-              const Text(
-                'Riwayat Persetujuan',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              Text(
+                AppLocalizations.of(context)!.approvalHistory,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 12),
               ...((approvals).map((approval) {
@@ -399,10 +420,10 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Level $lvl • ${st.toString().toUpperCase()}'),
+                        Text('Level $lvl • ${_mapStatusToLabel(context, st).toUpperCase()}'),
                         if (note != null && note != 'null')
                           Text(
-                            'Note: $note',
+                            '${AppLocalizations.of(context)!.notes}: $note',
                             style: const TextStyle(fontSize: 12),
                           ),
                       ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../config/theme.dart';
 import '../../services/notification_service.dart';
+import '../../l10n/app_localizations.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -43,7 +44,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifikasi'),
+        title: Text(AppLocalizations.of(context)!.notifications),
         backgroundColor: Colors.white,
         foregroundColor: AppTheme.textDark,
         elevation: 0,
@@ -51,7 +52,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           if (_notifications.isNotEmpty)
             TextButton(
               onPressed: () => _markAsRead(null),
-              child: const Text('Tandai Semua Dibaca'),
+              child: Text(AppLocalizations.of(context)!.markAllAsRead),
             ),
         ],
       ),
@@ -72,15 +73,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   final item = _notifications[index];
                   final isRead = item['read_at'] != null;
                   final date = DateTime.parse(item['created_at']);
+                  final localeName = Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US';
                   final formattedDate = DateFormat(
                     'd MMM y HH:mm',
-                    'id_ID',
+                    localeName,
                   ).format(date);
 
                   // Parse data field if it's a string, or use directly if map
                   // Laravel DatabaseNotification 'data' is usually JSON/Array
                   final dataContent = item['data'] ?? {};
-                  final title = dataContent['title'] ?? 'Notifikasi';
+                  final title = dataContent['title'] ?? AppLocalizations.of(context)!.notifications;
                   final body =
                       dataContent['message'] ?? dataContent['body'] ?? '-';
 
@@ -152,7 +154,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Belum ada notifikasi',
+            AppLocalizations.of(context)!.noNotifications,
             style: TextStyle(
               fontSize: 16,
               color: Colors.grey.shade500,

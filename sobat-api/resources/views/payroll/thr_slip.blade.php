@@ -255,7 +255,6 @@
 
         <div class="footer">
             <p>Dokumen ini diterbitkan secara elektronik oleh SOBAT HR System.</p>
-            <p>Dicetak pada: {{ date('d/m/Y H:i:s') }}</p>
         </div>
     </div>
 </body>

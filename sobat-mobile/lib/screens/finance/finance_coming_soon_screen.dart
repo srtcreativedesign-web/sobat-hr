@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../config/api_config.dart';
+import '../../l10n/app_localizations.dart';
 
 class FinanceComingSoonScreen extends StatefulWidget {
   final VoidCallback? onBack;
@@ -101,7 +102,7 @@ class _FinanceComingSoonScreenState extends State<FinanceComingSoonScreen> {
                       ),
                       const SizedBox(width: 16),
                       Text(
-                        'Keuangan',
+                        AppLocalizations.of(context)!.financeTitle,
                         style: GoogleFonts.manrope(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
@@ -257,9 +258,9 @@ class _FinanceComingSoonScreenState extends State<FinanceComingSoonScreen> {
                               color: const Color(0xFF2F323A),
                             ),
                             children: [
-                              const TextSpan(text: 'Fitur Masih Dalam '),
+                              TextSpan(text: AppLocalizations.of(context)!.featureUnderDevelopmentPart1),
                               TextSpan(
-                                text: 'Pengembangan',
+                                text: AppLocalizations.of(context)!.featureUnderDevelopmentPart2,
                                 style: TextStyle(
                                   foreground: Paint()
                                     ..shader = const LinearGradient(
@@ -277,7 +278,7 @@ class _FinanceComingSoonScreenState extends State<FinanceComingSoonScreen> {
                         ),
                         const SizedBox(height: 20),
                         Text(
-                          'Kami sedang merancang fitur masa depan untuk meningkatkan produktivitas Anda. Segera hadir di genggaman Anda.',
+                          AppLocalizations.of(context)!.featureUnderDevelopmentDesc,
                           textAlign: TextAlign.center,
                           style: GoogleFonts.inter(
                             fontSize: 15,
@@ -312,13 +313,13 @@ class _FinanceComingSoonScreenState extends State<FinanceComingSoonScreen> {
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
+                            children: [
                               Text(
-                                'Kembali',
-                                style: TextStyle(fontWeight: FontWeight.w700),
+                                AppLocalizations.of(context)!.back,
+                                style: const TextStyle(fontWeight: FontWeight.w700),
                               ),
-                              SizedBox(width: 8),
-                              Icon(Icons.arrow_forward, size: 16),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.arrow_forward, size: 16),
                             ],
                           ),
                         ),
@@ -337,17 +338,17 @@ class _FinanceComingSoonScreenState extends State<FinanceComingSoonScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.end,
-                          children: const [
+                          children: [
                             Text(
-                              'KESIAPAN SISTEM',
-                              style: TextStyle(
+                              AppLocalizations.of(context)!.systemReadiness,
+                              style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w900,
                                 color: Color(0xFF777B84),
                                 letterSpacing: 1.2,
                               ),
                             ),
-                            Text(
+                            const Text(
                               '50%',
                               style: TextStyle(
                                 fontSize: 14,

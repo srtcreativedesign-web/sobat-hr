@@ -116,8 +116,8 @@
         <tr>
             <td class="info-label">Divisi</td>
             <td>: HEAD OFFICE</td>
-            <td class="info-label" style="text-align: right;">Tanggal</td>
-            <td style="text-align: right;">: {{ date('d/m/Y') }}</td>
+            <td class="info-label" style="text-align: right;"></td>
+            <td style="text-align: right;"></td>
         </tr>
         <tr>
             <td class="info-label">Jabatan</td>

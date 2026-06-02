@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'submission_detail_screen.dart';
 import '../../config/theme.dart';
+import '../../l10n/app_localizations.dart';
 import '../../widgets/submission_card.dart';
 import '../../services/request_service.dart';
 
@@ -41,7 +42,7 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Gagal memuat data: $e')));
+        ).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.errorLoadData} $e')));
       }
     }
   }
@@ -90,6 +91,14 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
       return false;
     }).toList();
 
+    final translatedFilters = [
+      AppLocalizations.of(context)!.allLabel,
+      AppLocalizations.of(context)!.pending,
+      AppLocalizations.of(context)!.approved,
+      AppLocalizations.of(context)!.rejected,
+    ];
+    final translatedFilterLabel = translatedFilters[_selectedFilterIndex];
+
     if (filtered.isEmpty) {
       return [
         const SizedBox(height: 48),
@@ -99,7 +108,7 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
               Icon(Icons.inbox_outlined, size: 48, color: Colors.grey.shade300),
               const SizedBox(height: 16),
               Text(
-                'Tidak ada pengajuan $selectedFilter',
+                AppLocalizations.of(context)!.noSubmissionWithStatus(translatedFilterLabel),
                 style: TextStyle(color: Colors.grey.shade400),
               ),
             ],
@@ -120,13 +129,14 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
     for (var item in filtered) {
       widgets.add(
         SubmissionCard(
-          title: _mapTypeToTitle(item['type']),
+          title: _mapTypeToTitle(context, item['type']),
           date: _formatDateRange(
+            context,
             item['start_date'],
             item['end_date'],
             item['created_at'],
           ),
-          status: _mapStatusToLabel(item['status']),
+          status: _mapStatusToLabel(context, item['status']),
           iconWidget: _mapTypeToIcon(item['type']),
           iconColor: _mapStatusToColor(item['status']),
           iconBgColor: _mapStatusToColor(item['status']).withValues(alpha: 0.1),
@@ -146,33 +156,40 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
     return widgets;
   }
 
-  String _mapTypeToTitle(String? type) {
-    if (type == 'leave') return 'Cuti';
-    if (type == 'permit') return 'Izin';
-    if (type == 'sick') return 'Sakit';
-    if (type == 'reimbursement') return 'Reimbursement';
-    if (type == 'business_trip') return 'Perjalanan Dinas';
-    return type?.replaceAll('_', ' ').toUpperCase() ?? 'PENGAJUAN';
+  String _mapTypeToTitle(BuildContext context, String? type) {
+    if (type == 'leave') return AppLocalizations.of(context)!.leave;
+    if (type == 'permit') return AppLocalizations.of(context)!.permitLabel;
+    if (type == 'sick' || type == 'sick_leave') return AppLocalizations.of(context)!.sick;
+    if (type == 'reimbursement') return AppLocalizations.of(context)!.reimbursement;
+    if (type == 'business_trip') return AppLocalizations.of(context)!.businessTrip;
+    if (type == 'overtime') return AppLocalizations.of(context)!.overtime;
+    if (type == 'asset') return AppLocalizations.of(context)!.assetLabel;
+    if (type == 'resignation') return AppLocalizations.of(context)!.resignationLabel;
+    return type?.replaceAll('_', ' ').toUpperCase() ?? AppLocalizations.of(context)!.submissions.toUpperCase();
   }
 
   Widget _mapTypeToIcon(String? type) {
-    if (type == 'sick') {
+    if (type == 'sick' || type == 'sick_leave') {
       return Padding(
         padding: const EdgeInsets.all(8),
         child: Image.asset('assets/icons/sick.png', fit: BoxFit.contain),
       );
     }
-    if (type == 'leave') return Icon(Icons.calendar_month, size: 24);
-    if (type == 'permit') return Icon(Icons.assignment_outlined, size: 24);
-    if (type == 'business_trip') return Icon(Icons.flight_takeoff, size: 24);
-    return Icon(Icons.description_outlined, size: 24);
+    if (type == 'leave') return const Icon(Icons.calendar_month, size: 24);
+    if (type == 'permit') return const Icon(Icons.assignment_outlined, size: 24);
+    if (type == 'business_trip') return const Icon(Icons.flight_takeoff, size: 24);
+    if (type == 'reimbursement') return const Icon(Icons.attach_money, size: 24);
+    if (type == 'overtime') return const Icon(Icons.schedule, size: 24);
+    if (type == 'asset') return const Icon(Icons.devices, size: 24);
+    if (type == 'resignation') return const Icon(Icons.logout, size: 24);
+    return const Icon(Icons.description_outlined, size: 24);
   }
 
-  String _mapStatusToLabel(String? status) {
+  String _mapStatusToLabel(BuildContext context, String? status) {
     status = status?.toLowerCase();
-    if (status == 'approved') return 'Disetujui';
-    if (status == 'rejected') return 'Ditolak';
-    return 'Menunggu';
+    if (status == 'approved') return AppLocalizations.of(context)!.approved;
+    if (status == 'rejected') return AppLocalizations.of(context)!.rejected;
+    return AppLocalizations.of(context)!.pending;
   }
 
   Color _mapStatusToColor(String? status) {
@@ -182,24 +199,25 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
     return const Color(0xFFF59E0B); // Orange/Pending
   }
 
-  String _formatDateRange(String? start, String? end, String? createdAt) {
+  String _formatDateRange(BuildContext context, String? start, String? end, String? createdAt) {
+    final localeName = Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US';
     try {
       if (start == null) {
         if (createdAt != null) {
           final created = DateTime.parse(createdAt);
-          return DateFormat('d MMM y', 'id_ID').format(created);
+          return DateFormat('d MMM y', localeName).format(created);
         }
         return '-';
       }
       final startDate = DateTime.parse(start);
-      final startStr = DateFormat('d MMM y', 'id_ID').format(startDate);
+      final startStr = DateFormat('d MMM y', localeName).format(startDate);
 
       if (end == null || start == end) return startStr;
 
       final endDate = DateTime.parse(end);
-      final endStr = DateFormat('d MMM y', 'id_ID').format(endDate);
+      final endStr = DateFormat('d MMM y', localeName).format(endDate);
 
-      return '$startStr s/d $endStr';
+      return '$startStr ${AppLocalizations.of(context)!.dateRangeSeparator} $endStr';
     } catch (_) {
       return start ?? '-';
     }
@@ -233,9 +251,9 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
                 ),
                 const SizedBox(width: 12),
               ],
-              const Text(
-                'Pengajuan',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context)!.submissions,
+                style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.textDark,
@@ -266,13 +284,20 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
   }
 
   Widget _buildFilters() {
+    final translatedFilters = [
+      AppLocalizations.of(context)!.allLabel,
+      AppLocalizations.of(context)!.pending,
+      AppLocalizations.of(context)!.approved,
+      AppLocalizations.of(context)!.rejected,
+    ];
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Row(
         children: _filters.asMap().entries.map((entry) {
           final index = entry.key;
-          final label = entry.value;
+          final label = translatedFilters[index];
           final isSelected = index == _selectedFilterIndex;
 
           return Padding(

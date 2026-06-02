@@ -1717,6 +1717,540 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Available'**
   String get available;
+
+  /// No description provided for @selfService.
+  ///
+  /// In en, this message translates to:
+  /// **'SELF SERVICE'**
+  String get selfService;
+
+  /// No description provided for @manageWorkNeeds.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your\nwork needs'**
+  String get manageWorkNeeds;
+
+  /// No description provided for @servicesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} services'**
+  String servicesCount(Object count);
+
+  /// No description provided for @attendanceAndTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance & Time'**
+  String get attendanceAndTime;
+
+  /// No description provided for @alignment.
+  ///
+  /// In en, this message translates to:
+  /// **'Alignment'**
+  String get alignment;
+
+  /// No description provided for @administration.
+  ///
+  /// In en, this message translates to:
+  /// **'Administration'**
+  String get administration;
+
+  /// No description provided for @leaveMenuDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit annual leave or permit'**
+  String get leaveMenuDesc;
+
+  /// No description provided for @sickMenuDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Sick leave'**
+  String get sickMenuDesc;
+
+  /// No description provided for @overtimeMenuDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit overtime'**
+  String get overtimeMenuDesc;
+
+  /// No description provided for @historyMenuDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Submission history'**
+  String get historyMenuDesc;
+
+  /// No description provided for @thrMenuDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Religious Holiday Allowance'**
+  String get thrMenuDesc;
+
+  /// No description provided for @businessTripMenuDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Business Trip'**
+  String get businessTripMenuDesc;
+
+  /// No description provided for @reimbursementMenuDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim expenses'**
+  String get reimbursementMenuDesc;
+
+  /// No description provided for @daysCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days'**
+  String daysCount(Object count);
+
+  /// No description provided for @newLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get newLabel;
+
+  /// No description provided for @noSubmissionWithStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'No submissions with status {status}'**
+  String noSubmissionWithStatus(Object status);
+
+  /// No description provided for @submissionTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Submission Type'**
+  String get submissionTypeLabel;
+
+  /// No description provided for @permitLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Permit'**
+  String get permitLabel;
+
+  /// No description provided for @resignationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Resignation'**
+  String get resignationLabel;
+
+  /// No description provided for @activeSubmissionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Submissions'**
+  String get activeSubmissionTitle;
+
+  /// No description provided for @dateRangeSeparator.
+  ///
+  /// In en, this message translates to:
+  /// **'to'**
+  String get dateRangeSeparator;
+
+  /// No description provided for @photoSourceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Photo Source'**
+  String get photoSourceTitle;
+
+  /// No description provided for @camera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get camera;
+
+  /// No description provided for @gallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery'**
+  String get gallery;
+
+  /// No description provided for @document.
+  ///
+  /// In en, this message translates to:
+  /// **'Document'**
+  String get document;
+
+  /// No description provided for @signatureDigital.
+  ///
+  /// In en, this message translates to:
+  /// **'Digital Signature'**
+  String get signatureDigital;
+
+  /// No description provided for @uploadProofLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Proof / Receipt'**
+  String get uploadProofLabel;
+
+  /// No description provided for @doctorCertificate.
+  ///
+  /// In en, this message translates to:
+  /// **'Doctor\'s Certificate'**
+  String get doctorCertificate;
+
+  /// No description provided for @photoDoctorCertificate.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo of Doctor\'s Certificate'**
+  String get photoDoctorCertificate;
+
+  /// No description provided for @photoItemOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo of Item (Optional)'**
+  String get photoItemOptional;
+
+  /// No description provided for @pleaseUploadDoctorCert.
+  ///
+  /// In en, this message translates to:
+  /// **'Please upload doctor\'s certificate.'**
+  String get pleaseUploadDoctorCert;
+
+  /// No description provided for @pleaseSignSubmission.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign the submission before sending.'**
+  String get pleaseSignSubmission;
+
+  /// No description provided for @submissionSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Submission sent successfully'**
+  String get submissionSuccess;
+
+  /// No description provided for @submissionFail.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send submission: {error}'**
+  String submissionFail(Object error);
+
+  /// No description provided for @selectDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Date'**
+  String get selectDate;
+
+  /// No description provided for @overtimeHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Overtime Hours'**
+  String get overtimeHours;
+
+  /// No description provided for @startOvertime.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get startOvertime;
+
+  /// No description provided for @endOvertime.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get endOvertime;
+
+  /// No description provided for @requiredField.
+  ///
+  /// In en, this message translates to:
+  /// **'Required'**
+  String get requiredField;
+
+  /// No description provided for @brandOrMake.
+  ///
+  /// In en, this message translates to:
+  /// **'Item / Brand'**
+  String get brandOrMake;
+
+  /// No description provided for @specification.
+  ///
+  /// In en, this message translates to:
+  /// **'Specification'**
+  String get specification;
+
+  /// No description provided for @urgency.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgency'**
+  String get urgency;
+
+  /// No description provided for @urgentCheckbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgent / Pressing'**
+  String get urgentCheckbox;
+
+  /// No description provided for @urgentDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Check if item is needed immediately'**
+  String get urgentDesc;
+
+  /// No description provided for @ineligibilityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Eligible'**
+  String get ineligibilityTitle;
+
+  /// No description provided for @ineligibilityReasonDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'You are not eligible for leave.'**
+  String get ineligibilityReasonDefault;
+
+  /// No description provided for @ineligibilityCantSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot submit leave.'**
+  String get ineligibilityCantSubmit;
+
+  /// No description provided for @iUnderstand.
+  ///
+  /// In en, this message translates to:
+  /// **'I Understand'**
+  String get iUnderstand;
+
+  /// No description provided for @writeSubmissionDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Write submission details here...'**
+  String get writeSubmissionDetail;
+
+  /// No description provided for @photoUploadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to capture image: {error}'**
+  String photoUploadError(Object error);
+
+  /// No description provided for @fileUploadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to select file: {error}'**
+  String fileUploadError(Object error);
+
+  /// No description provided for @resignationType.
+  ///
+  /// In en, this message translates to:
+  /// **'Resignation Type'**
+  String get resignationType;
+
+  /// No description provided for @lastWorkingDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Working Date'**
+  String get lastWorkingDate;
+
+  /// No description provided for @nominalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount (Rp)'**
+  String get nominalLabel;
+
+  /// No description provided for @downloadProofButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Approval Proof'**
+  String get downloadProofButton;
+
+  /// No description provided for @downloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading...'**
+  String get downloading;
+
+  /// No description provided for @downloadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to download: {error}'**
+  String downloadFailed(Object error);
+
+  /// No description provided for @approvalHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval History'**
+  String get approvalHistory;
+
+  /// No description provided for @urgencyUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgent'**
+  String get urgencyUrgent;
+
+  /// No description provided for @urgencyNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get urgencyNormal;
+
+  /// No description provided for @resignationDefaultType.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal One Month Notice'**
+  String get resignationDefaultType;
+
+  /// No description provided for @cutiDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply for annual leave or special leave.'**
+  String get cutiDesc;
+
+  /// No description provided for @sakitDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload doctor\'s certificate for sick leave.'**
+  String get sakitDesc;
+
+  /// No description provided for @reimburseDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim medical expenses, glasses, etc.'**
+  String get reimburseDesc;
+
+  /// No description provided for @lemburDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Record overtime hours for approval.'**
+  String get lemburDesc;
+
+  /// No description provided for @dinasDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit out-of-town business travel request.'**
+  String get dinasDesc;
+
+  /// No description provided for @asetDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Request office equipment or assets procurement.'**
+  String get asetDesc;
+
+  /// No description provided for @resignDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit resignation request.'**
+  String get resignDesc;
+
+  /// No description provided for @sisaCutiLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Balance: {balance} Days'**
+  String sisaCutiLabel(Object balance);
+
+  /// No description provided for @reimbursementLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Limit: Rp 5,000,000'**
+  String get reimbursementLimit;
+
+  /// No description provided for @reimbursementTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Example: Glasses, Client Lunch, etc.'**
+  String get reimbursementTitleHint;
+
+  /// No description provided for @brandHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Example: Macbook, Dell, Logitech'**
+  String get brandHint;
+
+  /// No description provided for @specHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain required specifications...'**
+  String get specHint;
+
+  /// No description provided for @purposeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Purpose / Need'**
+  String get purposeLabel;
+
+  /// No description provided for @assetLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Asset Request'**
+  String get assetLabel;
+
+  /// No description provided for @submissionDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Submission Detail'**
+  String get submissionDetailTitle;
+
+  /// No description provided for @onTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'On Time'**
+  String get onTimeLabel;
+
+  /// No description provided for @earlyLeaveLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Early Leave'**
+  String get earlyLeaveLabel;
+
+  /// No description provided for @lateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Late'**
+  String get lateLabel;
+
+  /// No description provided for @absentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Absent'**
+  String get absentLabel;
+
+  /// No description provided for @inProgressLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'In Progress'**
+  String get inProgressLabel;
+
+  /// No description provided for @markAllAsRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark All as Read'**
+  String get markAllAsRead;
+
+  /// No description provided for @noNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications yet'**
+  String get noNotifications;
+
+  /// No description provided for @financeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finance'**
+  String get financeTitle;
+
+  /// No description provided for @featureUnderDevelopmentPart1.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature Under '**
+  String get featureUnderDevelopmentPart1;
+
+  /// No description provided for @featureUnderDevelopmentPart2.
+  ///
+  /// In en, this message translates to:
+  /// **'Development'**
+  String get featureUnderDevelopmentPart2;
+
+  /// No description provided for @featureUnderDevelopmentDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'We are designing future features to improve your productivity. Coming soon to your hands.'**
+  String get featureUnderDevelopmentDesc;
+
+  /// No description provided for @systemReadiness.
+  ///
+  /// In en, this message translates to:
+  /// **'SYSTEM READINESS'**
+  String get systemReadiness;
+
+  /// No description provided for @createSubmission.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Submission'**
+  String get createSubmission;
 }
 
 class _AppLocalizationsDelegate

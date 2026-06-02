@@ -93,10 +93,6 @@
                     <div class="info-label">Periode</div>
                     <div class="info-value">: {{ date('F Y', strtotime($payroll->period . '-01')) }}</div>
                 </div>
-                <div class="info-row">
-                    <div class="info-label">Tanggal Cetak</div>
-                    <div class="info-value">: {{ date('d F Y') }}</div>
-                </div>
             </div>
         </div>
 

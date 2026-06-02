@@ -845,4 +845,289 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get available => 'Available';
+
+  @override
+  String get selfService => 'SELF SERVICE';
+
+  @override
+  String get manageWorkNeeds => 'Manage your\nwork needs';
+
+  @override
+  String servicesCount(Object count) {
+    return '$count services';
+  }
+
+  @override
+  String get attendanceAndTime => 'Attendance & Time';
+
+  @override
+  String get alignment => 'Alignment';
+
+  @override
+  String get administration => 'Administration';
+
+  @override
+  String get leaveMenuDesc => 'Submit annual leave or permit';
+
+  @override
+  String get sickMenuDesc => 'Sick leave';
+
+  @override
+  String get overtimeMenuDesc => 'Submit overtime';
+
+  @override
+  String get historyMenuDesc => 'Submission history';
+
+  @override
+  String get thrMenuDesc => 'Religious Holiday Allowance';
+
+  @override
+  String get businessTripMenuDesc => 'Business Trip';
+
+  @override
+  String get reimbursementMenuDesc => 'Claim expenses';
+
+  @override
+  String daysCount(Object count) {
+    return '$count days';
+  }
+
+  @override
+  String get newLabel => 'New';
+
+  @override
+  String noSubmissionWithStatus(Object status) {
+    return 'No submissions with status $status';
+  }
+
+  @override
+  String get submissionTypeLabel => 'Submission Type';
+
+  @override
+  String get permitLabel => 'Permit';
+
+  @override
+  String get resignationLabel => 'Resignation';
+
+  @override
+  String get activeSubmissionTitle => 'Submissions';
+
+  @override
+  String get dateRangeSeparator => 'to';
+
+  @override
+  String get photoSourceTitle => 'Choose Photo Source';
+
+  @override
+  String get camera => 'Camera';
+
+  @override
+  String get gallery => 'Gallery';
+
+  @override
+  String get document => 'Document';
+
+  @override
+  String get signatureDigital => 'Digital Signature';
+
+  @override
+  String get uploadProofLabel => 'Upload Proof / Receipt';
+
+  @override
+  String get doctorCertificate => 'Doctor\'s Certificate';
+
+  @override
+  String get photoDoctorCertificate => 'Photo of Doctor\'s Certificate';
+
+  @override
+  String get photoItemOptional => 'Photo of Item (Optional)';
+
+  @override
+  String get pleaseUploadDoctorCert => 'Please upload doctor\'s certificate.';
+
+  @override
+  String get pleaseSignSubmission =>
+      'Please sign the submission before sending.';
+
+  @override
+  String get submissionSuccess => 'Submission sent successfully';
+
+  @override
+  String submissionFail(Object error) {
+    return 'Failed to send submission: $error';
+  }
+
+  @override
+  String get selectDate => 'Select Date';
+
+  @override
+  String get overtimeHours => 'Overtime Hours';
+
+  @override
+  String get startOvertime => 'Start';
+
+  @override
+  String get endOvertime => 'End';
+
+  @override
+  String get requiredField => 'Required';
+
+  @override
+  String get brandOrMake => 'Item / Brand';
+
+  @override
+  String get specification => 'Specification';
+
+  @override
+  String get urgency => 'Urgency';
+
+  @override
+  String get urgentCheckbox => 'Urgent / Pressing';
+
+  @override
+  String get urgentDesc => 'Check if item is needed immediately';
+
+  @override
+  String get ineligibilityTitle => 'Not Eligible';
+
+  @override
+  String get ineligibilityReasonDefault => 'You are not eligible for leave.';
+
+  @override
+  String get ineligibilityCantSubmit => 'You cannot submit leave.';
+
+  @override
+  String get iUnderstand => 'I Understand';
+
+  @override
+  String get writeSubmissionDetail => 'Write submission details here...';
+
+  @override
+  String photoUploadError(Object error) {
+    return 'Failed to capture image: $error';
+  }
+
+  @override
+  String fileUploadError(Object error) {
+    return 'Failed to select file: $error';
+  }
+
+  @override
+  String get resignationType => 'Resignation Type';
+
+  @override
+  String get lastWorkingDate => 'Last Working Date';
+
+  @override
+  String get nominalLabel => 'Amount (Rp)';
+
+  @override
+  String get downloadProofButton => 'Download Approval Proof';
+
+  @override
+  String get downloading => 'Downloading...';
+
+  @override
+  String downloadFailed(Object error) {
+    return 'Failed to download: $error';
+  }
+
+  @override
+  String get approvalHistory => 'Approval History';
+
+  @override
+  String get urgencyUrgent => 'Urgent';
+
+  @override
+  String get urgencyNormal => 'Normal';
+
+  @override
+  String get resignationDefaultType => 'Normal One Month Notice';
+
+  @override
+  String get cutiDesc => 'Apply for annual leave or special leave.';
+
+  @override
+  String get sakitDesc => 'Upload doctor\'s certificate for sick leave.';
+
+  @override
+  String get reimburseDesc => 'Claim medical expenses, glasses, etc.';
+
+  @override
+  String get lemburDesc => 'Record overtime hours for approval.';
+
+  @override
+  String get dinasDesc => 'Submit out-of-town business travel request.';
+
+  @override
+  String get asetDesc => 'Request office equipment or assets procurement.';
+
+  @override
+  String get resignDesc => 'Submit resignation request.';
+
+  @override
+  String sisaCutiLabel(Object balance) {
+    return 'Leave Balance: $balance Days';
+  }
+
+  @override
+  String get reimbursementLimit => 'Limit: Rp 5,000,000';
+
+  @override
+  String get reimbursementTitleHint => 'Example: Glasses, Client Lunch, etc.';
+
+  @override
+  String get brandHint => 'Example: Macbook, Dell, Logitech';
+
+  @override
+  String get specHint => 'Explain required specifications...';
+
+  @override
+  String get purposeLabel => 'Purpose / Need';
+
+  @override
+  String get assetLabel => 'Asset Request';
+
+  @override
+  String get submissionDetailTitle => 'Submission Detail';
+
+  @override
+  String get onTimeLabel => 'On Time';
+
+  @override
+  String get earlyLeaveLabel => 'Early Leave';
+
+  @override
+  String get lateLabel => 'Late';
+
+  @override
+  String get absentLabel => 'Absent';
+
+  @override
+  String get inProgressLabel => 'In Progress';
+
+  @override
+  String get markAllAsRead => 'Mark All as Read';
+
+  @override
+  String get noNotifications => 'No notifications yet';
+
+  @override
+  String get financeTitle => 'Finance';
+
+  @override
+  String get featureUnderDevelopmentPart1 => 'Feature Under ';
+
+  @override
+  String get featureUnderDevelopmentPart2 => 'Development';
+
+  @override
+  String get featureUnderDevelopmentDesc =>
+      'We are designing future features to improve your productivity. Coming soon to your hands.';
+
+  @override
+  String get systemReadiness => 'SYSTEM READINESS';
+
+  @override
+  String get createSubmission => 'Create Submission';
 }

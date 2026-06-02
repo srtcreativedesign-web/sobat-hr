@@ -6,6 +6,7 @@ import 'dart:convert'; // Added for base64Encode
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:signature/signature.dart';
+import '../../l10n/app_localizations.dart';
 import '../../services/request_service.dart';
 
 class CreateSubmissionScreen extends StatefulWidget {
@@ -82,32 +83,25 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
 
   // ... (Existing Type Config) ...
   Map<String, dynamic> get _typeConfig {
-    // Reusing existing type config logic (omitted for brevity in replacement, but I must be careful not to delete it if I replacing the whole block.
-    // Wait, I should not replace the whole class if I can avoid it.
-    // Actually, let's just replace the relevant parts.
-    // I'll start by adding imports and variables using replace_file_content carefully.
-    // But wait, the previous `replace_file_content` instruction says I should replace the whole file content if I am making multiple edits? No, "Use this tool ONLY when you are making a SINGLE CONTIGUOUS block of edits".
-    // I need to make multiple edits: Imports, Class Fields, Dispose, Build Method (adding the widget), and Helper Method.
-    // I should use `multi_replace_file_content`.
     switch (widget.type) {
       case 'Cuti':
         return {
           'icon': Icons.calendar_month,
           'color': const Color(0xFFEA580C),
           'bgColor': const Color(0xFFFFF7ED),
-          'desc': 'Ajukan cuti tahunan atau cuti khusus.',
+          'desc': AppLocalizations.of(context)!.cutiDesc,
           'quota': _isLoading
-              ? 'Memuat...'
+              ? AppLocalizations.of(context)!.loading
               : (_isEligible
-                    ? 'Sisa Cuti: $_leaveBalance Hari'
-                    : 'Tidak Eligible'),
+                    ? AppLocalizations.of(context)!.sisaCutiLabel(_leaveBalance.toString())
+                    : AppLocalizations.of(context)!.notEligible),
         };
       case 'Sakit':
         return {
           'icon': Icons.thermostat,
           'color': const Color(0xFFE11D48),
           'bgColor': const Color(0xFFFFF1F2),
-          'desc': 'Upload surat dokter untuk cuti sakit.',
+          'desc': AppLocalizations.of(context)!.sakitDesc,
           'quota': null,
         };
       case 'Reimbursement':
@@ -115,15 +109,15 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
           'icon': Icons.attach_money,
           'color': const Color(0xFF059669),
           'bgColor': const Color(0xFFD1FAE5),
-          'desc': 'Klaim biaya medis, kacamata, dll.',
-          'quota': 'Limit: Rp 5.000.000',
+          'desc': AppLocalizations.of(context)!.reimburseDesc,
+          'quota': AppLocalizations.of(context)!.reimbursementLimit,
         };
       case 'Lembur':
         return {
           'icon': Icons.schedule,
           'color': const Color(0xFF2563EB), // Blue 600
           'bgColor': const Color(0xFFEFF6FF), // Blue 50
-          'desc': 'Catat jam lembur untuk persetujuan.',
+          'desc': AppLocalizations.of(context)!.lemburDesc,
           'quota': null,
         };
       case 'Perjalanan Dinas':
@@ -131,7 +125,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
           'icon': Icons.flight_takeoff,
           'color': const Color(0xFF4F46E5), // Indigo 600
           'bgColor': const Color(0xFFEEF2FF), // Indigo 50
-          'desc': 'Pengajuan perjalanan bisnis luar kota.',
+          'desc': AppLocalizations.of(context)!.dinasDesc,
           'quota': null,
         };
       case 'Pengajuan Aset':
@@ -139,7 +133,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
           'icon': Icons.devices,
           'color': const Color(0xFF7C3AED),
           'bgColor': const Color(0xFFEDE9FE),
-          'desc': 'Ajukan pengadaan barang atau aset kantor.',
+          'desc': AppLocalizations.of(context)!.asetDesc,
           'quota': null,
         };
       case 'Resign':
@@ -147,7 +141,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
           'icon': Icons.logout,
           'color': const Color(0xFFDC2626), // Red 600
           'bgColor': const Color(0xFFFEF2F2), // Red 50
-          'desc': 'Pengajuan pengunduran diri.',
+          'desc': AppLocalizations.of(context)!.resignDesc,
           'quota': null,
         };
       default:
@@ -155,9 +149,30 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
           'icon': Icons.description,
           'color': Colors.grey,
           'bgColor': Colors.grey.shade100,
-          'desc': 'Formulir pengajuan umum.',
+          'desc': AppLocalizations.of(context)!.featureComingSoon,
           'quota': null,
         };
+    }
+  }
+
+  String _translateType(String type) {
+    switch (type) {
+      case 'Cuti':
+        return AppLocalizations.of(context)!.leave;
+      case 'Sakit':
+        return AppLocalizations.of(context)!.sick;
+      case 'Lembur':
+        return AppLocalizations.of(context)!.overtime;
+      case 'Reimbursement':
+        return AppLocalizations.of(context)!.reimbursement;
+      case 'Perjalanan Dinas':
+        return AppLocalizations.of(context)!.businessTrip;
+      case 'Pengajuan Aset':
+        return AppLocalizations.of(context)!.assetLabel;
+      case 'Resign':
+        return AppLocalizations.of(context)!.resignationLabel;
+      default:
+        return type;
     }
   }
 
@@ -235,14 +250,14 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Buat Pengajuan',
+                        AppLocalizations.of(context)!.createSubmission,
                         style: TextStyle(
                           fontSize: 14,
                           color: AppTheme.textDark.withValues(alpha: 0.6),
                         ),
                       ),
                       Text(
-                        widget.type,
+                        _translateType(widget.type),
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -307,8 +322,8 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
                       ] else if (widget.type == 'Reimbursement') ...[
                         _buildTextInput(
                           _titleCtrl,
-                          'Judul Pengajuan',
-                          'Contoh: Kacamata, Makan Siang Client, dll',
+                          AppLocalizations.of(context)!.submissionTypeLabel,
+                          AppLocalizations.of(context)!.reimbursementTitleHint,
                         ),
                         const SizedBox(height: 20),
                         _buildDatePicker(),
@@ -319,29 +334,29 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
                       ] else if (widget.type == 'Pengajuan Aset') ...[
                         _buildTextInput(
                           _brandCtrl,
-                          'Merek / Brand',
-                          'Contoh: Macbook, Dell, Logitech',
+                          AppLocalizations.of(context)!.brandOrMake,
+                          AppLocalizations.of(context)!.brandHint,
                         ),
                         const SizedBox(height: 20),
                         _buildTextInput(
                           _specCtrl,
-                          'Spesifikasi',
-                          'Jelaskan spesifikasi yang dibutuhkan...',
+                          AppLocalizations.of(context)!.specification,
+                          AppLocalizations.of(context)!.specHint,
                           maxLines: 3,
                         ),
                         const SizedBox(height: 20),
-                        _buildAmountField(label: 'Estimasi Harga (Rp)'),
+                        _buildAmountField(label: AppLocalizations.of(context)!.nominalLabel),
                         const SizedBox(height: 20),
                         _buildUrgencySwitch(),
                         const SizedBox(height: 20),
-                        _buildUploadButton(label: 'Foto Contoh Barang'),
+                        _buildUploadButton(label: AppLocalizations.of(context)!.photoItemOptional),
                       ] else if (widget.type == 'Resign') ...[
-                        _buildLabel('Tanggal Terakhir Bekerja'),
+                        _buildLabel(AppLocalizations.of(context)!.lastWorkingDate),
                         _buildClickableInput(
                           icon: Icons.calendar_month,
                           value: _startDate != null
-                              ? DateFormat('dd MMM yyyy').format(_startDate!)
-                              : 'Pilih Tanggal',
+                              ? DateFormat('dd MMM yyyy', Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US').format(_startDate!)
+                              : AppLocalizations.of(context)!.selectDate,
                           isPlaceholder: _startDate == null,
                           onTap: () async {
                             final picked = await showDatePicker(
@@ -358,13 +373,13 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
                           },
                         ),
                         const SizedBox(height: 20),
-                        _buildUploadButton(label: 'Surat Pengunduran Diri'),
+                        _buildUploadButton(label: AppLocalizations.of(context)!.resignationLabel),
                       ],
 
                       const SizedBox(height: 20),
                       _buildReasonField(
                         label: widget.type == 'Pengajuan Aset'
-                            ? 'Kebutuhan (Untuk Apa)'
+                            ? AppLocalizations.of(context)!.purposeLabel
                             : null,
                       ),
 
@@ -386,9 +401,9 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
                             ),
                             elevation: 0,
                           ),
-                          child: const Text(
-                            'Kirim Pengajuan',
-                            style: TextStyle(
+                          child: Text(
+                            AppLocalizations.of(context)!.submit,
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -425,15 +440,15 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildLabel('Pilih Tanggal'),
+        _buildLabel(AppLocalizations.of(context)!.selectDate),
         Row(
           children: [
             Expanded(
               child: _buildClickableInput(
                 icon: Icons.calendar_today,
                 value: _startDate != null
-                    ? DateFormat('dd MMM yyyy').format(_startDate!)
-                    : 'Mulai',
+                    ? DateFormat('dd MMM yyyy', Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US').format(_startDate!)
+                    : AppLocalizations.of(context)!.startOvertime,
                 isPlaceholder: _startDate == null,
                 onTap: () async {
                   final picked = await showDatePicker(
@@ -458,8 +473,8 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
               child: _buildClickableInput(
                 icon: Icons.event,
                 value: _endDate != null
-                    ? DateFormat('dd MMM yyyy').format(_endDate!)
-                    : 'Selesai',
+                    ? DateFormat('dd MMM yyyy', Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US').format(_endDate!)
+                    : AppLocalizations.of(context)!.endOvertime,
                 isPlaceholder: _endDate == null,
                 onTap: () async {
                   final picked = await showDatePicker(
@@ -482,12 +497,12 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildLabel('Tanggal'),
+        _buildLabel(AppLocalizations.of(context)!.date),
         _buildClickableInput(
           icon: Icons.calendar_month,
           value: _startDate != null
-              ? DateFormat('dd MMM yyyy').format(_startDate!)
-              : 'Pilih Tanggal',
+              ? DateFormat('dd MMM yyyy', Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US').format(_startDate!)
+              : AppLocalizations.of(context)!.selectDate,
           isPlaceholder: _startDate == null,
           onTap: () async {
             final picked = await showDatePicker(
@@ -507,13 +522,13 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildLabel('Jam Lembur'),
+        _buildLabel(AppLocalizations.of(context)!.overtimeHours),
         Row(
           children: [
             Expanded(
               child: _buildClickableInput(
                 icon: Icons.access_time,
-                value: _startTime?.format(context) ?? 'Mulai',
+                value: _startTime?.format(context) ?? AppLocalizations.of(context)!.startOvertime,
                 isPlaceholder: _startTime == null,
                 onTap: () async {
                   final picked = await showTimePicker(
@@ -535,7 +550,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
             Expanded(
               child: _buildClickableInput(
                 icon: Icons.access_time_filled,
-                value: _endTime?.format(context) ?? 'Selesai',
+                value: _endTime?.format(context) ?? AppLocalizations.of(context)!.endOvertime,
                 isPlaceholder: _endTime == null,
                 onTap: () async {
                   final picked = await showTimePicker(
@@ -593,11 +608,12 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
     );
   }
 
-  Widget _buildAmountField({String label = 'Nominal (Rp)'}) {
+  Widget _buildAmountField({String? label}) {
+    final displayLabel = label ?? AppLocalizations.of(context)!.nominalLabel;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildLabel(label),
+        _buildLabel(displayLabel),
         TextFormField(
           controller: _amountCtrl,
           keyboardType: TextInputType.number,
@@ -616,22 +632,23 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
               borderSide: BorderSide(color: Colors.grey.shade200),
             ),
           ),
-          validator: (value) => value!.isEmpty ? 'Wajib diisi' : null,
+          validator: (value) => value!.isEmpty ? AppLocalizations.of(context)!.requiredField : null,
         ),
       ],
     );
   }
 
-  Widget _buildUploadButton({String label = 'Upload Bukti / Struk'}) {
+  Widget _buildUploadButton({String? label}) {
+    final displayLabel = label ?? AppLocalizations.of(context)!.uploadProofLabel;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildLabel(
           widget.type == 'Sakit'
-              ? 'Surat Dokter'
+              ? AppLocalizations.of(context)!.doctorCertificate
               : (widget.type == 'Pengajuan Aset'
-                    ? 'Foto Barang (Opsional)'
-                    : label),
+                    ? AppLocalizations.of(context)!.photoItemOptional
+                    : displayLabel),
         ),
         if (_selectedFile != null)
           Stack(
@@ -701,8 +718,8 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
         else
           DottedBorderButton(
             label: widget.type == 'Sakit'
-                ? 'Foto Surat Dokter'
-                : 'Upload Bukti',
+                ? AppLocalizations.of(context)!.photoDoctorCertificate
+                : AppLocalizations.of(context)!.uploadProofLabel,
             onTap: _showImageSourceModal,
           ),
       ],
@@ -720,9 +737,9 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Pilih Sumber Foto',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Text(
+              AppLocalizations.of(context)!.photoSourceTitle,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
             Row(
@@ -730,18 +747,18 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
               children: [
                 _buildSourceOption(
                   icon: Icons.camera_alt,
-                  label: 'Kamera',
+                  label: AppLocalizations.of(context)!.camera,
                   onTap: () => _pickImage(ImageSource.camera),
                 ),
                 _buildSourceOption(
                   icon: Icons.photo_library,
-                  label: 'Galeri',
+                  label: AppLocalizations.of(context)!.gallery,
                   onTap: () => _pickImage(ImageSource.gallery),
                 ),
                 if (widget.type == 'Resign')
                   _buildSourceOption(
                     icon: Icons.picture_as_pdf,
-                    label: 'Dokumen',
+                    label: AppLocalizations.of(context)!.document,
                     onTap: () => _pickFile(),
                   ),
               ],
@@ -802,7 +819,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Gagal mengambil gambar: $e')));
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.photoUploadError(e.toString()))));
     }
   }
 
@@ -826,7 +843,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Gagal mengambil file: $e')));
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.fileUploadError(e.toString()))));
     }
   }
 
@@ -837,15 +854,15 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
         _buildLabel(
           label ??
               (widget.type == 'Reimbursement' || widget.type == 'Sakit'
-                  ? 'Keterangan'
-                  : 'Alasan'),
+                  ? AppLocalizations.of(context)!.description
+                  : AppLocalizations.of(context)!.reason),
         ),
         TextFormField(
           controller: _reasonCtrl,
           maxLines: 4,
           style: const TextStyle(fontSize: 14),
           decoration: InputDecoration(
-            hintText: 'Tuliskan detail pengajuan di sini...',
+            hintText: AppLocalizations.of(context)!.writeSubmissionDetail,
             filled: true,
             fillColor: Colors.grey.shade50,
             border: OutlineInputBorder(
@@ -857,7 +874,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
               borderSide: BorderSide(color: Colors.grey.shade200),
             ),
           ),
-          validator: (value) => value!.isEmpty ? 'Wajib diisi' : null,
+          validator: (value) => value!.isEmpty ? AppLocalizations.of(context)!.requiredField : null,
         ),
       ],
     );
@@ -867,7 +884,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildLabel('Tanda Tangan Digital'),
+        _buildLabel(AppLocalizations.of(context)!.signatureDigital),
         Container(
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey.shade300),
@@ -942,7 +959,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
               borderSide: BorderSide(color: Colors.grey.shade200),
             ),
           ),
-          validator: (value) => value!.isEmpty ? 'Wajib diisi' : null,
+          validator: (value) => value!.isEmpty ? AppLocalizations.of(context)!.requiredField : null,
         ),
       ],
     );
@@ -970,14 +987,14 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Urgent / Mendesak',
+                  AppLocalizations.of(context)!.urgentCheckbox,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: _isUrgent ? Colors.red.shade700 : AppTheme.textDark,
                   ),
                 ),
                 Text(
-                  'Centang jika barang dibutuhkan segera',
+                  AppLocalizations.of(context)!.urgentDesc,
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
@@ -1017,9 +1034,9 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              const Text(
-                'Belum Eligible',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context)!.ineligibilityTitle,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.textDark,
@@ -1027,7 +1044,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                _ineligibilityMessage ?? 'Anda tidak memenuhi syarat cuti.',
+                _ineligibilityMessage ?? AppLocalizations.of(context)!.ineligibilityReasonDefault,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 14,
@@ -1047,7 +1064,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
                     backgroundColor: AppTheme.textDark,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: const Text('Saya Mengerti'),
+                  child: Text(AppLocalizations.of(context)!.iUnderstand),
                 ),
               ),
             ],
@@ -1061,8 +1078,8 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
     if (_formKey.currentState!.validate()) {
       if (widget.type == 'Sakit' && _selectedFile == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Harap upload surat dokter.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.pleaseUploadDoctorCert),
             backgroundColor: Colors.red,
           ),
         );
@@ -1071,8 +1088,8 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
 
       if (_signatureController.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Harap tanda tangani pengajuan sebelum mengirim.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.pleaseSignSubmission),
             backgroundColor: Colors.red,
           ),
         );
@@ -1083,7 +1100,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              _ineligibilityMessage ?? 'Anda tidak dapat mengajukan cuti.',
+              _ineligibilityMessage ?? AppLocalizations.of(context)!.ineligibilityCantSubmit,
             ),
             backgroundColor: Colors.red,
           ),
@@ -1203,8 +1220,8 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Pengajuan berhasil dikirim'),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.submissionSuccess),
               backgroundColor: Colors.green,
             ),
           );
@@ -1214,7 +1231,10 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
       // Error handled by AppErrorHandler in service
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.submissionFail(e.toString())),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       } finally {

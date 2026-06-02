@@ -845,4 +845,290 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get available => 'Tersedia';
+
+  @override
+  String get selfService => 'LAYANAN MANDIRI';
+
+  @override
+  String get manageWorkNeeds => 'Kelola kebutuhan\nkerja kamu';
+
+  @override
+  String servicesCount(Object count) {
+    return '$count layanan';
+  }
+
+  @override
+  String get attendanceAndTime => 'Kehadiran & Waktu';
+
+  @override
+  String get alignment => 'Alignment';
+
+  @override
+  String get administration => 'Administrasi';
+
+  @override
+  String get leaveMenuDesc => 'Ajukan cuti tahunan atau izin';
+
+  @override
+  String get sickMenuDesc => 'Cuti sakit';
+
+  @override
+  String get overtimeMenuDesc => 'Ajukan lembur';
+
+  @override
+  String get historyMenuDesc => 'Riwayat pengajuan';
+
+  @override
+  String get thrMenuDesc => 'Tunjangan Hari Raya';
+
+  @override
+  String get businessTripMenuDesc => 'Perjalanan Dinas';
+
+  @override
+  String get reimbursementMenuDesc => 'Klaim pengeluaran';
+
+  @override
+  String daysCount(Object count) {
+    return '$count hari';
+  }
+
+  @override
+  String get newLabel => 'Baru';
+
+  @override
+  String noSubmissionWithStatus(Object status) {
+    return 'Tidak ada pengajuan $status';
+  }
+
+  @override
+  String get submissionTypeLabel => 'Jenis Pengajuan';
+
+  @override
+  String get permitLabel => 'Izin';
+
+  @override
+  String get resignationLabel => 'Resign';
+
+  @override
+  String get activeSubmissionTitle => 'Pengajuan';
+
+  @override
+  String get dateRangeSeparator => 's/d';
+
+  @override
+  String get photoSourceTitle => 'Pilih Sumber Foto';
+
+  @override
+  String get camera => 'Kamera';
+
+  @override
+  String get gallery => 'Galeri';
+
+  @override
+  String get document => 'Dokumen';
+
+  @override
+  String get signatureDigital => 'Tanda Tangan Digital';
+
+  @override
+  String get uploadProofLabel => 'Upload Bukti / Struk';
+
+  @override
+  String get doctorCertificate => 'Surat Dokter';
+
+  @override
+  String get photoDoctorCertificate => 'Foto Surat Dokter';
+
+  @override
+  String get photoItemOptional => 'Foto Barang (Opsional)';
+
+  @override
+  String get pleaseUploadDoctorCert => 'Harap upload surat dokter.';
+
+  @override
+  String get pleaseSignSubmission =>
+      'Harap tanda tangani pengajuan sebelum mengirim.';
+
+  @override
+  String get submissionSuccess => 'Pengajuan berhasil dikirim';
+
+  @override
+  String submissionFail(Object error) {
+    return 'Gagal mengirim pengajuan: $error';
+  }
+
+  @override
+  String get selectDate => 'Pilih Tanggal';
+
+  @override
+  String get overtimeHours => 'Jam Lembur';
+
+  @override
+  String get startOvertime => 'Mulai';
+
+  @override
+  String get endOvertime => 'Selesai';
+
+  @override
+  String get requiredField => 'Wajib diisi';
+
+  @override
+  String get brandOrMake => 'Barang / Merek';
+
+  @override
+  String get specification => 'Spesifikasi';
+
+  @override
+  String get urgency => 'Urgensi';
+
+  @override
+  String get urgentCheckbox => 'Urgent / Mendesak';
+
+  @override
+  String get urgentDesc => 'Centang jika barang dibutuhkan segera';
+
+  @override
+  String get ineligibilityTitle => 'Belum Eligible';
+
+  @override
+  String get ineligibilityReasonDefault => 'Anda tidak memenuhi syarat cuti.';
+
+  @override
+  String get ineligibilityCantSubmit => 'Anda tidak dapat mengajukan cuti.';
+
+  @override
+  String get iUnderstand => 'Saya Mengerti';
+
+  @override
+  String get writeSubmissionDetail => 'Tuliskan detail pengajuan di sini...';
+
+  @override
+  String photoUploadError(Object error) {
+    return 'Gagal mengambil gambar: $error';
+  }
+
+  @override
+  String fileUploadError(Object error) {
+    return 'Gagal mengambil file: $error';
+  }
+
+  @override
+  String get resignationType => 'Tipe Resign';
+
+  @override
+  String get lastWorkingDate => 'Tanggal Terakhir Bekerja';
+
+  @override
+  String get nominalLabel => 'Nominal (Rp)';
+
+  @override
+  String get downloadProofButton => 'Download Bukti Approval';
+
+  @override
+  String get downloading => 'Mengunduh...';
+
+  @override
+  String downloadFailed(Object error) {
+    return 'Gagal mengunduh: $error';
+  }
+
+  @override
+  String get approvalHistory => 'Riwayat Persetujuan';
+
+  @override
+  String get urgencyUrgent => 'Mendesak (Urgent)';
+
+  @override
+  String get urgencyNormal => 'Normal';
+
+  @override
+  String get resignationDefaultType => 'Normal One Month Notice';
+
+  @override
+  String get cutiDesc => 'Ajukan cuti tahunan atau cuti khusus.';
+
+  @override
+  String get sakitDesc => 'Upload surat dokter untuk cuti sakit.';
+
+  @override
+  String get reimburseDesc => 'Klaim biaya medis, kacamata, dll.';
+
+  @override
+  String get lemburDesc => 'Catat jam lembur untuk persetujuan.';
+
+  @override
+  String get dinasDesc => 'Pengajuan perjalanan bisnis luar kota.';
+
+  @override
+  String get asetDesc => 'Ajukan pengadaan barang atau aset kantor.';
+
+  @override
+  String get resignDesc => 'Pengajuan pengunduran diri.';
+
+  @override
+  String sisaCutiLabel(Object balance) {
+    return 'Sisa Cuti: $balance Hari';
+  }
+
+  @override
+  String get reimbursementLimit => 'Limit: Rp 5.000.000';
+
+  @override
+  String get reimbursementTitleHint =>
+      'Contoh: Kacamata, Makan Siang Client, dll';
+
+  @override
+  String get brandHint => 'Contoh: Macbook, Dell, Logitech';
+
+  @override
+  String get specHint => 'Jelaskan spesifikasi yang dibutuhkan...';
+
+  @override
+  String get purposeLabel => 'Kebutuhan (Untuk Apa)';
+
+  @override
+  String get assetLabel => 'Pengajuan Aset';
+
+  @override
+  String get submissionDetailTitle => 'Detail Pengajuan';
+
+  @override
+  String get onTimeLabel => 'Tepat Waktu';
+
+  @override
+  String get earlyLeaveLabel => 'Keluar Lebih Awal';
+
+  @override
+  String get lateLabel => 'Terlambat';
+
+  @override
+  String get absentLabel => 'Tidak Hadir';
+
+  @override
+  String get inProgressLabel => 'Sedang Berlangsung';
+
+  @override
+  String get markAllAsRead => 'Tandai Semua Dibaca';
+
+  @override
+  String get noNotifications => 'Belum ada notifikasi';
+
+  @override
+  String get financeTitle => 'Keuangan';
+
+  @override
+  String get featureUnderDevelopmentPart1 => 'Fitur Masih Dalam ';
+
+  @override
+  String get featureUnderDevelopmentPart2 => 'Pengembangan';
+
+  @override
+  String get featureUnderDevelopmentDesc =>
+      'Kami sedang merancang fitur masa depan untuk meningkatkan produktivitas Anda. Segera hadir di genggaman Anda.';
+
+  @override
+  String get systemReadiness => 'KESIAPAN SISTEM';
+
+  @override
+  String get createSubmission => 'Buat Pengajuan';
 }

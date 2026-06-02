@@ -446,18 +446,18 @@ class _HomeScreenState extends State<HomeScreen> {
           if (item['check_in'] != null) {
             activities.add({
               'type': 'attendance',
+              'action': 'check_in',
               'date': DateTime.parse('${item['date']} ${item['check_in']}'),
-              'title': AppLocalizations.of(context)!.attendanceCheckIn,
-              'desc': AppLocalizations.of(context)!.attendanceCheckInDesc(item['check_in'] ?? ''),
+              'time': item['check_in'] ?? '',
               'status': 'success',
             });
           }
           if (item['check_out'] != null) {
             activities.add({
               'type': 'attendance',
+              'action': 'check_out',
               'date': DateTime.parse('${item['date']} ${item['check_out']}'),
-              'title': AppLocalizations.of(context)!.attendanceCheckOut,
-              'desc': AppLocalizations.of(context)!.attendanceCheckOutDesc(item['check_out'] ?? ''),
+              'time': item['check_out'] ?? '',
               'status': 'neutral',
             });
           }
@@ -470,29 +470,18 @@ class _HomeScreenState extends State<HomeScreen> {
       try {
         final requestsData = await RequestService().getRequests();
         if (!mounted) return;
-        final localeName = Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US';
         for (var item in requestsData) {
           final date = DateTime.parse(item['created_at']);
           String status = item['status'] ?? 'pending';
           String type = item['type'] ?? 'Request';
-          String title = '$type ${status == 'approved' ? AppLocalizations.of(context)!.approved : (status == 'rejected' ? AppLocalizations.of(context)!.rejected : AppLocalizations.of(context)!.submitted)}';
-
-          String formattedDate = '-';
-          try {
-            if (item['start_date'] != null) {
-              final dateObj = DateTime.parse(item['start_date']);
-              formattedDate = DateFormat('d MMM y', localeName).format(dateObj);
-            } else if (item['created_at'] != null) {
-              final dateObj = DateTime.parse(item['created_at']);
-              formattedDate = DateFormat('d MMM y', localeName).format(dateObj);
-            }
-          } catch (_) {}
 
           activities.add({
             'type': 'request',
             'date': date,
-            'title': title,
-            'desc': AppLocalizations.of(context)!.submissionOf(type, formattedDate),
+            'req_type': type,
+            'req_status': status,
+            'start_date': item['start_date'],
+            'created_at': item['created_at'],
             'status': status == 'approved'
                 ? 'success'
                 : (status == 'rejected' ? 'error' : 'warning'),
@@ -506,7 +495,6 @@ class _HomeScreenState extends State<HomeScreen> {
       try {
         final payrolls = await PayrollService().getPayrolls(year: now.year);
         if (!mounted) return;
-        final localeName = Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US';
         for (var item in payrolls) {
           final period = item['period'] ?? item['period_start'];
           if (period != null) {
@@ -522,8 +510,6 @@ class _HomeScreenState extends State<HomeScreen> {
             activities.add({
               'type': 'payroll',
               'date': date,
-              'title': AppLocalizations.of(context)!.salaryTitle(DateFormat('MMMM', localeName).format(date)),
-              'desc': AppLocalizations.of(context)!.payslipPublished,
               'status': 'info',
             });
           }
@@ -712,6 +698,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDashboardContent(User? user) {
+    final localeName = Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US';
     return RefreshIndicator(
       onRefresh: _onRefresh,
       color: AppTheme.colorEggplant,
@@ -797,7 +784,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Text(
                                   DateFormat(
                                     'EEEE, d MMM',
-                                    'id_ID',
+                                    localeName,
                                   ).format(DateTime.now()),
                                   style: TextStyle(
                                     fontSize: 12,
@@ -1070,11 +1057,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildAttendanceCard(User? user) {
     if (user == null) return const SizedBox.shrink();
 
+    final localeName = Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US';
+
     // Format Date
     final now = DateTime.now();
     final formattedDate = DateFormat(
       'EEEE, d MMMM y',
-      'id_ID',
+      localeName,
     ).format(now); // Full month name
 
     // Determine Status
@@ -2281,34 +2270,65 @@ class _HomeScreenState extends State<HomeScreen> {
                   IconData? icon;
                   String? assetIcon;
                   Color color;
+                  String title = '';
+                  String desc = '';
+
+                  final localeName = Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US';
+                  final date = activity['date'] as DateTime;
 
                   switch (activity['type']) {
                     case 'attendance':
                       icon = Icons.access_time;
-                      color = activity['status'] == 'success'
-                          ? Colors.green
+                      color = activity['action'] == 'check_in'
+                          ? (activity['status'] == 'success' ? Colors.green : Colors.orange)
                           : Colors.orange;
-                      if (activity['title'] == 'Absen Keluar') {
-                        color = Colors.orange;
+                      
+                      final action = activity['action'];
+                      final time = activity['time'] ?? '';
+                      if (action == 'check_in') {
+                        title = AppLocalizations.of(context)!.attendanceCheckIn;
+                        desc = AppLocalizations.of(context)!.attendanceCheckInDesc(time);
+                      } else {
+                        title = AppLocalizations.of(context)!.attendanceCheckOut;
+                        desc = AppLocalizations.of(context)!.attendanceCheckOutDesc(time);
                       }
                       break;
+
                     case 'request':
-                      final reqType = (activity['title'] ?? '').toLowerCase();
-                      if (reqType.contains('cuti') || reqType.contains('leave')) {
+                      final reqType = activity['req_type'] ?? '';
+                      final reqStatus = activity['req_status'] ?? 'pending';
+
+                      // Translate type
+                      String typeLabel = reqType;
+                      final lowerType = reqType.toString().toLowerCase();
+                      if (lowerType == 'leave' || lowerType == 'cuti') {
+                        typeLabel = AppLocalizations.of(context)!.leave;
                         assetIcon = 'assets/icons/leave.png';
                         color = const Color(0xFF534AB7);
-                      } else if (reqType.contains('sakit') || reqType.contains('sick')) {
+                      } else if (lowerType == 'sick_leave' || lowerType == 'sick' || lowerType == 'sakit') {
+                        typeLabel = AppLocalizations.of(context)!.sick;
                         assetIcon = 'assets/icons/sick.png';
                         color = const Color(0xFFA32D2D);
-                      } else if (reqType.contains('lembur') || reqType.contains('overtime')) {
+                      } else if (lowerType == 'overtime' || lowerType == 'lembur') {
+                        typeLabel = AppLocalizations.of(context)!.overtime;
                         assetIcon = 'assets/icons/overtime.png';
                         color = const Color(0xFF854F0B);
-                      } else if (reqType.contains('perjalanan dinas') || reqType.contains('business_trip')) {
+                      } else if (lowerType == 'business_trip' || lowerType == 'perjalanan dinas') {
+                        typeLabel = AppLocalizations.of(context)!.businessTrip;
                         assetIcon = 'assets/icons/bussines-trip.png';
                         color = const Color(0xFF3B6D11);
-                      } else if (reqType.contains('reimbursement')) {
+                      } else if (lowerType == 'reimbursement') {
+                        typeLabel = AppLocalizations.of(context)!.reimbursement;
                         assetIcon = 'assets/icons/reimburse.png';
                         color = const Color(0xFF534AB7);
+                      } else if (lowerType == 'asset' || lowerType == 'pengajuan aset') {
+                        typeLabel = AppLocalizations.of(context)!.assetLabel;
+                        icon = Icons.description;
+                        color = Colors.blue;
+                      } else if (lowerType == 'resignation' || lowerType == 'resign') {
+                        typeLabel = AppLocalizations.of(context)!.resignationLabel;
+                        icon = Icons.description;
+                        color = Colors.red;
                       } else {
                         icon = Icons.description;
                         color = activity['status'] == 'success'
@@ -2317,19 +2337,49 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ? Colors.red
                                   : Colors.blue);
                       }
+
+                      // Translate status
+                      String statusLabel = reqStatus;
+                      if (reqStatus == 'approved') {
+                        statusLabel = AppLocalizations.of(context)!.approved;
+                      } else if (reqStatus == 'rejected') {
+                        statusLabel = AppLocalizations.of(context)!.rejected;
+                      } else {
+                        statusLabel = AppLocalizations.of(context)!.submitted;
+                      }
+
+                      title = '$typeLabel $statusLabel';
+
+                      // Format date
+                      String formattedDate = '-';
+                      try {
+                        if (activity['start_date'] != null) {
+                          final dateObj = DateTime.parse(activity['start_date']);
+                          formattedDate = DateFormat('d MMM y', localeName).format(dateObj);
+                        } else if (activity['created_at'] != null) {
+                          final dateObj = DateTime.parse(activity['created_at']);
+                          formattedDate = DateFormat('d MMM y', localeName).format(dateObj);
+                        }
+                      } catch (_) {}
+
+                      desc = AppLocalizations.of(context)!.submissionOf(typeLabel, formattedDate);
                       break;
+
                     case 'payroll':
                       assetIcon = 'assets/icons/payslip.png';
                       color = Colors.purple;
+                      title = AppLocalizations.of(context)!.salaryTitle(DateFormat('MMMM', localeName).format(date));
+                      desc = AppLocalizations.of(context)!.payslipPublished;
                       break;
+
                     default:
                       icon = Icons.notifications;
                       color = Colors.grey;
+                      title = activity['title'] ?? 'Notification';
+                      desc = activity['desc'] ?? '';
                   }
 
                   // Format time relative or absolute
-                  final localeName = Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US';
-                  final date = activity['date'] as DateTime;
                   final timeStr = activity['type'] == 'payroll'
                       ? DateFormat('dd MMM yyyy', localeName).format(date)
                       : DateFormat('dd MMM, HH:mm', localeName).format(date);
@@ -2357,7 +2407,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      activity['title'],
+                                      title,
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 14,
@@ -2367,7 +2417,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                   if (activity['type'] == 'attendance')
                                     AttendanceBadge(
-                                      status: activity['title'] == 'Absen Masuk' 
+                                      status: activity['action'] == 'check_in' 
                                         ? (activity['status'] == 'success' ? AttendanceStatus.onTime : AttendanceStatus.late)
                                         : AttendanceStatus.onTime, // Assuming check out is usually onTime for now
                                       showDot: false,
@@ -2376,7 +2426,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                activity['desc'],
+                                desc,
                                 style: const TextStyle(
                                   color: AppTheme.textLight,
                                   fontSize: 12,

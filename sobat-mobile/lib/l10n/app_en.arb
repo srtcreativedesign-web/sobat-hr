@@ -323,5 +323,134 @@
   "checkThrSlip": "Check THR Slip",
   "tapToViewHistory": "*Tap to view history",
   "annualBonus": "Annual Bonus",
-  "available": "Available"
+  "available": "Available",
+  "selfService": "SELF SERVICE",
+  "manageWorkNeeds": "Manage your\nwork needs",
+  "servicesCount": "{count} services",
+  "@servicesCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "attendanceAndTime": "Attendance & Time",
+  "alignment": "Alignment",
+  "administration": "Administration",
+  "leaveMenuDesc": "Submit annual leave or permit",
+  "sickMenuDesc": "Sick leave",
+  "overtimeMenuDesc": "Submit overtime",
+  "historyMenuDesc": "Submission history",
+  "thrMenuDesc": "Religious Holiday Allowance",
+  "businessTripMenuDesc": "Business Trip",
+  "reimbursementMenuDesc": "Claim expenses",
+  "daysCount": "{count} days",
+  "@daysCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "newLabel": "New",
+  "noSubmissionWithStatus": "No submissions with status {status}",
+  "@noSubmissionWithStatus": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "submissionTypeLabel": "Submission Type",
+  "permitLabel": "Permit",
+  "resignationLabel": "Resignation",
+  "activeSubmissionTitle": "Submissions",
+  "dateRangeSeparator": "to",
+  "photoSourceTitle": "Choose Photo Source",
+  "camera": "Camera",
+  "gallery": "Gallery",
+  "document": "Document",
+  "signatureDigital": "Digital Signature",
+  "uploadProofLabel": "Upload Proof / Receipt",
+  "doctorCertificate": "Doctor's Certificate",
+  "photoDoctorCertificate": "Photo of Doctor's Certificate",
+  "photoItemOptional": "Photo of Item (Optional)",
+  "pleaseUploadDoctorCert": "Please upload doctor's certificate.",
+  "pleaseSignSubmission": "Please sign the submission before sending.",
+  "submissionSuccess": "Submission sent successfully",
+  "submissionFail": "Failed to send submission: {error}",
+  "@submissionFail": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "selectDate": "Select Date",
+  "overtimeHours": "Overtime Hours",
+  "startOvertime": "Start",
+  "endOvertime": "End",
+  "requiredField": "Required",
+  "brandOrMake": "Item / Brand",
+  "specification": "Specification",
+  "urgency": "Urgency",
+  "urgentCheckbox": "Urgent / Pressing",
+  "urgentDesc": "Check if item is needed immediately",
+  "ineligibilityTitle": "Not Eligible",
+  "ineligibilityReasonDefault": "You are not eligible for leave.",
+  "ineligibilityCantSubmit": "You cannot submit leave.",
+  "iUnderstand": "I Understand",
+  "writeSubmissionDetail": "Write submission details here...",
+  "photoUploadError": "Failed to capture image: {error}",
+  "@photoUploadError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "fileUploadError": "Failed to select file: {error}",
+  "@fileUploadError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "resignationType": "Resignation Type",
+  "lastWorkingDate": "Last Working Date",
+  "nominalLabel": "Amount (Rp)",
+  "downloadProofButton": "Download Approval Proof",
+  "downloading": "Downloading...",
+  "downloadFailed": "Failed to download: {error}",
+  "@downloadFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "approvalHistory": "Approval History",
+  "urgencyUrgent": "Urgent",
+  "urgencyNormal": "Normal",
+  "resignationDefaultType": "Normal One Month Notice",
+  "cutiDesc": "Apply for annual leave or special leave.",
+  "sakitDesc": "Upload doctor's certificate for sick leave.",
+  "reimburseDesc": "Claim medical expenses, glasses, etc.",
+  "lemburDesc": "Record overtime hours for approval.",
+  "dinasDesc": "Submit out-of-town business travel request.",
+  "asetDesc": "Request office equipment or assets procurement.",
+  "resignDesc": "Submit resignation request.",
+  "sisaCutiLabel": "Leave Balance: {balance} Days",
+  "@sisaCutiLabel": {
+    "placeholders": {
+      "balance": {}
+    }
+  },
+  "reimbursementLimit": "Limit: Rp 5,000,000",
+  "reimbursementTitleHint": "Example: Glasses, Client Lunch, etc.",
+  "brandHint": "Example: Macbook, Dell, Logitech",
+  "specHint": "Explain required specifications...",
+  "purposeLabel": "Purpose / Need",
+  "assetLabel": "Asset Request",
+  "submissionDetailTitle": "Submission Detail",
+  "onTimeLabel": "On Time",
+  "earlyLeaveLabel": "Early Leave",
+  "lateLabel": "Late",
+  "absentLabel": "Absent",
+  "inProgressLabel": "In Progress",
+  "markAllAsRead": "Mark All as Read",
+  "noNotifications": "No notifications yet",
+  "financeTitle": "Finance",
+  "featureUnderDevelopmentPart1": "Feature Under ",
+  "featureUnderDevelopmentPart2": "Development",
+  "featureUnderDevelopmentDesc": "We are designing future features to improve your productivity. Coming soon to your hands.",
+  "systemReadiness": "SYSTEM READINESS",
+  "createSubmission": "Create Submission"
 }

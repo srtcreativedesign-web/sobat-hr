@@ -1,8 +1,7 @@
 // Modernized Submission Menu Screen
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../../services/request_service.dart';
 
 class SubmissionMenuScreen extends StatefulWidget {
@@ -100,9 +99,9 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
                         Icons.chevron_left_rounded,
                         onTap: () => Navigator.pop(context),
                       ),
-                      const Text(
-                        'Submissions',
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.of(context)!.activeSubmissionTitle,
+                        style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: Color(0xB2EEEDFE),
@@ -114,9 +113,9 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
                   ),
                   const SizedBox(height: 32),
                   // Hero Text
-                  const Text(
-                    'LAYANAN MANDIRI',
-                    style: TextStyle(
+                  Text(
+                    AppLocalizations.of(context)!.selfService,
+                    style: const TextStyle(
                       fontSize: 11,
                       color: Color(0xFFAFA9EC),
                       letterSpacing: 1.1,
@@ -124,9 +123,9 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Kelola kebutuhan\nkerja kamu',
-                    style: TextStyle(
+                  Text(
+                    AppLocalizations.of(context)!.manageWorkNeeds,
+                    style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFFEEEDFE),
@@ -137,7 +136,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      _buildInfoBadge(Icons.calendar_today_rounded, '7 layanan'),
+                      _buildInfoBadge(Icons.calendar_today_rounded, AppLocalizations.of(context)!.servicesCount('7')),
                       const SizedBox(width: 12),
                       Container(
                         width: 4,
@@ -150,7 +149,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
                       const SizedBox(width: 12),
                       _buildInfoBadge(
                         Icons.access_time_rounded,
-                        DateFormat('EEEE, d MMM', 'id_ID').format(DateTime.now()),
+                        DateFormat('EEEE, d MMM', Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US').format(DateTime.now()),
                       ),
                     ],
                   ),
@@ -218,16 +217,16 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader('Kehadiran & Waktu', '4 layanan'),
+          _buildSectionHeader(AppLocalizations.of(context)!.attendanceAndTime, AppLocalizations.of(context)!.servicesCount('4')),
           const SizedBox(height: 14),
           _buildMenuItem(
             context,
             assetIcon: 'assets/icons/leave.png',
             iconColor: const Color(0xFF534AB7),
             bgColor: const Color(0xFFEEEDFE),
-            title: 'Leave',
-            subtitle: 'Ajukan cuti tahunan atau izin',
-            trailingText: _isLoadingBalance ? '...' : '$_leaveBalance hari',
+            title: AppLocalizations.of(context)!.leave,
+            subtitle: AppLocalizations.of(context)!.leaveMenuDesc,
+            trailingText: _isLoadingBalance ? '...' : AppLocalizations.of(context)!.daysCount(_leaveBalance.toString()),
             isFirst: true,
             onTap:
                 () => Navigator.pushNamed(
@@ -241,8 +240,8 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
             assetIcon: 'assets/icons/sick.png',
             iconColor: const Color(0xFFA32D2D),
             bgColor: const Color(0xFFFFE4E4),
-            title: 'Sick Leave',
-            subtitle: 'Cuti sakit',
+            title: AppLocalizations.of(context)!.sick,
+            subtitle: AppLocalizations.of(context)!.sickMenuDesc,
             onTap:
                 () => Navigator.pushNamed(
                   context,
@@ -255,8 +254,8 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
             assetIcon: 'assets/icons/overtime.png',
             iconColor: const Color(0xFF854F0B),
             bgColor: const Color(0xFFFAEEDA),
-            title: 'Overtime',
-            subtitle: 'Ajukan lembur',
+            title: AppLocalizations.of(context)!.overtime,
+            subtitle: AppLocalizations.of(context)!.overtimeMenuDesc,
             onTap:
                 () => Navigator.pushNamed(
                   context,
@@ -269,22 +268,22 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
             assetIcon: 'assets/icons/history.png',
             iconColor: const Color(0xFF3B6D11),
             bgColor: const Color(0xFFEAF3DE),
-            title: 'History',
-            subtitle: 'Riwayat pengajuan',
+            title: AppLocalizations.of(context)!.history,
+            subtitle: AppLocalizations.of(context)!.historyMenuDesc,
             isLast: true,
             onTap: () => Navigator.pushNamed(context, '/attendance/history'),
           ),
           const SizedBox(height: 24),
-          _buildSectionHeader('Administrasi', '3 layanan'),
+          _buildSectionHeader(AppLocalizations.of(context)!.administration, AppLocalizations.of(context)!.servicesCount('3')),
           const SizedBox(height: 14),
           _buildMenuItem(
             context,
             assetIcon: 'assets/icons/payslip.png',
             iconColor: const Color(0xFF854F0B),
             bgColor: const Color(0xFFFAEEDA),
-            title: 'Slip THR',
-            subtitle: 'Tunjangan Hari Raya',
-            trailingText: 'Baru',
+            title: AppLocalizations.of(context)!.thr,
+            subtitle: AppLocalizations.of(context)!.thrMenuDesc,
+            trailingText: AppLocalizations.of(context)!.newLabel,
             isFirst: true,
             onTap: () => Navigator.pushNamed(context, '/payroll/thr'),
           ),
@@ -293,8 +292,8 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
             assetIcon: 'assets/icons/bussines-trip.png',
             iconColor: const Color(0xFF3B6D11),
             bgColor: const Color(0xFFEAF3DE),
-            title: 'Perjalanan Dinas',
-            subtitle: 'Business Trip',
+            title: AppLocalizations.of(context)!.businessTrip,
+            subtitle: AppLocalizations.of(context)!.businessTripMenuDesc,
             onTap:
                 () => Navigator.pushNamed(
                   context,
@@ -307,8 +306,8 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
             assetIcon: 'assets/icons/reimburse.png',
             iconColor: const Color(0xFF534AB7),
             bgColor: const Color(0xFFEEEDFE),
-            title: 'Reimbursement',
-            subtitle: 'Klaim pengeluaran',
+            title: AppLocalizations.of(context)!.reimbursement,
+            subtitle: AppLocalizations.of(context)!.reimbursementMenuDesc,
             isLast: true,
             onTap:
                 () => Navigator.pushNamed(
