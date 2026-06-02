@@ -20,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -58,6 +58,8 @@ class DatabaseHelper {
         field_notes $textTypeNullable,
         location_id $textTypeNullable,
         location_name $textTypeNullable,
+        shift_start_time $textTypeNullable,
+        shift_end_time $textTypeNullable,
         is_synced $intType DEFAULT 0,
         sync_attempts $intType DEFAULT 0,
         last_sync_attempt_at $textTypeNullable,
@@ -118,6 +120,11 @@ class DatabaseHelper {
       // Add location fields for triple-location geofencing
       await db.execute('ALTER TABLE offline_attendances ADD COLUMN location_id TEXT');
       await db.execute('ALTER TABLE offline_attendances ADD COLUMN location_name TEXT');
+    }
+    if (oldVersion < 4) {
+      // Add shift time fields
+      await db.execute('ALTER TABLE offline_attendances ADD COLUMN shift_start_time TEXT');
+      await db.execute('ALTER TABLE offline_attendances ADD COLUMN shift_end_time TEXT');
     }
   }
 

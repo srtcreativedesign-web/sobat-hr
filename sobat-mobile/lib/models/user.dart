@@ -95,7 +95,7 @@ class User {
       empRecordId = json['employee']['id']; // Store integer ID
       empId = json['employee']['employee_code'];
       jobLvl = json['employee']['job_level'];
-      trk = json['employee']['track'];
+      trk = json['employee']['track'] ?? json['employee']['track_type'];
       pos = json['employee']['position'];
 
       // Parse Shift Name

@@ -166,7 +166,7 @@ class OfflineAttendanceHandler {
                         onPressed: () {
                           Navigator.pop(ctx);
                           if (trackType == 'operational') {
-                            _navigateToQrScanner();
+                            _showShiftPicker();
                           } else {
                             _captureGpsAndSelfie();
                           }
@@ -258,8 +258,278 @@ class OfflineAttendanceHandler {
   }
 
 
+  /// Show shift picker bottom sheet for operational track
+  void _showShiftPicker() {
+    TimeOfDay startTime = const TimeOfDay(hour: 7, minute: 0);
+    TimeOfDay endTime = const TimeOfDay(hour: 15, minute: 0);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      isDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setSheetState) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Icon
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1565C0), Color(0xFF0D47A1)],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.blue.withValues(alpha: 0.3),
+                      blurRadius: 12, offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.schedule_rounded, color: Colors.white, size: 28),
+              ),
+              const SizedBox(height: 16),
+
+              const Text(
+                'Jadwal Shift Hari Ini',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.textDark),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Pilih jam mulai dan selesai shift Anda',
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 24),
+
+              // Shift time cards
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Column(
+                  children: [
+                    // Start time
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: startTime,
+                          builder: (context, child) => Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: Theme.of(context).colorScheme.copyWith(
+                                primary: AppTheme.colorCyan,
+                              ),
+                            ),
+                            child: child!,
+                          ),
+                        );
+                        if (picked != null) {
+                          setSheetState(() => startTime = picked);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.login_rounded, color: Colors.green, size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Jam Mulai Shift', style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w500)),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    startTime.format(context),
+                                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.textDark),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(Icons.edit_rounded, size: 18, color: Colors.grey[400]),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    Divider(color: Colors.grey[200], height: 20),
+
+                    // End time
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: endTime,
+                          builder: (context, child) => Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: Theme.of(context).colorScheme.copyWith(
+                                primary: AppTheme.colorCyan,
+                              ),
+                            ),
+                            child: child!,
+                          ),
+                        );
+                        if (picked != null) {
+                          setSheetState(() => endTime = picked);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.logout_rounded, color: Colors.red, size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Jam Selesai Shift', style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w500)),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    endTime.format(context),
+                                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.textDark),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(Icons.edit_rounded, size: 18, color: Colors.grey[400]),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Validation warning
+              if (endTime.hour * 60 + endTime.minute <= startTime.hour * 60 + startTime.minute)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.warning_rounded, size: 16, color: Colors.red[600]),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Jam selesai harus setelah jam mulai!',
+                          style: TextStyle(fontSize: 12, color: Colors.red[700], fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              const SizedBox(height: 24),
+
+              // Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: BorderSide(color: Colors.grey[300]!),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: (endTime.hour * 60 + endTime.minute <= startTime.hour * 60 + startTime.minute)
+                          ? null
+                          : () {
+                              Navigator.pop(ctx);
+                              final shiftStart = '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}';
+                              final shiftEnd = '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}';
+                              _navigateToQrScanner(
+                                shiftStartTime: shiftStart,
+                                shiftEndTime: shiftEnd,
+                              );
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.colorCyan,
+                        disabledBackgroundColor: Colors.grey[300],
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 20),
+                          SizedBox(width: 8),
+                          Text('Lanjut Scan QR',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Navigate to QR scanner for operational track
-  void _navigateToQrScanner() async {
+  void _navigateToQrScanner({String? shiftStartTime, String? shiftEndTime}) async {
     try {
       final qrCodeData = await Navigator.push<String>(
         context,
@@ -304,6 +574,8 @@ class OfflineAttendanceHandler {
           qrCodeData: qrCodeData,
           gpsLatitude: lat,
           gpsLongitude: lng,
+          shiftStartTime: shiftStartTime,
+          shiftEndTime: shiftEndTime,
         );
       }
     } catch (e) {
@@ -354,6 +626,8 @@ class OfflineAttendanceHandler {
     String? qrCodeData,
     double? gpsLatitude,
     double? gpsLongitude,
+    String? shiftStartTime,
+    String? shiftEndTime,
   }) async {
     final user = context.read<AuthProvider>().user;
     final trackType = user?.trackType ?? 'head_office';
@@ -384,6 +658,8 @@ class OfflineAttendanceHandler {
           photoPath: result['photoPath'],
           photoBase64: result['photoBase64'],
           locationAddress: result['address'],
+          shiftStartTime: shiftStartTime,
+          shiftEndTime: shiftEndTime,
         );
       }
     } catch (e) {
@@ -404,6 +680,8 @@ class OfflineAttendanceHandler {
     required String photoPath,
     required String photoBase64,
     String? locationAddress,
+    String? shiftStartTime,
+    String? shiftEndTime,
   }) async {
     try {
       _showLoading('Memproses absensi...');
@@ -433,6 +711,8 @@ class OfflineAttendanceHandler {
             notes: qrCodeData,
             attendanceType: 'office',
             trackType: trackType,
+            shiftStartTime: shiftStartTime,
+            shiftEndTime: shiftEndTime,
           ).timeout(const Duration(seconds: 30));
 
           if (!context.mounted) return;
@@ -486,6 +766,8 @@ class OfflineAttendanceHandler {
         photoBase64: photoBase64,
         locationAddress: locationAddress,
         attendanceType: 'office',
+        shiftStartTime: shiftStartTime,
+        shiftEndTime: shiftEndTime,
       );
 
       if (!context.mounted) return;
@@ -522,6 +804,8 @@ class OfflineAttendanceHandler {
     required String qrCodeData,
     double? gpsLatitude,
     double? gpsLongitude,
+    String? shiftStartTime,
+    String? shiftEndTime,
   }) async {
     String outletName = 'Outlet Tidak Diketahui';
     String outletCode = '-';
@@ -703,6 +987,8 @@ class OfflineAttendanceHandler {
                         qrCodeData: qrCodeData,
                         gpsLatitude: gpsLatitude,
                         gpsLongitude: gpsLongitude,
+                        shiftStartTime: shiftStartTime,
+                        shiftEndTime: shiftEndTime,
                       );
                     },
                     style: ElevatedButton.styleFrom(

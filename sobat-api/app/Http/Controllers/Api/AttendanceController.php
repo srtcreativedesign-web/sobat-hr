@@ -104,6 +104,8 @@ class AttendanceController extends Controller
             'field_notes' => 'nullable|string|required_if:attendance_type,field',
             'track_type' => 'nullable|in:operational,head_office,office',
             'is_shifting' => 'nullable|boolean',
+            'shift_start_time' => 'nullable|date_format:H:i',
+            'shift_end_time' => 'nullable|date_format:H:i',
         ]);
 
         $employee = Employee::find($validated['employee_id']);
@@ -172,26 +174,11 @@ class AttendanceController extends Controller
 
         // Late/Status calculation (skip if already pending from field attendance)
         if ($validated['status'] !== 'pending') {
-            // Check if user claimed shifting
-            if (isset($validated['is_shifting']) && $validated['is_shifting'] == true) {
-                $validated['status'] = 'present';
-                $validated['late_duration'] = 0;
-            } else {
-                // Get employee shift
-                $shift = $employee->shift;
-                $defaultStartTime = '08:00:00';
+            $clockInTime = Carbon::parse($validated['date'] . ' ' . $validated['check_in']);
 
-                if ($shift) {
-                    // Use shift start time if available
-                    $startTimeStr = $shift->start_time instanceof Carbon
-                        ? $shift->start_time->format('H:i:s')
-                        : Carbon::parse($shift->start_time)->format('H:i:s');
-                    $workStartTime = Carbon::parse($validated['date'] . ' ' . $startTimeStr);
-                } else {
-                    $workStartTime = Carbon::parse($validated['date'] . ' ' . $defaultStartTime);
-                }
-
-                $clockInTime = Carbon::parse($validated['date'] . ' ' . $validated['check_in']);
+            // Operational track with shift schedule: use shift_start_time for late calc
+            if ($trackType === 'operational' && !empty($validated['shift_start_time'])) {
+                $workStartTime = Carbon::parse($validated['date'] . ' ' . $validated['shift_start_time']);
 
                 if ($clockInTime->gt($workStartTime)) {
                     $lateDuration = abs($clockInTime->diffInMinutes($workStartTime));
@@ -204,6 +191,39 @@ class AttendanceController extends Controller
                     }
                 } else {
                     $validated['status'] = 'present';
+                }
+            } else {
+                // Check if user claimed shifting (head_office only)
+                if (isset($validated['is_shifting']) && $validated['is_shifting'] == true) {
+                    $validated['status'] = 'present';
+                    $validated['late_duration'] = 0;
+                } else {
+                    // Get employee shift
+                    $shift = $employee->shift;
+                    $defaultStartTime = '08:00:00';
+
+                    if ($shift) {
+                        // Use shift start time if available
+                        $startTimeStr = $shift->start_time instanceof Carbon
+                            ? $shift->start_time->format('H:i:s')
+                            : Carbon::parse($shift->start_time)->format('H:i:s');
+                        $workStartTime = Carbon::parse($validated['date'] . ' ' . $startTimeStr);
+                    } else {
+                        $workStartTime = Carbon::parse($validated['date'] . ' ' . $defaultStartTime);
+                    }
+
+                    if ($clockInTime->gt($workStartTime)) {
+                        $lateDuration = abs($clockInTime->diffInMinutes($workStartTime));
+                        $validated['late_duration'] = $lateDuration;
+
+                        if ($lateDuration > 5) {
+                            $validated['status'] = 'pending';
+                        } else {
+                            $validated['status'] = 'late';
+                        }
+                    } else {
+                        $validated['status'] = 'present';
+                    }
                 }
             }
         }

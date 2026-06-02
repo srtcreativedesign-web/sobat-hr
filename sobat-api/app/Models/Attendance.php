@@ -46,6 +46,8 @@ class Attendance extends Model
         'review_status',
         'review_notes',
         'is_shifting',
+        'shift_start_time',
+        'shift_end_time',
     ];
 
     protected $casts = [

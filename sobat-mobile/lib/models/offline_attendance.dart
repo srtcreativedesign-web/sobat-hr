@@ -15,6 +15,8 @@ class OfflineAttendance {
   final String? locationAddress;
   final String? attendanceType;
   final String? fieldNotes;
+  final String? shiftStartTime;
+  final String? shiftEndTime;
   final bool isSynced;
   final int syncAttempts;
   final String? lastSyncAttemptAt;
@@ -41,6 +43,8 @@ class OfflineAttendance {
     this.locationAddress,
     this.attendanceType,
     this.fieldNotes,
+    this.shiftStartTime,
+    this.shiftEndTime,
     this.isSynced = false,
     this.syncAttempts = 0,
     this.lastSyncAttemptAt,
@@ -70,6 +74,8 @@ class OfflineAttendance {
       locationAddress: map['location_address'] as String?,
       attendanceType: map['attendance_type'] as String?,
       fieldNotes: map['field_notes'] as String?,
+      shiftStartTime: map['shift_start_time'] as String?,
+      shiftEndTime: map['shift_end_time'] as String?,
       isSynced: (map['is_synced'] as int) == 1,
       syncAttempts: map['sync_attempts'] as int? ?? 0,
       lastSyncAttemptAt: map['last_sync_attempt_at'] as String?,
@@ -100,6 +106,8 @@ class OfflineAttendance {
       'location_address': locationAddress,
       'attendance_type': attendanceType,
       'field_notes': fieldNotes,
+      'shift_start_time': shiftStartTime,
+      'shift_end_time': shiftEndTime,
       'is_synced': isSynced ? 1 : 0,
       'sync_attempts': syncAttempts,
       'last_sync_attempt_at': lastSyncAttemptAt,
@@ -129,6 +137,8 @@ class OfflineAttendance {
     String? locationAddress,
     String? attendanceType,
     String? fieldNotes,
+    String? shiftStartTime,
+    String? shiftEndTime,
     bool? isSynced,
     int? syncAttempts,
     String? lastSyncAttemptAt,
@@ -155,6 +165,8 @@ class OfflineAttendance {
       locationAddress: locationAddress ?? this.locationAddress,
       attendanceType: attendanceType ?? this.attendanceType,
       fieldNotes: fieldNotes ?? this.fieldNotes,
+      shiftStartTime: shiftStartTime ?? this.shiftStartTime,
+      shiftEndTime: shiftEndTime ?? this.shiftEndTime,
       isSynced: isSynced ?? this.isSynced,
       syncAttempts: syncAttempts ?? this.syncAttempts,
       lastSyncAttemptAt: lastSyncAttemptAt ?? this.lastSyncAttemptAt,

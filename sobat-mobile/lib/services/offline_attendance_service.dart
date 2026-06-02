@@ -47,6 +47,8 @@ class OfflineAttendanceService {
     String? locationAddress,
     String? attendanceType,
     String? fieldNotes,
+    String? shiftStartTime,
+    String? shiftEndTime,
   }) async {
     try {
       final now = DateTime.now();
@@ -68,6 +70,8 @@ class OfflineAttendanceService {
         locationAddress: locationAddress,
         attendanceType: attendanceType,
         fieldNotes: fieldNotes,
+        shiftStartTime: shiftStartTime,
+        shiftEndTime: shiftEndTime,
         deviceId: deviceInfo,
         deviceUptimeSeconds: deviceUptime,
         createdAt: now.toIso8601String(),
@@ -212,6 +216,12 @@ class OfflineAttendanceService {
     }
     if (attendance.fieldNotes != null) {
       payload['field_notes'] = attendance.fieldNotes;
+    }
+    if (attendance.shiftStartTime != null) {
+      payload['shift_start_time'] = attendance.shiftStartTime;
+    }
+    if (attendance.shiftEndTime != null) {
+      payload['shift_end_time'] = attendance.shiftEndTime;
     }
 
     // Get auth token

@@ -20,6 +20,8 @@ class AttendanceService extends BaseService {
     String? fieldNotes,
     String? trackType,
     bool? isShifting,
+    String? shiftStartTime,
+    String? shiftEndTime,
   }) async {
     
 
@@ -48,6 +50,8 @@ class AttendanceService extends BaseService {
       if (fieldNotes != null && fieldNotes.isNotEmpty) {
         map['field_notes'] = fieldNotes;
       }
+      if (shiftStartTime != null) map['shift_start_time'] = shiftStartTime;
+      if (shiftEndTime != null) map['shift_end_time'] = shiftEndTime;
 
       FormData formData = FormData.fromMap(map);
 

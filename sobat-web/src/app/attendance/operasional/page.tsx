@@ -32,7 +32,9 @@ interface Attendance {
   device_timestamp: string | null;
   time_discrepancy_seconds: number | null;
   is_offline: boolean;
-  location_address: string | null;
+  shift_start_time?: string | null;
+  shift_end_time?: string | null;
+  notes?: string | null;
 }
 
 export default function OperasionalAttendancePage() {
@@ -149,6 +151,26 @@ export default function OperasionalAttendancePage() {
       year: 'numeric', month: 'short', day: 'numeric',
       hour: '2-digit', minute: '2-digit',
     });
+  };
+
+  const getOutletNameDisplay = (att: Attendance) => {
+    if (att.outlet?.name) return att.outlet.name;
+    const qrData = att.qr_code_data || att.notes;
+    if (qrData) {
+      try {
+        const parsed = JSON.parse(qrData);
+        if (parsed.outlet_name) return parsed.outlet_name;
+        if (parsed.name) return parsed.name;
+      } catch (e) {
+        // Not JSON
+      }
+      // If format is like "Toko-A-LT1-...", extract "Toko-A"
+      if (qrData.includes('-LT')) {
+        return qrData.split('-LT')[0].replace(/-/g, ' ');
+      }
+      return qrData;
+    }
+    return '-';
   };
 
   const handleReview = async (id: number, reviewStatus: 'approved' | 'rejected') => {
@@ -300,6 +322,7 @@ export default function OperasionalAttendancePage() {
                       <th className="text-left px-4 py-3 font-semibold text-gray-600">Karyawan</th>
                       <th className="text-left px-4 py-3 font-semibold text-gray-600">Tanggal</th>
                       <th className="text-left px-4 py-3 font-semibold text-gray-600">Check In</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Shift</th>
                       <th className="text-left px-4 py-3 font-semibold text-gray-600">Outlet</th>
                       <th className="text-left px-4 py-3 font-semibold text-gray-600">Validasi</th>
                       <th className="text-left px-4 py-3 font-semibold text-gray-600">Status</th>
@@ -315,8 +338,13 @@ export default function OperasionalAttendancePage() {
                         </td>
                         <td className="px-4 py-3 text-gray-600">{formatDate(att)}</td>
                         <td className="px-4 py-3 text-gray-600">{formatDateTime(att.check_in || att.device_timestamp)}</td>
+                        <td className="px-4 py-3 text-gray-600">
+                          {att.shift_start_time && att.shift_end_time
+                            ? `${att.shift_start_time.substring(0, 5)} - ${att.shift_end_time.substring(0, 5)}`
+                            : '-'}
+                        </td>
                         <td className="px-4 py-3">
-                          <div className="text-gray-800">{att.outlet?.name || '-'}</div>
+                          <div className="text-gray-800">{getOutletNameDisplay(att)}</div>
                           {att.floor_number && <div className="text-xs text-gray-400">LT-{att.floor_number}</div>}
                         </td>
                         <td className="px-4 py-3">
@@ -404,7 +432,7 @@ export default function OperasionalAttendancePage() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Outlet</label>
-                  <p className="text-sm font-medium text-gray-800 mt-1">{selectedAttendance.outlet?.name || '-'}</p>
+                  <p className="text-sm font-medium text-gray-800 mt-1">{getOutletNameDisplay(selectedAttendance)}</p>
                   {selectedAttendance.floor_number && (
                     <p className="text-xs text-gray-400">Lantai {selectedAttendance.floor_number}</p>
                   )}
@@ -413,6 +441,14 @@ export default function OperasionalAttendancePage() {
                   <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Metode Validasi</label>
                   <p className="text-sm font-medium text-gray-800 mt-1 capitalize">
                     {selectedAttendance.validation_method === 'qr_code' ? 'QR Code (Dua Layer)' : selectedAttendance.validation_method || '-'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Jadwal Shift</label>
+                  <p className="text-sm font-medium text-gray-800 mt-1">
+                    {selectedAttendance.shift_start_time && selectedAttendance.shift_end_time
+                      ? `${selectedAttendance.shift_start_time.substring(0, 5)} - ${selectedAttendance.shift_end_time.substring(0, 5)}`
+                      : '-'}
                   </p>
                 </div>
                 <div>
@@ -429,11 +465,11 @@ export default function OperasionalAttendancePage() {
                 </div>
               </div>
 
-              {selectedAttendance.qr_code_data && (
+              {(selectedAttendance.qr_code_data || selectedAttendance.notes) && (
                 <div>
                   <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Data QR Code</label>
                   <p className="text-xs text-gray-600 mt-1 font-mono bg-gray-50 p-2 rounded-lg break-all">
-                    {selectedAttendance.qr_code_data}
+                    {selectedAttendance.qr_code_data || selectedAttendance.notes}
                   </p>
                 </div>
               )}

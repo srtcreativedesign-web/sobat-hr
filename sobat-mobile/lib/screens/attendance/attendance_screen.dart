@@ -11,7 +11,6 @@ import '../../config/theme.dart';
 import '../../services/attendance_service.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/offline_attendance_service.dart';
-import 'offline_attendance_handler.dart';
 
 import 'dart:io';
 import 'package:intl/intl.dart';
@@ -358,7 +357,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       return;
     }
 
-    if (_attendanceType == 'office' && !_isWithinRange) {
+    final user = context.read<AuthProvider>().user;
+
+    // Bypass range check for QR-based attendance
+    if (_attendanceType == 'office' && !_isWithinRange && user?.trackType != 'operational') {
       _showErrorSnackBar('Anda harus berada di salah satu area lokasi absensi!');
       return;
     }
@@ -369,56 +371,132 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       return;
     }
 
-    final user = context.read<AuthProvider>().user;
-    print('################ TRACK DEBUG: Attendance Check-In for User: ${user?.name}, Track: ${user?.trackType}');
-    
-    // HO flow: Always proceed to selfie/gps
     if (!mounted) return;
 
-    // Check for Shifting (late > 60m)
-    bool isShifting = false;
-    final now = DateTime.now();
-    if (now.hour >= 9) {
-      bool userConfirmedShift = false;
-      await AwesomeDialog(
-        context: context,
-        dialogType: DialogType.question,
-        animType: AnimType.scale,
-        title: 'Konfirmasi Shifting',
-        desc: 'Anda terlambat lebih dari 60 menit. Apakah Anda bekerja shift hari ini?',
-        btnOkText: 'YA',
-        btnCancelText: 'TIDAK',
-        btnOkColor: Colors.green,
-        btnCancelColor: Colors.red,
-        btnOkOnPress: () {
-          userConfirmedShift = true;
-        },
-        btnCancelOnPress: () {
-          userConfirmedShift = false;
-        },
-      ).show();
-      isShifting = userConfirmedShift;
-    }
+    // Shift picker → QR Scan → Selfie → Submit
+    final schedule = await _showShiftDialog();
+    if (schedule == null || !mounted) return;
+    final shiftStartTime = schedule['start'];
+    final shiftEndTime = schedule['end'];
 
-    // Default HO Selfie flow
-    if (!mounted) return;
+    final qrCodeData = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AttendanceQrScannerScreen(
+          onScanSuccess: (data) => data,
+        ),
+      ),
+    );
+    if (qrCodeData == null || qrCodeData.isEmpty || !mounted) return;
+
     final String? photoPath = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => SelfieScreen(
           address: _currentAddress,
           shiftName: user?.shiftName ?? 'Regular Morning',
-          isShifting: isShifting,
-          status: _attendanceType == 'office' 
-            ? (isShifting ? 'Work from Office (Shift)' : 'Work from Office') 
-            : 'Work from Field',
+          isShifting: false,
+          status: 'Work from Office',
         ),
       ),
     );
 
     if (photoPath != null) {
-      _submitAttendance(photoPath, isShifting: isShifting);
+      _submitAttendance(
+        photoPath,
+        isShifting: false,
+        shiftStartTime: shiftStartTime,
+        shiftEndTime: shiftEndTime,
+        qrCodeData: qrCodeData,
+      );
     }
+  }
+
+  Future<Map<String, String>?> _showShiftDialog() async {
+    TimeOfDay startTime = const TimeOfDay(hour: 7, minute: 0);
+    TimeOfDay endTime = const TimeOfDay(hour: 15, minute: 0);
+
+    return await showDialog<Map<String, String>>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Jadwal Shift Hari Ini'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.access_time),
+                    title: const Text('Jam Mulai Shift'),
+                    subtitle: Text(
+                      startTime.format(context),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    onTap: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: startTime,
+                      );
+                      if (picked != null) {
+                        setDialogState(() => startTime = picked);
+                      }
+                    },
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: const Icon(Icons.access_time),
+                    title: const Text('Jam Selesai Shift'),
+                    subtitle: Text(
+                      endTime.format(context),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    onTap: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: endTime,
+                      );
+                      if (picked != null) {
+                        setDialogState(() => endTime = picked);
+                      }
+                    },
+                  ),
+                  if (endTime.hour * 60 + endTime.minute <=
+                      startTime.hour * 60 + startTime.minute)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(
+                        'Jam selesai harus setelah jam mulai!',
+                        style: TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Batal'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (endTime.hour * 60 + endTime.minute <=
+                        startTime.hour * 60 + startTime.minute) {
+                      return;
+                    }
+                    Navigator.pop(ctx, {
+                      'start': '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}',
+                      'end': '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}',
+                    });
+                  },
+                  child: const Text('Konfirmasi'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _handleCheckOut() async {
@@ -537,7 +615,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   }
 
 
-  Future<void> _submitAttendance(String photoPath, {String? qrCodeData, bool isShifting = false}) async {
+  Future<void> _submitAttendance(String photoPath, {String? qrCodeData, bool isShifting = false, String? shiftStartTime, String? shiftEndTime}) async {
     _showLoading();
 
     try {
@@ -559,6 +637,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         trackType: user.trackType,
         isShifting: isShifting,
         notes: qrCodeData, // Include QR data in notes for operational
+        shiftStartTime: shiftStartTime,
+        shiftEndTime: shiftEndTime,
       );
 
       await _fetchTodayAttendance(); // Refresh status
@@ -612,6 +692,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     // Decoupled logic: can check in if no record today OR already checked out
     bool canCheckIn = !hasCheckedIn || hasCheckedOut;
     bool canCheckOut = hasCheckedIn && !hasCheckedOut;
+
+    // Operational users skip location range check (QR code = location proof)
+    final bool isOperational =
+        context.read<AuthProvider>().user?.trackType == 'operational';
 
     // Check Late Logic
     bool isLateRestricted = false;
@@ -1288,127 +1372,85 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
                         const SizedBox(height: 24),
 
-                        // Offline Attendance Button (when no internet)
-                        if (!_isOnline && canCheckIn) ...[
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 16),
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: () {
-                                // Start offline attendance flow
-                                OfflineAttendanceHandler(
-                                  context: context,
-                                ).startOfflineAttendance();
-                              },
-                              icon: const Icon(Icons.offline_pin),
-                              label: const Text('Absen Offline'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.colorCyan,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
+                        // Action Buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed:
+                                    (canCheckIn &&
+                                        !_isLoading &&
+                                        (_attendanceType == 'field' ||
+                                            _isWithinRange ||
+                                            isOperational))
+                                        ? _handleCheckIn
+                                        : null,
+                                icon: Icon(
+                                  Icons.login,
+                                  color: buttonTextColor,
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                elevation: 4,
-                                textStyle: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                                label: Text('Masuk'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: buttonTextColor,
+                                  disabledBackgroundColor: Colors.white,
+                                  disabledForegroundColor: Colors.grey,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 0,
+                                  textStyle: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          const Text(
-                            '• Aktifkan GPS untuk melakukan absensi kantor',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 11,
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed:
+                                    (canCheckOut &&
+                                        (_attendanceType == 'field' || _isWithinRange || isOperational) &&
+                                        !_isLoading)
+                                        ? _handleCheckOut
+                                        : null,
+                                icon: Icon(
+                                  Icons.logout,
+                                  color: canCheckOut
+                                      ? buttonTextColor
+                                      : Colors.grey,
+                                ),
+                                label: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    isLateRestricted
+                                        ? 'Menunggu Approval'
+                                        : 'Pulang',
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: buttonTextColor,
+                                  disabledBackgroundColor: Colors.white,
+                                  disabledForegroundColor: Colors.grey,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 0,
+                                  textStyle: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-
-                        // Action Buttons (Online mode)
-                        if (_isOnline)
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed:
-                                      (canCheckIn &&
-                                          !_isLoading &&
-                                          (_attendanceType == 'field' ||
-                                              _isWithinRange))
-                                      ? _handleCheckIn
-                                      : null,
-                                  icon: Icon(
-                                    Icons.login,
-                                    color: buttonTextColor,
-                                  ),
-                                  label: Text('Masuk'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: buttonTextColor,
-                                    disabledBackgroundColor: Colors.white,
-                                    disabledForegroundColor: Colors.grey,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    elevation: 0,
-                                    textStyle: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed:
-                                      (canCheckOut &&
-                                          (_attendanceType == 'field' || _isWithinRange) &&
-                                          !_isLoading)
-                                      ? _handleCheckOut
-                                      : null,
-                                  icon: Icon(
-                                    Icons.logout,
-                                    color: canCheckOut
-                                        ? buttonTextColor
-                                        : Colors.grey,
-                                  ),
-                                  label: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(
-                                      isLateRestricted
-                                          ? 'Menunggu Approval'
-                                          : 'Pulang',
-                                    ),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: buttonTextColor,
-                                    disabledBackgroundColor: Colors.white,
-                                    disabledForegroundColor: Colors.grey,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    elevation: 0,
-                                    textStyle: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
