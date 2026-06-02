@@ -7,6 +7,7 @@ import '../../services/payroll_service.dart';
 import '../../providers/auth_provider.dart';
 import '../security/pin_screen.dart';
 import 'package:intl/intl.dart';
+import '../../l10n/app_localizations.dart';
 
 class PayrollScreen extends StatefulWidget {
   const PayrollScreen({super.key});
@@ -20,14 +21,34 @@ class _PayrollScreenState extends State<PayrollScreen> {
   bool _isLoading = true;
   List<dynamic> _payrolls = [];
   int? _selectedYear; // Null means "All Years"
+  bool _pinVerified = false;
 
   @override
   void initState() {
     super.initState();
     _enableScreenshotProtection();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadPayrolls();
+      _showPinVerification();
     });
+  }
+
+  void _showPinVerification() {
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    if (user == null) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PinScreen(
+          mode: user.hasPin ? PinMode.verify : PinMode.setup,
+          onSuccess: () {
+            Navigator.pop(context); // Close PIN Screen
+            setState(() => _pinVerified = true);
+            _loadPayrolls();
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _enableScreenshotProtection() async {
@@ -57,7 +78,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal memuat data: $e'),
+          content: Text('${AppLocalizations.of(context)!.errorLoadData} $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -100,8 +121,8 @@ class _PayrollScreenState extends State<PayrollScreen> {
       Navigator.pop(context); // Close loading
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Slip gaji berhasil diunduh dan dibuka'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.slipDownloaded),
           backgroundColor: Colors.green,
         ),
       );
@@ -112,7 +133,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal download: $e'),
+          content: Text('${AppLocalizations.of(context)!.errorDownload} $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -138,8 +159,51 @@ class _PayrollScreenState extends State<PayrollScreen> {
             children: [
               _buildHeader(),
               Expanded(
-                child: _isLoading
-                    ? const Center(
+                child: !_pinVerified
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.lock_outline,
+                              size: 64,
+                              color: Colors.grey.shade300,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Verifikasi PIN diperlukan',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            ElevatedButton(
+                              onPressed: _showPinVerification,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.colorEggplant,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                  vertical: 14,
+                                ),
+                              ),
+                              child: const Text(
+                                'Masukkan PIN',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : _isLoading
+                        ? const Center(
                         child: CircularProgressIndicator(
                           color: AppTheme.colorEggplant,
                         ),
@@ -218,6 +282,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
   }
 
   Widget _buildHeader() {
+    final localeName = Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US';
     // Calculate latest net salary (first item if available)
     double lastSalary = 0;
     String lastDate = '-';
@@ -241,7 +306,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
             : periodStr.toString();
         lastDate = DateFormat(
           'd MMM yyyy',
-          'id_ID',
+          localeName,
         ).format(DateTime.parse(dateStr));
       }
     }
@@ -389,7 +454,8 @@ class _PayrollScreenState extends State<PayrollScreen> {
   }
 
   Widget _buildPayrollCard(Map<String, dynamic> payroll) {
-    // Handle both 'period' (FnB: YYYY-MM) and 'period_start' (generic: YYYY-MM-DD)
+    final localeName = Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US';
+    // Handle both 'period' (FnB) and 'period_start' (generic)
     final periodStr = payroll['period'] ?? payroll['period_start'];
 
     // Default to current date if no period found
@@ -404,7 +470,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
       periodDate = DateTime.parse(dateStr);
     }
 
-    final monthName = DateFormat('MMMM', 'id_ID').format(periodDate);
+    final monthName = DateFormat('MMMM', localeName).format(periodDate);
     final status = payroll['status'] ?? 'pending';
 
     // Status config
@@ -535,7 +601,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
                   child: TextButton.icon(
                     onPressed: () => _showDetailSheet(payroll),
                     icon: const Icon(Icons.visibility_outlined, size: 18),
-                    label: const Text('Lihat Detail'),
+                    label: Text(AppLocalizations.of(context)!.viewDetails),
                     style: TextButton.styleFrom(
                       foregroundColor: AppTheme.colorEggplant,
                       padding: const EdgeInsets.symmetric(vertical: 0),
@@ -552,6 +618,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
   }
 
   Future<void> _showDetailSheet(Map<String, dynamic> payroll) async {
+    final localeName = Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US';
     if (Platform.isAndroid) {
       await ScreenProtector.preventScreenshotOn();
     }
@@ -938,14 +1005,14 @@ class _PayrollScreenState extends State<PayrollScreen> {
                         payroll['id'],
                         DateFormat(
                           'MMM_yyyy',
-                          'id_ID',
+                          localeName,
                         ).format(DateTime.parse(dateStr)),
                         division: payroll['division'],
                       );
                     }
                   },
                   icon: const Icon(Icons.download_rounded),
-                  label: const Text('Download Slip Gaji'),
+                  label: Text(AppLocalizations.of(context)!.downloadPayslip),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.colorEggplant,
                     foregroundColor: Colors.white,

@@ -639,4 +639,210 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rememberMe => 'Remember Me';
+
+  @override
+  String get errorLoadData => 'Failed to load data:';
+
+  @override
+  String get errorDownload => 'Failed to download:';
+
+  @override
+  String get slipDownloaded => 'Payslip successfully downloaded and opened';
+
+  @override
+  String get slipThrDownloaded => 'THR slip successfully downloaded';
+
+  @override
+  String get signFirst => 'Please sign first';
+
+  @override
+  String get downloadPdf => 'Download PDF';
+
+  @override
+  String get downloadPayslip => 'Download Payslip';
+
+  @override
+  String get scanQrCodeTitle => 'Scan Attendance QR Code';
+
+  @override
+  String get permissionBlocked => 'Permission Blocked';
+
+  @override
+  String get workHourConfirmation => 'Work Hour Confirmation';
+
+  @override
+  String get noImLate => 'No, I\'m Late';
+
+  @override
+  String get yesImShifting => 'Yes, I\'m Shifting';
+
+  @override
+  String get startAttendance => 'Start Attendance';
+
+  @override
+  String get shiftStartTime => 'Shift Start Time';
+
+  @override
+  String get shiftEndTime => 'Shift End Time';
+
+  @override
+  String get continueScanQr => 'Continue Scan QR';
+
+  @override
+  String get confirmApproval => 'Confirm Approval';
+
+  @override
+  String get yesApprove => 'Yes, Approve';
+
+  @override
+  String get approvalSuccess => 'Submission successfully approved';
+
+  @override
+  String get confirmRejection => 'Confirm Rejection';
+
+  @override
+  String get provideRejectionReason => 'Provide rejection reason:';
+
+  @override
+  String get rejectionSuccess => 'Submission rejected';
+
+  @override
+  String get tryAgain => 'Try Again';
+
+  @override
+  String get backToLogin => 'Back to Login';
+
+  @override
+  String get resendOtp => 'Resend OTP';
+
+  @override
+  String get selfiePhoto => 'Selfie Photo';
+
+  @override
+  String get holdPhoneSteady => 'Hold phone steady (blurry image)';
+
+  @override
+  String get validUntilDec => 'Valid until Dec';
+
+  @override
+  String get notEligible => 'Not Eligible';
+
+  @override
+  String get leaveType => 'Leave';
+
+  @override
+  String get latestInformation => 'Latest Information';
+
+  @override
+  String get seeAll => 'See All';
+
+  @override
+  String get noLatestAnnouncement => 'No latest announcements';
+
+  @override
+  String get newsLabel => 'News';
+
+  @override
+  String get importantLabel => 'Important';
+
+  @override
+  String get announcementLabel => 'Announcement';
+
+  @override
+  String get readMore => 'Read more';
+
+  @override
+  String get viewPayslipShort => 'View slip';
+
+  @override
+  String get businessTripShort => 'Business Trip';
+
+  @override
+  String get approvalLabel => 'Approval';
+
+  @override
+  String get approvalSubtitle => 'Approval';
+
+  @override
+  String get quickMenu => 'Quick Menu';
+
+  @override
+  String get allLabel => 'All';
+
+  @override
+  String get recentActivity => 'Recent Activity';
+
+  @override
+  String get noRecentActivity => 'No recent activities.';
+
+  @override
+  String get doneLabel => 'Done';
+
+  @override
+  String contractExpiringIn(Object days, Object date) {
+    return 'Your employment contract will expire in $days days ($date). Please contact HRD.';
+  }
+
+  @override
+  String contractExpiringUrgent(Object days) {
+    return 'URGENT: Contract expires in $days days!';
+  }
+
+  @override
+  String contractExpired(Object date) {
+    return 'Your employment contract has expired on $date. Please contact HRD.';
+  }
+
+  @override
+  String get contractExpiredToday => 'YOUR EMPLOYMENT CONTRACT EXPIRES TODAY!';
+
+  @override
+  String pendingCountText(Object count) {
+    return '$count pending';
+  }
+
+  @override
+  String get lastPayslip => 'LAST PAYSLIP';
+
+  @override
+  String get dataNotAvailable => 'No data yet';
+
+  @override
+  String get dataAvailable => 'Data available';
+
+  @override
+  String get basicSalary => 'Basic Salary';
+
+  @override
+  String get allowance => 'Allowance';
+
+  @override
+  String get totalAmount => 'Total';
+
+  @override
+  String get statusProcess => 'Processing';
+
+  @override
+  String get statusNotAvailable => 'Not available';
+
+  @override
+  String get updatedAt => 'Updated';
+
+  @override
+  String get thrBonusTitle => 'THR BONUS';
+
+  @override
+  String get yearPrefix => 'Year';
+
+  @override
+  String get checkThrSlip => 'Check THR Slip';
+
+  @override
+  String get tapToViewHistory => '*Tap to view history';
+
+  @override
+  String get annualBonus => 'Annual Bonus';
+
+  @override
+  String get available => 'Available';
 }

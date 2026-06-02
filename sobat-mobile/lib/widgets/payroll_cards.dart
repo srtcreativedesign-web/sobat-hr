@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 
 // ─────────────────────────────────────────────
 //  Color tokens
@@ -75,22 +76,22 @@ class SlipGajiCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
+          _buildHeader(context),
           const SizedBox(height: 12),
-          _buildBreakdown(),
+          _buildBreakdown(context),
           const SizedBox(height: 8),
           _buildActions(context),
           if (data.status == SlipGajiStatus.proses ||
               data.updatedAt.isNotEmpty) ...[
             const SizedBox(height: 6),
-            _buildStatusBadge(),
+            _buildStatusBadge(context),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -99,7 +100,7 @@ class SlipGajiCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'SLIP GAJI TERAKHIR',
+              AppLocalizations.of(context)!.lastPayslip,
               style: TextStyle(
                 fontSize: 10,
                 color: _C.gray400,
@@ -118,7 +119,7 @@ class SlipGajiCard extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              data.gajiPokok == null ? 'Belum ada data' : 'Data tersedia',
+              data.gajiPokok == null ? AppLocalizations.of(context)!.dataNotAvailable : AppLocalizations.of(context)!.dataAvailable,
               style: const TextStyle(fontSize: 11, color: _C.gray400),
             ),
           ],
@@ -140,7 +141,7 @@ class SlipGajiCard extends StatelessWidget {
     );
   }
 
-  Widget _buildBreakdown() {
+  Widget _buildBreakdown(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -149,20 +150,20 @@ class SlipGajiCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _breakdownRow('Gaji pokok', data.gajiPokok),
+          _breakdownRow(context, AppLocalizations.of(context)!.basicSalary, data.gajiPokok),
           const SizedBox(height: 8),
-          _breakdownRow('Tunjangan', data.tunjangan),
+          _breakdownRow(context, AppLocalizations.of(context)!.allowance, data.tunjangan),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 8),
             child: Divider(color: _C.gray100, thickness: 0.5, height: 0),
           ),
-          _breakdownRow('Total', data.total, isTotal: true),
+          _breakdownRow(context, AppLocalizations.of(context)!.totalAmount, data.total, isTotal: true),
         ],
       ),
     );
   }
 
-  Widget _breakdownRow(String label, String? value, {bool isTotal = false}) {
+  Widget _breakdownRow(BuildContext context, String label, String? value, {bool isTotal = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -187,7 +188,7 @@ class SlipGajiCard extends StatelessWidget {
             : _SkeletonBox(
                 width: isTotal
                     ? 72
-                    : label == 'Tunjangan'
+                    : label == AppLocalizations.of(context)!.allowance
                     ? 44
                     : 60,
                 color: isTotal ? _C.purple50 : _C.gray100,
@@ -200,21 +201,21 @@ class SlipGajiCard extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: _OutlineButton(label: 'Unduh PDF', onTap: data.onUnduh),
+          child: _OutlineButton(label: AppLocalizations.of(context)!.downloadPdf, onTap: data.onUnduh),
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: _FilledButton(label: 'Lihat Detail', onTap: data.onDetail),
+          child: _FilledButton(label: AppLocalizations.of(context)!.viewDetails, onTap: data.onDetail),
         ),
       ],
     );
   }
 
-  Widget _buildStatusBadge() {
+  Widget _buildStatusBadge(BuildContext context) {
     final (dot, text, label) = switch (data.status) {
-      SlipGajiStatus.proses => (_C.amber100, _C.amber600, 'Proses'),
-      SlipGajiStatus.selesai => (_C.green100, _C.green600, 'Selesai'),
-      SlipGajiStatus.belumAda => (_C.gray100, _C.gray600, 'Belum ada'),
+      SlipGajiStatus.proses => (_C.amber100, _C.amber600, AppLocalizations.of(context)!.statusProcess),
+      SlipGajiStatus.selesai => (_C.green100, _C.green600, AppLocalizations.of(context)!.doneLabel),
+      SlipGajiStatus.belumAda => (_C.gray100, _C.gray600, AppLocalizations.of(context)!.statusNotAvailable),
     };
 
     return Row(
@@ -226,7 +227,7 @@ class SlipGajiCard extends StatelessWidget {
         ),
         const SizedBox(width: 5),
         Text(
-          '$label${data.updatedAt.isNotEmpty ? ' • Diperbarui ${data.updatedAt}' : ''}',
+          '$label${data.updatedAt.isNotEmpty ? ' • ${AppLocalizations.of(context)!.updatedAt} ${data.updatedAt}' : ''}',
           style: TextStyle(fontSize: 10, color: text),
         ),
       ],
@@ -269,11 +270,11 @@ class SlipThrCard extends StatelessWidget {
         border: Border.all(color: _C.gray100, width: 0.5),
       ),
       clipBehavior: Clip.antiAlias,
-      child: Column(children: [_buildGradientTop(), _buildFooter()]),
+      child: Column(children: [_buildGradientTop(context), _buildFooter(context)]),
     );
   }
 
-  Widget _buildGradientTop() {
+  Widget _buildGradientTop(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -327,7 +328,7 @@ class SlipThrCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'TUNJANGAN HARI RAYA',
+                        AppLocalizations.of(context)!.thrBonusTitle,
                         style: TextStyle(
                           fontSize: 10,
                           color: Colors.white.withValues(alpha: 0.6),
@@ -337,7 +338,7 @@ class SlipThrCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Tahun ${data.tahun}',
+                        '${AppLocalizations.of(context)!.yearPrefix} ${data.tahun}',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
@@ -370,9 +371,9 @@ class SlipThrCard extends StatelessWidget {
               RichText(
                 text: TextSpan(
                   children: [
-                    const TextSpan(
-                      text: 'Cek Slip THR ',
-                      style: TextStyle(
+                    TextSpan(
+                      text: '${AppLocalizations.of(context)!.checkThrSlip} ',
+                      style: const TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w500,
                         color: Colors.white,
@@ -392,7 +393,7 @@ class SlipThrCard extends StatelessWidget {
               ),
               const SizedBox(height: 5),
               Text(
-                '*Ketuk untuk melihat riwayat',
+                AppLocalizations.of(context)!.tapToViewHistory,
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.white.withValues(alpha: 0.55),
@@ -402,10 +403,10 @@ class SlipThrCard extends StatelessWidget {
               Wrap(
                 spacing: 8,
                 children: [
-                  ...data.tags.map((tag) => _GlassBadge(label: tag)),
+                  ...data.tags.map((tag) => _GlassBadge(label: tag == 'Bonus Tahunan' ? AppLocalizations.of(context)!.annualBonus : tag)),
                   if (data.isAvailable)
                     _GlassBadge(
-                      label: 'Tersedia',
+                      label: AppLocalizations.of(context)!.available,
                       dotColor: const Color(0xFF97C459),
                     ),
                 ],
@@ -417,7 +418,7 @@ class SlipThrCard extends StatelessWidget {
     );
   }
 
-  Widget _buildFooter() {
+  Widget _buildFooter(BuildContext context) {
     return GestureDetector(
       onTap: data.onDetail,
       child: Container(
@@ -436,7 +437,7 @@ class SlipThrCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 5),
                   Text(
-                    'Diperbarui ${data.updatedAt}',
+                    '${AppLocalizations.of(context)!.updatedAt} ${data.updatedAt}',
                     style: const TextStyle(fontSize: 11, color: _C.gray400),
                   ),
                 ],
@@ -445,9 +446,9 @@ class SlipThrCard extends StatelessWidget {
               const SizedBox(),
             Row(
               children: [
-                const Text(
-                  'Lihat detail',
-                  style: TextStyle(
+                Text(
+                  AppLocalizations.of(context)!.viewDetails,
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: _C.blue600,

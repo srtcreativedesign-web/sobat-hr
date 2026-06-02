@@ -441,6 +441,7 @@ class _HomeScreenState extends State<HomeScreen> {
           month: now.month,
           year: now.year,
         );
+        if (!mounted) return;
         for (var item in attendanceData) {
           if (item['check_in'] != null) {
             activities.add({
@@ -468,6 +469,8 @@ class _HomeScreenState extends State<HomeScreen> {
       // 2. Fetch Requests (Leave/Permit)
       try {
         final requestsData = await RequestService().getRequests();
+        if (!mounted) return;
+        final localeName = Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US';
         for (var item in requestsData) {
           final date = DateTime.parse(item['created_at']);
           String status = item['status'] ?? 'pending';
@@ -478,10 +481,10 @@ class _HomeScreenState extends State<HomeScreen> {
           try {
             if (item['start_date'] != null) {
               final dateObj = DateTime.parse(item['start_date']);
-              formattedDate = DateFormat('d MMM y', 'id_ID').format(dateObj);
+              formattedDate = DateFormat('d MMM y', localeName).format(dateObj);
             } else if (item['created_at'] != null) {
               final dateObj = DateTime.parse(item['created_at']);
-              formattedDate = DateFormat('d MMM y', 'id_ID').format(dateObj);
+              formattedDate = DateFormat('d MMM y', localeName).format(dateObj);
             }
           } catch (_) {}
 
@@ -502,6 +505,8 @@ class _HomeScreenState extends State<HomeScreen> {
       // 3. Fetch Payrolls
       try {
         final payrolls = await PayrollService().getPayrolls(year: now.year);
+        if (!mounted) return;
+        final localeName = Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US';
         for (var item in payrolls) {
           final period = item['period'] ?? item['period_start'];
           if (period != null) {
@@ -517,7 +522,7 @@ class _HomeScreenState extends State<HomeScreen> {
             activities.add({
               'type': 'payroll',
               'date': date,
-              'title': AppLocalizations.of(context)!.salaryTitle(DateFormat('MMMM', 'id_ID').format(date)),
+              'title': AppLocalizations.of(context)!.salaryTitle(DateFormat('MMMM', localeName).format(date)),
               'desc': AppLocalizations.of(context)!.payslipPublished,
               'status': 'info',
             });
@@ -1418,7 +1423,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 _timelineLabelV2(AppLocalizations.of(context)!.checkIn, checkIn != null ? DateFormat('HH:mm').format(checkIn) : '--:--', checkIn != null ? const Color(0xFF97C459) : null),
                 _timelineLabelV2(AppLocalizations.of(context)!.checkOut, checkOut != null ? DateFormat('HH:mm').format(checkOut) : (checkIn != null ? DateFormat('HH:mm').format(DateTime.now()) : '--:--'), checkIn != null ? const Color(0xFFFBB03B) : null),
-                _timelineLabelV2('Selesai', DateFormat('HH:mm').format(end), Colors.white.withValues(alpha: 0.3)),
+                _timelineLabelV2(AppLocalizations.of(context)!.doneLabel, DateFormat('HH:mm').format(end), Colors.white.withValues(alpha: 0.3)),
               ],
             ),
           ],
@@ -1603,7 +1608,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         TextSpan(
-                          text: 'Hari',
+                          text: AppLocalizations.of(context)!.days,
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
@@ -1659,7 +1664,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Icon(Icons.check_circle, size: 12, color: AppTheme.success),
                 const SizedBox(width: 4),
                 Text(
-                  'Valid s/d Des',
+                  AppLocalizations.of(context)!.validUntilDec,
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -1678,7 +1683,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 _isEligibleLeave
                     ? AppLocalizations.of(context)!.leaveTotal(_leaveQuota)
-                    : 'Belum Eligible',
+                    : AppLocalizations.of(context)!.notEligible,
                 style: TextStyle(fontSize: 12, color: AppTheme.textLight),
               ),
               InkWell(
@@ -1718,7 +1723,7 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Informasi Terbaru',
+              AppLocalizations.of(context)!.latestInformation,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -1730,7 +1735,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.pushNamed(context, '/announcements');
               },
               child: Text(
-                'Lihat Semua',
+                AppLocalizations.of(context)!.seeAll,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -1756,7 +1761,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Icon(Icons.info_outline, color: Colors.grey.shade400),
                 const SizedBox(width: 12),
                 Text(
-                  'Belum ada pengumuman terbaru',
+                  AppLocalizations.of(context)!.noLatestAnnouncement,
                   style: TextStyle(color: Colors.grey.shade500),
                 ),
               ],
@@ -1903,7 +1908,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Text(
-                                        isNews ? 'Berita' : 'Penting',
+                                        isNews ? AppLocalizations.of(context)!.newsLabel : AppLocalizations.of(context)!.importantLabel,
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 10,
@@ -1913,7 +1918,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     const Spacer(),
                                     Text(
-                                      item['title'] ?? 'Pengumuman',
+                                      item['title'] ?? AppLocalizations.of(context)!.announcementLabel,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
@@ -1927,7 +1932,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Row(
                                       children: [
                                         Text(
-                                          'Baca selengkapnya',
+                                          AppLocalizations.of(context)!.readMore,
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w500,
@@ -1989,7 +1994,7 @@ class _HomeScreenState extends State<HomeScreen> {
         'icon': 'assets/icons/payslip.png',
         'isAsset': true,
         'label': AppLocalizations.of(context)!.payslip,
-        'subtitle': 'Lihat slip',
+        'subtitle': AppLocalizations.of(context)!.viewPayslipShort,
         'gradient': [const Color(0xFF667EEA), const Color(0xFF764BA2)],
         'onTap': _navigateToPayroll,
       },
@@ -2028,7 +2033,7 @@ class _HomeScreenState extends State<HomeScreen> {
         'icon': 'assets/icons/bussines-trip.png',
         'isAsset': true,
         'label': AppLocalizations.of(context)!.businessTrip,
-        'subtitle': 'Perjalanan',
+        'subtitle': AppLocalizations.of(context)!.businessTripShort,
         'gradient': [const Color(0xFF84FAB0), const Color(0xFF8FD3F4)],
         'onTap': () => Navigator.pushNamed(context, '/submission/create', arguments: 'Perjalanan Dinas'),
       },
@@ -2038,10 +2043,10 @@ class _HomeScreenState extends State<HomeScreen> {
       menuItems.add({
         'icon': Icons.verified_rounded,
         'isAsset': false,
-        'label': 'Approval',
+        'label': AppLocalizations.of(context)!.approvalLabel,
         'subtitle': _pendingApprovalsCount > 0
-            ? '$_pendingApprovalsCount pending'
-            : 'Persetujuan',
+            ? AppLocalizations.of(context)!.pendingCountText(_pendingApprovalsCount.toString())
+            : AppLocalizations.of(context)!.approvalSubtitle,
         'gradient': [const Color(0xFFA18CD1), const Color(0xFFFBC2EB)],
         'badge': _pendingApprovalsCount,
         'onTap': () async {
@@ -2061,7 +2066,7 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Menu Cepat',
+              AppLocalizations.of(context)!.quickMenu,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -2083,7 +2088,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Semua',
+                      AppLocalizations.of(context)!.allLabel,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -2233,7 +2238,7 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Aktivitas Terkini',
+              AppLocalizations.of(context)!.recentActivity,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -2257,7 +2262,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 20),
             child: Text(
-              'Belum ada aktivitas terkini.',
+              AppLocalizations.of(context)!.noRecentActivity,
               style: TextStyle(color: Colors.grey),
             ),
           )
@@ -2323,10 +2328,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
 
                   // Format time relative or absolute
+                  final localeName = Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US';
                   final date = activity['date'] as DateTime;
                   final timeStr = activity['type'] == 'payroll'
-                      ? DateFormat('dd MMM yyyy', 'id_ID').format(date)
-                      : DateFormat('dd MMM, HH:mm', 'id_ID').format(date);
+                      ? DateFormat('dd MMM yyyy', localeName).format(date)
+                      : DateFormat('dd MMM, HH:mm', localeName).format(date);
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16),
@@ -2423,24 +2429,23 @@ class _HomeScreenState extends State<HomeScreen> {
     Color borderColor = Colors.orange.shade200;
     Color textColor = Colors.orange.shade800;
     IconData icon = Icons.warning_amber_rounded;
-    String message =
-        'Kontrak kerja Anda akan berakhir dalam $difference hari (${DateFormat('d MMM y', 'id_ID').format(contractDate)}). Silahkan hubungi HRD.';
+    final localeName = Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US';
+    String message = AppLocalizations.of(context)!.contractExpiringIn(difference.toString(), DateFormat('d MMM y', localeName).format(contractDate));
 
     if (difference <= 7 && difference >= 0) {
       bgColor = Colors.red.shade50;
       borderColor = Colors.red.shade200;
       textColor = Colors.red.shade800;
       icon = Icons.error_outline_rounded;
-      message = 'URGENT: Kontrak berakhir dalam $difference hari!';
+      message = AppLocalizations.of(context)!.contractExpiringUrgent(difference.toString());
     } else if (difference < 0) {
       bgColor = Colors.red.shade50;
       borderColor = Colors.red.shade200;
       textColor = Colors.red.shade800;
       icon = Icons.error_outline_rounded;
-      message =
-          'Kontrak kerja Anda telah berakhir pada ${DateFormat('d MMM y', 'id_ID').format(contractDate)}. Silahkan hubungi HRD.';
+      message = AppLocalizations.of(context)!.contractExpired(DateFormat('d MMM y', localeName).format(contractDate));
     } else if (difference == 0) {
-      message = 'KONTRAK KERJA ANDA BERAKHIR HARI INI!';
+      message = AppLocalizations.of(context)!.contractExpiredToday;
       bgColor = Colors.red.shade50;
       borderColor = Colors.red.shade200;
       textColor = Colors.red.shade800;
@@ -2493,12 +2498,13 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
+    final localeName = Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US';
     final period = (_lastPayroll!['period'] ?? _lastPayroll!['period_start'] ?? '').toString();
     String formattedPeriod = period;
     try {
       if (period.contains('-')) {
         final date = DateTime.parse('$period-01');
-        formattedPeriod = DateFormat('MMMM yyyy', 'id_ID').format(date);
+        formattedPeriod = DateFormat('MMMM yyyy', localeName).format(date);
       }
     } catch (_) {}
 
@@ -2514,7 +2520,7 @@ class _HomeScreenState extends State<HomeScreen> {
         total: _lastPayroll!['net_salary']?.toString() ?? _lastPayroll!['total_salary']?.toString(),
         status: status,
         updatedAt: _lastPayroll!['updated_at'] != null 
-            ? DateFormat('d MMM HH:mm', 'id_ID').format(DateTime.parse(_lastPayroll!['updated_at']))
+            ? DateFormat('d MMM HH:mm', localeName).format(DateTime.parse(_lastPayroll!['updated_at']))
             : '',
         onUnduh: () async {
           final user = Provider.of<AuthProvider>(context, listen: false).user;
@@ -2562,12 +2568,13 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
+    final localeName = Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US';
     return SlipThrCard(
       data: SlipThrData(
         tahun: _lastThr!['year']?.toString() ?? '',
         isAvailable: _lastThr!['status'] == 'paid',
         updatedAt: _lastThr!['paid_at'] != null
-            ? DateFormat('d MMM yyyy', 'id_ID').format(DateTime.parse(_lastThr!['paid_at']))
+            ? DateFormat('d MMM yyyy', localeName).format(DateTime.parse(_lastThr!['paid_at']))
             : '',
         onDetail: () => Navigator.pushNamed(context, '/payroll/thr'),
       ),

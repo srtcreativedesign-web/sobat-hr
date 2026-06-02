@@ -1321,6 +1321,402 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remember Me'**
   String get rememberMe;
+
+  /// No description provided for @errorLoadData.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load data:'**
+  String get errorLoadData;
+
+  /// No description provided for @errorDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to download:'**
+  String get errorDownload;
+
+  /// No description provided for @slipDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Payslip successfully downloaded and opened'**
+  String get slipDownloaded;
+
+  /// No description provided for @slipThrDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'THR slip successfully downloaded'**
+  String get slipThrDownloaded;
+
+  /// No description provided for @signFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign first'**
+  String get signFirst;
+
+  /// No description provided for @downloadPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Download PDF'**
+  String get downloadPdf;
+
+  /// No description provided for @downloadPayslip.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Payslip'**
+  String get downloadPayslip;
+
+  /// No description provided for @scanQrCodeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Attendance QR Code'**
+  String get scanQrCodeTitle;
+
+  /// No description provided for @permissionBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission Blocked'**
+  String get permissionBlocked;
+
+  /// No description provided for @workHourConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Work Hour Confirmation'**
+  String get workHourConfirmation;
+
+  /// No description provided for @noImLate.
+  ///
+  /// In en, this message translates to:
+  /// **'No, I\'m Late'**
+  String get noImLate;
+
+  /// No description provided for @yesImShifting.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, I\'m Shifting'**
+  String get yesImShifting;
+
+  /// No description provided for @startAttendance.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Attendance'**
+  String get startAttendance;
+
+  /// No description provided for @shiftStartTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Shift Start Time'**
+  String get shiftStartTime;
+
+  /// No description provided for @shiftEndTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Shift End Time'**
+  String get shiftEndTime;
+
+  /// No description provided for @continueScanQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue Scan QR'**
+  String get continueScanQr;
+
+  /// No description provided for @confirmApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Approval'**
+  String get confirmApproval;
+
+  /// No description provided for @yesApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, Approve'**
+  String get yesApprove;
+
+  /// No description provided for @approvalSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Submission successfully approved'**
+  String get approvalSuccess;
+
+  /// No description provided for @confirmRejection.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Rejection'**
+  String get confirmRejection;
+
+  /// No description provided for @provideRejectionReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Provide rejection reason:'**
+  String get provideRejectionReason;
+
+  /// No description provided for @rejectionSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Submission rejected'**
+  String get rejectionSuccess;
+
+  /// No description provided for @tryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again'**
+  String get tryAgain;
+
+  /// No description provided for @backToLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Login'**
+  String get backToLogin;
+
+  /// No description provided for @resendOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend OTP'**
+  String get resendOtp;
+
+  /// No description provided for @selfiePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Selfie Photo'**
+  String get selfiePhoto;
+
+  /// No description provided for @holdPhoneSteady.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold phone steady (blurry image)'**
+  String get holdPhoneSteady;
+
+  /// No description provided for @validUntilDec.
+  ///
+  /// In en, this message translates to:
+  /// **'Valid until Dec'**
+  String get validUntilDec;
+
+  /// No description provided for @notEligible.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Eligible'**
+  String get notEligible;
+
+  /// No description provided for @leaveType.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get leaveType;
+
+  /// No description provided for @latestInformation.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest Information'**
+  String get latestInformation;
+
+  /// No description provided for @seeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'See All'**
+  String get seeAll;
+
+  /// No description provided for @noLatestAnnouncement.
+  ///
+  /// In en, this message translates to:
+  /// **'No latest announcements'**
+  String get noLatestAnnouncement;
+
+  /// No description provided for @newsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'News'**
+  String get newsLabel;
+
+  /// No description provided for @importantLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Important'**
+  String get importantLabel;
+
+  /// No description provided for @announcementLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcement'**
+  String get announcementLabel;
+
+  /// No description provided for @readMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Read more'**
+  String get readMore;
+
+  /// No description provided for @viewPayslipShort.
+  ///
+  /// In en, this message translates to:
+  /// **'View slip'**
+  String get viewPayslipShort;
+
+  /// No description provided for @businessTripShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Business Trip'**
+  String get businessTripShort;
+
+  /// No description provided for @approvalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval'**
+  String get approvalLabel;
+
+  /// No description provided for @approvalSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval'**
+  String get approvalSubtitle;
+
+  /// No description provided for @quickMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Menu'**
+  String get quickMenu;
+
+  /// No description provided for @allLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get allLabel;
+
+  /// No description provided for @recentActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Activity'**
+  String get recentActivity;
+
+  /// No description provided for @noRecentActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent activities.'**
+  String get noRecentActivity;
+
+  /// No description provided for @doneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get doneLabel;
+
+  /// No description provided for @contractExpiringIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Your employment contract will expire in {days} days ({date}). Please contact HRD.'**
+  String contractExpiringIn(Object days, Object date);
+
+  /// No description provided for @contractExpiringUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'URGENT: Contract expires in {days} days!'**
+  String contractExpiringUrgent(Object days);
+
+  /// No description provided for @contractExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Your employment contract has expired on {date}. Please contact HRD.'**
+  String contractExpired(Object date);
+
+  /// No description provided for @contractExpiredToday.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR EMPLOYMENT CONTRACT EXPIRES TODAY!'**
+  String get contractExpiredToday;
+
+  /// No description provided for @pendingCountText.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} pending'**
+  String pendingCountText(Object count);
+
+  /// No description provided for @lastPayslip.
+  ///
+  /// In en, this message translates to:
+  /// **'LAST PAYSLIP'**
+  String get lastPayslip;
+
+  /// No description provided for @dataNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No data yet'**
+  String get dataNotAvailable;
+
+  /// No description provided for @dataAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Data available'**
+  String get dataAvailable;
+
+  /// No description provided for @basicSalary.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic Salary'**
+  String get basicSalary;
+
+  /// No description provided for @allowance.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowance'**
+  String get allowance;
+
+  /// No description provided for @totalAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get totalAmount;
+
+  /// No description provided for @statusProcess.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing'**
+  String get statusProcess;
+
+  /// No description provided for @statusNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available'**
+  String get statusNotAvailable;
+
+  /// No description provided for @updatedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated'**
+  String get updatedAt;
+
+  /// No description provided for @thrBonusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'THR BONUS'**
+  String get thrBonusTitle;
+
+  /// No description provided for @yearPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get yearPrefix;
+
+  /// No description provided for @checkThrSlip.
+  ///
+  /// In en, this message translates to:
+  /// **'Check THR Slip'**
+  String get checkThrSlip;
+
+  /// No description provided for @tapToViewHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'*Tap to view history'**
+  String get tapToViewHistory;
+
+  /// No description provided for @annualBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'Annual Bonus'**
+  String get annualBonus;
+
+  /// No description provided for @available.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get available;
 }
 
 class _AppLocalizationsDelegate

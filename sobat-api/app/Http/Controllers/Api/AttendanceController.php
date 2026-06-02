@@ -106,6 +106,7 @@ class AttendanceController extends Controller
             'is_shifting' => 'nullable|boolean',
             'shift_start_time' => 'nullable|date_format:H:i',
             'shift_end_time' => 'nullable|date_format:H:i',
+            'qr_code_data' => 'nullable|string',
         ]);
 
         $employee = Employee::find($validated['employee_id']);

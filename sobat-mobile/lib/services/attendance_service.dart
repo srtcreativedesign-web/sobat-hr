@@ -22,6 +22,7 @@ class AttendanceService extends BaseService {
     bool? isShifting,
     String? shiftStartTime,
     String? shiftEndTime,
+    String? qrCodeData,
   }) async {
     
 
@@ -52,6 +53,9 @@ class AttendanceService extends BaseService {
       }
       if (shiftStartTime != null) map['shift_start_time'] = shiftStartTime;
       if (shiftEndTime != null) map['shift_end_time'] = shiftEndTime;
+      if (qrCodeData != null && qrCodeData.isNotEmpty) {
+        map['qr_code_data'] = qrCodeData;
+      }
 
       FormData formData = FormData.fromMap(map);
 

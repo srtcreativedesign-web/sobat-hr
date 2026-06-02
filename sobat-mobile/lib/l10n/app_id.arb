@@ -236,5 +236,92 @@
   "feedbackComplaint": "Keluhan",
   "feedbackQuestion": "Pertanyaan",
   "feedbackOther": "Lainnya",
-  "rememberMe": "Ingat Saya"
+  "rememberMe": "Ingat Saya",
+  "errorLoadData": "Gagal memuat data:",
+  "errorDownload": "Gagal download:",
+  "slipDownloaded": "Slip gaji berhasil diunduh dan dibuka",
+  "slipThrDownloaded": "Slip THR berhasil diunduh",
+  "signFirst": "Mohon tanda tangan terlebih dahulu",
+  "downloadPdf": "Download PDF",
+  "downloadPayslip": "Download Slip Gaji",
+  "scanQrCodeTitle": "Scan QR Code Absensi",
+  "permissionBlocked": "Izin Akses Terblokir",
+  "workHourConfirmation": "Konfirmasi Jam Kerja",
+  "noImLate": "Tidak, Saya Terlambat",
+  "yesImShifting": "Ya, Saya Shifting",
+  "startAttendance": "Mulai Absen",
+  "shiftStartTime": "Jam Mulai Shift",
+  "shiftEndTime": "Jam Selesai Shift",
+  "continueScanQr": "Lanjut Scan QR",
+  "confirmApproval": "Konfirmasi Persetujuan",
+  "yesApprove": "Ya, Setujui",
+  "approvalSuccess": "Pengajuan berhasil disetujui",
+  "confirmRejection": "Konfirmasi Penolakan",
+  "provideRejectionReason": "Berikan alasan penolakan:",
+  "rejectionSuccess": "Pengajuan ditolak",
+  "tryAgain": "Coba Lagi",
+  "backToLogin": "Kembali ke Login",
+  "resendOtp": "Kirim Ulang OTP",
+  "selfiePhoto": "Foto Selfie",
+  "holdPhoneSteady": "Pegang HP dengan stabil (gambar buram)",
+  "validUntilDec": "Valid s/d Des",
+  "notEligible": "Belum Eligible",
+  "leaveType": "Cuti",
+  "latestInformation": "Informasi Terbaru",
+  "seeAll": "Lihat Semua",
+  "noLatestAnnouncement": "Belum ada pengumuman terbaru",
+  "newsLabel": "Berita",
+  "importantLabel": "Penting",
+  "announcementLabel": "Pengumuman",
+  "readMore": "Baca selengkapnya",
+  "viewPayslipShort": "Lihat slip",
+  "businessTripShort": "Perjalanan",
+  "approvalLabel": "Approval",
+  "approvalSubtitle": "Persetujuan",
+  "quickMenu": "Menu Cepat",
+  "allLabel": "Semua",
+  "recentActivity": "Aktivitas Terkini",
+  "noRecentActivity": "Belum ada aktivitas terkini.",
+  "doneLabel": "Selesai",
+  "contractExpiringIn": "Kontrak kerja Anda akan berakhir dalam {days} hari ({date}). Silahkan hubungi HRD.",
+  "@contractExpiringIn": {
+    "placeholders": {
+      "days": {},
+      "date": {}
+    }
+  },
+  "contractExpiringUrgent": "URGENT: Kontrak berakhir dalam {days} hari!",
+  "@contractExpiringUrgent": {
+    "placeholders": {
+      "days": {}
+    }
+  },
+  "contractExpired": "Kontrak kerja Anda telah berakhir pada {date}. Silahkan hubungi HRD.",
+  "@contractExpired": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "contractExpiredToday": "KONTRAK KERJA ANDA BERAKHIR HARI INI!",
+  "pendingCountText": "{count} pending",
+  "@pendingCountText": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "lastPayslip": "SLIP GAJI TERAKHIR",
+  "dataNotAvailable": "Belum ada data",
+  "dataAvailable": "Data tersedia",
+  "basicSalary": "Gaji pokok",
+  "allowance": "Tunjangan",
+  "totalAmount": "Total",
+  "statusProcess": "Proses",
+  "statusNotAvailable": "Belum ada",
+  "updatedAt": "Diperbarui",
+  "thrBonusTitle": "TUNJANGAN HARI RAYA",
+  "yearPrefix": "Tahun",
+  "checkThrSlip": "Cek Slip THR",
+  "tapToViewHistory": "*Ketuk untuk melihat riwayat",
+  "annualBonus": "Bonus Tahunan",
+  "available": "Tersedia"
 }

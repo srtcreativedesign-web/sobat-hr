@@ -236,5 +236,92 @@
   "feedbackComplaint": "Complaint",
   "feedbackQuestion": "Question",
   "feedbackOther": "Other",
-  "rememberMe": "Remember Me"
+  "rememberMe": "Remember Me",
+  "errorLoadData": "Failed to load data:",
+  "errorDownload": "Failed to download:",
+  "slipDownloaded": "Payslip successfully downloaded and opened",
+  "slipThrDownloaded": "THR slip successfully downloaded",
+  "signFirst": "Please sign first",
+  "downloadPdf": "Download PDF",
+  "downloadPayslip": "Download Payslip",
+  "scanQrCodeTitle": "Scan Attendance QR Code",
+  "permissionBlocked": "Permission Blocked",
+  "workHourConfirmation": "Work Hour Confirmation",
+  "noImLate": "No, I'm Late",
+  "yesImShifting": "Yes, I'm Shifting",
+  "startAttendance": "Start Attendance",
+  "shiftStartTime": "Shift Start Time",
+  "shiftEndTime": "Shift End Time",
+  "continueScanQr": "Continue Scan QR",
+  "confirmApproval": "Confirm Approval",
+  "yesApprove": "Yes, Approve",
+  "approvalSuccess": "Submission successfully approved",
+  "confirmRejection": "Confirm Rejection",
+  "provideRejectionReason": "Provide rejection reason:",
+  "rejectionSuccess": "Submission rejected",
+  "tryAgain": "Try Again",
+  "backToLogin": "Back to Login",
+  "resendOtp": "Resend OTP",
+  "selfiePhoto": "Selfie Photo",
+  "holdPhoneSteady": "Hold phone steady (blurry image)",
+  "validUntilDec": "Valid until Dec",
+  "notEligible": "Not Eligible",
+  "leaveType": "Leave",
+  "latestInformation": "Latest Information",
+  "seeAll": "See All",
+  "noLatestAnnouncement": "No latest announcements",
+  "newsLabel": "News",
+  "importantLabel": "Important",
+  "announcementLabel": "Announcement",
+  "readMore": "Read more",
+  "viewPayslipShort": "View slip",
+  "businessTripShort": "Business Trip",
+  "approvalLabel": "Approval",
+  "approvalSubtitle": "Approval",
+  "quickMenu": "Quick Menu",
+  "allLabel": "All",
+  "recentActivity": "Recent Activity",
+  "noRecentActivity": "No recent activities.",
+  "doneLabel": "Done",
+  "contractExpiringIn": "Your employment contract will expire in {days} days ({date}). Please contact HRD.",
+  "@contractExpiringIn": {
+    "placeholders": {
+      "days": {},
+      "date": {}
+    }
+  },
+  "contractExpiringUrgent": "URGENT: Contract expires in {days} days!",
+  "@contractExpiringUrgent": {
+    "placeholders": {
+      "days": {}
+    }
+  },
+  "contractExpired": "Your employment contract has expired on {date}. Please contact HRD.",
+  "@contractExpired": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "contractExpiredToday": "YOUR EMPLOYMENT CONTRACT EXPIRES TODAY!",
+  "pendingCountText": "{count} pending",
+  "@pendingCountText": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "lastPayslip": "LAST PAYSLIP",
+  "dataNotAvailable": "No data yet",
+  "dataAvailable": "Data available",
+  "basicSalary": "Basic Salary",
+  "allowance": "Allowance",
+  "totalAmount": "Total",
+  "statusProcess": "Processing",
+  "statusNotAvailable": "Not available",
+  "updatedAt": "Updated",
+  "thrBonusTitle": "THR BONUS",
+  "yearPrefix": "Year",
+  "checkThrSlip": "Check THR Slip",
+  "tapToViewHistory": "*Tap to view history",
+  "annualBonus": "Annual Bonus",
+  "available": "Available"
 }

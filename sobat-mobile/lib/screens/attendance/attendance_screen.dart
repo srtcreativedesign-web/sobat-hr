@@ -373,21 +373,46 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
     if (!mounted) return;
 
-    // Shift picker → QR Scan → Selfie → Submit
-    final schedule = await _showShiftDialog();
-    if (schedule == null || !mounted) return;
-    final shiftStartTime = schedule['start'];
-    final shiftEndTime = schedule['end'];
+    // Hitung durasi terlambat
+    bool isShifting = false;
+    final now = DateTime.now();
+    DateTime workStartTime;
+    
+    if (user?.shiftStartTime != null) {
+      final timeParts = user!.shiftStartTime!.split(':');
+      workStartTime = DateTime(
+          now.year, now.month, now.day, int.parse(timeParts[0]), int.parse(timeParts[1]));
+    } else {
+      workStartTime = DateTime(now.year, now.month, now.day, 8, 0);
+    }
 
-    final qrCodeData = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AttendanceQrScannerScreen(
-          onScanSuccess: (data) => data,
+    final lateDuration = now.difference(workStartTime).inMinutes;
+
+    if (lateDuration > 60) {
+      final confirmShifting = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Konfirmasi Jam Kerja'),
+          content: const Text(
+              'Anda terdeteksi terlambat lebih dari 1 jam. Apakah Anda memiliki jadwal shifting hari ini?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Tidak, Saya Terlambat'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Ya, Saya Shifting'),
+            ),
+          ],
         ),
-      ),
-    );
-    if (qrCodeData == null || qrCodeData.isEmpty || !mounted) return;
+      );
+
+      if (confirmShifting == null) return; // User membatalkan dialog
+      isShifting = confirmShifting;
+    }
+
+    if (!mounted) return;
 
     final String? photoPath = await Navigator.push(
       context,
@@ -395,7 +420,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         builder: (context) => SelfieScreen(
           address: _currentAddress,
           shiftName: user?.shiftName ?? 'Regular Morning',
-          isShifting: false,
+          isShifting: isShifting,
           status: 'Work from Office',
         ),
       ),
@@ -404,100 +429,12 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     if (photoPath != null) {
       _submitAttendance(
         photoPath,
-        isShifting: false,
-        shiftStartTime: shiftStartTime,
-        shiftEndTime: shiftEndTime,
-        qrCodeData: qrCodeData,
+        isShifting: isShifting,
       );
     }
   }
 
-  Future<Map<String, String>?> _showShiftDialog() async {
-    TimeOfDay startTime = const TimeOfDay(hour: 7, minute: 0);
-    TimeOfDay endTime = const TimeOfDay(hour: 15, minute: 0);
 
-    return await showDialog<Map<String, String>>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Jadwal Shift Hari Ini'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.access_time),
-                    title: const Text('Jam Mulai Shift'),
-                    subtitle: Text(
-                      startTime.format(context),
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    onTap: () async {
-                      final picked = await showTimePicker(
-                        context: context,
-                        initialTime: startTime,
-                      );
-                      if (picked != null) {
-                        setDialogState(() => startTime = picked);
-                      }
-                    },
-                  ),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.access_time),
-                    title: const Text('Jam Selesai Shift'),
-                    subtitle: Text(
-                      endTime.format(context),
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    onTap: () async {
-                      final picked = await showTimePicker(
-                        context: context,
-                        initialTime: endTime,
-                      );
-                      if (picked != null) {
-                        setDialogState(() => endTime = picked);
-                      }
-                    },
-                  ),
-                  if (endTime.hour * 60 + endTime.minute <=
-                      startTime.hour * 60 + startTime.minute)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 8),
-                      child: Text(
-                        'Jam selesai harus setelah jam mulai!',
-                        style: TextStyle(color: Colors.red, fontSize: 12),
-                      ),
-                    ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Batal'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (endTime.hour * 60 + endTime.minute <=
-                        startTime.hour * 60 + startTime.minute) {
-                      return;
-                    }
-                    Navigator.pop(ctx, {
-                      'start': '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}',
-                      'end': '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}',
-                    });
-                  },
-                  child: const Text('Konfirmasi'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
 
   Future<void> _handleCheckOut() async {
     // 0. Null checks
@@ -615,7 +552,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   }
 
 
-  Future<void> _submitAttendance(String photoPath, {String? qrCodeData, bool isShifting = false, String? shiftStartTime, String? shiftEndTime}) async {
+  Future<void> _submitAttendance(String photoPath, {bool isShifting = false}) async {
     _showLoading();
 
     try {
@@ -636,9 +573,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         fieldNotes: _attendanceType == 'field' ? _fieldNotesController.text : null,
         trackType: user.trackType,
         isShifting: isShifting,
-        notes: qrCodeData, // Include QR data in notes for operational
-        shiftStartTime: shiftStartTime,
-        shiftEndTime: shiftEndTime,
       );
 
       await _fetchTodayAttendance(); // Refresh status

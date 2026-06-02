@@ -639,4 +639,210 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get rememberMe => 'Ingat Saya';
+
+  @override
+  String get errorLoadData => 'Gagal memuat data:';
+
+  @override
+  String get errorDownload => 'Gagal download:';
+
+  @override
+  String get slipDownloaded => 'Slip gaji berhasil diunduh dan dibuka';
+
+  @override
+  String get slipThrDownloaded => 'Slip THR berhasil diunduh';
+
+  @override
+  String get signFirst => 'Mohon tanda tangan terlebih dahulu';
+
+  @override
+  String get downloadPdf => 'Download PDF';
+
+  @override
+  String get downloadPayslip => 'Download Slip Gaji';
+
+  @override
+  String get scanQrCodeTitle => 'Scan QR Code Absensi';
+
+  @override
+  String get permissionBlocked => 'Izin Akses Terblokir';
+
+  @override
+  String get workHourConfirmation => 'Konfirmasi Jam Kerja';
+
+  @override
+  String get noImLate => 'Tidak, Saya Terlambat';
+
+  @override
+  String get yesImShifting => 'Ya, Saya Shifting';
+
+  @override
+  String get startAttendance => 'Mulai Absen';
+
+  @override
+  String get shiftStartTime => 'Jam Mulai Shift';
+
+  @override
+  String get shiftEndTime => 'Jam Selesai Shift';
+
+  @override
+  String get continueScanQr => 'Lanjut Scan QR';
+
+  @override
+  String get confirmApproval => 'Konfirmasi Persetujuan';
+
+  @override
+  String get yesApprove => 'Ya, Setujui';
+
+  @override
+  String get approvalSuccess => 'Pengajuan berhasil disetujui';
+
+  @override
+  String get confirmRejection => 'Konfirmasi Penolakan';
+
+  @override
+  String get provideRejectionReason => 'Berikan alasan penolakan:';
+
+  @override
+  String get rejectionSuccess => 'Pengajuan ditolak';
+
+  @override
+  String get tryAgain => 'Coba Lagi';
+
+  @override
+  String get backToLogin => 'Kembali ke Login';
+
+  @override
+  String get resendOtp => 'Kirim Ulang OTP';
+
+  @override
+  String get selfiePhoto => 'Foto Selfie';
+
+  @override
+  String get holdPhoneSteady => 'Pegang HP dengan stabil (gambar buram)';
+
+  @override
+  String get validUntilDec => 'Valid s/d Des';
+
+  @override
+  String get notEligible => 'Belum Eligible';
+
+  @override
+  String get leaveType => 'Cuti';
+
+  @override
+  String get latestInformation => 'Informasi Terbaru';
+
+  @override
+  String get seeAll => 'Lihat Semua';
+
+  @override
+  String get noLatestAnnouncement => 'Belum ada pengumuman terbaru';
+
+  @override
+  String get newsLabel => 'Berita';
+
+  @override
+  String get importantLabel => 'Penting';
+
+  @override
+  String get announcementLabel => 'Pengumuman';
+
+  @override
+  String get readMore => 'Baca selengkapnya';
+
+  @override
+  String get viewPayslipShort => 'Lihat slip';
+
+  @override
+  String get businessTripShort => 'Perjalanan';
+
+  @override
+  String get approvalLabel => 'Approval';
+
+  @override
+  String get approvalSubtitle => 'Persetujuan';
+
+  @override
+  String get quickMenu => 'Menu Cepat';
+
+  @override
+  String get allLabel => 'Semua';
+
+  @override
+  String get recentActivity => 'Aktivitas Terkini';
+
+  @override
+  String get noRecentActivity => 'Belum ada aktivitas terkini.';
+
+  @override
+  String get doneLabel => 'Selesai';
+
+  @override
+  String contractExpiringIn(Object days, Object date) {
+    return 'Kontrak kerja Anda akan berakhir dalam $days hari ($date). Silahkan hubungi HRD.';
+  }
+
+  @override
+  String contractExpiringUrgent(Object days) {
+    return 'URGENT: Kontrak berakhir dalam $days hari!';
+  }
+
+  @override
+  String contractExpired(Object date) {
+    return 'Kontrak kerja Anda telah berakhir pada $date. Silahkan hubungi HRD.';
+  }
+
+  @override
+  String get contractExpiredToday => 'KONTRAK KERJA ANDA BERAKHIR HARI INI!';
+
+  @override
+  String pendingCountText(Object count) {
+    return '$count pending';
+  }
+
+  @override
+  String get lastPayslip => 'SLIP GAJI TERAKHIR';
+
+  @override
+  String get dataNotAvailable => 'Belum ada data';
+
+  @override
+  String get dataAvailable => 'Data tersedia';
+
+  @override
+  String get basicSalary => 'Gaji pokok';
+
+  @override
+  String get allowance => 'Tunjangan';
+
+  @override
+  String get totalAmount => 'Total';
+
+  @override
+  String get statusProcess => 'Proses';
+
+  @override
+  String get statusNotAvailable => 'Belum ada';
+
+  @override
+  String get updatedAt => 'Diperbarui';
+
+  @override
+  String get thrBonusTitle => 'TUNJANGAN HARI RAYA';
+
+  @override
+  String get yearPrefix => 'Tahun';
+
+  @override
+  String get checkThrSlip => 'Cek Slip THR';
+
+  @override
+  String get tapToViewHistory => '*Ketuk untuk melihat riwayat';
+
+  @override
+  String get annualBonus => 'Bonus Tahunan';
+
+  @override
+  String get available => 'Tersedia';
 }

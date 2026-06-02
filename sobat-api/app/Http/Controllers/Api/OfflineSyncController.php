@@ -66,6 +66,8 @@ class OfflineSyncController extends Controller
                 'device_uptime_seconds' => 'nullable|integer',
                 'attendance_type' => 'nullable|in:office,field',
                 'field_notes' => 'nullable|string',
+                'shift_start_time' => 'nullable|date_format:H:i',
+                'shift_end_time' => 'nullable|date_format:H:i',
             ]);
 
             $employee = Employee::with('user')->findOrFail($validated['employee_id']);
@@ -169,7 +171,8 @@ class OfflineSyncController extends Controller
             // 5. Determine attendance status
             $attendanceStatus = $this->determineAttendanceStatus(
                 $validated['device_timestamp'],
-                $validated['attendance_type'] ?? 'office'
+                $validated['attendance_type'] ?? 'office',
+                $validated['shift_start_time'] ?? null
             );
 
             // 6. Create attendance record
@@ -190,6 +193,8 @@ class OfflineSyncController extends Controller
                 'photo_path' => $photoPath,
                 'attendance_type' => $validated['attendance_type'] ?? 'office',
                 'field_notes' => $validated['field_notes'] ?? null,
+                'shift_start_time' => $validated['shift_start_time'] ?? null,
+                'shift_end_time' => $validated['shift_end_time'] ?? null,
             ];
 
             // Add location-specific data
@@ -354,7 +359,7 @@ class OfflineSyncController extends Controller
     /**
      * Determine attendance status based on check-in time
      */
-    protected function determineAttendanceStatus(string $checkInTime, string $attendanceType): string
+    protected function determineAttendanceStatus(string $checkInTime, string $attendanceType, ?string $shiftStartTime = null): string
     {
         // Field attendance is always pending (requires approval)
         if ($attendanceType === 'field') {
@@ -362,7 +367,8 @@ class OfflineSyncController extends Controller
         }
 
         $checkIn = Carbon::parse($checkInTime);
-        $workStart = Carbon::parse($checkIn->format('Y-m-d').' 08:00:00');
+        $startTimeString = $shiftStartTime ? $shiftStartTime : '08:00:00';
+        $workStart = Carbon::parse($checkIn->format('Y-m-d').' '.$startTimeString);
 
         if ($checkIn->gt($workStart)) {
             $lateMinutes = abs($checkIn->diffInMinutes($workStart));

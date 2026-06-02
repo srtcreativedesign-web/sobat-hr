@@ -531,6 +531,11 @@ class OfflineAttendanceHandler {
   /// Navigate to QR scanner for operational track
   void _navigateToQrScanner({String? shiftStartTime, String? shiftEndTime}) async {
     try {
+      _showLoading('Menyiapkan Kamera...');
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!context.mounted) return;
+      Navigator.pop(context); // Close loading
+
       final qrCodeData = await Navigator.push<String>(
         context,
         MaterialPageRoute(
@@ -708,7 +713,7 @@ class OfflineAttendanceHandler {
             photo: File(photoPath),
             status: 'present',
             address: locationAddress,
-            notes: qrCodeData,
+            qrCodeData: qrCodeData,
             attendanceType: 'office',
             trackType: trackType,
             shiftStartTime: shiftStartTime,
