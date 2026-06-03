@@ -3,19 +3,14 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 import '../../config/theme.dart';
-import '../../services/attendance_service.dart';
-import '../../services/connectivity_service.dart';
+import '../../providers/attendance_provider.dart';
 import '../../services/offline_attendance_service.dart';
 
-import 'dart:io';
 import 'package:intl/intl.dart';
 import 'selfie_screen.dart';
-import 'attendance_qr_scanner_screen.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 
 class AttendanceScreen extends StatefulWidget {
@@ -27,48 +22,35 @@ class AttendanceScreen extends StatefulWidget {
 
 class _AttendanceScreenState extends State<AttendanceScreen>
     with SingleTickerProviderStateMixin {
-  // Services
-  final AttendanceService _attendanceService = AttendanceService();
-  final ConnectivityService _connectivity = ConnectivityService();
-  final OfflineAttendanceService _offlineService = OfflineAttendanceService();
-
-  // State
+  // State variables for UI
   final MapController _mapController = MapController();
-  Position? _currentPosition;
-  bool _isLoading = true;
-  bool _isOnline = true;
-
-  String? _currentAddress;
-  bool _isWithinRange = false;
-  Map<String, dynamic>? _todayAttendance;
-
-  // Field Attendance
-  String _attendanceType = 'office'; // 'office' or 'field'
   final TextEditingController _fieldNotesController = TextEditingController();
 
   // Animation
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
-  // Attendance Locations (multi-location)
-  List<Map<String, dynamic>> _locations = [];
-  String? _matchedLocationName;
-
   @override
   void initState() {
     super.initState();
-    _initLocations();
-    _checkPermissionsAndLocate();
-    _fetchTodayAttendance();
-    _checkConnectivity();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = Provider.of<AuthProvider>(context, listen: false).user;
+      final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
 
-    // Listen for connectivity changes
-    _connectivity.onlineStatusStream.listen((isOnline) {
-      if (mounted) {
-        setState(() {
-          _isOnline = isOnline;
-        });
+      attendanceProvider.checkConnectivity();
+      attendanceProvider.initLocations();
+      if (user?.employeeRecordId != null) {
+        attendanceProvider.fetchTodayAttendance(user!.employeeRecordId!);
       }
+      attendanceProvider.checkPermissionsAndLocate(_mapController).catchError((err) {
+        if (mounted) {
+          if (err == 'permission_blocked') {
+            _showPermissionHelpDialog();
+          } else {
+            _showErrorSnackBar(err.toString());
+          }
+        }
+      });
     });
 
     // Pulse Animation for User Location
@@ -80,190 +62,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       begin: 0.8,
       end: 1.5,
     ).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeOut));
-  }
-
-  /// Hardcoded fallback locations (used when API is unreachable)
-  static const List<Map<String, dynamic>> _fallbackLocations = [
-    {'id': 'office', 'name': 'Office', 'latitude': -6.13778, 'longitude': 106.62295, 'radius_meters': 10},
-    {'id': 'gudang_b3', 'name': 'Gudang B3', 'latitude': -6.134087, 'longitude': 106.623301, 'radius_meters': 10},
-    {'id': 'training_centre', 'name': 'Training Centre', 'latitude': -6.133417, 'longitude': 106.629707, 'radius_meters': 10},
-  ];
-
-  Future<void> _initLocations() async {
-    try {
-      // Try fetching from API first
-      final apiLocations = await _attendanceService.getAttendanceLocations();
-      if (mounted) {
-        setState(() {
-          _locations =
-              apiLocations.isNotEmpty
-                  ? apiLocations
-                  : _fallbackLocations
-                      .map((l) => Map<String, dynamic>.from(l))
-                      .toList();
-        });
-
-        // Re-check distance if position already available
-        if (_currentPosition != null) {
-          _checkDistance(_currentPosition!);
-        }
-      }
-    } catch (e) {
-      debugPrint('Error initializing locations: $e');
-      if (mounted) {
-        setState(() {
-          _locations =
-              _fallbackLocations
-                  .map((l) => Map<String, dynamic>.from(l))
-                  .toList();
-        });
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _fieldNotesController.dispose();
-    _pulseController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _fetchTodayAttendance() async {
-    try {
-      final attendance = await _attendanceService.getTodayAttendance();
-      if (mounted) {
-        setState(() {
-          _todayAttendance = attendance;
-          if (attendance != null && attendance['attendance_type'] != null) {
-            _attendanceType = attendance['attendance_type'];
-          }
-        });
-      }
-    } catch (e) {
-      debugPrint('Server fetch failed, checking local database: $e');
-      if (!mounted) return;
-      
-      // If server fails (offline), check local SQLite for today's record
-      try {
-        final user = context.read<AuthProvider>().user;
-        if (user?.employeeRecordId != null) {
-          final localAttendance = await _offlineService.getTodayOfflineAttendance(user!.employeeRecordId!);
-          if (localAttendance != null && mounted) {
-            setState(() {
-              _todayAttendance = localAttendance;
-              if (localAttendance['attendance_type'] != null) {
-                _attendanceType = localAttendance['attendance_type'];
-              }
-            });
-          }
-        }
-      } catch (localErr) {
-        debugPrint('Local fetch also failed: $localErr');
-      }
-    }
-  }
-
-  Future<void> _checkConnectivity() async {
-    final isOnline = await _connectivity.checkConnectivity();
-    if (mounted) {
-      setState(() {
-        _isOnline = isOnline;
-      });
-    }
-  }
-
-  Future<void> _checkPermissionsAndLocate() async {
-    // 1. Check if GPS hardware is actually ON
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        _showErrorSnackBar('GPS tidak aktif. Harap nyalakan Lokasi Anda.');
-      }
-      return;
-    }
-
-    // Request both permissions
-    Map<Permission, PermissionStatus> statuses = await [
-      Permission.locationWhenInUse,
-      Permission.camera,
-    ].request();
-
-    final locationStatus = statuses[Permission.locationWhenInUse];
-    final cameraStatus = statuses[Permission.camera];
-
-    if (locationStatus == PermissionStatus.permanentlyDenied ||
-        cameraStatus == PermissionStatus.permanentlyDenied) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        _showPermissionHelpDialog();
-      }
-      return;
-    }
-
-    if (locationStatus!.isGranted && cameraStatus!.isGranted) {
-      try {
-        Position position = await Geolocator.getCurrentPosition(
-          locationSettings: Platform.isIOS
-              ? AppleSettings(
-                  accuracy: LocationAccuracy.high,
-                  distanceFilter: 10,
-                  pauseLocationUpdatesAutomatically: true,
-                )
-              : const LocationSettings(
-                  accuracy: LocationAccuracy.high,
-                ),
-        ).timeout(const Duration(seconds: 15));
-
-        // Get Address
-        try {
-          List<Placemark> placemarks = await placemarkFromCoordinates(
-            position.latitude,
-            position.longitude,
-          ).timeout(const Duration(seconds: 10));
-          
-          if (placemarks.isNotEmpty) {
-            Placemark place = placemarks.first;
-            _currentAddress =
-                '${place.street}, ${place.subLocality}, ${place.locality}';
-          }
-        } catch (e) {
-          debugPrint('Geocoding failed: $e');
-          _currentAddress = 'Lokasi tidak diketahui';
-        }
-
-        if (mounted) {
-          setState(() {
-            _currentPosition = position;
-            _isLoading = false;
-            _checkDistance(position);
-          });
-        }
-
-        // Move map to user location
-        _mapController.move(
-          LatLng(position.latitude, position.longitude),
-          18.0,
-        );
-      } catch (e) {
-        debugPrint('Location fetching failed: $e');
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-          _showErrorSnackBar('Gagal mendapatkan lokasi GPS. Mohon coba lagi.');
-        }
-      }
-    } else {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        _showErrorSnackBar('Akses Lokasi & Kamera dibutuhkan untuk absensi.');
-      }
-    }
   }
 
   void _showPermissionHelpDialog() {
@@ -300,41 +98,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     );
   }
 
-  void _checkDistance(Position userPos) {
-    if (_locations.isEmpty) {
-      if (mounted) {
-        setState(() {
-          _isWithinRange = false;
-          _matchedLocationName = null;
-        });
-      }
-      return;
-    }
-
-    bool found = false;
-    String? matchedName;
-
-    for (final loc in _locations) {
-      final distance = Geolocator.distanceBetween(
-        userPos.latitude,
-        userPos.longitude,
-        (loc['latitude'] as num).toDouble(),
-        (loc['longitude'] as num).toDouble(),
-      );
-      final radius = (loc['radius_meters'] as num?)?.toDouble() ?? 100.0;
-      if (distance <= radius + 10) {
-        found = true;
-        matchedName = loc['name'] as String?;
-        break;
-      }
-    }
-
-    if (mounted) {
-      setState(() {
-        _isWithinRange = found;
-        _matchedLocationName = matchedName;
-      });
-    }
+  @override
+  void dispose() {
+    _fieldNotesController.dispose();
+    _pulseController.dispose();
+    super.dispose();
   }
 
   IconData _getLocationIcon(String locationId) {
@@ -349,8 +117,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   // ... (Keep existing methods until build)
 
   Future<void> _handleCheckIn() async {
-    // 1. Validation
-    if (_currentPosition == null) {
+    final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+    if (attendanceProvider.currentPosition == null) {
       _showErrorSnackBar(
         'Lokasi tidak ditemukan. Pastikan GPS aktif dan sinyal stabil.',
       );
@@ -360,12 +128,12 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     final user = context.read<AuthProvider>().user;
 
     // Bypass range check for QR-based attendance
-    if (_attendanceType == 'office' && !_isWithinRange && user?.trackType != 'operational') {
+    if (attendanceProvider.attendanceType == 'office' && !attendanceProvider.isWithinRange && user?.trackType != 'operational') {
       _showErrorSnackBar('Anda harus berada di salah satu area lokasi absensi!');
       return;
     }
 
-    if (_attendanceType == 'field' &&
+    if (attendanceProvider.attendanceType == 'field' &&
         _fieldNotesController.text.trim().isEmpty) {
       _showErrorSnackBar('Wajib mengisi keterangan untuk Absen Luar!');
       return;
@@ -378,8 +146,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     final now = DateTime.now();
     DateTime workStartTime;
     
-    if (user?.shiftStartTime != null) {
-      final timeParts = user!.shiftStartTime!.split(':');
+    final currentUser = user;
+    if (currentUser != null && currentUser.shiftStartTime != null) {
+      final timeParts = currentUser.shiftStartTime!.split(':');
       workStartTime = DateTime(
           now.year, now.month, now.day, int.parse(timeParts[0]), int.parse(timeParts[1]));
     } else {
@@ -418,7 +187,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       context,
       MaterialPageRoute(
         builder: (context) => SelfieScreen(
-          address: _currentAddress,
+          address: attendanceProvider.currentAddress,
           shiftName: user?.shiftName ?? 'Regular Morning',
           isShifting: isShifting,
           status: 'Work from Office',
@@ -434,46 +203,40 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     }
   }
 
-
-
   Future<void> _handleCheckOut() async {
-    // 0. Null checks
-    if (_currentPosition == null) {
+    final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+    if (attendanceProvider.currentPosition == null) {
       _showErrorSnackBar(
         'Lokasi tidak ditemukan. Pastikan GPS aktif dan sinyal stabil.',
       );
       return;
     }
 
-    // Flexible checkout: check based on CURRENTLY SELECTED type in UI
-    if (_todayAttendance == null) {
+    if (attendanceProvider.todayAttendance == null) {
       _showErrorSnackBar('Data absensi hari ini tidak ditemukan.');
       return;
     }
 
-    // Flexible checkout: check based on CURRENTLY SELECTED type in UI
-    if (_attendanceType == 'office' && !_isWithinRange) {
+    if (attendanceProvider.attendanceType == 'office' && !attendanceProvider.isWithinRange) {
       _showErrorSnackBar('Anda harus berada di salah satu area lokasi absensi untuk Absen Kantor!');
       return;
     }
     
-    if (_attendanceType == 'field' && _fieldNotesController.text.trim().isEmpty) {
+    if (attendanceProvider.attendanceType == 'field' && _fieldNotesController.text.trim().isEmpty) {
       _showErrorSnackBar('Wajib mengisi keterangan untuk Absen Luar saat pulang!');
       return;
     }
 
-    // 1. Photo Confirmation (Selfie)
     if (!mounted) return;
     final user = context.read<AuthProvider>().user;
-    print('################ TRACK DEBUG: Attendance Check-Out for User: ${user?.name}, Track: ${user?.trackType}');
     final String? photoPath = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => SelfieScreen(
-          address: _currentAddress,
+          address: attendanceProvider.currentAddress,
           shiftName: user?.shiftName ?? 'Regular Morning',
           isShifting: false,
-          status: _attendanceType == 'office' 
+          status: attendanceProvider.attendanceType == 'office' 
             ? 'Work from Office' 
             : 'Work from Field',
         ),
@@ -482,31 +245,21 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
     if (photoPath == null) return; // User cancelled
 
-    // 2. Submit Checkout
     _showLoading();
-    final bool wasPreviousDay = _todayAttendance?['is_previous_day'] == true;
+    final bool wasPreviousDay = attendanceProvider.todayAttendance?['is_previous_day'] == true;
 
     try {
-      await _attendanceService.checkOut(
-        attendanceId: _todayAttendance!['id'],
+      await attendanceProvider.submitCheckOut(
+        attendanceId: attendanceProvider.todayAttendance!['id'],
         checkOutTime: DateFormat('HH:mm:ss').format(DateTime.now()),
-        photo: File(photoPath),
-        status: 'present',
-        attendanceType: _attendanceType,
-        fieldNotes: _attendanceType == 'field' ? _fieldNotesController.text : null,
+        photoPath: photoPath,
+        employeeId: user!.employeeRecordId!,
+        fieldNotes: attendanceProvider.attendanceType == 'field' ? _fieldNotesController.text : null,
+        wasPreviousDay: wasPreviousDay,
       );
 
       _fieldNotesController.clear();
       
-      // If this was a cross-day checkout, clear the state so user can clock-in for today
-      if (wasPreviousDay) {
-        setState(() {
-          _todayAttendance = null;
-        });
-      }
-      
-      await _fetchTodayAttendance(); // Refresh status
-
       if (!mounted) return;
       Navigator.pop(context); // Pop loading
       _showSuccessSnackBar(wasPreviousDay
@@ -551,7 +304,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     ).show();
   }
 
-
   Future<void> _submitAttendance(String photoPath, {bool isShifting = false}) async {
     _showLoading();
 
@@ -562,25 +314,19 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         throw 'Data Karyawan tidak valid. Silakan login ulang.';
       }
 
-      await _attendanceService.checkIn(
+      final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+      await attendanceProvider.submitCheckIn(
         employeeId: user!.employeeRecordId!,
-        latitude: _currentPosition!.latitude,
-        longitude: _currentPosition!.longitude,
-        photo: File(photoPath),
-        status: 'present',
-        address: _currentAddress,
-        attendanceType: _attendanceType,
-        fieldNotes: _attendanceType == 'field' ? _fieldNotesController.text : null,
-        trackType: user.trackType,
+        photoPath: photoPath,
+        trackType: user.trackType ?? 'office',
         isShifting: isShifting,
+        fieldNotes: attendanceProvider.attendanceType == 'field' ? _fieldNotesController.text : null,
       );
-
-      await _fetchTodayAttendance(); // Refresh status
 
       if (!mounted) return;
       Navigator.pop(context); // Pop loading
 
-      if (_attendanceType == 'field') {
+      if (attendanceProvider.attendanceType == 'field') {
         _showSuccessSnackBar('Check In Berhasil! Menunggu approval admin.');
       } else {
         _showSuccessSnackBar('Check In Berhasil!');
@@ -595,21 +341,19 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   Future<void> _manualSync() async {
     _showLoading();
     try {
-      final result = await _offlineService.syncAllUnsyncedAttendances();
+      final user = context.read<AuthProvider>().user;
+      final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+      final result = await attendanceProvider.manualSync(user!.employeeRecordId!);
       if (!mounted) return;
       Navigator.pop(context); // Close loading
 
       if (result['success'] == true && result['synced'] > 0) {
         _showSuccessSnackBar('Berhasil menyinkronkan ${result['synced']} data!');
-        _fetchTodayAttendance(); // Refresh status
       } else if (result['synced'] == 0 && result['failed'] == 0) {
         _showSuccessSnackBar('Semua data sudah tersinkronisasi.');
       } else if (result['failed'] > 0) {
         _showErrorSnackBar('Gagal menyinkronkan ${result['failed']} data. Cek koneksi Anda.');
       }
-      
-      // Force UI refresh for the unsynced count
-      setState(() {}); 
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context);
@@ -619,6 +363,17 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
   @override
   Widget build(BuildContext context) {
+    final attendanceProvider = Provider.of<AttendanceProvider>(context);
+    final _todayAttendance = attendanceProvider.todayAttendance;
+    final _isOnline = attendanceProvider.isOnline;
+    final _isLoading = attendanceProvider.isLoading;
+    final _isWithinRange = attendanceProvider.isWithinRange;
+    final _matchedLocationName = attendanceProvider.matchedLocationName;
+    final _locations = attendanceProvider.locations;
+    final _currentPosition = attendanceProvider.currentPosition;
+    final _currentAddress = attendanceProvider.currentAddress;
+    final _attendanceType = attendanceProvider.attendanceType;
+
     // Logic for Buttons
     bool hasCheckedIn = _todayAttendance != null;
     bool hasCheckedOut = hasCheckedIn && _todayAttendance!['check_out'] != null;
@@ -904,7 +659,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               ),
                               // Show unsynced count
                               FutureBuilder<int>(
-                                future: _offlineService.getUnsyncedCount(),
+                                future: OfflineAttendanceService().getUnsyncedCount(),
                                 builder: (context, snapshot) {
                                   if (!snapshot.hasData ||
                                       snapshot.data! == 0) {
@@ -1081,9 +836,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               children: [
                                 Expanded(
                                   child: GestureDetector(
-                                    onTap: () => setState(
-                                      () => _attendanceType = 'office',
-                                    ),
+                                    onTap: () => attendanceProvider.setAttendanceType('office'),
                                     child: AnimatedContainer(
                                       duration: const Duration(
                                         milliseconds: 200,
@@ -1112,9 +865,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 ),
                                 Expanded(
                                   child: GestureDetector(
-                                    onTap: () => setState(
-                                      () => _attendanceType = 'field',
-                                    ),
+                                    onTap: () => attendanceProvider.setAttendanceType('field'),
                                     child: AnimatedContainer(
                                       duration: const Duration(
                                         milliseconds: 200,

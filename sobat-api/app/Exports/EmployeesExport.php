@@ -78,6 +78,7 @@ class EmployeesExport implements FromQuery, WithHeadings, WithMapping, WithStyle
             'Alamat Domisili',
             'Nama Atasan',
             'Track',
+            'Track Type',
         ];
     }
 
@@ -129,6 +130,7 @@ class EmployeesExport implements FromQuery, WithHeadings, WithMapping, WithStyle
             $employee->current_address ?? '-',
             $employee->supervisor_name ?? '-',
             $employee->track === 'operational' ? 'Operational' : ($employee->track === 'office' ? 'Head Office' : $employee->track ?? '-'),
+            $employee->track_type ?? '-',
         ]);
     }
 

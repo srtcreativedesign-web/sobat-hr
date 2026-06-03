@@ -36,22 +36,22 @@ class RequestController extends Controller
             $query->where('employee_id', $user->employee->id);
         }
 
-        if ($request->has('employee_id')) {
+        if ($request->filled('employee_id')) {
             $query->where('employee_id', $request->employee_id);
         }
 
-        if ($request->has('type')) {
+        if ($request->filled('type') && $request->type !== 'null') {
             $query->where('type', $request->type);
         }
 
-        if ($request->has('department')) {
+        if ($request->filled('department')) {
             $dept = $request->department;
             $query->whereHas('employee', function ($q) use ($dept) {
                 $q->where('department', $dept);
             });
         }
 
-        if ($request->has('search')) {
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->whereHas('employee', function ($q) use ($search) {
                 $q->where('full_name', 'like', "%{$search}%")
@@ -59,7 +59,7 @@ class RequestController extends Controller
             });
         }
 
-        if ($request->has('status')) {
+        if ($request->filled('status') && $request->status !== 'null') {
             $status = $request->status;
             if (str_contains($status, ',')) {
                 $query->whereIn('status', explode(',', $status));
@@ -69,6 +69,15 @@ class RequestController extends Controller
         }
 
         $requests = $query->orderBy('created_at', 'desc')->paginate(20);
+
+        \Illuminate\Support\Facades\Log::info('API /requests response', [
+            'user_id' => $user->id,
+            'is_admin' => $isAdmin,
+            'is_mobile' => $isMobile,
+            'employee_id' => $user->employee ? $user->employee->id : null,
+            'data_count' => count($requests->items()),
+            'data' => $requests->items(),
+        ]);
 
         return response()->json($requests);
     }

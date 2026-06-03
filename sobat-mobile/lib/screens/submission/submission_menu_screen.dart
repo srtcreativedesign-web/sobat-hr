@@ -271,7 +271,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
             title: AppLocalizations.of(context)!.history,
             subtitle: AppLocalizations.of(context)!.historyMenuDesc,
             isLast: true,
-            onTap: () => Navigator.pushNamed(context, '/attendance/history'),
+            onTap: () => Navigator.pushNamed(context, '/submission/list'),
           ),
           const SizedBox(height: 24),
           _buildSectionHeader(AppLocalizations.of(context)!.administration, AppLocalizations.of(context)!.servicesCount('3')),
