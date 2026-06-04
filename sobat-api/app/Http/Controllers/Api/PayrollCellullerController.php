@@ -464,14 +464,22 @@ class PayrollCellullerController extends Controller
             ['basic_salary', 'position_allowance', 'meal_amount', 'transport_amount', 'mandatory_overtime_amount', 'attendance_allowance', 'health_allowance', 'overtime_amount', 'bonus', 'holiday_allowance', 'adjustment', 'policy_ho'],
             ['deduction_absent', 'deduction_late', 'deduction_so_shortage', 'deduction_loan', 'deduction_admin_fee', 'deduction_bpjs_tk']
         );
-        $formatted['thp'] = $thpResult['thp'];
-        if ($thpResult['net_salary'] !== null) {
-            $formatted['net_salary'] = $thpResult['net_salary'];
-        }
         
-        // Fallback for gross salary if it's 0 or missing in DB
-        $gross = (float)($payroll->gross_salary ?? 0);
-        $formatted['gross_salary'] = $gross > 0 ? $gross : $thpResult['total_income'];
+        // If it's MCM format, all breakdown is 0, so THP becomes 0.
+        // We must override it with final_payment if basic_salary is 0 and final_payment exists.
+        if ($payroll->basic_salary <= 0 && $payroll->final_payment > 0) {
+            $formatted['thp'] = $payroll->final_payment;
+            $formatted['net_salary'] = $payroll->final_payment;
+            $formatted['gross_salary'] = $payroll->final_payment;
+        } else {
+            $formatted['thp'] = $thpResult['thp'];
+            if ($thpResult['net_salary'] !== null) {
+                $formatted['net_salary'] = $thpResult['net_salary'];
+            }
+            // Fallback for gross salary if it's 0 or missing in DB
+            $gross = (float)($payroll->gross_salary ?? 0);
+            $formatted['gross_salary'] = $gross > 0 ? $gross : $thpResult['total_income'];
+        }
         
         // Add attendance data for Mobile App
         $formatted['attendance'] = [
