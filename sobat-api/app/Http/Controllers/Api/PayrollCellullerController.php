@@ -120,83 +120,124 @@ class PayrollCellullerController extends Controller
             }
             
             $dataRows = [];
-            $startDataRow = $headerRowIndex + 1; // Row after header
             
-            // Based on 'payslip cell.xlsx': header is row 1, data starts row 2 (or header row 1 & 2, data 3?)
-            // The read_headers.php showed Row 1 has headers like "No", "Nama", etc.
-            // Let's assume data starts at row 2 if header detected at 1. Correct logic based on file:
-            // "Row 1: [A]No | [B]Nama ..."
-            
+            // Detect if this is MCM Bank Transfer format
+            $isMCMFormat = false;
+            if (strtoupper(trim((string)$sheet->getCell('F1')->getValue())) === 'NAMA' && 
+                strtoupper(trim((string)$sheet->getCell('A1')->getValue())) === 'REKENING') {
+                $isMCMFormat = true;
+                $headerRowIndex = 1;
+                $startDataRow = 2;
+            } else {
+                $startDataRow = $headerRowIndex + 1; // Row after header
+            }
+
             for ($row = $startDataRow; $row <= $highestRow; $row++) {
-                $employeeName = $getCellValue('B', $row);
-                
-                if (empty($employeeName) || !is_string($employeeName)) continue;
-                
-                // MAPPING BASED ON 'payslip cell.xlsx' (refer to payslip_celluller_format.md)
-                $parsed = [
-                    'employee_name' => $employeeName,
-                    'period' => $request->period ?? date('Y-m'), // Use period from request if provided
-                    'account_number' => $getCellValue('C', $row),
+                if ($isMCMFormat) {
+                    $employeeName = $getCellValue('F', $row);
+                    if (empty($employeeName) || !is_string($employeeName)) continue;
                     
-                    // Attendance
-                    'days_total' => (int) $getCellValue('D', $row),
-                    'days_off' => (int) $getCellValue('E', $row),
-                    'days_sick' => (int) $getCellValue('F', $row),
-                    'days_permission' => (int) $getCellValue('G', $row),
-                    'days_alpha' => (int) $getCellValue('H', $row),
-                    'days_leave' => (int) $getCellValue('I', $row),
-                    'days_present' => (int) $getCellValue('J', $row),
+                    $parsed = [
+                        'employee_name' => $employeeName,
+                        'period' => $request->period ?? date('Y-m'),
+                        'account_number' => $getCellValue('A', $row),
+                        
+                        'days_total' => 0, 'days_off' => 0, 'days_sick' => 0, 'days_permission' => 0,
+                        'days_alpha' => 0, 'days_leave' => 0, 'days_present' => 0,
+                        
+                        'basic_salary' => 0, 'position_allowance' => 0,
+                        'meal_rate' => 0, 'meal_amount' => 0,
+                        'transport_rate' => 0, 'transport_amount' => 0,
+                        'mandatory_overtime_rate' => 0, 'mandatory_overtime_amount' => 0,
+                        'attendance_allowance' => 0, 'health_allowance' => 0,
+                        'subtotal_1' => 0,
+                        
+                        'overtime_rate' => 0, 'overtime_hours' => 0, 'overtime_amount' => 0,
+                        'bonus' => 0, 'holiday_allowance' => 0, 'adjustment' => 0,
+                        'gross_salary' => 0, 'policy_ho' => 0,
+                        
+                        'deduction_absent' => 0, 'deduction_late' => 0, 'deduction_so_shortage' => 0,
+                        'deduction_loan' => 0, 'deduction_admin_fee' => 0, 'deduction_bpjs_tk' => 0,
+                        'total_deduction' => 0,
+                        
+                        'net_salary' => $getCellValue('C', $row), // Nominal
+                        'ewa_amount' => 0,
+                        'final_payment' => $getCellValue('C', $row), // Nominal
+                        
+                        'years_of_service' => null, 
+                        'notes' => null,
+                    ];
+                } else {
+                    $employeeName = $getCellValue('B', $row);
                     
-                    // Income
-                    'basic_salary' => $getCellValue('K', $row),
-                    'position_allowance' => $getCellValue('L', $row),
+                    if (empty($employeeName) || !is_string($employeeName)) continue;
                     
-                    'meal_rate' => $getCellValue('M', $row),
-                    'meal_amount' => $getCellValue('N', $row),
-                    
-                    'transport_rate' => $getCellValue('O', $row),
-                    'transport_amount' => $getCellValue('P', $row),
-                    
-                    'mandatory_overtime_rate' => $getCellValue('Q', $row),
-                    'mandatory_overtime_amount' => $getCellValue('R', $row),
-                    
-                    'attendance_allowance' => $getCellValue('S', $row),
-                    'health_allowance' => $getCellValue('T', $row),
-                    
-                    'subtotal_1' => $getCellValue('U', $row), // Total Gaji
-                    
-                    // Overtime
-                    'overtime_rate' => $getCellValue('V', $row),
-                    'overtime_hours' => $getCellValue('W', $row),
-                    'overtime_amount' => $getCellValue('X', $row),
-                    
-                    // Bonus & Incentives
-                    'bonus' => $getCellValue('Y', $row),
-                    'holiday_allowance' => $getCellValue('Z', $row), // Insentif Lebaran
-                    'adjustment' => $getCellValue('AA', $row),
-                    
-                    'gross_salary' => $getCellValue('AB', $row), // Total Gaji & Bonus
-                    'policy_ho' => $getCellValue('AC', $row),
-                    
-                    // Deductions
-                    'deduction_absent' => $getCellValue('AD', $row),
-                    'deduction_late' => $getCellValue('AE', $row),
-                    'deduction_so_shortage' => $getCellValue('AF', $row), // Selisih SO
-                    'deduction_loan' => $getCellValue('AG', $row),
-                    'deduction_admin_fee' => $getCellValue('AH', $row),
-                    'deduction_bpjs_tk' => $getCellValue('AI', $row),
-                    
-                    'total_deduction' => $getCellValue('AJ', $row),
-                    
-                    // Finals
-                    'net_salary' => $getCellValue('AK', $row), // Grand Total
-                    'ewa_amount' => $getCellValue('AL', $row),
-                    'final_payment' => $getCellValue('AM', $row), // PAYROLL
-                    
-                    // Extras (No specific columns mapped in Excel for these, keeping nullable)
-                    'years_of_service' => null, 
-                    'notes' => null,
-                ];
+                    // MAPPING BASED ON 'payslip cell.xlsx' (refer to payslip_celluller_format.md)
+                    $parsed = [
+                        'employee_name' => $employeeName,
+                        'period' => $request->period ?? date('Y-m'), // Use period from request if provided
+                        'account_number' => $getCellValue('C', $row),
+                        
+                        // Attendance
+                        'days_total' => (int) $getCellValue('D', $row),
+                        'days_off' => (int) $getCellValue('E', $row),
+                        'days_sick' => (int) $getCellValue('F', $row),
+                        'days_permission' => (int) $getCellValue('G', $row),
+                        'days_alpha' => (int) $getCellValue('H', $row),
+                        'days_leave' => (int) $getCellValue('I', $row),
+                        'days_present' => (int) $getCellValue('J', $row),
+                        
+                        // Income
+                        'basic_salary' => $getCellValue('K', $row),
+                        'position_allowance' => $getCellValue('L', $row),
+                        
+                        'meal_rate' => $getCellValue('M', $row),
+                        'meal_amount' => $getCellValue('N', $row),
+                        
+                        'transport_rate' => $getCellValue('O', $row),
+                        'transport_amount' => $getCellValue('P', $row),
+                        
+                        'mandatory_overtime_rate' => $getCellValue('Q', $row),
+                        'mandatory_overtime_amount' => $getCellValue('R', $row),
+                        
+                        'attendance_allowance' => $getCellValue('S', $row),
+                        'health_allowance' => $getCellValue('T', $row),
+                        
+                        'subtotal_1' => $getCellValue('U', $row), // Total Gaji
+                        
+                        // Overtime
+                        'overtime_rate' => $getCellValue('V', $row),
+                        'overtime_hours' => $getCellValue('W', $row),
+                        'overtime_amount' => $getCellValue('X', $row),
+                        
+                        // Bonus & Incentives
+                        'bonus' => $getCellValue('Y', $row),
+                        'holiday_allowance' => $getCellValue('Z', $row), // Insentif Lebaran
+                        'adjustment' => $getCellValue('AA', $row),
+                        
+                        'gross_salary' => $getCellValue('AB', $row), // Total Gaji & Bonus
+                        'policy_ho' => $getCellValue('AC', $row),
+                        
+                        // Deductions
+                        'deduction_absent' => $getCellValue('AD', $row),
+                        'deduction_late' => $getCellValue('AE', $row),
+                        'deduction_so_shortage' => $getCellValue('AF', $row), // Selisih SO
+                        'deduction_loan' => $getCellValue('AG', $row),
+                        'deduction_admin_fee' => $getCellValue('AH', $row),
+                        'deduction_bpjs_tk' => $getCellValue('AI', $row),
+                        
+                        'total_deduction' => $getCellValue('AJ', $row),
+                        
+                        // Finals
+                        'net_salary' => $getCellValue('AK', $row), // Grand Total
+                        'ewa_amount' => $getCellValue('AL', $row),
+                        'final_payment' => $getCellValue('AM', $row), // PAYROLL
+                        
+                        // Extras (No specific columns mapped in Excel for these, keeping nullable)
+                        'years_of_service' => null, 
+                        'notes' => null,
+                    ];
+                }
                 
                 $dataRows[] = $parsed;
             }
