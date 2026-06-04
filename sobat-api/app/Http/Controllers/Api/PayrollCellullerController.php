@@ -85,10 +85,31 @@ class PayrollCellullerController extends Controller
             $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
             $reader->setReadDataOnly(false); // false = calculate formulas (gross_salary, etc. are formulas)
             $spreadsheet = $reader->load($file->getRealPath());
-            $sheet = $spreadsheet->getActiveSheet();
+            // Iterate over all sheets to find the correct payroll breakdown sheet
+            // Because sometimes the active sheet is the MCM Bank Transfer sheet instead of the breakdown
+            $sheet = null;
+            $headerRowIndex = -1;
             
-            $highestRow = $sheet->getHighestRow();
-            $highestColumn = $sheet->getHighestColumn();
+            foreach ($spreadsheet->getAllSheets() as $s) {
+                for ($row = 1; $row <= min(10, $s->getHighestRow()); $row++) {
+                    $cellValue = $s->getCell('B' . $row)->getValue(); // Check Column B based on Excel file analysis
+                    if ($cellValue && (stripos($cellValue, 'Nama') !== false)) {
+                         $sheet = $s;
+                         $headerRowIndex = $row;
+                         break 2;
+                    }
+                }
+            }
+            
+            // If we couldn't find a breakdown sheet, fallback to the active sheet
+            if (!$sheet) {
+                $sheet = $spreadsheet->getActiveSheet();
+                $highestRow = $sheet->getHighestRow();
+                $highestColumn = $sheet->getHighestColumn();
+            } else {
+                $highestRow = $sheet->getHighestRow();
+                $highestColumn = $sheet->getHighestColumn();
+            }
             
             // Helper to get calculated cell value
             $getCellValue = function($col, $row) use ($sheet) {
@@ -103,16 +124,6 @@ class PayrollCellullerController extends Controller
                 }
                 return $value ?? 0;
             };
-            
-            // Detect header row (Look for "Nama" or "Nama Karyawan")
-            $headerRowIndex = -1;
-            for ($row = 1; $row <= min(10, $highestRow); $row++) {
-                $cellValue = $sheet->getCell('B' . $row)->getValue(); // Check Column B based on Excel file analysis
-                if ($cellValue && (stripos($cellValue, 'Nama') !== false)) {
-                     $headerRowIndex = $row;
-                     break;
-                }
-            }
             
             if ($headerRowIndex === -1) {
                 // Fallback: Check standard Row 1
