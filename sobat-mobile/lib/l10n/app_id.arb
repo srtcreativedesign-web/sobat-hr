@@ -452,5 +452,9 @@
   "featureUnderDevelopmentPart2": "Pengembangan",
   "featureUnderDevelopmentDesc": "Kami sedang merancang fitur masa depan untuk meningkatkan produktivitas Anda. Segera hadir di genggaman Anda.",
   "systemReadiness": "KESIAPAN SISTEM",
-  "createSubmission": "Buat Pengajuan"
+  "createSubmission": "Buat Pengajuan",
+  "overtimeHistoryTitle": "Riwayat Lembur",
+  "selectPeriod": "Pilih Periode",
+  "clearPeriod": "Hapus Periode",
+  "downloadPdfSummary": "Unduh Rekap PDF"
 }

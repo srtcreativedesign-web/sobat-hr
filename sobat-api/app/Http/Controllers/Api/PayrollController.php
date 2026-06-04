@@ -365,10 +365,9 @@ class PayrollController extends Controller
                 }
             };
 
-            // Detect header row (look for "Nama Karyawan")
+            // Detect header row (look for "Nama Karyawan" or "NAMA")
             $headerRowIndex = -1;
             for ($row = 1; $row <= min(10, $highestRow); $row++) {
-                // Use cell iterator instead of range() to support columns beyond Z
                 $rowIterator = $sheet->getRowIterator($row, $row)->current();
                 $cellIterator = $rowIterator->getCellIterator('A', $highestColumn);
                 $cellIterator->setIterateOnlyExistingCells(false);
@@ -376,7 +375,7 @@ class PayrollController extends Controller
                 foreach ($cellIterator as $cell) {
                     $cellValue = $cell->getValue();
 
-                    if ($cellValue && stripos($cellValue, 'Nama Karyawan') !== false) {
+                    if ($cellValue && (stripos($cellValue, 'Nama Karyawan') !== false || strtoupper(trim($cellValue)) === 'NAMA')) {
                         $headerRowIndex = $row;
                         Log::info("Header found at row $row, col ".$cell->getColumn());
                         break 2;
@@ -385,14 +384,14 @@ class PayrollController extends Controller
             }
 
             if ($headerRowIndex === -1) {
-                return response()->json(['message' => 'Format tidak dikenali. Pastikan ada kolom "Nama Karyawan".'], 422);
+                return response()->json(['message' => 'Format tidak dikenali. Pastikan ada kolom "Nama Karyawan" atau "NAMA".'], 422);
             }
 
             // BUILD COLUMN MAPPING based on header names
             $columnMapping = [];
             $headerPatterns = [
                 'periode' => ['Periode'],
-                'nama_karyawan' => ['Nama Karyawan', 'Nama Pegawai'],
+                'nama_karyawan' => ['Nama Karyawan', 'Nama Pegawai', 'NAMA'],
                 'no_rekening' => ['No Rekening', 'Rekening'],
                 'gaji_pokok' => ['Gaji Pokok', 'Gapok', 'Basic Salary'],
                 'kehadiran_jumlah' => [['Kehadiran', 'Jumlah']],
@@ -401,7 +400,7 @@ class PayrollController extends Controller
                 'transport_rate' => [['Transport', '/ Hari']],
                 'kesehatan_jumlah' => ['Tunj. Kesehatan'],
                 'tunj_jabatan' => ['Tunj. Jabatan'],
-                'total_gaji' => [['Total Gaji', '( Rp )']],  // Hanya "Total Gaji (Rp)", bukan "Total Gaji & Bonus"
+                'total_gaji' => [['Total Gaji', '( Rp )']],
                 'total_gaji_bonus' => ['Total Gaji & Bonus'],
                 'lembur_rate' => [['Lembur', '/ Jam']],
                 'lembur_jam' => [['Lembur', 'Jam']],
@@ -425,7 +424,7 @@ class PayrollController extends Controller
                 'grand_total' => ['Grand Total'],
                 'ewa' => ['EWA', 'Pinjaman ke Stafbook', 'Pinjaman stafbook'],
                 'potongan_ewa' => ['Potongan EWA'],
-                'payroll' => ['Payroll', 'THP'],
+                'payroll' => ['Payroll', 'THP', 'NOMINAL'],
                 'jml_hr_masuk' => ['JML HR', 'Jumlah Hari'],
             ];
 
@@ -539,6 +538,19 @@ class PayrollController extends Controller
                 // Read values using mapped columns
                 $periode = $getCellValue($columnMapping['periode'] ?? null, $row);
                 $accountNumber = $getCellValue($columnMapping['no_rekening'] ?? null, $row);
+
+                // Fix for cellular format where first column of Nama Karyawan is just a "+"
+                if ($employeeName === '+') {
+                    // Find the next column letter
+                    $namaColLetter = $columnMapping['nama_karyawan'];
+                    $nextColLetter = ++$namaColLetter;
+                    $employeeName = $getCellValue($nextColLetter, $row);
+                }
+
+                // Skip if still no employee name after + adjustment
+                if (empty($employeeName) || ! is_string($employeeName)) {
+                    continue;
+                }
 
                 // Basic Salary
                 $basicSalary = $getCellValue($columnMapping['gaji_pokok'] ?? null, $row);

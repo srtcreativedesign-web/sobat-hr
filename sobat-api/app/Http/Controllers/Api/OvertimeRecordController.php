@@ -35,6 +35,13 @@ class OvertimeRecordController extends Controller
                   ->whereYear('date', $request->year);
         }
 
+        if ($request->has('track') && $request->track) {
+            $track = $request->track;
+            $query->whereHas('employee', function ($q) use ($track) {
+                $q->where('track', $track);
+            });
+        }
+
         return response()->json($query->orderBy('date', 'desc')->paginate(20));
     }
 

@@ -452,5 +452,9 @@
   "featureUnderDevelopmentPart2": "Development",
   "featureUnderDevelopmentDesc": "We are designing future features to improve your productivity. Coming soon to your hands.",
   "systemReadiness": "SYSTEM READINESS",
-  "createSubmission": "Create Submission"
+  "createSubmission": "Create Submission",
+  "overtimeHistoryTitle": "Overtime History",
+  "selectPeriod": "Select Period",
+  "clearPeriod": "Clear Period",
+  "downloadPdfSummary": "Download PDF Summary"
 }

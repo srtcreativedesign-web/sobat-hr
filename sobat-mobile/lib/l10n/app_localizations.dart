@@ -2251,6 +2251,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create Submission'**
   String get createSubmission;
+
+  /// No description provided for @overtimeHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Overtime History'**
+  String get overtimeHistoryTitle;
+
+  /// No description provided for @selectPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Period'**
+  String get selectPeriod;
+
+  /// No description provided for @clearPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Period'**
+  String get clearPeriod;
+
+  /// No description provided for @downloadPdfSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Download PDF Summary'**
+  String get downloadPdfSummary;
 }
 
 class _AppLocalizationsDelegate

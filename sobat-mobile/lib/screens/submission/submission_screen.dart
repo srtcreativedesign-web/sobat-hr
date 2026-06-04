@@ -19,6 +19,20 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _submissions = [];
 
+  String _selectedType = 'all';
+
+  List<Map<String, String>> _getTypeFilters(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return [
+      {'value': 'all', 'label': loc.allLabel},
+      {'value': 'leave', 'label': loc.leave},
+      {'value': 'sick', 'label': loc.sick},
+      {'value': 'overtime', 'label': loc.overtime},
+      {'value': 'business_trip', 'label': loc.businessTrip},
+      {'value': 'reimbursement', 'label': loc.reimbursement},
+    ];
+  }
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +66,7 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
     return Column(
       children: [
         _buildHeader(),
+        _buildTypeFilters(),
         _buildFilters(),
         Expanded(
           child: RefreshIndicator(
@@ -62,7 +77,7 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
                 : ListView(
                     padding: EdgeInsets.fromLTRB(
                       24,
-                      16,
+                      8,
                       24,
                       100 + MediaQuery.of(context).padding.bottom,
                     ),
@@ -74,16 +89,57 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
     );
   }
 
+  Widget _buildTypeFilters() {
+    final types = _getTypeFilters(context);
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+      child: Row(
+        children: types.map((type) {
+          final isSelected = _selectedType == type['value'];
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(type['label']!),
+              selected: isSelected,
+              onSelected: (selected) {
+                if (selected) {
+                  setState(() => _selectedType = type['value']!);
+                }
+              },
+              selectedColor: AppTheme.colorCyan.withValues(alpha: 0.1),
+              backgroundColor: Colors.white,
+              side: BorderSide(
+                color: isSelected ? AppTheme.colorCyan : Colors.grey.shade200,
+              ),
+              labelStyle: TextStyle(
+                color: isSelected ? AppTheme.colorCyan : AppTheme.textLight,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   List<Widget> _buildFilteredList() {
     // 1. Filter based on selection
     final selectedFilter = _filters[_selectedFilterIndex];
 
-    // Map API status to Filter labels if necessary, or just match strings
-    // API Statuses: pending, approved, rejected
-    // Filters: Semua, Menunggu, Disetujui, Ditolak
-
     final filtered = _submissions.where((item) {
       final status = (item['status'] ?? '').toString().toLowerCase();
+      final type = (item['type'] ?? '').toString().toLowerCase();
+
+      // Category filter
+      if (_selectedType != 'all') {
+        if (_selectedType == 'sick' && (type == 'sick' || type == 'sick_leave')) {
+          // Allow
+        } else if (type != _selectedType) {
+          return false;
+        }
+      }
+
       if (selectedFilter == 'Semua') return true;
       if (selectedFilter == 'Menunggu' && status == 'pending') return true;
       if (selectedFilter == 'Disetujui' && status == 'approved') return true;
@@ -142,12 +198,16 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
           iconBgColor: _mapStatusToColor(item['status']).withValues(alpha: 0.1),
           detailLabel: item['reason'] ?? '-',
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => SubmissionDetailScreen(submission: item),
-              ),
-            );
+            if (item['type'] == 'overtime') {
+              Navigator.pushNamed(context, '/submission/overtime-history');
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SubmissionDetailScreen(submission: item),
+                ),
+              );
+            }
           },
         ),
       );

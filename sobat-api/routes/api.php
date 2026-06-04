@@ -105,6 +105,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Request routes (Cuti, Lembur, Reimburse, Resign)
     Route::get('/requests/leave-balance', [App\Http\Controllers\Api\RequestController::class, 'leaveBalance']);
+    Route::get('/requests/export/overtime', [App\Http\Controllers\Api\RequestController::class, 'exportOvertime']);
+    Route::get('/requests/export/overtime-pdf', [App\Http\Controllers\Api\RequestController::class, 'exportOvertimePdf']);
+    Route::get('/requests/export/{id}', [App\Http\Controllers\Api\RequestController::class, 'exportProof']);
     Route::get('/requests/{id}/proof', [App\Http\Controllers\Api\RequestController::class, 'exportProof']);
     Route::apiResource('requests', App\Http\Controllers\Api\RequestController::class);
     Route::post('/requests/{id}/submit', [App\Http\Controllers\Api\RequestController::class, 'submit']);
@@ -120,7 +123,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/overtime-records', [App\Http\Controllers\Api\OvertimeRecordController::class, 'index']);
     Route::post('/overtime-records/backfill', [App\Http\Controllers\Api\OvertimeRecordController::class, 'backfill']);
 
-    Route::get('/requests/export/overtime', [App\Http\Controllers\Api\RequestController::class, 'exportOvertime']);
     Route::get('/approvals', [App\Http\Controllers\Api\ApprovalController::class, 'index']);
     Route::get('/approvals/pending', [App\Http\Controllers\Api\ApprovalController::class, 'pending']);
 

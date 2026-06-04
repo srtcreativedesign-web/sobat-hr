@@ -68,6 +68,18 @@ class RequestController extends Controller
             }
         }
 
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $startDate = $request->start_date;
+            $endDate = $request->end_date . ' 23:59:59';
+            
+            $query->where(function($q) use ($startDate, $endDate) {
+                $q->whereBetween('start_date', [$startDate, $endDate])
+                  ->orWhere(function($q2) use ($startDate, $endDate) {
+                      $q2->whereNull('start_date')->whereBetween('created_at', [$startDate, $endDate]);
+                  });
+            });
+        }
+
         $requests = $query->orderBy('created_at', 'desc')->paginate(20);
 
         \Illuminate\Support\Facades\Log::info('API /requests response', [
@@ -781,6 +793,30 @@ class RequestController extends Controller
     public function exportOvertime(Request $request)
     {
         return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\OvertimeExport($request), 'overtime-report-'.now()->format('YmdHis').'.xlsx');
+    }
+
+    public function exportOvertimePdf(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->employee) {
+            return response()->json(['message' => 'Employee record not found'], 404);
+        }
+
+        $query = RequestModel::with(['employee', 'overtimeDetail'])
+            ->where('employee_id', $user->employee->id)
+            ->where('type', 'overtime')
+            ->where('status', 'approved');
+
+        if ($request->filled('month') && $request->filled('year')) {
+            $query->whereMonth('start_date', $request->month)
+                  ->whereYear('start_date', $request->year);
+        }
+
+        $requests = $query->orderBy('start_date', 'desc')->get();
+
+        $pdf = Pdf::loadView('pdf.overtime_summary', compact('requests'));
+        
+        return $pdf->download('Rekap-Lembur-' . now()->format('YmdHis') . '.pdf');
     }
 
     private function sendFcmToUser($user, string $title, string $body): void

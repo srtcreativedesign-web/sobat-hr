@@ -1130,4 +1130,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get createSubmission => 'Create Submission';
+
+  @override
+  String get overtimeHistoryTitle => 'Overtime History';
+
+  @override
+  String get selectPeriod => 'Select Period';
+
+  @override
+  String get clearPeriod => 'Clear Period';
+
+  @override
+  String get downloadPdfSummary => 'Download PDF Summary';
 }

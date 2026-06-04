@@ -43,6 +43,13 @@ class OvertimeExport implements FromQuery, WithHeadings, WithMapping
             });
         }
         
+        if ($this->request->has('track') && $this->request->track) {
+            $track = $this->request->track;
+            $query->whereHas('employee', function($q) use ($track) {
+                $q->where('track', $track);
+            });
+        }
+        
         return $query->orderBy('start_date', 'desc');
     }
 

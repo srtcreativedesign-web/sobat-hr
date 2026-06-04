@@ -1131,4 +1131,16 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get createSubmission => 'Buat Pengajuan';
+
+  @override
+  String get overtimeHistoryTitle => 'Riwayat Lembur';
+
+  @override
+  String get selectPeriod => 'Pilih Periode';
+
+  @override
+  String get clearPeriod => 'Hapus Periode';
+
+  @override
+  String get downloadPdfSummary => 'Unduh Rekap PDF';
 }

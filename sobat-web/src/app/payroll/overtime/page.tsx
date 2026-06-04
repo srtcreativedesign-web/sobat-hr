@@ -44,6 +44,7 @@ export default function OvertimePage() {
     // Filters
     const [search, setSearch] = useState('');
     const [selectedOrg, setSelectedOrg] = useState('');
+    const [activeTab, setActiveTab] = useState<'operational' | 'office'>('operational');
 
     const fetchOvertime = async () => {
         setIsLoading(true);
@@ -57,6 +58,9 @@ export default function OvertimePage() {
             }
             if (selectedOrg) {
                 url += `&organization_id=${selectedOrg}`;
+            }
+            if (activeTab) {
+                url += `&track=${activeTab}`;
             }
 
             const response = await fetch(url, {
@@ -85,6 +89,7 @@ export default function OvertimePage() {
 
             if (search) url += `?search=${search}`;
             if (selectedOrg) url += `${search ? '&' : '?'}organization_id=${selectedOrg}`;
+            url += `${search || selectedOrg ? '&' : '?'}track=${activeTab}`;
 
             const response = await fetch(url, {
                 headers: {
@@ -145,7 +150,7 @@ export default function OvertimePage() {
             fetchOvertime();
         }, 500);
         return () => clearTimeout(timer);
-    }, [search, selectedOrg]);
+    }, [search, selectedOrg, activeTab]);
 
     return (
         <DashboardLayout>
@@ -160,6 +165,36 @@ export default function OvertimePage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
                         Export to Excel
+                    </button>
+                </div>
+
+                {/* Tabs */}
+                <div className="flex space-x-4 border-b border-[#1C3ECA]/10 mb-6">
+                    <button
+                        onClick={() => setActiveTab('operational')}
+                        className={`pb-4 px-4 text-sm font-medium transition-colors relative ${
+                            activeTab === 'operational'
+                                ? 'text-[#1C3ECA]'
+                                : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                        Operational
+                        {activeTab === 'operational' && (
+                            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#1C3ECA] rounded-t-full" />
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('office')}
+                        className={`pb-4 px-4 text-sm font-medium transition-colors relative ${
+                            activeTab === 'office'
+                                ? 'text-[#1C3ECA]'
+                                : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                        Head Office
+                        {activeTab === 'office' && (
+                            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#1C3ECA] rounded-t-full" />
+                        )}
                     </button>
                 </div>
 

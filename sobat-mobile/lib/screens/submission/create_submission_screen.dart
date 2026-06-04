@@ -199,6 +199,29 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          if (widget.type == 'Lembur')
+            Padding(
+              padding: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/submission/overtime-history');
+                },
+                icon: const Icon(Icons.history, size: 18),
+                label: const Text(
+                  'Riwayat',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.colorCyan,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
+              ),
+            ),
           if (config['quota'] != null)
             Container(
               margin: const EdgeInsets.only(right: 16),

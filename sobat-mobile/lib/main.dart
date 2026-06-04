@@ -11,6 +11,7 @@ import 'providers/auth_provider.dart';
 import 'providers/locale_provider.dart';
 import 'providers/home_provider.dart';
 import 'providers/attendance_provider.dart';
+import 'providers/overtime_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/forgot_password_screen.dart';
 import 'screens/auth/welcome_screen.dart';
@@ -23,6 +24,7 @@ import 'screens/payroll/payroll_screen.dart';
 import 'screens/payroll/thr_screen.dart';
 import 'screens/submission/submission_menu_screen.dart';
 import 'screens/submission/submission_screen.dart';
+import 'screens/submission/overtime_history_screen.dart';
 import 'screens/submission/create_submission_screen.dart';
 import 'screens/announcement/announcement_list_screen.dart';
 import 'screens/notification/notification_screen.dart';
@@ -126,6 +128,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => LocaleProvider(prefs)),
         ChangeNotifierProvider(create: (_) => HomeProvider()),
         ChangeNotifierProvider(create: (_) => AttendanceProvider()),
+        ChangeNotifierProvider(create: (_) => OvertimeProvider()),
       ],
       child: Consumer<LocaleProvider>(
         builder: (context, localeProvider, child) {
@@ -160,6 +163,7 @@ class MyApp extends StatelessWidget {
                 backgroundColor: Color(0xFFF9FAFB),
                 body: SubmissionScreen(),
               ),
+              '/submission/overtime-history': (context) => const OvertimeHistoryScreen(),
               '/submission/create': (context) {
                 final args =
                     ModalRoute.of(context)!.settings.arguments as String;
