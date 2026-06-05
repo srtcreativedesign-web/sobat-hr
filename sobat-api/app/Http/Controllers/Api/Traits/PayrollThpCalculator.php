@@ -27,7 +27,7 @@ trait PayrollThpCalculator
 
         $totalDeductions = 0;
         foreach ($deductionFields as $field) {
-            $totalDeductions += (float)($payroll->$field ?? 0);
+            $totalDeductions += abs((float)($payroll->$field ?? 0));
         }
 
         $thpCalculated = $totalIncome - $totalDeductions;

@@ -230,6 +230,7 @@ class PayrollMmController extends Controller
                 'terlambat' => 'deduction_absent', // Maybe same deduction column
                 'selisih so' => 'deduction_shortage',
                 'pinjaman' => 'deduction_loan',
+                'kasbon' => 'deduction_loan',
                 'adm bank' => 'deduction_admin_fee',
                 'bpjs tk' => 'deduction_bpjs_tk',
             ];

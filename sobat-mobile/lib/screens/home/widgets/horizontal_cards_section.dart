@@ -125,6 +125,13 @@ class _HorizontalCardsSectionState extends State<HorizontalCardsSection> {
   }
 
   Widget _buildLeaveBalanceCard() {
+    double percentage = 0.0;
+    if (widget.isEligibleLeave && widget.leaveQuota > 0) {
+      percentage = widget.leaveBalance / widget.leaveQuota;
+      if (percentage < 0) percentage = 0.0;
+      if (percentage > 1) percentage = 1.0;
+    }
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8),
       padding: const EdgeInsets.all(20),
@@ -186,7 +193,7 @@ class _HorizontalCardsSectionState extends State<HorizontalCardsSection> {
                   ),
                 ],
               ),
-              // Conic Chart Simulation
+              // Dynamic Circular Chart
               Container(
                 height: 56,
                 width: 56,
@@ -194,7 +201,7 @@ class _HorizontalCardsSectionState extends State<HorizontalCardsSection> {
                   shape: BoxShape.circle,
                   gradient: SweepGradient(
                     colors: [AppTheme.colorCyan, Colors.grey.shade100],
-                    stops: const [0.75, 0.75],
+                    stops: [percentage, percentage],
                     transform: const GradientRotation(-1.57),
                   ),
                 ),

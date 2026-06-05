@@ -182,6 +182,7 @@ if ($headerRowIndex === -1) {
                 'terlambat' => 'deduction_late', 
                 'selisih so' => 'deduction_so_shortage',
                 'pinjaman' => 'deduction_loan',
+                'kasbon' => 'deduction_loan',
                 'adm bank' => 'deduction_admin_fee',
                 'bpjs tk' => 'deduction_bpjs_tk',
             ];

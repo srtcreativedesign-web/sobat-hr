@@ -251,7 +251,9 @@ class PayrollWrappingController extends Controller
                 'potongan' => 'deductions_header',
                 'grand total' => 'thp',
                 'pinjaman ewa' => 'ewa_amount',
-                'pinjaman' => 'ewa_amount', // Map generic 'Pinjaman' to EWA to prevent it being a regular THP deduction
+                'pinjaman' => 'deduction_loan',
+                'kasbon' => 'deduction_loan',
+                'kasbon' => 'deduction_loan',
                 'payroll' => 'net_salary',
                 'indisipliner' => 'deduction_late', // Mapping disciplinary to late deduction as a generic bucket
             ];

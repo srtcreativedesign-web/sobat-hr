@@ -51,16 +51,12 @@ class _PayrollScreenState extends State<PayrollScreen> {
   }
 
   Future<void> _enableScreenshotProtection() async {
-    if (Platform.isAndroid) {
-      await ScreenProtector.preventScreenshotOn();
-    }
+    await ScreenProtector.preventScreenshotOn();
   }
 
   @override
   void dispose() {
-    if (Platform.isAndroid) {
-      ScreenProtector.preventScreenshotOff();
-    }
+    ScreenProtector.preventScreenshotOff();
     super.dispose();
   }
 

@@ -318,7 +318,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       await attendanceProvider.submitCheckIn(
         employeeId: user!.employeeRecordId!,
         photoPath: photoPath,
-        trackType: user.trackType ?? 'office',
+        trackType: user.trackType,
         isShifting: isShifting,
         fieldNotes: attendanceProvider.attendanceType == 'field' ? _fieldNotesController.text : null,
       );
@@ -364,19 +364,19 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   @override
   Widget build(BuildContext context) {
     final attendanceProvider = Provider.of<AttendanceProvider>(context);
-    final _todayAttendance = attendanceProvider.todayAttendance;
-    final _isOnline = attendanceProvider.isOnline;
-    final _isLoading = attendanceProvider.isLoading;
-    final _isWithinRange = attendanceProvider.isWithinRange;
-    final _matchedLocationName = attendanceProvider.matchedLocationName;
-    final _locations = attendanceProvider.locations;
-    final _currentPosition = attendanceProvider.currentPosition;
-    final _currentAddress = attendanceProvider.currentAddress;
-    final _attendanceType = attendanceProvider.attendanceType;
+    final todayAttendance = attendanceProvider.todayAttendance;
+    final isOnline = attendanceProvider.isOnline;
+    final isLoadingLocal = attendanceProvider.isLoading;
+    final isWithinRange = attendanceProvider.isWithinRange;
+    final matchedLocationName = attendanceProvider.matchedLocationName;
+    final locations = attendanceProvider.locations;
+    final currentPosition = attendanceProvider.currentPosition;
+    final currentAddress = attendanceProvider.currentAddress;
+    final attendanceType = attendanceProvider.attendanceType;
 
     // Logic for Buttons
-    bool hasCheckedIn = _todayAttendance != null;
-    bool hasCheckedOut = hasCheckedIn && _todayAttendance!['check_out'] != null;
+    bool hasCheckedIn = todayAttendance != null;
+    bool hasCheckedOut = hasCheckedIn && todayAttendance['check_out'] != null;
 
     // Decoupled logic: can check in if no record today OR already checked out
     bool canCheckIn = !hasCheckedIn || hasCheckedOut;
@@ -390,10 +390,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     bool isLateRestricted = false;
     if (hasCheckedIn &&
         !hasCheckedOut &&
-        _todayAttendance!['check_in'] != null) {
+        todayAttendance['check_in'] != null) {
       String statusStr =
-          _todayAttendance!['status']?.toString().toLowerCase() ?? '';
-      String checkInTimeStr = _todayAttendance!['check_in'].toString();
+          todayAttendance['status']?.toString().toLowerCase() ?? '';
+      String checkInTimeStr = todayAttendance['check_in'].toString();
 
       bool isLate = false;
       try {
@@ -438,7 +438,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       buttonTextColor = gradientColors[0];
     }
 
-    if (_locations.isEmpty) {
+    if (locations.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('Presensi')),
         body: const Center(
@@ -456,8 +456,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
             mapController: _mapController,
             options: MapOptions(
               initialCenter: LatLng(
-                (_locations.first['latitude'] as num).toDouble(),
-                (_locations.first['longitude'] as num).toDouble(),
+                (locations.first['latitude'] as num).toDouble(),
+                (locations.first['longitude'] as num).toDouble(),
               ),
               initialZoom: 16.0,
             ),
@@ -468,19 +468,19 @@ class _AttendanceScreenState extends State<AttendanceScreen>
               ),
               CircleLayer(
                 circles: [
-                  for (final loc in _locations)
+                  for (final loc in locations)
                     CircleMarker(
                       point: LatLng(
                         (loc['latitude'] as num).toDouble(),
                         (loc['longitude'] as num).toDouble(),
                       ),
-                      color: (loc['name'] == _matchedLocationName)
+                      color: (loc['name'] == matchedLocationName)
                           ? Colors.green.withValues(alpha: 0.2)
                           : AppTheme.colorCyan.withValues(alpha: 0.15),
-                      borderColor: (loc['name'] == _matchedLocationName)
+                      borderColor: (loc['name'] == matchedLocationName)
                           ? Colors.green
                           : AppTheme.colorCyan,
-                      borderStrokeWidth: (loc['name'] == _matchedLocationName) ? 2 : 1,
+                      borderStrokeWidth: (loc['name'] == matchedLocationName) ? 2 : 1,
                       useRadiusInMeter: true,
                       radius: (loc['radius_meters'] as num?)?.toDouble() ?? 100.0,
                     ),
@@ -488,7 +488,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
               ),
               MarkerLayer(
                 markers: [
-                  for (final loc in _locations)
+                  for (final loc in locations)
                     Marker(
                       point: LatLng(
                         (loc['latitude'] as num).toDouble(),
@@ -502,7 +502,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: (loc['name'] == _matchedLocationName)
+                              color: (loc['name'] == matchedLocationName)
                                   ? Colors.green
                                   : Colors.white,
                               borderRadius: BorderRadius.circular(8),
@@ -513,7 +513,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.bold,
-                                color: (loc['name'] == _matchedLocationName)
+                                color: (loc['name'] == matchedLocationName)
                                     ? Colors.white
                                     : AppTheme.colorEggplant,
                               ),
@@ -529,7 +529,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                             ),
                             child: Icon(
                               _getLocationIcon(loc['id'] as String? ?? ''),
-                              color: (loc['name'] == _matchedLocationName)
+                              color: (loc['name'] == matchedLocationName)
                                   ? Colors.green
                                   : AppTheme.colorEggplant,
                               size: 18,
@@ -538,11 +538,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                         ],
                       ),
                     ),
-                  if (_currentPosition != null)
+                  if (currentPosition != null)
                     Marker(
                       point: LatLng(
-                        _currentPosition!.latitude,
-                        _currentPosition!.longitude,
+                        currentPosition.latitude,
+                        currentPosition.longitude,
                       ),
                       width: 100,
                       height: 100,
@@ -599,7 +599,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
               child: Column(
                 children: [
                   // Offline Banner
-                  if (!_isOnline)
+                  if (!isOnline)
                     Container(
                       width: double.infinity,
                       margin: const EdgeInsets.symmetric(
@@ -714,14 +714,14 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                             onPressed: () => Navigator.pop(context),
                           ),
                         ),
-                        if (!_isLoading)
+                        if (!isLoadingLocal)
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: _isWithinRange
+                              color: isWithinRange
                                   ? Colors.green.withValues(alpha: 0.9)
                                   : Colors.red.withValues(alpha: 0.9),
                               borderRadius: BorderRadius.circular(30),
@@ -736,7 +736,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
-                                  _isWithinRange
+                                  isWithinRange
                                       ? Icons.verified
                                       : Icons.location_off,
                                   color: Colors.white,
@@ -744,8 +744,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  _isWithinRange
-                                      ? 'Di Area ${_matchedLocationName ?? 'Kantor'}'
+                                  isWithinRange
+                                      ? 'Di Area ${matchedLocationName ?? 'Kantor'}'
                                       : 'Di Luar Area',
                                   style: const TextStyle(
                                     color: Colors.white,
@@ -845,7 +845,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                         vertical: 12,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: _attendanceType == 'office'
+                                        color: attendanceType == 'office'
                                             ? textColor.withValues(alpha: 0.2)
                                             : Colors.transparent,
                                         borderRadius: BorderRadius.circular(25),
@@ -855,7 +855,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                         'Absen Kantor',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          color: _attendanceType == 'office'
+                                          color: attendanceType == 'office'
                                               ? textColor
                                               : subTextColor,
                                         ),
@@ -874,7 +874,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                         vertical: 12,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: _attendanceType == 'field'
+                                        color: attendanceType == 'field'
                                             ? textColor.withValues(alpha: 0.2)
                                             : Colors.transparent,
                                         borderRadius: BorderRadius.circular(25),
@@ -884,7 +884,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                         'Absen Luar',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          color: _attendanceType == 'field'
+                                          color: attendanceType == 'field'
                                               ? textColor
                                               : subTextColor,
                                         ),
@@ -897,7 +897,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                           ),
 
                           // Field Notes Input
-                          if (_attendanceType == 'field') ...[
+                          if (attendanceType == 'field') ...[
                             TextField(
                               controller: _fieldNotesController,
                               style: TextStyle(color: textColor),
@@ -957,7 +957,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                             child: Row(
                               children: [
                                 Icon(
-                                  (_todayAttendance?['attendance_type'] ==
+                                  (todayAttendance['attendance_type'] ==
                                           'field')
                                       ? Icons.commute
                                       : Icons.store,
@@ -966,7 +966,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  (_todayAttendance?['attendance_type'] ==
+                                  (todayAttendance['attendance_type'] ==
                                           'field')
                                       ? 'Mode: Absen Luar (Dinas)'
                                       : 'Mode: Absen Kantor',
@@ -975,10 +975,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                     color: textColor,
                                   ),
                                 ),
-                                if (_todayAttendance?['is_offline_local'] == true) ...[
+                                if (todayAttendance['is_offline_local'] == true) ...[
                                   const Spacer(),
                                   Icon(
-                                    _todayAttendance?['is_synced'] == true
+                                    todayAttendance['is_synced'] == true
                                         ? Icons.cloud_done
                                         : Icons.cloud_off,
                                     size: 14,
@@ -986,7 +986,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    _todayAttendance?['is_synced'] == true
+                                    todayAttendance['is_synced'] == true
                                         ? 'Ter-sync'
                                         : 'Lokal',
                                     style: TextStyle(
@@ -1039,7 +1039,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      _currentAddress ?? 'Mencari lokasi...',
+                                      currentAddress ?? 'Mencari lokasi...',
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
@@ -1064,9 +1064,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               child: ElevatedButton.icon(
                                 onPressed:
                                     (canCheckIn &&
-                                        !_isLoading &&
-                                        (_attendanceType == 'field' ||
-                                            _isWithinRange ||
+                                        !isLoadingLocal &&
+                                        (attendanceType == 'field' ||
+                                            isWithinRange ||
                                             isOperational))
                                         ? _handleCheckIn
                                         : null,
@@ -1098,8 +1098,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               child: ElevatedButton.icon(
                                 onPressed:
                                     (canCheckOut &&
-                                        (_attendanceType == 'field' || _isWithinRange || isOperational) &&
-                                        !_isLoading)
+                                        (attendanceType == 'field' || isWithinRange || isOperational) &&
+                                        !isLoadingLocal)
                                         ? _handleCheckOut
                                         : null,
                                 icon: Icon(
