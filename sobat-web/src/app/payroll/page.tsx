@@ -1011,6 +1011,18 @@ export default function PayrollPage() {
                               <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.details.insentif_luar_kota)}</span>
                             </div>
                           )}
+                          {selectedPayroll.details?.piket_um_sabtu > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Piket & UM Sabtu</span>
+                              <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.details.piket_um_sabtu)}</span>
+                            </div>
+                          )}
+                          {selectedPayroll.details?.adjustment && selectedPayroll.details?.adjustment !== 0 ? (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Adj Gaji</span>
+                              <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.details.adjustment)}</span>
+                            </div>
+                          ) : null}
                           {/* Add Generic Overtime if available in details */}
                           {selectedPayroll.details?.overtime_hours > 0 && (
                             <div className="flex justify-between text-sm">
