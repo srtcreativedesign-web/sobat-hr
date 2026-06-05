@@ -464,10 +464,10 @@ class PayrollHoController extends Controller
             if (isset($row['deductions']) && is_string($row['deductions'])) {
                 $row['deductions'] = json_decode($row['deductions'], true) ?? [];
             }
-            // Ensure values are numeric for array_sum
+            // Ensure values are numeric for array_sum and ALWAYS POSITIVE
             if (isset($row['deductions']) && is_array($row['deductions'])) {
                  $row['deductions'] = array_map(function($v) { 
-                     return is_numeric($v) ? (float)$v : 0; 
+                     return is_numeric($v) ? abs((float)$v) : 0; 
                  }, $row['deductions']);
             }
 
@@ -480,7 +480,7 @@ class PayrollHoController extends Controller
             $deductionsTotal = array_sum($row['deductions']);
 
             // Merge EWA: use pot_ewa if ewa is 0 (Excel column might be labeled "Potongan EWA")
-            $ewaAmount = ($row['ewa'] > 0) ? $row['ewa'] : ($row['pot_ewa'] ?? 0);
+            $ewaAmount = (!empty($row['ewa'])) ? abs((float)$row['ewa']) : abs((float)($row['pot_ewa'] ?? 0));
             
             // Include EWA in total deductions
             $deductionsTotal += $ewaAmount;
