@@ -167,9 +167,11 @@
         // Potongan
         $kasbon = $deductions['loan'] ?? ($payroll->deduction_loan ?? 0);
         $alfa = $deductions['alfa'] ?? ($deductions['absent'] ?? ($payroll->deduction_absent ?? 0));
-        $potEwa = $details['ewa'] ?? ($payroll->ewa_amount ?? 0);
+        $potEwa = (!empty($details['ewa'])) ? $details['ewa'] : ($details['pot_ewa'] ?? ($payroll->ewa_amount ?? 0));
+        $bpjsTk = $deductions['bpjs_tk'] ?? 0;
+        $admBank = $deductions['bank_fee'] ?? 0;
 
-        $totalPotongan = $kasbon + $alfa + $potEwa;
+        $totalPotongan = $kasbon + $alfa + $potEwa + $bpjsTk + $admBank;
 
         // Gaji Bersih
         $gajiBersih = $payroll->net_salary ?? ($gajiDiterima - $totalPotongan);
@@ -240,7 +242,7 @@
         </tr>
         @endif
 
-        @if($adjGaji > 0)
+        @if($adjGaji != 0)
         <tr>
             <td>Adj Gaji</td>
             <td class="amount">Rp {{ number_format($adjGaji, 0, ',', '.') }}</td>
@@ -265,8 +267,22 @@
     <table class="details-table">
         @if($kasbon > 0)
         <tr>
-            <td>Kasbon</td>
+            <td>Pinjaman/Kasbon</td>
             <td class="amount">Rp {{ number_format($kasbon, 0, ',', '.') }}</td>
+        </tr>
+        @endif
+
+        @if($bpjsTk > 0)
+        <tr>
+            <td>BPJS TK</td>
+            <td class="amount">Rp {{ number_format($bpjsTk, 0, ',', '.') }}</td>
+        </tr>
+        @endif
+
+        @if($admBank > 0)
+        <tr>
+            <td>Adm Bank</td>
+            <td class="amount">Rp {{ number_format($admBank, 0, ',', '.') }}</td>
         </tr>
         @endif
 
@@ -279,7 +295,7 @@
 
         @if($potEwa > 0)
         <tr>
-            <td>Potongan EWA</td>
+            <td>Admin Bank & EWA</td>
             <td class="amount">Rp {{ number_format($potEwa, 0, ',', '.') }}</td>
         </tr>
         @endif
