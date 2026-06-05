@@ -338,7 +338,8 @@ class PayrollHoController extends Controller
                     $name = $sheet->getCell($nameCol . $row)->getValue();
                 }
                 
-                if (empty($name)) continue;
+                $name = trim((string)$name);
+                if (empty($name) || is_numeric($name)) continue;
 
                 // Helper for cell value
                 $getCellValue = function($col, $dataRow) use ($sheet) {
