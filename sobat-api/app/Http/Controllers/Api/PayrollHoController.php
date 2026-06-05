@@ -306,7 +306,7 @@ class PayrollHoController extends Controller
                 'loan' => $findCol(['potongan kasbon', 'kasbon'], null), 
                 'alfa' => $findCol(['potongan alfa', 'alfa'], null),
                 'pot_ewa' => $findCol(['potongan ewa', 'admin bank dan ewa'], null),
-                'payroll' => $findCol(['net salary', 'gaji diterima', 'gaji'], null),
+                'payroll' => $findCol(['net salary', 'gaji transfer', 'grand total'], null),
                 
                 // Keep other standard fields just in case
                 'incentive' => $findCol(['insentif', 'incentive'], null),
@@ -314,8 +314,8 @@ class PayrollHoController extends Controller
                 'incentive_attend' => $findCol(['insentif kehadiran', 'attendance incentive'], null), 
                 'piket' => $findCol(['piket', 'piket um sabtu', 'piket dan um sabtu'], null),
                 'adj' => $findCol(['adj', 'adjustment', 'adj gaji'], null),
-                'total_gaji' => $findCol(['total gaji', 'gross salary', 'total'], null),
-                'net_received' => $findCol(['gaji diterima', 'gaji', 'net salary'], null),
+                'total_gaji' => $findCol(['gaji diterima', 'gross salary', 'total gaji', 'gaji'], null),
+                'net_received' => $findCol(['net salary', 'gaji transfer', 'grand total'], null),
                 'late' => $findCol(['terlambat', 'late'], null),
                 'shortage' => $findCol(['selisih', 'shortage'], null),
                 'bank' => $findCol(['adm bank', 'bank fee'], null),
