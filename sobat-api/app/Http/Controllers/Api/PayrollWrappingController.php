@@ -526,12 +526,18 @@ class PayrollWrappingController extends Controller
                 ->where('period', $row['period'])
                 ->first();
                 
-            if ($existing) {
-                 $errors[] = "Row " . ($index + 1) . ": Payroll already exists for {$row['employee_name']} in {$row['period']}";
-                 continue;
-            }
             
-            PayrollWrapping::create(array_merge($row, ['employee_id' => $employee->id]));
+                $payrollData = array_merge($row, [
+                    'employee_id' => $employee->id,
+                    'status' => 'draft'
+                ]);
+                
+                if ($existing) {
+                    $existing->update($payrollData);
+                } else {
+            
+            PayrollWrapping::create($payrollData);
+                }
             $saved++;
         }
         

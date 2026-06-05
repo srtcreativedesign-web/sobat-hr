@@ -294,10 +294,15 @@ class PayrollCellullerController extends Controller
                     ->where('period', $row['period'])
                     ->first();
                 
+                
+                $payrollData = array_merge($row, [
+                    'employee_id' => $employee->id,
+                    'status' => 'draft'
+                ]);
+                
                 if ($existing) {
-                    $errors[] = "Row " . ($index + 1) . ": Payroll info for '{$row['employee_name']}' already exists";
-                    continue;
-                }
+                    $existing->update($payrollData);
+                } else {
                 
                 // Remove employee_name from row data as it's not in the table
                 $data = $row;

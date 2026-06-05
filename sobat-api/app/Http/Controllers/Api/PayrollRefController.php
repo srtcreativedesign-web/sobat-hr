@@ -456,15 +456,18 @@ if ($headerRowIndex === -1) {
                     ->where('period', $row['period'])
                     ->first();
                 
-                if ($existing) {
-                    $errors[] = "Row " . ($index + 1) . ": Payroll info for '{$row['employee_name']}' already exists";
-                    continue;
-                }
                 
-                PayrollRef::create(array_merge($row, [
+                $payrollData = array_merge($row, [
                     'employee_id' => $employee->id,
-                    'status' => 'draft',
-                ]));
+                    'status' => 'draft'
+                ]);
+                
+                if ($existing) {
+                    $existing->update($payrollData);
+                } else {
+                
+                PayrollRef::create($payrollData);
+                }
                 
                 $saved++;
             }

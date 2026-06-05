@@ -549,15 +549,18 @@ class PayrollMmController extends Controller
                     ->where('period', $row['period'])
                     ->first();
                 
-                if ($existing) {
-                    $errors[] = "Row " . ($index + 1) . ": Payroll info for '{$row['employee_name']}' already exists";
-                    continue;
-                }
                 
-                PayrollMm::create(array_merge($row, [
+                $payrollData = array_merge($row, [
                     'employee_id' => $employee->id,
-                    'status' => 'draft',
-                ]));
+                    'status' => 'draft'
+                ]);
+                
+                if ($existing) {
+                    $existing->update($payrollData);
+                } else {
+                
+                PayrollMm::create($payrollData);
+                }
                 
                 $saved++;
             }

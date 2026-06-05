@@ -427,15 +427,18 @@ if ($headerRowIndex === -1) {
                     ->where('period', $row['period'])
                     ->first();
                 
-                if ($existing) {
-                    $errors[] = "Row " . ($index + 1) . ": Payroll for '{$row['employee_name']}' period {$row['period']} already exists";
-                    continue;
-                }
                 
-                PayrollMoneyChanger::create(array_merge($row, [
+                $payrollData = array_merge($row, [
                     'employee_id' => $employee->id,
-                    'status' => 'draft',
-                ]));
+                    'status' => 'draft'
+                ]);
+                
+                if ($existing) {
+                    $existing->update($payrollData);
+                } else {
+                
+                PayrollMoneyChanger::create($payrollData);
+                }
                 
                 $saved++;
             }

@@ -489,10 +489,15 @@ class PayrollTungtauController extends Controller
                     ->where('period', $row['period'])
                     ->first();
                 
+                
+                $payrollData = array_merge($row, [
+                    'employee_id' => $employee->id,
+                    'status' => 'draft'
+                ]);
+                
                 if ($existing) {
-                    $errors[] = "Row " . ($index + 1) . ": Payroll for '{$row['employee_name']}' in period {$row['period']} already exists";
-                    continue;
-                }
+                    $existing->update($payrollData);
+                } else {
                 
                 // Debug log the data being saved
                 Log::info('Tungtau Payroll Save Data', [
@@ -502,10 +507,8 @@ class PayrollTungtauController extends Controller
                 ]);
                 
                 // Create payroll
-                PayrollTungtau::create(array_merge($row, [
-                    'employee_id' => $employee->id,
-                    'status' => 'draft',
-                ]));
+                PayrollTungtau::create($payrollData);
+                }
                 
                 $saved++;
             }

@@ -505,10 +505,15 @@ class PayrollFnbController extends Controller
                     ->where('period', $row['period'])
                     ->first();
                 
+                
+                $payrollData = array_merge($row, [
+                    'employee_id' => $employee->id,
+                    'status' => 'draft'
+                ]);
+                
                 if ($existing) {
-                    $errors[] = "Row " . ($index + 1) . ": Payroll for '{$row['employee_name']}' in period {$row['period']} already exists";
-                    continue;
-                }
+                    $existing->update($payrollData);
+                } else {
                 
                 // Debug log the data being saved
                 Log::info('FnB Payroll Save Data', [
@@ -518,10 +523,8 @@ class PayrollFnbController extends Controller
                 ]);
                 
                 // Create payroll
-                PayrollFnb::create(array_merge($row, [
-                    'employee_id' => $employee->id,
-                    'status' => 'draft',
-                ]));
+                PayrollFnb::create($payrollData);
+                }
                 
                 $saved++;
             }

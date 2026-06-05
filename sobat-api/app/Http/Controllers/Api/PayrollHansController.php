@@ -431,17 +431,18 @@ if ($headerRowIndex === -1) {
                     ->where('period', $row['period'])
                     ->first();
                 
-                if ($existing) {
-                    $errors[] = "Row " . ($index + 1) . ": Payroll info for '{$row['employee_name']}' already exists";
-                    continue;
-                }
                 
-                PayrollHans::create(array_merge($row, [
+                $payrollData = array_merge($row, [
                     'employee_id' => $employee->id,
-                    'status' => 'draft',
-                    'adjustment' => $row['adjustment'] ?? 0,
-                    'deduction_so_shortage' => $row['deduction_so_shortage'] ?? 0,
-                ]));
+                    'status' => 'draft'
+                ]);
+                
+                if ($existing) {
+                    $existing->update($payrollData);
+                } else {
+                
+                PayrollHans::create($payrollData);
+                }
                 
                 $saved++;
             }
