@@ -1053,9 +1053,8 @@ export default function PayrollPage() {
                             const numValue = parseFloat(value);
                             if (!numValue || numValue === 0) return null;
                             
-                            // Skip EWA/Stafbook from general deductions as it's shown at the end
-                            if (key.toLowerCase().includes('ewa') || key.toLowerCase().includes('stafbook')) return null;
-
+                            // Skip EWA/Stafbook from general deductions as it's shown at the end (except for office where it's part of regular deductions)
+                            if (selectedDivision !== 'office' && (key.toLowerCase().includes('ewa') || key.toLowerCase().includes('stafbook'))) return null;
 
                             return (
                               <div key={key} className="flex justify-between text-sm">
@@ -1124,7 +1123,7 @@ export default function PayrollPage() {
                     <div className="flex items-center justify-between border-b border-white/20 pb-4">
                       <div>
                         <p className="text-indigo-100 text-xs font-medium uppercase tracking-wider">Grand Total</p>
-                        <p className="text-2xl font-bold">{formatCurrency(selectedPayroll.net_salary)}</p>
+                        <p className="text-2xl font-bold">{formatCurrency(selectedPayroll.gross_salary || selectedPayroll.net_salary)}</p>
                       </div>
                     </div>
                   )}

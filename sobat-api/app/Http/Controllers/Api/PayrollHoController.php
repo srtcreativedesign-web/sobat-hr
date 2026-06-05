@@ -121,7 +121,7 @@ class PayrollHoController extends Controller
             'Adm Bank' => $deductions['bank_fee'] ?? 0,
             'BPJS TK' => $deductions['bpjs_tk'] ?? 0,
             'ALFA' => $deductions['alfa'] ?? 0,
-            'Potongan EWA' => $get('ewa'),
+            'Admin Bank & EWA' => $get('ewa'),
         ];
         
         $formatted['attendance'] = [
