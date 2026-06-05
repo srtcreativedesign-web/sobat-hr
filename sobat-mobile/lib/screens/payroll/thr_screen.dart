@@ -28,9 +28,9 @@ class _ThrScreenState extends State<ThrScreen> {
   void initState() {
     super.initState();
     _enableScreenshotProtection();
-    // Show PIN screen after build
+    // Load THRs first to check if they exist
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showPinVerification();
+      _loadThrs();
     });
   }
 
@@ -60,7 +60,6 @@ class _ThrScreenState extends State<ThrScreen> {
           onSuccess: () {
             Navigator.pop(context); // Close PIN Screen
             setState(() => _pinVerified = true);
-            _loadThrs();
           },
         ),
       ),
@@ -75,6 +74,14 @@ class _ThrScreenState extends State<ThrScreen> {
         _thrs = data;
         _isLoading = false;
       });
+      
+      if (!_pinVerified) {
+        if (_thrs.isEmpty) {
+          setState(() => _pinVerified = true);
+        } else {
+          _showPinVerification();
+        }
+      }
     } catch (e) {
       setState(() => _isLoading = false);
       if (!mounted) return;

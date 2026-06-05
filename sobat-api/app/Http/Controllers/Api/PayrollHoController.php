@@ -292,21 +292,21 @@ class PayrollHoController extends Controller
             // Define Columns Configuration (Once, outside loop)
             $cols = [
                 'account' => $findCol(['no rekening', 'account number', 'rekening', 'nomor rekening'], 'C'),
-                'present' => $findCol(['jml hr masuk', 'hadir', 'jml hr masuk'], 'E'),
-                'basic' => $findCol(['gaji pokok'], null),
-                'transport_amt' => $findCol(['transport total', 'uang kehadiran'], null),
-                'transport_rate' => $findCol(['transport @hari'], null),
+                'present' => $findCol(['jml hr masuk', 'hadir', 'jml hr'], 'E'),
+                'basic' => $findCol(['gaji pokok', 'gp'], null),
+                'transport_amt' => $findCol(['transport total', 'uang transport', 'transport'], null),
+                'transport_rate' => $findCol(['transport @hari', 'rate transport'], null),
                 'attend_amt' => $findCol(['uang kehadiran total', 'uang kehadiran'], null), 
-                'attend_rate' => $findCol(['uang kehadiran @hari'], null),
-                'health' => $findCol(['tunjangan'], null), 
+                'attend_rate' => $findCol(['uang kehadiran @hari', 'rate kehadiran'], null),
+                'health' => $findCol(['tunjangan kesehatan', 'tunjangan'], null), 
                 'position' => $findCol(['tunjangan jabatan'], null),
                 'overtime_hr' => $findCol(['jam lbr', 'jam lembur'], null),
-                'overtime_amt' => $findCol(['uang lembur total'], null),
-                'overtime_rate' => $findCol(['uang lembur @hari', 'uang lembur @ jam'], null), 
+                'overtime_amt' => $findCol(['uang lembur total', 'uang lembur', 'uang  lembur'], null),
+                'overtime_rate' => $findCol(['uang lembur @hari', 'uang lembur @ jam', 'rate lembur'], null), 
                 'loan' => $findCol(['potongan kasbon', 'kasbon'], null), 
                 'alfa' => $findCol(['potongan alfa', 'alfa'], null),
-                'pot_ewa' => $findCol(['potongan ewa'], null),
-                'payroll' => $findCol(['net salary', 'gaji diterima'], null),
+                'pot_ewa' => $findCol(['potongan ewa', 'admin bank dan ewa'], null),
+                'payroll' => $findCol(['net salary', 'gaji diterima', 'gaji'], null),
                 
                 // Keep other standard fields just in case
                 'incentive' => $findCol(['insentif', 'incentive'], null),
@@ -314,12 +314,12 @@ class PayrollHoController extends Controller
                 'incentive_attend' => $findCol(['insentif kehadiran', 'attendance incentive'], null), 
                 'piket' => $findCol(['piket', 'piket um sabtu', 'piket dan um sabtu'], null),
                 'adj' => $findCol(['adj', 'adjustment', 'adj gaji'], null),
-                'total_gaji' => $findCol(['total gaji', 'gross salary'], null),
+                'total_gaji' => $findCol(['total gaji', 'gross salary', 'total'], null),
                 'net_received' => $findCol(['gaji diterima', 'gaji', 'net salary'], null),
                 'late' => $findCol(['terlambat', 'late'], null),
                 'shortage' => $findCol(['selisih', 'shortage'], null),
                 'bank' => $findCol(['adm bank', 'bank fee'], null),
-                'bpjs_tk' => $findCol(['bpjs tk', 'bpjs employment', 'bpjs ketenagakerjaan'], null),
+                'bpjs_tk' => $findCol(['bpjs tk', 'bpjs employment', 'bpjs ketenagakerjaan', 'bpjs'], null),
                 'ewa' => $findCol(['ewa'], null),
                 'grand_total' => $findCol(['grand total'], null),
             ];
@@ -334,7 +334,7 @@ class PayrollHoController extends Controller
                 $name = $sheet->getCell('B' . $row)->getValue();
                 // Check mapped column for name if B is empty
                 if (empty($name)) {
-                    $nameCol = $findCol('nama karyawan', 'B');
+                    $nameCol = $findCol(['nama karyawan', 'employee name', 'nama pegawai', 'nama'], 'B');
                     $name = $sheet->getCell($nameCol . $row)->getValue();
                 }
                 

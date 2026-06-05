@@ -28,7 +28,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
     super.initState();
     _enableScreenshotProtection();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showPinVerification();
+      _loadPayrolls();
     });
   }
 
@@ -44,7 +44,6 @@ class _PayrollScreenState extends State<PayrollScreen> {
           onSuccess: () {
             Navigator.pop(context); // Close PIN Screen
             setState(() => _pinVerified = true);
-            _loadPayrolls();
           },
         ),
       ),
@@ -73,6 +72,14 @@ class _PayrollScreenState extends State<PayrollScreen> {
         _payrolls = data;
         _isLoading = false;
       });
+      
+      if (!_pinVerified) {
+        if (_payrolls.isEmpty) {
+          setState(() => _pinVerified = true);
+        } else {
+          _showPinVerification();
+        }
+      }
     } catch (e) {
       setState(() => _isLoading = false);
       if (!mounted) return;
@@ -363,7 +370,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
                 )
               else
                 Text(
-                  _formatCurrency(lastSalary),
+                  _pinVerified ? _formatCurrency(lastSalary) : 'Rp ***.***',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 32,
@@ -372,7 +379,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
                 ),
               const SizedBox(height: 8),
               Text(
-                'Periode $lastDate',
+                'Periode ${_pinVerified ? lastDate : '***'}',
                 style: const TextStyle(color: Colors.white70, fontSize: 12),
               ),
             ],
