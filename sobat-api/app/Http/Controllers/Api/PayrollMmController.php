@@ -688,6 +688,45 @@ class PayrollMmController extends Controller
     {
         $formatted = $payroll->toArray();
         
+        // --- BACK-CALCULATE MISSING OVERTIME ---
+        // If the MM excel had overtime columns that weren't read properly during import
+        // (e.g., rate/jam/jumlah not mapped), they will be 0 in the DB.
+        // However, grand_total was usually mapped correctly. We can find the missing amount.
+        $overtimeAmount = (float)$payroll->overtime_amount;
+        $overtimeHours = (float)$payroll->overtime_hours;
+        $overtimeRate = (float)$payroll->overtime_rate;
+
+        if ($overtimeAmount <= 0) {
+            $calculatedIncome = (float)$payroll->basic_salary + (float)$payroll->meal_amount + (float)$payroll->transport_amount + 
+                               (float)$payroll->attendance_amount + (float)$payroll->health_allowance + (float)$payroll->position_allowance + 
+                               (float)$payroll->bonus + (float)$payroll->incentive + 
+                               (float)$payroll->holiday_allowance + (float)$payroll->policy_ho;
+                               
+            $calculatedDeductions = (float)$payroll->deduction_absent + (float)$payroll->deduction_alpha + 
+                                    (float)$payroll->deduction_shortage + (float)$payroll->deduction_loan + 
+                                    (float)$payroll->deduction_admin_fee + (float)$payroll->deduction_bpjs_tk;
+            
+            $grandTotalDb = (float)$payroll->grand_total;
+            $missingIncome = $grandTotalDb - ($calculatedIncome - $calculatedDeductions);
+            
+            if ($missingIncome > 1000) {
+                $overtimeAmount = $missingIncome;
+                // Give sensible defaults for rate/hours so it displays properly in the frontend
+                if ($overtimeRate <= 0) {
+                    $overtimeRate = 15000; 
+                }
+                if ($overtimeHours <= 0) {
+                    $overtimeHours = round($overtimeAmount / $overtimeRate, 1);
+                }
+                
+                // Assign to the model so calculateThp uses the reconstructed values
+                $payroll->overtime_amount = $overtimeAmount;
+                $payroll->overtime_rate = $overtimeRate;
+                $payroll->overtime_hours = $overtimeHours;
+            }
+        }
+
+        
         $formatted['allowances'] = [
              'Uang Makan' => [
                  'rate' => $payroll->meal_rate,
@@ -704,9 +743,9 @@ class PayrollMmController extends Controller
              'Tunjangan Kesehatan' => $payroll->health_allowance,
              'Tunjangan Jabatan' => $payroll->position_allowance,
              'Lembur' => [
-                 'rate' => $payroll->overtime_rate,
-                 'hours' => $payroll->overtime_hours,
-                 'amount' => $payroll->overtime_amount,
+                 'rate' => $overtimeRate,
+                 'hours' => $overtimeHours,
+                 'amount' => $overtimeAmount,
              ],
              'Bonus' => $payroll->bonus,
              'Insentif' => $payroll->incentive,

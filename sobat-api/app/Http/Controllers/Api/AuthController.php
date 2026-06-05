@@ -149,6 +149,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,'.$user->id,
+            'supervisor_name' => 'nullable|string',
         ]);
 
         $user->update([
@@ -156,9 +157,24 @@ class AuthController extends Controller
             'email' => $validated['email'],
         ]);
 
+        // Self-service supervisor mapping
+        if ($request->has('supervisor_name') && !empty($request->supervisor_name)) {
+            $supervisor = \App\Models\Employee::where('full_name', $request->supervisor_name)->first();
+            
+            if (!$supervisor) {
+                return response()->json([
+                    'message' => 'Atasan dengan nama tersebut tidak ditemukan di sistem. Harap periksa ejaan namanya.',
+                ], 422);
+            }
+            
+            if ($user->employee) {
+                $user->employee->update(['supervisor_id' => $supervisor->id]);
+            }
+        }
+
         return response()->json([
             'message' => 'Profile updated successfully',
-            'user' => $user,
+            'user' => $user->load('employee'),
         ]);
     }
 
