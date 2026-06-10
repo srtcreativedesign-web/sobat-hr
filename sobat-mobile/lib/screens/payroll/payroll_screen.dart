@@ -762,17 +762,27 @@ class _PayrollScreenState extends State<PayrollScreen> {
                       final value = entry.value;
                       double amount = 0;
 
+                      String label = entry.key;
+
                       // Handle nested objects (like Kehadiran, Transport, Lembur with amount field)
                       if (value is Map && value['amount'] != null) {
                         amount =
                             double.tryParse(value['amount'].toString()) ?? 0;
+                        
+                        // Append rate to label if present (like Web App)
+                        if (value['rate'] != null && value['rate'].toString().isNotEmpty) {
+                          final rate = double.tryParse(value['rate'].toString()) ?? 0;
+                          if (rate >= 1000) {
+                            label = '$label (${_formatCurrency(rate)} /hari)';
+                          }
+                        }
                       } else {
                         amount = double.tryParse(value.toString()) ?? 0;
                       }
 
                       if (amount > 0 && entry.key != 'Lembur') {
                         // Lembur shown separately
-                        return _buildDetailRow(entry.key, amount, isPlus: true);
+                        return _buildDetailRow(label, amount, isPlus: true);
                       }
                       return const SizedBox.shrink();
                     }),
@@ -798,9 +808,20 @@ class _PayrollScreenState extends State<PayrollScreen> {
                           final hours =
                               double.tryParse(rawHours.toString()) ?? 0;
 
+                          String label = 'Lembur';
+                          if (lembur is Map && lembur['rate'] != null && lembur['rate'].toString().isNotEmpty) {
+                            final rate = double.tryParse(lembur['rate'].toString()) ?? 0;
+                            if (rate >= 1000) {
+                              label += ' (${_formatCurrency(rate)} /hari)';
+                            }
+                          }
+                          if (hours > 0) {
+                            label += ' ($hours Jam)';
+                          }
+
                           if (amount > 0) {
                             return _buildDetailRow(
-                              hours > 0 ? 'Lembur ($hours Jam)' : 'Lembur',
+                              label,
                               amount,
                               isPlus: true,
                             );

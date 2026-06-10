@@ -222,6 +222,11 @@ export default function Sidebar() {
           name: 'Overtime',
           href: '/payroll/overtime',
           icon: null
+        },
+        {
+          name: 'Import / Export',
+          href: '/payroll/import',
+          icon: null
         }
       ]
     },

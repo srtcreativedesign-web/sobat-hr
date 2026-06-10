@@ -6,24 +6,52 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 
-use App\Models\PayrollHans;
+
 use App\Models\Employee;
 use App\Models\Role;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\GroqAiService;
 
-class PayrollHansController extends Controller
+class PayrollRetailController extends Controller
 {
     use Traits\PayrollThpCalculator;
+
+    private function isAdmin(): bool
+    {
+        $user = auth()->user();
+        $roleName = $user->role ? strtolower($user->role->name) : '';
+        return in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN, Role::ADMIN_CABANG, Role::HR]);
+    }
+
+    private function getModel($divisionType)
+    {
+        $models = [
+            'cellular' => \App\Models\PayrollCelluller::class,
+            'hans' => \App\Models\PayrollHans::class,
+            'ref' => \App\Models\PayrollRef::class,
+            'wrapping' => \App\Models\PayrollWrapping::class,
+            'mm' => \App\Models\PayrollMm::class,
+            'money_changer' => \App\Models\PayrollMoneyChanger::class,
+        ];
+
+        if (!isset($models[$divisionType])) {
+            abort(400, "Invalid division_type: {$divisionType}");
+        }
+
+        return new $models[$divisionType];
+    }
+
     /**
      * Display a listing of Hans payrolls
      */
     public function index(Request $request)
     {
+        $request->validate(['division_type' => 'required']);
+
         $user = auth()->user();
         // EAGER LOADING: employee
-        $query = PayrollHans::with('employee');
+        $query = $this->getModel($request->division_type)->with('employee');
         
         // SECURITY CHECK: Scope query to authenticated user
         $roleName = $user->role ? strtolower($user->role->name) : '';
@@ -48,6 +76,10 @@ class PayrollHansController extends Controller
             $period = $request->year . '-' . str_pad($request->month, 2, '0', STR_PAD_LEFT);
             $query->where('period', $period);
         }
+        // Filter by year only (used by Mobile App Riwayat Gaji)
+        elseif (!$request->has('period') && $request->has('year') && !empty($request->year)) {
+            $query->where('period', 'like', $request->year . '-%');
+        }
         
         
         // Filter by search name
@@ -68,7 +100,7 @@ class PayrollHansController extends Controller
         
         // Transform data structurally for the frontend
         $payrolls->getCollection()->transform(function ($payroll) {
-            return $this->formatPayroll($payroll);
+            return $this->formatPayrollData($payroll);
         });
         
         return response()->json($payrolls);
@@ -146,6 +178,7 @@ if ($headerRowIndex === -1) {
                 'tunj kesehatan' => 'health_allowance',
                 'tunj. jabatan' => 'position_allowance',
                 'tunj jabatan' => 'position_allowance',
+                'tunjangan jabatan' => 'position_allowance',
                 'total gaji & bonus' => 'total_salary_2',
                 'total gaji' => 'total_salary_1',
                 'lembur wajib' => 'mandatory_overtime_header',
@@ -154,6 +187,10 @@ if ($headerRowIndex === -1) {
                 'thr' => 'holiday_allowance',
                 'insentif' => 'incentive',
                 'bonus' => 'bonus',
+                'bonus/thr' => 'bonus',
+                'thr/bonus' => 'bonus',
+                'bonus / thr' => 'bonus',
+                'thr / bonus' => 'bonus',
                 'kebijakan' => 'policy_ho',
                 'adj' => 'adjustment',
                 'potongan' => 'deductions_header',
@@ -398,9 +435,413 @@ if ($headerRowIndex === -1) {
     /**
      * Save imported Hans payroll data
      */
+
+    public function parseHeaders(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls',
+            'division_type' => 'required|string',
+        ]);
+
+        $file = $request->file('file');
+
+        try {
+            $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
+            $reader->setReadDataOnly(true); 
+            $spreadsheet = $reader->load($file->getRealPath());
+            
+            $sheet = $spreadsheet->getSheetByName('gabungan');
+            if (!$sheet) {
+                $sheet = $spreadsheet->getActiveSheet();
+            }
+            
+            $highestRow = $sheet->getHighestRow();
+            $highestColumn = $sheet->getHighestColumn();
+            
+            $headerRowIndex = -1;
+            for ($row = 1; $row <= min(15, $highestRow); $row++) {
+                $rowIterator = $sheet->getRowIterator($row, $row)->current();
+                $cellIterator = $rowIterator->getCellIterator('A', $highestColumn);
+                $cellIterator->setIterateOnlyExistingCells(false);
+                
+                foreach ($cellIterator as $cell) {
+                    $cellValue = $cell->getValue();
+                    if ($cellValue && stripos($cellValue, 'Nama Karyawan') !== false) {
+                        $headerRowIndex = $row;
+                        break 2;
+                    }
+                }
+            }
+            
+            if ($headerRowIndex === -1) {
+                return response()->json(['message' => 'Format Excel tidak dikenali. Pastikan ada kolom "Nama Karyawan".'], 422);
+            }
+            
+            $headerPatterns = [
+                'employee_name' => ['Nama Karyawan', 'Nama Pegawai'],
+                'account_number' => ['No Rekening', 'Rekening'],
+                'days_total' => [['Jumlah', 'Hari']],
+                'days_off' => ['Off'],
+                'days_sick' => ['Sakit'],
+                'days_permission' => ['Ijin'],
+                'days_alpha' => ['Alfa', 'ALFA', 'Alpa'],
+                'days_leave' => ['Cuti'],
+                'days_present' => ['Ada', 'Hadir'],
+                'basic_salary' => ['Gaji Pokok', 'Gapok', 'Basic Salary'],
+                'meal_rate' => [['Uang Makan', '/ Hari'], ['Makan', '/ Hari']],
+                'meal_amount' => [['Uang Makan', 'Jumlah'], ['Makan', 'Jumlah'], 'Uang Makan'],
+                'attendance_rate' => [['Kehadiran', '/ Hari']],
+                'attendance_allowance' => [['Kehadiran', 'Jumlah'], 'Kehadiran', 'Uang Kehadiran'],
+                'transport_rate' => [['Transport', '/ Hari']],
+                'transport_amount' => [['Transport', 'Jumlah'], 'Transport', 'Uang Transport'],
+                'health_allowance' => ['Tunj. Kesehatan', 'Kesehatan', 'Tunjangan Kesehatan'],
+                'position_allowance' => ['Tunj. Jabatan', 'Jabatan', 'Tunjangan Jabatan'],
+                'total_salary_1' => ['Total Gaji            ( Rp )', 'Total Gaji'],
+                'overtime_rate' => [['Lembur', '/ Jam']],
+                'mandatory_overtime_rate' => [['Lembur Wajib', '/ Hari'], 'Lembur Wajib'],
+                'overtime_hours' => [['Lembur', 'Jam']],
+                'overtime_amount' => [['Lembur', 'Jumlah'], 'Lembur', 'Uang Lembur'],
+                'target_koli' => ['Target Koli', 'Koli'],
+                'accessory_fee' => ['Aksesoris', 'Fee Aksesoris', 'Accessory'],
+                'backup_allowance' => ['Backup'],
+                'attendance_incentive' => ['Insentif Kehadrian', 'Insentif Kehadiran'],
+                'holiday_allowance' => ['Insentif Lebaran', 'THR'],
+                'total_salary_gross' => ['Total Gaji    (Rp)', 'Total Gaji & Bonus'],
+                'bonus' => ['Bonus', 'Insentif', 'Bonus/THR', 'THR/Bonus', 'Bonus / THR', 'THR / Bonus'],
+                'policy_ho_amount' => ['Kebijakan'],
+                'deduction_absent' => ['Absen 1X', 'Absen 1x'],
+                'late_minutes' => ['terlambat (menit)'],
+                'deduction_late' => ['Terlambat', 'Potongan Terlambat'],
+                'shortage_deduction' => ['Selisih SO', 'Selisih'],
+                'deduction_loan' => ['Pinjaman', 'Kasbon'],
+                'bank_fee' => ['Adm Bank', 'Admin Bank'],
+                'bpjs_tk_deduction' => ['BPJS TK', 'BPJS Ketenagakerjaan'],
+                'total_deduction' => [['Potongan', 'Jumlah'], 'Total Potongan'],
+                'thp' => ['Grand Total'],
+                'ewa_amount' => ['EWA', 'Pinjaman ke Stafbook', 'Pinjaman stafbook', 'Potongan EWA'],
+                'net_salary' => ['Total Gaji Ditransfer', 'Payroll', 'THP'],
+                'adjustment' => ['Adj', 'Penyesuaian', 'Kekurangan Gaji'],
+            ];
+            
+            $allHeaders = [];
+            $allSubs = [];
+            $colOrder = [];
+            $uiHeaders = [];
+            
+            $headerRow = $sheet->getRowIterator($headerRowIndex, $headerRowIndex)->current();
+            $cellIterator = $headerRow->getCellIterator('A', $highestColumn);
+            $cellIterator->setIterateOnlyExistingCells(false);
+            
+            foreach ($cellIterator as $cell) {
+                $col = $cell->getColumn();
+                $colOrder[] = $col;
+                
+                $headerValue = trim((string)$cell->getValue());
+                $subValue = trim((string)$sheet->getCell($col . ($headerRowIndex + 1))->getValue());
+                
+                $allHeaders[$col] = $headerValue;
+                $allSubs[$col] = $subValue;
+                
+                // Create a meaningful display title for the UI
+                $displayTitle = $headerValue;
+                if (empty($displayTitle)) {
+                    for ($i = count($colOrder) - 1; $i >= 0; $i--) {
+                        if (!empty($allHeaders[$colOrder[$i]])) {
+                            $displayTitle = $allHeaders[$colOrder[$i]];
+                            break;
+                        }
+                    }
+                }
+                
+                if (!empty($subValue)) {
+                    $displayTitle .= empty($displayTitle) ? $subValue : ' - ' . $subValue;
+                }
+                
+                $uiHeaders[$col] = trim($displayTitle);
+            }
+            
+            $columnMapping = [];
+            $usedColumns = []; 
+            
+            foreach ($headerPatterns as $key => $patterns) {
+                $alternativePatterns = is_array($patterns) ? $patterns : [$patterns];
+                
+                foreach ($alternativePatterns as $pattern) {
+                    $matched = false;
+                    foreach ($colOrder as $col) {
+                        if (in_array($col, $usedColumns)) continue;
+                        
+                        $headerValue = $allHeaders[$col];
+                        $unitsValue = $allSubs[$col];
+                        
+                        $effectiveHeader = '';
+                        if (!empty($headerValue)) {
+                            $effectiveHeader = $headerValue;
+                        } else {
+                            foreach ($colOrder as $c) {
+                                if (!empty($allHeaders[$c])) $effectiveHeader = $allHeaders[$c];
+                                if ($c === $col) break;
+                            }
+                        }
+                        
+                        if (is_array($pattern)) {
+                            $headerMatch = $effectiveHeader && stripos($effectiveHeader, $pattern[0]) !== false;
+                            $unitsMatch = $unitsValue && stripos($unitsValue, $pattern[1]) !== false;
+                            
+                            if ($pattern[1] === 'Jam' && $unitsMatch && stripos($unitsValue, '/ Jam') !== false) {
+                                $unitsMatch = false; 
+                            }
+                            
+                            if ($headerMatch && $unitsMatch) {
+                                $columnMapping[$key] = $col;
+                                $usedColumns[] = $col;
+                                $matched = true;
+                                break;
+                            }
+                        } else {
+                            $matchedHeader = $effectiveHeader && stripos($effectiveHeader, $pattern) !== false;
+                            $matchedSub = $unitsValue && stripos($unitsValue, $pattern) !== false;
+                            
+                            if ($matchedHeader || $matchedSub) {
+                                $columnMapping[$key] = $col;
+                                $usedColumns[] = $col;
+                                $matched = true;
+                                break;
+                            }
+                        }
+                    }
+                    if ($matched) break;
+                }
+            }
+            
+            Log::info('Retail Column Mapping Detected', $columnMapping);
+            
+            return response()->json([
+                'requiresMapping' => true,
+                'headers' => $uiHeaders,
+                'default_mapping' => $columnMapping,
+                'headerRowIndex' => $headerRowIndex,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Retail Payroll Parse Error: ' . $e->getMessage());
+            return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function simulateImport(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls',
+            'mapping' => 'required|string',
+            'headerRowIndex' => 'required|numeric',
+        ]);
+
+        $file = $request->file('file');
+        $columnMapping = json_decode($request->mapping, true);
+        $headerRowIndex = (int) $request->headerRowIndex;
+
+        try {
+            $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
+            $reader->setReadDataOnly(true); 
+            $spreadsheet = $reader->load($file->getRealPath());
+            
+            $sheet = $spreadsheet->getSheetByName('gabungan');
+            if (!$sheet) {
+                $sheet = $spreadsheet->getActiveSheet();
+            }
+            
+            $highestRow = $sheet->getHighestRow();
+            $getCellValue = function($col, $row) use ($sheet) {
+                if (!$col) return 0;
+                try {
+                    $cell = $sheet->getCell($col . $row);
+                    $value = $cell->getCalculatedValue();
+                    
+                    if (is_numeric($value)) return (float) $value;
+                    
+                    if (is_string($value)) {
+                        $cleaned = preg_replace('/[^0-9\.\,\-]/', '', $value);
+                        if ($cleaned !== '' && is_numeric($cleaned)) {
+                            return (float) $cleaned;
+                        }
+                        return $value;
+                    }
+                    
+                    return $value ?? 0;
+                } catch (\Exception $e) {
+                    return 0;
+                }
+            };
+
+            $dataRows = [];
+            $startDataRow = $headerRowIndex + 2; 
+            
+            for ($row = $startDataRow; $row <= $highestRow; $row++) {
+                $employeeName = $getCellValue($columnMapping['employee_name'] ?? null, $row);
+                if (empty($employeeName) || !is_string($employeeName)) continue;
+                
+                $daysTotal = (int) $getCellValue($columnMapping['days_total'] ?? null, $row);
+                $daysOff = (int) $getCellValue($columnMapping['days_off'] ?? null, $row);
+                $daysSick = (int) $getCellValue($columnMapping['days_sick'] ?? null, $row);
+                $daysPermission = (int) $getCellValue($columnMapping['days_permission'] ?? null, $row);
+                $daysAlpha = (int) $getCellValue($columnMapping['days_alpha'] ?? null, $row);
+                $daysLeave = (int) $getCellValue($columnMapping['days_leave'] ?? null, $row);
+                $daysPresent = (int) $getCellValue($columnMapping['days_present'] ?? null, $row);
+                
+                if ($daysPresent <= 0 && $daysTotal > 0) {
+                    $daysPresent = $daysTotal - $daysOff - $daysSick - $daysPermission - $daysAlpha - $daysLeave;
+                    if ($daysPresent < 0) $daysPresent = 0;
+                }
+                
+                $basicSalary = $getCellValue($columnMapping['basic_salary'] ?? null, $row);
+                $attendanceRate = $getCellValue($columnMapping['attendance_rate'] ?? null, $row);
+                $attendanceAmount = $getCellValue($columnMapping['attendance_allowance'] ?? null, $row);
+                
+                // Fallback: Infer rate if missing
+                if ($attendanceRate <= 0 && $attendanceAmount > 0 && $daysPresent > 0) {
+                    $attendanceRate = $attendanceAmount / $daysPresent;
+                }
+                
+                $mealRate = $getCellValue($columnMapping['meal_rate'] ?? null, $row);
+                $mealAmount = $getCellValue($columnMapping['meal_amount'] ?? null, $row);
+                
+                // Fallback: Infer meal rate if missing
+                if ($mealRate <= 0 && $mealAmount > 0 && $daysPresent > 0) {
+                    $mealRate = $mealAmount / $daysPresent;
+                }
+                
+                $transportRate = $getCellValue($columnMapping['transport_rate'] ?? null, $row);
+                $transportAmount = $getCellValue($columnMapping['transport_amount'] ?? null, $row);
+                
+                // Fallback: Infer transport rate if missing
+                if ($transportRate <= 0 && $transportAmount > 0 && $daysPresent > 0) {
+                    $transportRate = $transportAmount / $daysPresent;
+                }
+                
+                $healthAllowance = $getCellValue($columnMapping['health_allowance'] ?? null, $row);
+                $positionAllowance = $getCellValue($columnMapping['position_allowance'] ?? null, $row);
+                $totalSalary1 = $getCellValue($columnMapping['total_salary_1'] ?? null, $row);
+                $overtimeRate = $getCellValue($columnMapping['overtime_rate'] ?? null, $row);
+                $overtimeHours = $getCellValue($columnMapping['overtime_hours'] ?? null, $row);
+                $overtimeAmount = $getCellValue($columnMapping['overtime_amount'] ?? null, $row);
+                
+                // Fallback: Infer overtime rate if missing
+                if ($overtimeRate <= 0 && $overtimeAmount > 0 && $overtimeHours > 0) {
+                    $overtimeRate = $overtimeAmount / $overtimeHours;
+                }
+                $targetKoli = $getCellValue($columnMapping['target_koli'] ?? null, $row);
+                $accessoryFee = $getCellValue($columnMapping['accessory_fee'] ?? null, $row);
+                $backup = $getCellValue($columnMapping['backup_allowance'] ?? null, $row);
+                $insentifKehadiran = $getCellValue($columnMapping['attendance_incentive'] ?? null, $row);
+                $holidayAllowance = $getCellValue($columnMapping['holiday_allowance'] ?? null, $row);
+                $bonus = $getCellValue($columnMapping['bonus'] ?? null, $row);
+                $adjustment = $getCellValue($columnMapping['adjustment'] ?? null, $row);
+                $totalSalary2 = $getCellValue($columnMapping['total_salary_gross'] ?? null, $row);
+                $policyHo = $getCellValue($columnMapping['policy_ho_amount'] ?? null, $row);
+                $deductionAbsent = $getCellValue($columnMapping['deduction_absent'] ?? null, $row);
+                $deductionLate = $getCellValue($columnMapping['deduction_late'] ?? null, $row);
+                $deductionShortage = $getCellValue($columnMapping['shortage_deduction'] ?? null, $row);
+                $deductionLoan = $getCellValue($columnMapping['deduction_loan'] ?? null, $row);
+                $deductionAdminFee = $getCellValue($columnMapping['bank_fee'] ?? null, $row);
+                $deductionBpjsTk = $getCellValue($columnMapping['bpjs_tk_deduction'] ?? null, $row);
+                $totalDeductions = $getCellValue($columnMapping['total_deduction'] ?? null, $row);
+                
+                if ($totalDeductions <= 0) {
+                    $totalDeductions = abs($deductionAbsent) + abs($deductionLate) + abs($deductionShortage) + abs($deductionLoan) + abs($deductionAdminFee) + abs($deductionBpjsTk);
+                }
+                
+                $grandTotal = $getCellValue($columnMapping['thp'] ?? null, $row);
+                $ewa = $getCellValue($columnMapping['ewa_amount'] ?? null, $row);
+                $netSalary = $getCellValue($columnMapping['net_salary'] ?? null, $row);
+                
+                if ($netSalary <= 0 && $grandTotal > 0) {
+                    $netSalary = $grandTotal - $ewa;
+                }
+                
+                if ($totalSalary2 > 0) {
+                    $grossSalary = $totalSalary2;
+                } elseif ($totalSalary1 > 0) {
+                    $grossSalary = $totalSalary1;
+                } else {
+                    $grossSalary = $basicSalary + $mealAmount + $attendanceAmount + $transportAmount + $healthAllowance + $positionAllowance + $overtimeAmount + $holidayAllowance + $bonus + $adjustment + $backup + $insentifKehadiran + $targetKoli + $accessoryFee;
+                }
+                
+                $dataRows[] = [
+                    'employee_name' => $employeeName,
+                    'period' => $request->period ?? date('Y-m'),
+                    'account_number' => $getCellValue($columnMapping['account_number'] ?? null, $row),
+                    
+                    'days_total' => $daysTotal,
+                    'days_off' => $daysOff,
+                    'days_sick' => $daysSick,
+                    'days_permission' => $daysPermission,
+                    'days_alpha' => $daysAlpha,
+                    'days_leave' => $daysLeave,
+                    'days_present' => $daysPresent,
+                    
+                    'basic_salary' => $basicSalary,
+                    'meal_rate' => $mealRate,
+                    'meal_amount' => $mealAmount,
+                    'attendance_rate' => $attendanceRate,
+                    'attendance_amount' => $attendanceAmount,
+                    'attendance_allowance' => $attendanceAmount, // For money_changer
+                    'transport_rate' => $transportRate,
+                    'transport_amount' => $transportAmount,
+                    'health_allowance' => $healthAllowance,
+                    'position_allowance' => $positionAllowance,
+                    'total_salary_1' => $totalSalary1,
+                    'subtotal_1' => $totalSalary1, // For cellullers
+                    
+                    'overtime_rate' => $overtimeRate,
+                    'overtime_hours' => $overtimeHours,
+                    'overtime_amount' => $overtimeAmount,
+                    'target_koli' => $targetKoli,
+                    'accessory_fee' => $accessoryFee,
+                    
+                    'backup' => $backup,
+                    'insentif_kehadiran' => $insentifKehadiran,
+                    'holiday_allowance' => $holidayAllowance,
+                    'bonus' => $bonus,
+                    'adjustment' => $adjustment,
+                    'total_salary_2' => $grossSalary, 
+                    'gross_salary' => $grossSalary, // For cellullers
+                    'policy_ho' => $policyHo,
+                    
+                    'deduction_absent' => $deductionAbsent,
+                    'deduction_late' => $deductionLate,
+                    'deduction_shortage' => $deductionShortage,
+                    'deduction_so_shortage' => $deductionShortage, // Alias
+                    'deduction_loan' => $deductionLoan,
+                    'deduction_admin_fee' => $deductionAdminFee,
+                    'deduction_bpjs_tk' => $deductionBpjsTk,
+                    'total_deductions' => $totalDeductions,
+                    'deduction_total' => $totalDeductions, // Alias
+                    'total_deduction' => $totalDeductions, // Alias
+                    
+                    'grand_total' => $grandTotal,
+                    'ewa_amount' => $ewa,
+                    'net_salary' => $netSalary,
+                ];
+            }
+
+            return response()->json([
+                'message' => 'File parsed successfully',
+                'file_name' => $file->getClientOriginalName(),
+                'rows_count' => count($dataRows),
+                'rows' => $dataRows,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Retail Payroll Simulate Error: ' . $e->getMessage());
+            return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function saveImport(Request $request)
     {
         $request->validate([
+            'division_type' => 'required|string',
             'rows' => 'required|array',
             'rows.*.employee_name' => 'required|string',
         ]);
@@ -427,7 +868,7 @@ if ($headerRowIndex === -1) {
                 }
                 
                 // Check duplicate
-                $existing = PayrollHans::where('employee_id', $employee->id)
+                $existing = $this->getModel($request->division_type)->where('employee_id', $employee->id)
                     ->where('period', $row['period'])
                     ->first();
                 
@@ -436,7 +877,7 @@ if ($headerRowIndex === -1) {
                     continue;
                 }
                 
-                PayrollHans::create(array_merge($row, [
+                $this->getModel($request->division_type)->create(array_merge($row, [
                     'employee_id' => $employee->id,
                     'status' => 'draft',
                     'adjustment' => $row['adjustment'] ?? 0,
@@ -458,9 +899,9 @@ if ($headerRowIndex === -1) {
         }
     }
     
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $payroll = PayrollHans::with('employee')->findOrFail($id);
+        $payroll = $this->getModel($request->division_type)->with('employee')->findOrFail($id);
         
         // Security check
         $user = auth()->user();
@@ -471,18 +912,19 @@ if ($headerRowIndex === -1) {
              }
         }
         
-        return response()->json($this->formatPayroll($payroll));
+        return response()->json($this->formatPayrollData($payroll));
     }
     
     public function updateStatus(Request $request, $id)
     {
          $request->validate([
+            'division_type' => 'required|string',
             'status' => 'required|in:draft,approved,paid',
             'approval_signature' => 'nullable|string',
             'notes' => 'nullable|string',
         ]);
             
-        $payroll = PayrollHans::findOrFail($id);
+        $payroll = $this->getModel($request->division_type)->findOrFail($id);
         
         $data = ['status' => $request->status];
         
@@ -501,9 +943,9 @@ if ($headerRowIndex === -1) {
         ]);
     }
     
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        $payroll = PayrollHans::findOrFail($id);
+        $payroll = $this->getModel($request->division_type)->findOrFail($id);
         $payroll->delete();
         return response()->json(['message' => 'Payroll delete successfully']);
     }
@@ -511,10 +953,10 @@ if ($headerRowIndex === -1) {
     /**
      * Generate PDF Slip
      */
-    public function generateSlip($id)
+    public function generateSlip(Request $request, $id)
     {
         try {
-            $payroll = PayrollHans::with('employee')->findOrFail($id);
+            $payroll = $this->getModel($request->division_type)->with('employee')->findOrFail($id);
             
             // Security check
             $user = auth()->user();
@@ -525,7 +967,7 @@ if ($headerRowIndex === -1) {
                  }
             }
             
-            $formatted = $this->formatPayroll($payroll); 
+            $formatted = $this->formatPayrollData($payroll); 
             unset($formatted['employee']);
             foreach ($formatted as $key => $val) {
                 $payroll->$key = $val;
@@ -547,13 +989,23 @@ if ($headerRowIndex === -1) {
                 // Ignore AI error
             }
             
+            // Determine view based on division_type
+            $viewName = 'payslips.retail_unified';
+            $divType = $request->division_type;
+            
+            $payroll->division_type = $divType; // Inject division type for the view
+
+            if ($divType === 'fnb') {
+                $viewName = 'payslips.fnb';
+            }
+
             // Pass simple object to view, view can format
-            $pdf = PDF::loadView('payslips.hans', [
+            $pdf = PDF::loadView($viewName, [
                 'payroll' => $payroll,
                 'aiMessage' => $aiMessage
             ]);
             
-            $filename = 'payslip_hans_' . str_replace(' ', '_', $payroll->employee->full_name) . '_' . $payroll->period . '.pdf';
+            $filename = 'payslip_' . $divType . '_' . str_replace(' ', '_', $payroll->employee->full_name) . '_' . $payroll->period . '.pdf';
             
             return $pdf->download($filename);
         } catch (\Exception $e) {
@@ -565,23 +1017,23 @@ if ($headerRowIndex === -1) {
         }
     }
     
-    private function formatPayroll($payroll)
+    private function formatPayrollData($payroll)
     {
         $formatted = $payroll->toArray();
         unset($formatted['ewa_amount']);
         
         $formatted['allowances'] = [
              'Uang Makan' => [
-                 'rate' => $payroll->meal_rate,
-                 'amount' => $payroll->meal_amount,
+                 'rate' => $payroll->meal_rate ?? null,
+                 'amount' => $payroll->meal_amount ?? 0,
              ],
              'Transport' => [
                  'rate' => $payroll->transport_rate,
                  'amount' => $payroll->transport_amount,
              ],
              'Kehadiran' => [
-                 'rate' => $payroll->attendance_rate,
-                 'amount' => $payroll->attendance_amount,
+                 'rate' => $payroll->attendance_rate ?? null,
+                 'amount' => $payroll->attendance_amount ?? $payroll->attendance_allowance ?? 0,
              ],
              'Tunjangan Kesehatan' => $payroll->health_allowance,
              'Tunjangan Jabatan' => $payroll->position_allowance,
@@ -590,18 +1042,20 @@ if ($headerRowIndex === -1) {
                  'hours' => $payroll->overtime_hours,
                  'amount' => $payroll->overtime_amount,
              ],
-             'Bonus' => $payroll->bonus,
-             'Insentif' => $payroll->incentive,
-             'THR' => $payroll->holiday_allowance,
-             'Adj Kekurangan Gaji' => $payroll->adjustment, // New
+             'Target Koli' => $payroll->target_koli ?? 0,
+             'Fee Aksesoris' => $payroll->accessory_fee ?? 0,
+             'Backup' => $payroll->backup ?? 0,
+             'Insentif Kehadiran' => $payroll->insentif_kehadiran ?? 0,
+             'Insentif Lebaran' => $payroll->holiday_allowance,
+             'Bonus' => $payroll->bonus ?? 0,
+             'Adjustment' => $payroll->adjustment,
              'Kebijakan HO' => $payroll->policy_ho,
         ];
         
         $formatted['deductions'] = [
-            'Absen 1X' => $payroll->deduction_absent,
+            'Potongan Absen' => $payroll->deduction_absent,
             'Terlambat' => $payroll->deduction_late, 
-            'Selisih SO' => $payroll->deduction_so_shortage, // New
-            'Tidak Hadir' => $payroll->deduction_alpha,
+            'Selisih SO' => $payroll->deduction_shortage ?? $payroll->deduction_so_shortage ?? 0,
             'Pinjaman' => $payroll->deduction_loan,
             'Adm Bank' => $payroll->deduction_admin_fee,
             'BPJS TK' => $payroll->deduction_bpjs_tk,
@@ -609,8 +1063,8 @@ if ($headerRowIndex === -1) {
         
         // Dynamic THP calculation with fallback for import anomalies
         $thpResult = $this->calculateThp($payroll, 
-            ['basic_salary', 'meal_amount', 'transport_amount', 'attendance_amount', 'health_allowance', 'position_allowance', 'overtime_amount', 'bonus', 'incentive', 'holiday_allowance', 'adjustment', 'policy_ho'],
-            ['deduction_absent', 'deduction_late', 'deduction_so_shortage', 'deduction_alpha', 'deduction_loan', 'deduction_admin_fee', 'deduction_bpjs_tk']
+            ['basic_salary', 'attendance_amount', 'transport_amount', 'health_allowance', 'position_allowance', 'overtime_amount', 'target_koli', 'accessory_fee', 'backup', 'insentif_kehadiran', 'holiday_allowance', 'adjustment', 'policy_ho'],
+            ['deduction_absent', 'deduction_late', 'deduction_shortage', 'deduction_loan', 'deduction_admin_fee', 'deduction_bpjs_tk']
         );
         $formatted['thp'] = $thpResult['thp'];
         if ($thpResult['net_salary'] !== null) {
@@ -625,11 +1079,12 @@ if ($headerRowIndex === -1) {
         $formatted['days_long_shift'] = $payroll->days_long_shift;
         $formatted['years_of_service'] = $payroll->years_of_service;
         $formatted['notes'] = $payroll->notes;
+        $formatted['ewa_amount'] = $payroll->ewa_amount ?? 0;
 
         // Add attendance data for Mobile App
         $formatted['attendance'] = [
             'Total Hari' => $payroll->days_total,
-            'Long Shift' => $payroll->days_long_shift, 
+            'Long Shift' => $payroll->days_long_shift ?? 0, 
             'Off' => $payroll->days_off,
             'Sakit' => $payroll->days_sick,
             'Ijin' => $payroll->days_permission,

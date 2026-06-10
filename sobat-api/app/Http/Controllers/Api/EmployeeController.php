@@ -114,6 +114,7 @@ class EmployeeController extends Controller
             'spouse_name' => 'nullable|string',
             'family_contact_number' => 'nullable', // allow string or number
             'education' => 'nullable', // Accept array/json or string
+            'leave_quota' => 'nullable|integer|min:0',
             'supervisor_name' => 'nullable|string',
             'supervisor_position' => 'nullable|string',
             'supervisor_id' => 'nullable|exists:employees,id', // Added
@@ -201,6 +202,7 @@ class EmployeeController extends Controller
             'spouse_name',
             'family_contact_number',
             'education',
+            'leave_quota',
             'supervisor_name',
             'supervisor_position',
             'supervisor_id', // Added
@@ -348,6 +350,7 @@ class EmployeeController extends Controller
             'spouse_name' => 'nullable|string',
             'family_contact_number' => 'nullable', // allow string or number
             'education' => 'nullable', // Accept array/json or string
+            'leave_quota' => 'nullable|integer|min:0',
             'supervisor_name' => 'nullable|string',
             'supervisor_position' => 'nullable|string',
             'supervisor_id' => 'nullable|exists:employees,id', // Added
@@ -454,6 +457,7 @@ class EmployeeController extends Controller
             'spouse_name',
             'family_contact_number',
             'education',
+            'leave_quota',
             'supervisor_name',
             'supervisor_position',
             'supervisor_id', // Added
@@ -545,12 +549,173 @@ class EmployeeController extends Controller
             return response()->json(['message' => 'Anda tidak memiliki akses ke data payroll karyawan ini.'], 403);
         }
 
-        $payrolls = $employee->payrolls()
-            ->orderBy('period_month', 'desc')
-            ->orderBy('period_year', 'desc')
-            ->paginate(12);
+        $payrollModels = [
+            \App\Models\Payroll::class => 'ho',
+            \App\Models\PayrollCelluller::class => 'cellular',
+            \App\Models\PayrollFnb::class => 'fnb',
+            \App\Models\PayrollHans::class => 'hans',
+            \App\Models\PayrollMaximum::class => 'maximum',
+            \App\Models\PayrollMm::class => 'minimarket',
+            \App\Models\PayrollMoneyChanger::class => 'money_changer',
+            \App\Models\PayrollRef::class => 'reflexiology',
+            \App\Models\PayrollTungtau::class => 'tungtau',
+            \App\Models\PayrollWrapping::class => 'wrapping',
+        ];
 
-        return response()->json($payrolls);
+        $allPayrolls = collect();
+
+        foreach ($payrollModels as $modelClass => $type) {
+            $records = $modelClass::where('employee_id', $employee->id)->get();
+            
+            foreach ($records as $record) {
+                $data = $record->toArray();
+                $data['division_type_label'] = $type;
+                
+                // Standardize mapping for generic/HO payrolls (which use JSON 'details' column)
+                if ($modelClass === \App\Models\Payroll::class) {
+                    if (isset($data['details']) && is_array($data['details'])) {
+                        $details = $data['details'];
+                        
+                        if (isset($details['days_present'])) {
+                            $data['attendance'] = [
+                                'Hadir' => $details['days_present'] ?? 0,
+                                'Sakit' => $details['days_sick'] ?? 0,
+                                'Ijin' => $details['days_permission'] ?? 0,
+                                'Alfa' => $details['days_alpha'] ?? 0,
+                                'Cuti' => $details['days_leave'] ?? 0,
+                            ];
+                        }
+                        
+                        $allowancesMap = [];
+                        $daysPresent = $details['days_present'] ?? 0;
+                        $formatRate = function ($amount, $defaultLabel) use ($daysPresent) {
+                            if ($daysPresent > 0 && $amount > 0 && fmod($amount, $daysPresent) == 0) {
+                                $rate = $amount / $daysPresent;
+                                if ($rate >= 1000) return $defaultLabel . ' (Rp ' . number_format($rate, 0, ',', '.') . ' /hari)';
+                            }
+                            return $defaultLabel;
+                        };
+
+                        if (($details['transport_allowance'] ?? 0) > 0) $allowancesMap[$formatRate($details['transport_allowance'], 'Transport')] = $details['transport_allowance'];
+                        if (($details['health_allowance'] ?? 0) > 0) $allowancesMap['Tunjangan Kesehatan'] = $details['health_allowance'];
+                        if (($details['position_allowance'] ?? 0) > 0) $allowancesMap['Tunjangan Jabatan'] = $details['position_allowance'];
+                        if (($details['holiday_allowance'] ?? 0) > 0) $allowancesMap['Tunjangan Hari Raya'] = $details['holiday_allowance'];
+                        if (($details['attendance_allowance'] ?? 0) > 0) $allowancesMap[$formatRate($details['attendance_allowance'], 'Kehadiran')] = $details['attendance_allowance'];
+                        if (($details['meal_allowance'] ?? 0) > 0) $allowancesMap[$formatRate($details['meal_allowance'], 'Uang Makan')] = $details['meal_allowance'];
+                        if (($details['bonus'] ?? 0) > 0) $allowancesMap['Bonus / THR'] = $details['bonus'];
+                        if (($details['target_koli'] ?? 0) > 0) $allowancesMap['Target Koli'] = $details['target_koli'];
+                        if (($details['accessory_fee'] ?? 0) > 0) $allowancesMap['Accessory Fee'] = $details['accessory_fee'];
+                        if (($details['backup'] ?? 0) > 0) $allowancesMap['Backup'] = $details['backup'];
+                        if (($details['policy_ho'] ?? 0) > 0) $allowancesMap['Kebijakan HO'] = $details['policy_ho'];
+                        if (($details['adjustment'] ?? 0) > 0) $allowancesMap['Adjustment'] = $details['adjustment'];
+                        if (($details['insentif_kehadiran'] ?? 0) > 0) $allowancesMap['Insentif Kehadiran'] = $details['insentif_kehadiran'];
+                        
+                        if (($details['overtime_hours'] ?? 0) > 0) {
+                            $allowancesMap['Lembur'] = [
+                                'amount' => $record->overtime_pay ?? 0,
+                                'hours' => $details['overtime_hours'],
+                            ];
+                        }
+                        if (!empty($allowancesMap)) $data['allowances'] = $allowancesMap;
+
+                        if (isset($details['deductions'])) {
+                            $deductionsMap = [];
+                            $d = $details['deductions'];
+                            if (($d['absent'] ?? 0) > 0) $deductionsMap['Absen'] = $d['absent'];
+                            if (($d['alfa'] ?? 0) > 0) $deductionsMap['Alfa'] = $d['alfa'];
+                            if (($d['late'] ?? 0) > 0) $deductionsMap['Terlambat'] = $d['late'];
+                            if (($d['shortage'] ?? 0) > 0) $deductionsMap['Selisih SO'] = $d['shortage'];
+                            if (($d['loan'] ?? 0) > 0) $deductionsMap['Pinjaman/Kasbon'] = $d['loan'];
+                            if (($d['bank_fee'] ?? 0) > 0) $deductionsMap['Biaya Admin Bank'] = $d['bank_fee'];
+                            if (($d['bpjs_tk'] ?? 0) > 0) $deductionsMap['BPJS Ketenagakerjaan'] = $d['bpjs_tk'];
+                            if (!empty($deductionsMap)) $data['deductions'] = $deductionsMap;
+                        }
+                        
+                        if (isset($details['deductions']['ewa']) && $details['deductions']['ewa'] > 0) {
+                             $data['ewa_amount'] = $details['deductions']['ewa'];
+                        }
+                    }
+                } else {
+                    // Standardize mapping for Retail/Services payrolls (which use direct DB columns)
+                    $data['attendance'] = [
+                        'Hadir' => $record->days_present ?? 0,
+                        'Sakit' => $record->days_sick ?? 0,
+                        'Ijin' => $record->days_permission ?? 0,
+                        'Alfa' => $record->days_alpha ?? 0,
+                        'Cuti' => $record->days_leave ?? 0,
+                    ];
+                    
+                    $allowancesMap = [];
+                    if (($record->transport_amount ?? 0) > 0) {
+                        $label = 'Transport';
+                        if (($record->transport_rate ?? 0) >= 1000) $label .= ' (Rp ' . number_format($record->transport_rate, 0, ',', '.') . ' /hari)';
+                        $allowancesMap[$label] = $record->transport_amount;
+                    }
+                    if (($record->health_allowance ?? 0) > 0) $allowancesMap['Tunjangan Kesehatan'] = $record->health_allowance;
+                    if (($record->position_allowance ?? 0) > 0) $allowancesMap['Tunjangan Jabatan'] = $record->position_allowance;
+                    if (($record->holiday_allowance ?? 0) > 0) $allowancesMap['Tunjangan Hari Raya'] = $record->holiday_allowance;
+                    
+                    $attAmt = $record->attendance_amount ?? $record->attendance_allowance ?? 0;
+                    if ($attAmt > 0) {
+                        $label = 'Kehadiran';
+                        if (($record->attendance_rate ?? 0) >= 1000) $label .= ' (Rp ' . number_format($record->attendance_rate, 0, ',', '.') . ' /hari)';
+                        $allowancesMap[$label] = $attAmt;
+                    }
+                    if (($record->meal_amount ?? 0) > 0) {
+                        $label = 'Uang Makan';
+                        if (($record->meal_rate ?? 0) >= 1000) $label .= ' (Rp ' . number_format($record->meal_rate, 0, ',', '.') . ' /hari)';
+                        $allowancesMap[$label] = $record->meal_amount;
+                    }
+                    if (($record->bonus ?? 0) > 0) $allowancesMap['Bonus / THR'] = $record->bonus;
+                    if (($record->target_koli ?? 0) > 0) $allowancesMap['Target Koli'] = $record->target_koli;
+                    if (($record->accessory_fee ?? 0) > 0) $allowancesMap['Accessory Fee'] = $record->accessory_fee;
+                    if (($record->backup ?? 0) > 0) $allowancesMap['Backup'] = $record->backup;
+                    if (($record->policy_ho ?? 0) > 0) $allowancesMap['Kebijakan HO'] = $record->policy_ho;
+                    if (($record->adjustment ?? 0) > 0) $allowancesMap['Adjustment'] = $record->adjustment;
+                    if (($record->insentif_kehadiran ?? 0) > 0) $allowancesMap['Insentif Kehadiran'] = $record->insentif_kehadiran;
+                    
+                    if (($record->overtime_hours ?? 0) > 0) {
+                        $allowancesMap['Lembur'] = [
+                            'amount' => $record->overtime_amount ?? 0,
+                            'hours' => $record->overtime_hours,
+                        ];
+                    }
+                    if (!empty($allowancesMap)) $data['allowances'] = $allowancesMap;
+
+                    $deductionsMap = [];
+                    if (($record->deduction_absent ?? 0) > 0) $deductionsMap['Potongan Absen'] = $record->deduction_absent;
+                    if (($record->deduction_late ?? 0) > 0) $deductionsMap['Terlambat'] = $record->deduction_late;
+                    $shortage = $record->deduction_shortage ?? $record->deduction_so_shortage ?? 0;
+                    if ($shortage > 0) $deductionsMap['Selisih SO'] = $shortage;
+                    if (($record->deduction_loan ?? 0) > 0) $deductionsMap['Pinjaman/Kasbon'] = $record->deduction_loan;
+                    if (($record->deduction_admin_fee ?? 0) > 0) $deductionsMap['Biaya Admin Bank'] = $record->deduction_admin_fee;
+                    if (($record->deduction_bpjs_tk ?? 0) > 0) $deductionsMap['BPJS Ketenagakerjaan'] = $record->deduction_bpjs_tk;
+                    if (!empty($deductionsMap)) $data['deductions'] = $deductionsMap;
+                    
+                    if (($record->ewa_amount ?? 0) > 0) {
+                        $data['ewa_amount'] = $record->ewa_amount;
+                    }
+                }
+                
+                $allPayrolls->push($data);
+            }
+        }
+
+        // Sort descending by period
+        $sortedPayrolls = $allPayrolls->sortByDesc('period')->values();
+
+        // Manual Pagination
+        $page = $request->get('page', 1);
+        $perPage = 12;
+        $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
+            $sortedPayrolls->forPage($page, $perPage)->values(),
+            $sortedPayrolls->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginated);
     }
 
     /**

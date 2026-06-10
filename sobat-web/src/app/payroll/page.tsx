@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
 import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
@@ -110,19 +111,15 @@ export default function PayrollPage() {
       if (selectedDivision === 'fnb') endpoint = '/payrolls/fnb';
       if (selectedDivision === 'maximum') endpoint = '/payrolls/maximum';
     if (selectedDivision === 'tungtau') endpoint = '/payrolls/tungtau';
-      if (selectedDivision === 'minimarket') endpoint = '/payrolls/mm';
-      if (selectedDivision === 'reflexiology') endpoint = '/payrolls/ref';
-      if (selectedDivision === 'wrapping') endpoint = '/payrolls/wrapping';
-      if (selectedDivision === 'hans') endpoint = '/payrolls/hans';
-      if (selectedDivision === 'cellular') endpoint = '/payroll-cellullers'; // New Endpoint
-      if (selectedDivision === 'money_changer') endpoint = '/payrolls/money-changer';
+      if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) endpoint = '/payrolls/retail';
 
       const response = await apiClient.get(endpoint, {
         params: {
           page: currentPage,
           ...(selectedMonth !== 0 && { month: selectedMonth }),
           ...(selectedYear !== 0 && { year: selectedYear }),
-          ...(debouncedSearch && { search: debouncedSearch })
+          ...(debouncedSearch && { search: debouncedSearch }),
+          ...(['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision) && { division_type: selectedDivision })
         }
       });
 
@@ -245,9 +242,11 @@ export default function PayrollPage() {
       } else {
         // Handle save response
         if (data.saved === 0 && data.errors && data.errors.length > 0) {
-          alert('Gagal menyimpan data:\n' + data.errors.join('\n'));
+          alert(`Gagal menyimpan data:\n` + data.errors.join(`\n`));
         } else if (data.errors && data.errors.length > 0) {
-          alert(`Berhasil menyimpan ${data.saved} data.\nAda beberapa error:\n` + data.errors.join('\n'));
+          alert(`Berhasil menyimpan ${data.saved} data.
+Ada beberapa error:
+` + data.errors.join(`\n`));
         } else {
           alert(data.message || 'Import berhasil');
         }
@@ -287,13 +286,10 @@ export default function PayrollPage() {
         if (selectedDivision === 'fnb') endpoint = `/payrolls/fnb/${pendingApprovalId}/status`;
         if (selectedDivision === 'maximum') endpoint = `/payrolls/maximum/${pendingApprovalId}/status`;
         if (selectedDivision === 'tungtau') endpoint = `/payrolls/tungtau/${pendingApprovalId}/status`;
-        if (selectedDivision === 'minimarket') endpoint = `/payrolls/mm/${pendingApprovalId}/status`;
-        if (selectedDivision === 'reflexiology') endpoint = `/payrolls/ref/${pendingApprovalId}/status`;
-        if (selectedDivision === 'wrapping') endpoint = `/payrolls/wrapping/${pendingApprovalId}/status`;
-        if (selectedDivision === 'hans') endpoint = `/payrolls/hans/${pendingApprovalId}/status`;
+        if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) {
+          endpoint = `/payrolls/retail/${pendingApprovalId}/status`;
+        }
         if (selectedDivision === 'office') endpoint = `/payrolls/ho/${pendingApprovalId}/status`;
-        if (selectedDivision === 'cellular') endpoint = `/payroll-cellullers/${pendingApprovalId}/status`; // New Endpoint
-        if (selectedDivision === 'money_changer') endpoint = `/payrolls/money-changer/${pendingApprovalId}/status`;
 
         // Note: FNB uses updateStatus which takes 'status' and 'approval_signature'
         // Generic Controller might need update. Assuming Generic uses PATCH /payrolls/{id}/status
@@ -304,7 +300,8 @@ export default function PayrollPage() {
           status: 'approved',
           approval_signature: signatureData,
           signer_name: signerName,
-          notes: approvalNotes
+          notes: approvalNotes,
+          division_type: selectedDivision
         });
       }
 
@@ -504,7 +501,7 @@ export default function PayrollPage() {
                 Download Template
               </button>
               <button
-                onClick={() => setShowUploadModal(true)}
+                onClick={() => router.push('/payroll/import')}
                 className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#60A5FA] to-[#93C5FD] text-[#1C3ECA] rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-[1.02]"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -516,6 +513,24 @@ export default function PayrollPage() {
           </div>
         </div>
       </div>
+
+          {/* Sub Navigation Tabs */}
+          <div className="flex px-8 border-b border-gray-200">
+            <Link
+              href="/payroll"
+              className="px-6 py-4 text-sm font-semibold border-b-2 border-[#1C3ECA] text-[#1C3ECA] transition-colors"
+            >
+              Data Payroll
+            </Link>
+            <Link
+              href="/payroll/import"
+              className="px-6 py-4 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors"
+            >
+              Import / Export
+            </Link>
+          </div>
+
+
 
       {/* Filter Section */}
       <div className="bg-white border-b border-gray-200 px-8 py-4">
@@ -530,7 +545,8 @@ export default function PayrollPage() {
             >
               <option value="all">Semua Divisi (Bulk Download)</option>
               <option value="office">Office (Pusat)</option>
-              <option value="fnb">FnB</option>\n              <option value="tungtau">FnB Tungtau</option>
+              <option value="fnb">FnB</option>
+              <option value="tungtau">FnB Tungtau</option>
             <option value="maximum">FnB Maximum 600</option>
               <option value="minimarket">Minimarket</option>
               <option value="reflexiology">Reflexiology</option>
@@ -772,21 +788,11 @@ export default function PayrollPage() {
                                   ? `/payrolls/tungtau/${payroll.id}/slip`
                                   : selectedDivision === 'fnb'
                                   ? `/payrolls/fnb/${payroll.id}/slip`
-                                  : selectedDivision === 'minimarket'
-                                    ? `/payrolls/mm/${payroll.id}/slip`
-                                    : selectedDivision === 'reflexiology'
-                                      ? `/payrolls/ref/${payroll.id}/slip`
-                                      : selectedDivision === 'wrapping'
-                                        ? `/payrolls/wrapping/${payroll.id}/slip`
-                                        : selectedDivision === 'hans'
-                                          ? `/payrolls/hans/${payroll.id}/slip`
-                                          : selectedDivision === 'cellular'
-                                            ? `/payroll-cellullers/${payroll.id}/slip`
-                                            : selectedDivision === 'money_changer'
-                                              ? `/payrolls/money-changer/${payroll.id}/slip`
-                                            : selectedDivision === 'office'
-                                              ? `/payrolls/ho/${payroll.id}/slip`
-                                              : `/payrolls/${payroll.id}/slip`;
+                                  : ['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)
+                                    ? `/payrolls/retail/${payroll.id}/slip?division_type=${selectedDivision}`
+                                    : selectedDivision === 'office'
+                                      ? `/payrolls/ho/${payroll.id}/slip`
+                                      : `/payrolls/${payroll.id}/slip`;
 
                                 const response = await apiClient.get(endpoint, {
                                   responseType: 'blob',
@@ -1174,19 +1180,11 @@ export default function PayrollPage() {
                           ? `/payrolls/tungtau/${selectedPayroll.id}/slip`
                           : selectedDivision === 'fnb'
                           ? `/payrolls/fnb/${selectedPayroll.id}/slip`
-                          : selectedDivision === 'minimarket'
-                            ? `/payrolls/mm/${selectedPayroll.id}/slip`
-                            : selectedDivision === 'reflexiology'
-                              ? `/payrolls/ref/${selectedPayroll.id}/slip`
-                              : selectedDivision === 'wrapping'
-                                ? `/payrolls/wrapping/${selectedPayroll.id}/slip`
-                                : selectedDivision === 'hans'
-                                  ? `/payrolls/hans/${selectedPayroll.id}/slip`
-                                  : selectedDivision === 'office'
-                                    ? `/payrolls/ho/${selectedPayroll.id}/slip`
-                                    : selectedDivision === 'cellular'
-                                      ? `/payroll-cellullers/${selectedPayroll.id}/slip`
-                                      : `/payrolls/${selectedPayroll.id}/slip`;
+                          : selectedDivision === 'office'
+                          ? `/payrolls/ho/${selectedPayroll.id}/slip`
+                          : ['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)
+                          ? `/payrolls/retail/${selectedPayroll.id}/slip?division_type=${selectedDivision}`
+                          : `/payrolls/${selectedPayroll.id}/slip`;
 
                         const response = await apiClient.get(endpoint, {
                           responseType: 'blob',
@@ -1311,217 +1309,6 @@ export default function PayrollPage() {
         )
       }
 
-      {/* Upload Modal */}
-      {
-        showUploadModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 text-black">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">Import Excel</h3>
-                <button
-                  onClick={() => {
-                    setShowUploadModal(false);
-                    setSelectedFile(null);
-                    setUploadProgress(0);
-                  }}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="space-y-6">
-                {/* File Input */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Pilih File Excel
-                  </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#60A5FA] transition-colors">
-                    <input
-                      type="file"
-                      accept=".xlsx,.xls,.csv"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      id="file-upload"
-                    />
-                    <label htmlFor="file-upload" className="cursor-pointer">
-                      <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                      {selectedFile ? (
-                        <p className="text-sm text-gray-900 font-semibold">{selectedFile.name}</p>
-                      ) : (
-                        <>
-                          <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
-                          <p className="text-xs text-gray-400 mt-1">Excel/CSV files (.xlsx, .xls, .csv)</p>
-                        </>
-                      )}
-                    </label>
-                  </div>
-                </div>
-
-                {/* Upload Progress */}
-                {uploadProgress > 0 && uploadProgress < 100 && (
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-600">Uploading...</span>
-                      <span className="text-[#1C3ECA] font-semibold">{uploadProgress}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-gradient-to-r from-[#60A5FA] to-[#93C5FD] h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      setShowUploadModal(false);
-                      setSelectedFile(null);
-                      setUploadProgress(0);
-                    }}
-                    className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleUpload}
-                    disabled={!selectedFile || uploadProgress > 0}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-[#60A5FA] to-[#93C5FD] text-[#1C3ECA] rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                  >
-                    Upload
-                  </button>
-                </div>
-
-                {/* Parsed Preview */}
-                {parsedRows.length > 0 && (
-                  <div className="mt-6">
-                    <h4 className="text-sm font-semibold mb-2">Preview Data ({parsedRows.length} baris)</h4>
-                    <div className="max-h-64 overflow-auto border rounded-lg">
-                      <table className="w-full text-sm">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            {Object.keys(parsedRows[0]).map((col) => (
-                              <th key={col} className="text-left p-2 font-medium text-gray-600 whitespace-nowrap">{col}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {parsedRows.map((row: any, idx: number) => (
-                            <tr key={idx} className="even:bg-white odd:bg-gray-50">
-                              {Object.keys(parsedRows[0]).map((col) => (
-                                <td key={col} className="p-2 whitespace-nowrap">
-                                  {typeof row[col] === 'object' && row[col] !== null ? (
-                                    <div className="text-xs max-h-20 overflow-y-auto">
-                                      {Object.entries(row[col]).map(([k, v]) => {
-                                        // Skip empty/zero values in preview to save space
-                                        if (v === 0 || v === '0' || v === null) return null;
-                                        return (
-                                          <div key={k} className="whitespace-nowrap">
-                                            <span className="font-semibold">{k}:</span> {String(v)}
-                                          </div>
-                                        );
-                                      })}
-                                      {Object.values(row[col]).every(v => v === 0 || v === '0' || v === null) && <span className="text-gray-400">-</span>}
-                                    </div>
-                                  ) : (
-                                    row[col]
-                                  )}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="mt-4 flex gap-3">
-                      <button
-                        onClick={() => {
-                          setParsedRows([]);
-                          setSelectedFile(null);
-                          setUploadProgress(0);
-                        }}
-                        className="px-4 py-2 border rounded-lg"
-                      >
-                        Clear
-                      </button>
-                      <button
-                        onClick={async () => {
-                          try {
-                            // Use division-specific save endpoint
-                            let saveEndpoint = '/payrolls/import/save';
-                            if (selectedDivision === 'office') saveEndpoint = '/payrolls/ho/import/save';
-                            if (selectedDivision === 'fnb') saveEndpoint = '/payrolls/fnb/import/save';
-                            if (selectedDivision === 'maximum') saveEndpoint = '/payrolls/maximum/import/save';
-                            if (selectedDivision === 'tungtau') saveEndpoint = '/payrolls/tungtau/import/save';
-                            if (selectedDivision === 'minimarket') saveEndpoint = '/payrolls/mm/import/save';
-                            if (selectedDivision === 'reflexiology') saveEndpoint = '/payrolls/ref/import/save';
-                            if (selectedDivision === 'wrapping') saveEndpoint = '/payrolls/wrapping/import/save';
-                            if (selectedDivision === 'hans') saveEndpoint = '/payrolls/hans/import/save';
-                            if (selectedDivision === 'cellular') saveEndpoint = '/payroll-cellullers/import/save';
-                            if (selectedDivision === 'money_changer') saveEndpoint = '/payrolls/money-changer/import/save';
-
-                            const response = await apiClient.post(saveEndpoint, {
-                              rows: parsedRows,
-                            });
-                            const data = response.data;
-
-                            // Show detailed results
-                            // Show detailed results
-                            let message = `Import selesai!`;
-
-                            if (data.summary) {
-                              message += `\n\nTotal: ${data.summary.total}\nBerhasil: ${data.summary.saved}\nGagal: ${data.summary.failed}`;
-                            }
-
-                            if (data.failed && data.failed.length > 0) {
-                              message += '\n\nBaris yang gagal:';
-                              data.failed.slice(0, 5).forEach((fail: any) => {
-                                message += `\n- Row ${fail.row}: ${fail.employee_name} - ${fail.reason}`;
-                              });
-                              if (data.failed.length > 5) {
-                                message += `\n... dan ${data.failed.length - 5} lainnya (lihat console)`;
-                              }
-                              // console.log('All failed rows:', data.failed);
-                            }
-
-                            alert(message);
-
-                            // Close modal and refresh only if some succeeded
-                            if (data.summary && data.summary.saved > 0) {
-                              setShowUploadModal(false);
-                              setParsedRows([]);
-                              setSelectedFile(null);
-                              setUploadProgress(0);
-                              fetchPayrolls();
-                            }
-                          } catch (error: any) {
-                            alert(error.response?.data?.message || 'Gagal menyimpan data');
-                            console.error('Save error details:', error);
-                            if (error.response) {
-                              console.error('Response data:', error.response.data);
-                              console.error('Response status:', error.response.status);
-                            }
-                          }
-                        }}
-                        className="px-4 py-2 bg-gradient-to-r from-[#60A5FA] to-[#93C5FD] text-[#1C3ECA] rounded-lg"
-                      >
-                        Save to DB
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )
-      }
-    </DashboardLayout >
+          </DashboardLayout>
   );
 }

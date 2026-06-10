@@ -87,14 +87,52 @@ class DashboardController extends Controller
             ->whereBetween('contract_end_date', [$todayStr, $threeMonthsFromNow])
             ->count();
 
-        // Payroll Stats (Current Month)
+        // Payroll Stats (Latest Available Period across ALL divisions)
         try {
-            $periodString = sprintf('%04d-%02d', $currentYear, $currentMonth);
-            $payrollTotal = \App\Models\Payroll::where('period', $periodString)
-                ->sum('net_salary');
+            $payrollModels = [
+                \App\Models\Payroll::class,
+                \App\Models\PayrollCelluller::class,
+                \App\Models\PayrollFnb::class,
+                \App\Models\PayrollHans::class,
+                \App\Models\PayrollMaximum::class,
+                \App\Models\PayrollMm::class,
+                \App\Models\PayrollMoneyChanger::class,
+                \App\Models\PayrollRef::class,
+                \App\Models\PayrollTungtau::class,
+                \App\Models\PayrollWrapping::class,
+            ];
+
+            $latestPeriod = null;
+            // 1. Find the latest period across all tables
+            foreach ($payrollModels as $model) {
+                $latest = $model::orderBy('period', 'desc')->first();
+                if ($latest) {
+                    if (!$latestPeriod || $latest->period > $latestPeriod) {
+                        $latestPeriod = $latest->period;
+                    }
+                }
+            }
+
+            $payrollTotal = 0;
+            // 2. Sum the net_salary for that period across all tables
+            if ($latestPeriod) {
+                foreach ($payrollModels as $model) {
+                    $payrollTotal += $model::where('period', $latestPeriod)->sum('net_salary');
+                }
+                
+                // Parse the period back to month and year for the frontend
+                $parts = explode('-', $latestPeriod);
+                $payrollMonth = isset($parts[1]) ? (int)$parts[1] : $currentMonth;
+                $payrollYear = isset($parts[0]) ? (int)$parts[0] : $currentYear;
+            } else {
+                $payrollMonth = $currentMonth;
+                $payrollYear = $currentYear;
+            }
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Dashboard Payroll Stat Error: ' . $e->getMessage());
             $payrollTotal = 0;
+            $payrollMonth = $currentMonth;
+            $payrollYear = $currentYear;
         }
 
         // Leaderboards (Top Late & Top On-Time)
@@ -125,8 +163,8 @@ class DashboardController extends Controller
             'requests' => $requestStats,
             'payroll' => [
                 'total' => $payrollTotal,
-                'period_month' => $currentMonth,
-                'period_year' => $currentYear,
+                'period_month' => $payrollMonth,
+                'period_year' => $payrollYear,
             ],
             'contract_expiring_soon' => $contractExpiringSoon,
             'period' => [

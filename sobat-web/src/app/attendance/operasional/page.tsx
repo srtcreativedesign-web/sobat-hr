@@ -525,7 +525,7 @@ export default function OperasionalAttendancePage() {
                     </div>
                     <div>
                       <span className="text-gray-400">Lokasi:</span>
-                      <p className="text-gray-600 mt-0.5">{selectedAttendance.location_address || '-'}</p>
+                      <p className="text-gray-600 mt-0.5">{(selectedAttendance as any).location_address || '-'}</p>
                     </div>
                   </div>
                 </div>

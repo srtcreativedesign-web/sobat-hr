@@ -259,6 +259,15 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
               const SizedBox(height: 16),
               _buildDetailRow(AppLocalizations.of(context)!.nominalLabel, amount),
             ],
+            if (widget.submission['type'] == 'business_trip' &&
+                widget.submission['detail'] != null &&
+                widget.submission['detail']['destination'] != null) ...[
+              const SizedBox(height: 16),
+              _buildDetailRow(
+                'Tujuan',
+                widget.submission['detail']['destination'].toString(),
+              ),
+            ],
             const SizedBox(height: 16),
             _buildDetailRow(AppLocalizations.of(context)!.description, reason),
 

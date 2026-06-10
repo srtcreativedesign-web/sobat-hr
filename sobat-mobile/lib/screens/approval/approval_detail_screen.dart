@@ -292,7 +292,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
             ] else if (type == 'business_trip') ...[
               _buildDetailRow(
                 'Tujuan',
-                request['destination'] ?? request['title'] ?? '-',
+                request['detail']?['destination'] ?? request['destination'] ?? request['title'] ?? '-',
               ),
               const SizedBox(height: 16),
               _buildDetailRow('Tanggal', duration),

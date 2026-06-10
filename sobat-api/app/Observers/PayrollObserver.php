@@ -56,5 +56,7 @@ class PayrollObserver
         } catch (\Exception $e) {
             Log::error("PayrollObserver FCM error: {$e->getMessage()}");
         }
+        
+        // Feature removed as per user request: Stop duplicating retail records to generic payrolls table
     }
 }

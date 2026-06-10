@@ -26,6 +26,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
   final _specCtrl = TextEditingController(); // New: Spesifikasi
   final _titleCtrl =
       TextEditingController(); // New: Judul Pengajuan (Reimbursement)
+  final _destinationCtrl = TextEditingController(); // New: Tujuan (Business Trip)
 
   bool _isUrgent = false; // New: Urgent/Tidak
   File? _selectedFile; // Renamed from _selectedImage to allow PDF
@@ -183,6 +184,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
     _brandCtrl.dispose();
     _specCtrl.dispose();
     _titleCtrl.dispose();
+    _destinationCtrl.dispose();
     _signatureController.dispose();
     super.dispose();
   }
@@ -334,6 +336,15 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
                           widget.type == 'Sakit' ||
                           widget.type == 'Perjalanan Dinas') ...[
                         _buildDateRangePicker(),
+                        if (widget.type == 'Perjalanan Dinas') ...[
+                          const SizedBox(height: 20),
+                          _buildTextInput(
+                            _destinationCtrl,
+                            'Tujuan',
+                            'Masukkan kota atau tempat tujuan dinas',
+                            maxLines: 1,
+                          ),
+                        ],
                         if (widget.type == 'Sakit') ...[
                           const SizedBox(height: 20),
                           _buildUploadButton(),
@@ -1196,6 +1207,10 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
             end = end.add(const Duration(days: 1));
           }
           data['duration'] = end.difference(start).inMinutes;
+        }
+
+        if (apiType == 'business_trip') {
+          data['destination'] = _destinationCtrl.text;
         }
 
         if (apiType == 'asset') {

@@ -7,6 +7,8 @@ class DivisionsConfig {
   static const Map<String, String> endpoints = {
     'office': 'payrolls/ho',
     'fnb': 'payrolls/fnb',
+    'tungtau': 'payrolls/tungtau',
+    'maximum': 'payrolls/maximum',
     'minimarket': 'payrolls/mm',
     'reflexiology': 'payrolls/ref',
     'wrapping': 'payrolls/wrapping',
@@ -55,6 +57,8 @@ class DivisionsConfig {
     const names = {
       'office': 'Head Office',
       'fnb': 'Food & Beverage',
+      'tungtau': 'Tung Tau',
+      'maximum': 'Maximum 600',
       'minimarket': 'Minimarket',
       'reflexiology': 'Reflexiology',
       'wrapping': 'Wrapping',

@@ -33,10 +33,9 @@ trait PayrollThpCalculator
         $thpCalculated = $totalIncome - $totalDeductions;
         $dbThp = $netSalary + $ewaAmount;
 
-        // If DB has 0 or if there is a significant miscalculation in the uploaded Excel (> Rp 100 difference),
-        // we forcefully override it with the correct mathematical calculation from the components.
-        // Users should use 'adjustment' for manual tweaks, not overwrite the net_salary cell directly.
-        if ($netSalary <= 0 || abs($thpCalculated - $dbThp) > 100) {
+        // If DB has 0 we fallback to calculation. Otherwise, strictly trust the DB (which came from Excel).
+        // The user explicitly requested to NOT recalculate and just move values from preview to draft.
+        if ($netSalary <= 0) {
             return [
                 'thp' => $thpCalculated,
                 'net_salary' => $thpCalculated - $ewaAmount,
@@ -45,7 +44,7 @@ trait PayrollThpCalculator
             ];
         }
 
-        // If the DB value is correct (matches calculation), no need to override net_salary
+        // Always trust the DB value
         return [
             'thp' => $dbThp,
             'net_salary' => null,

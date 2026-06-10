@@ -25,6 +25,7 @@ class Employee extends Model
         'level',
         'basic_salary',
         'status',
+        'leave_quota',
         'employment_status',
         'contract_end_date',
         'job_level',

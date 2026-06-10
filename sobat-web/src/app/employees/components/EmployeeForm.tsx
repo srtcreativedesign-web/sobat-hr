@@ -287,6 +287,10 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Nama Atasan Langsung</label>
                                     <input type="text" name="supervisor_name" value={formData.supervisor_name || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none text-gray-900" />
                                 </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Jatah Cuti Tahunan (Hari)</label>
+                                    <input type="number" name="leave_quota" value={formData.leave_quota || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none text-gray-900" min="0" />
+                                </div>
                             </div>
                         )}
 

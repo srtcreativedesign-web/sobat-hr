@@ -21,6 +21,13 @@ class PayrollHoController extends Controller
         $user = auth()->user();
         $query = Payroll::with(['employee', 'employee.division']);
 
+        // Filter out retail divisions from the generic payrolls table
+        // This ensures the Mobile App (which calls /payrolls/ho) doesn't get duplicate retail employees
+        $query->where(function($q) {
+            $q->whereNull('details->division_type')
+              ->orWhereNotIn('details->division_type', ['money_changer', 'fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'tungtau', 'maximum']);
+        });
+
         // Scope access
         $roleName = $user->role ? strtolower($user->role->name) : '';
         if (!in_array($roleName, ['admin', 'super_admin', 'hr'])) {

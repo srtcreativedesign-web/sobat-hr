@@ -159,60 +159,46 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollMaximumController::class, 'generateSlip']);
     });
 
-    // Minimarket Payroll routes
-    Route::prefix('payrolls/mm')->group(function () {
-        Route::get('/', [App\Http\Controllers\Api\PayrollMmController::class, 'index']);
-        Route::post('/import', [App\Http\Controllers\Api\PayrollMmController::class, 'import']);
-        Route::post('/import/save', [App\Http\Controllers\Api\PayrollMmController::class, 'saveImport']);
-        Route::get('/{id}', [App\Http\Controllers\Api\PayrollMmController::class, 'show']);
-        Route::patch('/{id}/status', [App\Http\Controllers\Api\PayrollMmController::class, 'updateStatus']);
-        Route::delete('/{id}', [App\Http\Controllers\Api\PayrollMmController::class, 'destroy']);
-        Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollMmController::class, 'generateSlip']);
+    // Payroll Retail & Jasa (Gabungan)
+    Route::prefix('payrolls/retail')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\PayrollRetailController::class, 'index']);
+        Route::post('/import', [App\Http\Controllers\Api\PayrollRetailController::class, 'import']);
+        Route::post('/import/parse-headers', [App\Http\Controllers\Api\PayrollRetailController::class, 'parseHeaders']);
+        Route::post('/import/simulate', [App\Http\Controllers\Api\PayrollRetailController::class, 'simulateImport']);
+        Route::post('/import/save', [App\Http\Controllers\Api\PayrollRetailController::class, 'saveImport']);
+        Route::get('/{id}', [App\Http\Controllers\Api\PayrollRetailController::class, 'show']);
+        Route::patch('/{id}/status', [App\Http\Controllers\Api\PayrollRetailController::class, 'updateStatus']);
+        Route::delete('/{id}', [App\Http\Controllers\Api\PayrollRetailController::class, 'destroy']);
+        Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollRetailController::class, 'generateSlip']);
     });
 
-    // Reflexiology Payroll routes
-    Route::prefix('payrolls/ref')->group(function () {
-        Route::get('/', [App\Http\Controllers\Api\PayrollRefController::class, 'index']);
-        Route::post('/import', [App\Http\Controllers\Api\PayrollRefController::class, 'import']);
-        Route::post('/import/save', [App\Http\Controllers\Api\PayrollRefController::class, 'saveImport']);
-        Route::get('/{id}', [App\Http\Controllers\Api\PayrollRefController::class, 'show']);
-        Route::patch('/{id}/status', [App\Http\Controllers\Api\PayrollRefController::class, 'updateStatus']);
-        Route::delete('/{id}', [App\Http\Controllers\Api\PayrollRefController::class, 'destroy']);
-        Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollRefController::class, 'generateSlip']);
-    });
+    // Mobile App Division Aliases → Forward to PayrollRetailController with division_type injected
+    // The Flutter mobile app calls individual endpoints per division (e.g. payrolls/mm, payrolls/money-changer)
+    $mobileRetailDivisions = [
+        'payrolls/mm' => 'mm',
+        'payrolls/ref' => 'ref',
+        'payrolls/wrapping' => 'wrapping',
+        'payrolls/hans' => 'hans',
+        'payrolls/money-changer' => 'money_changer',
+        'payroll-cellullers' => 'cellular',
+    ];
 
-    // Wrapping Payroll routes
-    Route::prefix('payrolls/wrapping')->group(function () {
-        Route::get('/', [App\Http\Controllers\Api\PayrollWrappingController::class, 'index']);
-        Route::post('/import', [App\Http\Controllers\Api\PayrollWrappingController::class, 'import']);
-        Route::post('/import/save', [App\Http\Controllers\Api\PayrollWrappingController::class, 'saveImport']);
-        Route::get('/{id}', [App\Http\Controllers\Api\PayrollWrappingController::class, 'show']);
-        Route::patch('/{id}/status', [App\Http\Controllers\Api\PayrollWrappingController::class, 'updateStatus']);
-        Route::delete('/{id}', [App\Http\Controllers\Api\PayrollWrappingController::class, 'destroy']);
-        Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollWrappingController::class, 'generateSlip']);
-    });
-
-    // Hans Payroll routes
-    Route::prefix('payrolls/hans')->group(function () {
-        Route::get('/', [App\Http\Controllers\Api\PayrollHansController::class, 'index']);
-        Route::post('/import', [App\Http\Controllers\Api\PayrollHansController::class, 'import']);
-        Route::post('/import/save', [App\Http\Controllers\Api\PayrollHansController::class, 'saveImport']);
-        Route::get('/{id}', [App\Http\Controllers\Api\PayrollHansController::class, 'show']);
-        Route::patch('/{id}/status', [App\Http\Controllers\Api\PayrollHansController::class, 'updateStatus']);
-        Route::delete('/{id}', [App\Http\Controllers\Api\PayrollHansController::class, 'destroy']);
-        Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollHansController::class, 'generateSlip']);
-    });
-
-    // Money Changer Payroll routes
-    Route::prefix('payrolls/money-changer')->group(function () {
-        Route::get('/', [App\Http\Controllers\Api\PayrollMoneyChangerController::class, 'index']);
-        Route::post('/import', [App\Http\Controllers\Api\PayrollMoneyChangerController::class, 'import']);
-        Route::post('/import/save', [App\Http\Controllers\Api\PayrollMoneyChangerController::class, 'saveImport']);
-        Route::get('/{id}', [App\Http\Controllers\Api\PayrollMoneyChangerController::class, 'show']);
-        Route::patch('/{id}/status', [App\Http\Controllers\Api\PayrollMoneyChangerController::class, 'updateStatus']);
-        Route::delete('/{id}', [App\Http\Controllers\Api\PayrollMoneyChangerController::class, 'destroy']);
-        Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollMoneyChangerController::class, 'generateSlip']);
-    });
+    foreach ($mobileRetailDivisions as $routePrefix => $divisionType) {
+        Route::prefix($routePrefix)->group(function () use ($divisionType) {
+            Route::get('/', function (Illuminate\Http\Request $request) use ($divisionType) {
+                $request->merge(['division_type' => $divisionType]);
+                return app(App\Http\Controllers\Api\PayrollRetailController::class)->index($request);
+            });
+            Route::get('/{id}', function (Illuminate\Http\Request $request, $id) use ($divisionType) {
+                $request->merge(['division_type' => $divisionType]);
+                return app(App\Http\Controllers\Api\PayrollRetailController::class)->show($request, $id);
+            });
+            Route::get('/{id}/slip', function (Illuminate\Http\Request $request, $id) use ($divisionType) {
+                $request->merge(['division_type' => $divisionType]);
+                return app(App\Http\Controllers\Api\PayrollRetailController::class)->generateSlip($request, $id);
+            });
+        });
+    }
 
     // HO (Head Office) Payroll routes - Standardized
     Route::prefix('payrolls/ho')->group(function () {
@@ -264,12 +250,7 @@ Route::middleware('auth:sanctum')->group(function () {
         });
     });
 
-    // Payroll Celluller (NEW)
-    Route::apiResource('payroll-cellullers', App\Http\Controllers\Api\PayrollCellullerController::class);
-    Route::post('payroll-cellullers/import', [App\Http\Controllers\Api\PayrollCellullerController::class, 'import']);
-    Route::post('payroll-cellullers/import/save', [App\Http\Controllers\Api\PayrollCellullerController::class, 'saveImport']);
-    Route::patch('payroll-cellullers/{id}/status', [App\Http\Controllers\Api\PayrollCellullerController::class, 'updateStatus']);
-    Route::get('payroll-cellullers/{id}/slip', [App\Http\Controllers\Api\PayrollCellullerController::class, 'generateSlip']);
+
 
     // Role routes (Super Admin only)
     Route::middleware('role:super_admin')->group(function () {

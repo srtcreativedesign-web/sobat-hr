@@ -173,35 +173,15 @@ class RequestController extends Controller
                         $endDate = \Carbon\Carbon::parse($request->end_date);
                         $duration = $startDate->diffInDays($endDate) + 1; // Inclusive
 
-                        // 3. Check Quota
-                        $quota = 12;
-                        $used = RequestModel::where('employee_id', $user->employee->id)
-                            ->where('type', 'leave')
-                            ->where('status', 'approved')
-                            ->whereYear('start_date', now()->year)
-                            ->get()
-                            ->sum(function ($req) {
-                                if ($req->amount > 0) {
-                                    return $req->amount;
-                                }
-                                if ($req->start_date && $req->end_date) {
-                                    $s = \Carbon\Carbon::parse($req->start_date);
-                                    $e = \Carbon\Carbon::parse($req->end_date);
-
-                                    return $s->diffInDays($e) + 1;
-                                }
-
-                                return 0;
-                            });
-
-                        if (($used + $duration) > $quota) {
+                        // 3. Check Quota directly from Employee's leave_quota (which is manageable by admin)
+                        $remainingQuota = (int)$user->employee->leave_quota;
+                        if ($duration > $remainingQuota) {
                             return response()->json([
-                                'message' => 'Sisa cuti tidak mencukupi.',
+                                'message' => 'Jatah cuti Anda sudah habis atau tidak mencukupi.',
                                 'details' => [
-                                    'quota' => $quota,
-                                    'used' => $used,
+                                    'quota' => $remainingQuota,
                                     'requested' => $duration,
-                                    'remaining' => max(0, $quota - $used),
+                                    'remaining' => $remainingQuota,
                                 ],
                             ], 422);
                         }

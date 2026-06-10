@@ -137,6 +137,18 @@ class ApprovalService
                         ]
                     );
                 }
+
+                // Hook for Leave (Deduct Quota)
+                if ($request->type === 'leave' && $request->leaveDetail) {
+                    $employee = $request->employee;
+                    if ($employee) {
+                        $deduction = $request->leaveDetail->amount ?? 0;
+                        if ($deduction > 0) {
+                            $employee->decrement('leave_quota', $deduction);
+                            Log::info("Deducted {$deduction} leave quota from Employee ID {$employee->id}. Remaining: {$employee->leave_quota}");
+                        }
+                    }
+                }
             }
 
             return $request->fresh();
