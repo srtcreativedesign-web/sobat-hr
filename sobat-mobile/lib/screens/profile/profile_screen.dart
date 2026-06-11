@@ -39,12 +39,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = auth.user;
 
     return Scaffold(
+      extendBody: true,
       backgroundColor: const Color(0xFFF8FAFC), // Slate-50 background
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : Stack(
-              children: [
-                CustomScrollView(
+          : CustomScrollView(
                   slivers: [
                     // 1. Sticky Header
                     SliverAppBar(
@@ -143,54 +142,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
                 ),
-
-                // Navbar Overlay
-                Positioned(
-                  left: 24,
-                  right: 24,
-                  bottom: 32,
-                  child: CustomNavbar(
-                    currentIndex: 4,
-                    onTap: (index) {
-                      if (index == 0) {
-                        Navigator.pop(context, 0);
-                      } else if (index == 1) {
-                        Navigator.pop(context, 1);
-                      } else if (index == 3) {
-                        Navigator.pop(context, 3);
-                      }
-                    },
-                  ),
-                ),
-
-                // Floating FAB
-                Positioned(
-                  bottom: 56,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: SizedBox(
-                      height: 64,
-                      width: 64,
-                      child: FloatingActionButton(
-                        heroTag: 'profile_fab',
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/submission/menu');
-                        },
-                        backgroundColor: AppTheme.colorEggplant,
-                        elevation: 4,
-                        shape: const CircleBorder(),
-                        child: const Icon(
-                          Icons.add_rounded,
-                          size: 32,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: SizedBox(
+        height: 64,
+        width: 64,
+        child: FloatingActionButton(
+          heroTag: 'profile_fab',
+          onPressed: () {
+            Navigator.pushNamed(context, '/submission/menu');
+          },
+          backgroundColor: AppTheme.colorEggplant,
+          elevation: 4,
+          shape: const CircleBorder(),
+          child: const Icon(
+            Icons.add_rounded,
+            size: 32,
+            color: Colors.white,
+          ),
+        ),
+      ),
+      bottomNavigationBar: CustomNavbar(
+        currentIndex: 4,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pop(context, 0);
+          } else if (index == 1) {
+            Navigator.pop(context, 1);
+          } else if (index == 3) {
+            Navigator.pop(context, 3);
+          }
+        },
+      ),
     );
   }
 

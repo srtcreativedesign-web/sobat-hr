@@ -18,7 +18,7 @@ class _InvitationScreenState extends State<InvitationScreen> {
   // Get dev host from --dart-define or fallback to default
   static const String _devHost = String.fromEnvironment(
     'DEV_HOST',
-    defaultValue: '192.168.1.27',
+    defaultValue: '172.20.10.3',
   );
 
   @override
@@ -50,7 +50,16 @@ class _InvitationScreenState extends State<InvitationScreen> {
               });
             }
           },
-          onWebResourceError: (WebResourceError error) {},
+          onWebResourceError: (WebResourceError error) {
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Failed to load page: ${error.description}')),
+              );
+            }
+          },
           onNavigationRequest: (NavigationRequest request) {
             return NavigationDecision.navigate;
           },

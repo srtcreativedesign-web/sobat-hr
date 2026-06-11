@@ -32,7 +32,7 @@ class QuickActionsSection extends StatelessWidget {
         'isAsset': true,
         'label': AppLocalizations.of(context)!.payslip,
         'subtitle': AppLocalizations.of(context)!.viewPayslipShort,
-        'gradient': [const Color(0xFF667EEA), const Color(0xFF764BA2)],
+        'color': const Color(0xFF667EEA),
         'onTap': () => Navigator.pushNamed(context, '/payroll'),
       },
       {
@@ -42,7 +42,7 @@ class QuickActionsSection extends StatelessWidget {
             ? AppLocalizations.of(context)!.leave 
             : '${AppLocalizations.of(context)!.leave} ($leaveBalance)',
         'subtitle': AppLocalizations.of(context)!.applyLeave,
-        'gradient': [const Color(0xFF43E97B), const Color(0xFF38F9D7)],
+        'color': const Color(0xFF43E97B),
         'onTap': () async {
           await Navigator.pushNamed(
             context,
@@ -57,7 +57,7 @@ class QuickActionsSection extends StatelessWidget {
         'isAsset': true,
         'label': AppLocalizations.of(context)!.history,
         'subtitle': AppLocalizations.of(context)!.attendance,
-        'gradient': [const Color(0xFFF6D365), const Color(0xFFFDA085)],
+        'color': const Color(0xFFF6D365),
         'onTap': () => Navigator.pushNamed(context, '/attendance/history'),
       },
       {
@@ -65,7 +65,7 @@ class QuickActionsSection extends StatelessWidget {
         'isAsset': true,
         'label': AppLocalizations.of(context)!.overtime,
         'subtitle': AppLocalizations.of(context)!.applyOvertime,
-        'gradient': [const Color(0xFFFF9A9E), const Color(0xFFFAD0C4)],
+        'color': const Color(0xFFFF9A9E),
         'onTap': () => Navigator.pushNamed(context, '/submission/create', arguments: 'Lembur'),
       },
       {
@@ -73,7 +73,7 @@ class QuickActionsSection extends StatelessWidget {
         'isAsset': true,
         'label': AppLocalizations.of(context)!.businessTrip,
         'subtitle': AppLocalizations.of(context)!.businessTripShort,
-        'gradient': [const Color(0xFF84FAB0), const Color(0xFF8FD3F4)],
+        'color': const Color(0xFF84FAB0),
         'onTap': () => Navigator.pushNamed(context, '/submission/create', arguments: 'Perjalanan Dinas'),
       },
     ];
@@ -86,7 +86,7 @@ class QuickActionsSection extends StatelessWidget {
         'subtitle': pendingApprovalsCount > 0
             ? AppLocalizations.of(context)!.pendingCountText(pendingApprovalsCount.toString())
             : AppLocalizations.of(context)!.approvalSubtitle,
-        'gradient': [const Color(0xFFA18CD1), const Color(0xFFFBC2EB)],
+        'color': const Color(0xFFA18CD1),
         'badge': pendingApprovalsCount,
         'onTap': () async {
           await Navigator.push(
@@ -101,166 +101,208 @@ class QuickActionsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              AppLocalizations.of(context)!.quickMenu,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textDark,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                AppLocalizations.of(context)!.quickMenu,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textDark,
+                ),
               ),
-            ),
-            GestureDetector(
-              onTap: () => Navigator.pushNamed(context, '/submission/menu'),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppTheme.colorEggplant.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      AppLocalizations.of(context)!.allLabel,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+              GestureDetector(
+                onTap: () => Navigator.pushNamed(context, '/submission/menu'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.colorEggplant.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        AppLocalizations.of(context)!.allLabel,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.colorEggplant,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 10,
                         color: AppTheme.colorEggplant,
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      size: 10,
-                      color: AppTheme.colorEggplant,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 16),
-        GridView.count(
-          crossAxisCount: menuItems.length <= 3
-              ? menuItems.length
-              : (menuItems.length == 4 ? 4 : 3),
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          childAspectRatio: 0.78,
-          children: menuItems.map((item) {
-            return _buildActionItem(
-              item['icon'],
-              item['label'] as String,
-              item['gradient'] as List<Color>,
-              subtitle: item['subtitle'] as String,
-              badgeCount: (item['badge'] as int?) ?? 0,
-              isAsset: (item['isAsset'] as bool?) ?? false,
-              onTap: item['onTap'] as VoidCallback?,
-            );
-          }).toList(),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: GridView.builder(
+            padding: EdgeInsets.zero,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.35, // Wider rectangular tiles
+            ),
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: menuItems.length,
+            itemBuilder: (context, index) {
+              final item = menuItems[index];
+              return _buildFeatureTile(
+                item['icon'],
+                item['label'] as String,
+                item['color'] as Color,
+                subtitle: item['subtitle'] as String,
+                badgeCount: (item['badge'] as int?) ?? 0,
+                isAsset: (item['isAsset'] as bool?) ?? false,
+                onTap: item['onTap'] as VoidCallback?,
+              );
+            },
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildActionItem(
+  Widget _buildFeatureTile(
     dynamic icon,
     String label,
-    List<Color> gradientColors, {
+    Color baseColor, {
     String subtitle = '',
     VoidCallback? onTap,
     int badgeCount = 0,
     bool isAsset = false,
   }) {
     return Container(
-      decoration: const BoxDecoration(color: Colors.transparent),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: baseColor.withValues(alpha: 0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap ?? () {},
           borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Stack(
               children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    SizedBox(
-                      width: 42,
-                      height: 42,
+                // Faded Background Illustration
+                Positioned(
+                  right: -15,
+                  bottom: -15,
+                  child: Opacity(
+                    opacity: 0.15,
+                    child: SizedBox(
+                      width: 80,
+                      height: 80,
                       child: isAsset
-                          ? Image.asset(
-                              icon as String,
-                              errorBuilder: (context, error, stackTrace) => Icon(
-                                Icons.error_outline_rounded,
-                                color: gradientColors[0],
-                                size: 22,
-                              ),
-                            )
-                          : Icon(icon as IconData, color: gradientColors[0], size: 28),
+                          ? Image.asset(icon as String, fit: BoxFit.contain)
+                          : Icon(icon as IconData, size: 80, color: baseColor),
                     ),
-                    if (badgeCount > 0)
-                      Positioned(
-                        top: -4,
-                        right: -4,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 1.5),
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 18,
-                            minHeight: 18,
-                          ),
-                          child: Text(
-                            badgeCount > 99 ? '99+' : badgeCount.toString(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                // Content
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Top Row: Icon & Badge
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: baseColor.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
                             ),
-                            textAlign: TextAlign.center,
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: isAsset
+                                  ? Image.asset(
+                                      icon as String,
+                                      errorBuilder: (context, error, stackTrace) => Icon(
+                                        Icons.error_outline_rounded,
+                                        color: baseColor,
+                                        size: 16,
+                                      ),
+                                    )
+                                  : Icon(icon as IconData, color: baseColor, size: 20),
+                            ),
                           ),
-                        ),
+                          const Spacer(),
+                          if (badgeCount > 0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.redAccent,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                badgeCount > 99 ? '99+' : badgeCount.toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textDark,
+                      const Spacer(),
+                      // Bottom Row: Label & Subtitle
+                      Text(
+                        label,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textDark,
+                          letterSpacing: -0.3,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.textLight.withValues(alpha: 0.8),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w400,
-                    color: AppTheme.textLight.withValues(alpha: 0.7),
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

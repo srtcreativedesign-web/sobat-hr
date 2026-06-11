@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
-    'allowed_origins' => ['http://localhost:3000', 'http://localhost:8000', 'https://sobat-hr.com', 'https://www.sobat-hr.com'],
+    'allowed_origins' => ['*'],
 
     'allowed_origins_patterns' => [],
 

@@ -13,7 +13,7 @@ import '../../l10n/app_localizations.dart';
 import '../../screens/submission/submission_screen.dart';
 import '../../services/announcement_service.dart';
 
-import 'package:intl/intl.dart';
+
 import '../profile/enroll_face_screen.dart'; // Added
 import '../../services/offline_attendance_service.dart';
 import '../finance/finance_coming_soon_screen.dart';
@@ -287,69 +287,50 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
+      extendBody: true,
       backgroundColor: const Color(0xFFF8FAFC), // Slate-50 like background
-      body: Stack(
-        children: [
-          // Body Content
-          _selectedIndex == 0
-              ? _buildDashboardContent(user)
-              : _selectedIndex == 1
-              ? const SubmissionScreen()
-              : _selectedIndex == 3
-              ? FinanceComingSoonScreen(onBack: () => setState(() => _selectedIndex = 0))
-              : Center(child: Text('Coming Soon: Index $_selectedIndex')),
-
-          // 3. Floating Bottom Nav
-          Positioned(
-            left: 24,
-            right: 24,
-            bottom: 32,
-            child: CustomNavbar(
-              currentIndex: _selectedIndex,
-              onTap: (index) {
-                if (index == 4) {
-                  Navigator.pushNamed(context, '/profile').then((result) {
-                    if (mounted) {
-                      if (result != null && result is int) {
-                        setState(() => _selectedIndex = result);
-                      } else {
-                        setState(() => _selectedIndex = 0);
-                      }
-                    }
-                  });
+      body: _selectedIndex == 0
+          ? _buildDashboardContent(user)
+          : _selectedIndex == 1
+          ? const SubmissionScreen()
+          : _selectedIndex == 3
+          ? FinanceComingSoonScreen(onBack: () => setState(() => _selectedIndex = 0))
+          : Center(child: Text('Coming Soon: Index $_selectedIndex')),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: SizedBox(
+        height: 64,
+        width: 64,
+        child: FloatingActionButton(
+          onPressed: () {
+            Navigator.pushNamed(context, '/submission/menu');
+          },
+          backgroundColor: AppTheme.colorPrimary,
+          elevation: 4,
+          shape: const CircleBorder(),
+          child: const Icon(
+            Icons.add_rounded,
+            size: 32,
+            color: Colors.white,
+          ),
+        ),
+      ),
+      bottomNavigationBar: CustomNavbar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          if (index == 4) {
+            Navigator.pushNamed(context, '/profile').then((result) {
+              if (mounted) {
+                if (result != null && result is int) {
+                  setState(() => _selectedIndex = result);
                 } else {
-                  setState(() => _selectedIndex = index);
+                  setState(() => _selectedIndex = 0);
                 }
-              },
-            ),
-          ),
-
-          // 4. Floating FAB (Separated)
-          Positioned(
-            bottom: 56,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: SizedBox(
-                height: 64,
-                width: 64,
-                child: FloatingActionButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/submission/menu');
-                  },
-                  backgroundColor: AppTheme.colorEggplant,
-                  elevation: 4,
-                  shape: const CircleBorder(),
-                  child: const Icon(
-                     Icons.add_rounded,
-                    size: 32,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+              }
+            });
+          } else {
+            setState(() => _selectedIndex = index);
+          }
+        },
       ),
     );
   }
@@ -408,9 +389,10 @@ class _HomeScreenState extends State<HomeScreen> {
           CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              // 1. Sticky Header
+              // 1. Sticky Header (Now Gradient Premium Card)
               StickyHeaderSection(
                 user: user,
+                greeting: _getGreeting(),
                 notificationCount: homeProvider.notificationCount,
                 onProfileTap: () {
                   Navigator.pushNamed(context, '/profile').then((_) {
@@ -427,110 +409,11 @@ class _HomeScreenState extends State<HomeScreen> {
               // 2. Main Content
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 24),
+                  padding: const EdgeInsets.only(bottom: 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Greeting Header
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  _getGreeting().toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppTheme.colorCyan,
-                                    letterSpacing: 1.2,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  width: 4,
-                                  height: 4,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.grey,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  DateFormat(
-                                    'EEEE, d MMM',
-                                    localeName,
-                                  ).format(DateTime.now()),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppTheme.textLight,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: RichText(
-                                    text: TextSpan(
-                                      style: TextStyle(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.w900,
-                                        color: AppTheme.textDark,
-                                        letterSpacing: -1,
-                                        fontFamily: 'Manrope',
-                                      ),
-                                      children: [
-                                        TextSpan(text: '${AppLocalizations.of(context)!.greetingHello} '),
-                                        TextSpan(
-                                          text:
-                                              user?.name.split(' ').first ??
-                                              'User',
-                                          style: const TextStyle(
-                                            color: AppTheme.colorEggplant,
-                                          ),
-                                        ),
-                                        const TextSpan(
-                                          text: '!',
-                                          style: TextStyle(
-                                            color: AppTheme.colorCyan,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.05,
-                                        ),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Text(
-                                    '👌🏻',
-                                    style: TextStyle(fontSize: 20),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 12),
                       // Attendance Card
                       AttendanceCardSection(
                         user: user,
