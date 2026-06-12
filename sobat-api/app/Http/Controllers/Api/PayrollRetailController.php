@@ -860,6 +860,7 @@ if ($headerRowIndex === -1) {
                     'adjustment' => $adjustment,
                     'total_salary_2' => $grossSalary, 
                     'gross_salary' => $grossSalary, // For cellullers
+                    'total_salary_gross' => $grossSalary, // For wrapping
                     'policy_ho' => $policyHo,
                     
                     'deduction_absent' => $deductionAbsent,
