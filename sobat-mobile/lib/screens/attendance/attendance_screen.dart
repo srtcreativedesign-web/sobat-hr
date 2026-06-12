@@ -8,6 +8,9 @@ import 'dart:async';
 import '../../config/theme.dart';
 import '../../providers/attendance_provider.dart';
 import '../../services/offline_attendance_service.dart';
+import 'package:mapcn_flutter/mapcn_flutter.dart';
+import '../../widgets/slide_action_button.dart';
+import '../../widgets/progress_journey_path.dart';
 
 import 'package:intl/intl.dart';
 import 'selfie_screen.dart';
@@ -440,14 +443,21 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
     if (locations.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Presensi')),
+        backgroundColor: const Color(0xFF0F172A), // Match midnight theme background
+        appBar: AppBar(
+          title: const Text('Presensi', style: TextStyle(color: Colors.white)),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
         body: const Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator(color: Colors.cyanAccent),
         ),
       );
     }
 
     return Scaffold(
+      backgroundColor: const Color(0xFF0F172A), // Match midnight theme background
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
@@ -462,9 +472,12 @@ class _AttendanceScreenState extends State<AttendanceScreen>
               initialZoom: 16.0,
             ),
             children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.sobat_hr',
+              ColorFiltered(
+                colorFilter: const ColorFilter.matrix(MapcnThemes.midnight),
+                child: TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.example.sobat_hr',
+                ),
               ),
               CircleLayer(
                 circles: [
@@ -557,7 +570,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 height: 40 * _pulseAnimation.value,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppTheme.colorCyan.withValues(
+                                  color: Colors.cyanAccent.withValues(
                                     alpha: 0.4 - (_pulseController.value * 0.4),
                                   ),
                                 ),
@@ -567,15 +580,16 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 height: 20,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppTheme.colorCyan,
+                                  color: Colors.cyanAccent,
                                   border: Border.all(
                                     color: Colors.white,
-                                    width: 3,
+                                    width: 2,
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black26,
-                                      blurRadius: 5,
+                                      color: Colors.cyanAccent.withValues(alpha: 0.8),
+                                      blurRadius: 10,
+                                      spreadRadius: 2,
                                     ),
                                   ],
                                 ),
@@ -766,379 +780,288 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
           // 3. BOTTOM FLOATING CARD
           Positioned(
-            bottom: 32,
-            left: 20,
-            right: 20,
+            bottom: 0,
+            left: 0,
+            right: 0,
             child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: gradientColors,
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(32),
+                  topRight: Radius.circular(32),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: gradientColors[0].withValues(alpha: 0.3),
+                    color: Colors.black12,
                     blurRadius: 20,
-                    offset: const Offset(0, 10),
+                    offset: Offset(0, -5),
                   ),
                 ],
               ),
-              child: Stack(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Background Pattern
-                  Positioned(
-                    top: -20,
-                    right: -20,
-                    child: Container(
-                      width: 150,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.05),
+                  // Stepper: 1 Absen Kantor -> 2 Selesai
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 24, height: 24,
+                            decoration: const BoxDecoration(color: Color(0xFF1C3ECA), shape: BoxShape.circle),
+                            child: const Center(child: Text('1', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold))),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            attendanceType == 'field' ? 'Absen Luar' : 'Absen Kantor', 
+                            style: const TextStyle(color: Color(0xFF1C3ECA), fontWeight: FontWeight.bold, fontSize: 14)
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: -30,
-                    left: -30,
-                    child: Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.05),
+                      Row(
+                        children: [
+                          Text('Selesai', style: TextStyle(color: hasCheckedIn ? const Color(0xFF1C3ECA) : Colors.grey, fontWeight: FontWeight.bold, fontSize: 14)),
+                          const SizedBox(width: 8),
+                          Container(
+                            width: 24, height: 24,
+                            decoration: BoxDecoration(color: hasCheckedIn ? const Color(0xFF1C3ECA) : Colors.grey.shade200, shape: BoxShape.circle),
+                            child: Center(child: Text('2', style: TextStyle(color: hasCheckedIn ? Colors.white : Colors.grey, fontSize: 12, fontWeight: FontWeight.bold))),
+                          ),
+                        ],
                       ),
-                    ),
+                    ],
                   ),
 
-                  // Content
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Toggle Attendance Type (Visible if not finished today)
-                        if (canCheckIn || canCheckOut) ...[
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 20),
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(30),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.1),
+                  const SizedBox(height: 16),
+
+                  // Progress Journey Path
+                  ProgressJourneyPath(isCompleted: hasCheckedIn),
+
+                  const SizedBox(height: 16),
+
+                  // Toggle Attendance Type (Visible if not finished today)
+                  if (canCheckIn || canCheckOut) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => attendanceProvider.setAttendanceType('office'),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: attendanceType == 'office' ? Colors.white : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(25),
+                                  boxShadow: attendanceType == 'office' ? [const BoxShadow(color: Colors.black12, blurRadius: 4)] : [],
+                                ),
+                                alignment: Alignment.center,
+                                child: Text('Absen Kantor', style: TextStyle(fontWeight: FontWeight.bold, color: attendanceType == 'office' ? const Color(0xFF1C3ECA) : Colors.grey.shade600)),
                               ),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () => attendanceProvider.setAttendanceType('office'),
-                                    child: AnimatedContainer(
-                                      duration: const Duration(
-                                        milliseconds: 200,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 12,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: attendanceType == 'office'
-                                            ? textColor.withValues(alpha: 0.2)
-                                            : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(25),
-                                      ),
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        'Absen Kantor',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: attendanceType == 'office'
-                                              ? textColor
-                                              : subTextColor,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () => attendanceProvider.setAttendanceType('field'),
-                                    child: AnimatedContainer(
-                                      duration: const Duration(
-                                        milliseconds: 200,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 12,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: attendanceType == 'field'
-                                            ? textColor.withValues(alpha: 0.2)
-                                            : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(25),
-                                      ),
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        'Absen Luar',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: attendanceType == 'field'
-                                              ? textColor
-                                              : subTextColor,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ),
                           ),
-
-                          // Field Notes Input
-                          if (attendanceType == 'field') ...[
-                            TextField(
-                              controller: _fieldNotesController,
-                              style: TextStyle(color: textColor),
-                              decoration: InputDecoration(
-                                labelText: 'Keterangan (Wajib)',
-                                labelStyle: TextStyle(color: subTextColor),
-                                hintText: 'Contoh: Meeting dengan Client A',
-                                hintStyle: TextStyle(
-                                  color: textColor.withValues(alpha: 0.5),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => attendanceProvider.setAttendanceType('field'),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: attendanceType == 'field' ? Colors.white : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(25),
+                                  boxShadow: attendanceType == 'field' ? [const BoxShadow(color: Colors.black12, blurRadius: 4)] : [],
                                 ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.white.withValues(alpha: 0.3),
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.white.withValues(alpha: 0.3),
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                filled: true,
-                                fillColor: Colors.black.withValues(alpha: 0.1),
+                                alignment: Alignment.center,
+                                child: Text('Absen Luar', style: TextStyle(fontWeight: FontWeight.bold, color: attendanceType == 'field' ? const Color(0xFF1C3ECA) : Colors.grey.shade600)),
                               ),
-                              maxLines: 2,
                             ),
-                            const SizedBox(height: 20),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // Field Notes Input
+                  if (attendanceType == 'field') ...[
+                    TextField(
+                      controller: _fieldNotesController,
+                      style: const TextStyle(color: Color(0xFF1E293B)),
+                      decoration: InputDecoration(
+                        labelText: 'Keterangan (Wajib)',
+                        labelStyle: TextStyle(color: Colors.grey.shade500),
+                        hintText: 'Contoh: Meeting dengan Client A',
+                        hintStyle: TextStyle(color: Colors.grey.shade400),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFF1C3ECA)),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                      ),
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+
+                  // Show Active Check-in Type if already Checked In
+                  if (hasCheckedIn) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF), // blue-50
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFBFDBFE)), // blue-200
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            (todayAttendance['attendance_type'] == 'field') ? Icons.commute : Icons.store,
+                            size: 16,
+                            color: const Color(0xFF1C3ECA),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            (todayAttendance['attendance_type'] == 'field') ? 'Mode: Absen Luar (Dinas)' : 'Mode: Absen Kantor',
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1C3ECA)),
+                          ),
+                          if (todayAttendance['is_offline_local'] == true) ...[
+                            const Spacer(),
+                            Icon(
+                              todayAttendance['is_synced'] == true ? Icons.cloud_done : Icons.cloud_off,
+                              size: 14,
+                              color: const Color(0xFF1C3ECA),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              todayAttendance['is_synced'] == true ? 'Ter-sync' : 'Lokal',
+                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF1C3ECA)),
+                            ),
                           ],
                         ],
+                      ),
+                    ),
+                  ],
 
-                        // Show Active Check-in Type if already Checked In
-                        if (hasCheckedIn) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 8,
-                              horizontal: 12,
-                            ),
-                            margin: const EdgeInsets.only(bottom: 16),
-                            decoration: BoxDecoration(
-                              color: textColor.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: textColor.withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  (todayAttendance['attendance_type'] ==
-                                          'field')
-                                      ? Icons.commute
-                                      : Icons.store,
-                                  size: 16,
-                                  color: textColor,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  (todayAttendance['attendance_type'] ==
-                                          'field')
-                                      ? 'Mode: Absen Luar (Dinas)'
-                                      : 'Mode: Absen Kantor',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: textColor,
-                                  ),
-                                ),
-                                if (todayAttendance['is_offline_local'] == true) ...[
-                                  const Spacer(),
-                                  Icon(
-                                    todayAttendance['is_synced'] == true
-                                        ? Icons.cloud_done
-                                        : Icons.cloud_off,
-                                    size: 14,
-                                    color: textColor.withValues(alpha: 0.8),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    todayAttendance['is_synced'] == true
-                                        ? 'Ter-sync'
-                                        : 'Lokal',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: textColor.withValues(alpha: 0.8),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
-
-                        // Location Info
+                  // Location Info
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: glassBorderColor),
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
                           ),
-                          child: Row(
+                          child: const Icon(Icons.my_location, color: Color(0xFF1C3ECA), size: 24),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.my_location,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
+                              Text(
+                                'Lokasi Anda',
+                                style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w600),
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Lokasi Anda',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.white70,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 1,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      currentAddress ?? 'Mencari lokasi...',
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                              const SizedBox(height: 4),
+                              Text(
+                                currentAddress ?? 'Mencari lokasi...',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                               ),
                             ],
                           ),
                         ),
-
-                        const SizedBox(height: 24),
-
-                        // Action Buttons
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed:
-                                    (canCheckIn &&
-                                        !isLoadingLocal &&
-                                        (attendanceType == 'field' ||
-                                            isWithinRange ||
-                                            isOperational))
-                                        ? _handleCheckIn
-                                        : null,
-                                icon: Icon(
-                                  Icons.login,
-                                  color: buttonTextColor,
-                                ),
-                                label: Text('Masuk'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: buttonTextColor,
-                                  disabledBackgroundColor: Colors.white,
-                                  disabledForegroundColor: Colors.grey,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  elevation: 0,
-                                  textStyle: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
+                        // Accuracy badge
+                        if (isWithinRange)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed:
-                                    (canCheckOut &&
-                                        (attendanceType == 'field' || isWithinRange || isOperational) &&
-                                        !isLoadingLocal)
-                                        ? _handleCheckOut
-                                        : null,
-                                icon: Icon(
-                                  Icons.logout,
-                                  color: canCheckOut
-                                      ? buttonTextColor
-                                      : Colors.grey,
-                                ),
-                                label: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  child: Text(
-                                    isLateRestricted
-                                        ? 'Menunggu Approval'
-                                        : 'Pulang',
-                                  ),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: buttonTextColor,
-                                  disabledBackgroundColor: Colors.white,
-                                  disabledForegroundColor: Colors.grey,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  elevation: 0,
-                                  textStyle: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
+                            child: Row(
+                              children: [
+                                Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
+                                const SizedBox(width: 4),
+                                const Text('Akurat', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
                       ],
                     ),
                   ),
+
+                  const SizedBox(height: 20),
+
+                  // Action Slide Button
+                  if (canCheckIn)
+                    SlideActionWidget(
+                      text: 'Geser untuk Masuk',
+                      backgroundColor: const Color(0xFF1C3ECA),
+                      onSubmit: () {
+                         if (attendanceType == 'office' && !isWithinRange && !isOperational) {
+                           _showErrorSnackBar('Jarak terlalu jauh dari lokasi kantor. Silakan pilih mode Absen Luar jika Anda sedang bertugas di luar.');
+                           return;
+                         }
+                         if (!isLoadingLocal && (attendanceType == 'field' || isWithinRange || isOperational)) {
+                           _handleCheckIn();
+                         }
+                      },
+                    )
+                  else if (canCheckOut)
+                    SlideActionWidget(
+                      text: isLateRestricted ? 'Menunggu Approval' : 'Geser untuk Pulang',
+                      backgroundColor: const Color(0xFF10B981), // Green for go home
+                      thumbIcon: Icons.logout_rounded,
+                      onSubmit: () {
+                         if (attendanceType == 'office' && !isWithinRange && !isOperational) {
+                           _showErrorSnackBar('Jarak terlalu jauh dari lokasi kantor. Silakan pilih mode Absen Luar jika Anda sedang bertugas di luar.');
+                           return;
+                         }
+                         if (!isLateRestricted && !isLoadingLocal && (attendanceType == 'field' || isWithinRange || isOperational)) {
+                           _handleCheckOut();
+                         }
+                      },
+                    )
+                  else if (hasCheckedOut)
+                     Container(
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(32),
+                        ),
+                        child: const Center(
+                          child: Text('Absensi Selesai', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 16)),
+                        ),
+                     )
                 ],
               ),
             ),

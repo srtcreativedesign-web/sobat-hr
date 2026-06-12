@@ -12,17 +12,12 @@ class _C {
   static const gray600 = Color(0xFF5F5E5A);
   static const gray900 = Color(0xFF2C2C2A);
   static const purple50 = Color(0xFFEEEDFE);
-  static const purple400 = Color(0xFF7F77DD);
   static const purple600 = Color(0xFF534AB7);
-  static const purple800 = Color(0xFF3C3489);
-  static const purple900 = Color(0xFF26215C);
   static const green100 = Color(0xFFC0DD97);
   static const green600 = Color(0xFF3B6D11);
   static const amber100 = Color(0xFFFAC775);
   static const amber600 = Color(0xFFBA7517);
-  static const blue100 = Color(0xFFBBDEFB);
   static const blue600 = Color(0xFF1565C0);
-  static const blue700 = Color(0xFF0E4D92);
   static const white = Colors.white;
 }
 

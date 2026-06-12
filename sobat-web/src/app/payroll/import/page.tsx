@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/auth-store';
 import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
 import SignatureCanvas from 'react-signature-canvas';
+import { NavTabs } from '@/components/ui/tabs';
 
 interface Payroll {
   id: number;
@@ -551,19 +552,16 @@ Ada beberapa error:
       </div>
 
           {/* Sub Navigation Tabs */}
-          <div className="flex px-8 border-b border-gray-200">
-            <Link
-              href="/payroll"
-              className="px-6 py-4 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors"
-            >
-              Data Payroll
-            </Link>
-            <Link
-              href="/payroll/import"
-              className="px-6 py-4 text-sm font-semibold border-b-2 border-[#1C3ECA] text-[#1C3ECA] transition-colors"
-            >
-              Import / Export
-            </Link>
+          <div className="px-8 pt-4 pb-2">
+            <div className="w-[400px]">
+              <NavTabs 
+                activeValue="import" 
+                tabs={[
+                  { label: "Data Payroll", value: "data", href: "/payroll" },
+                  { label: "Import / Export", value: "import", href: "/payroll/import" }
+                ]} 
+              />
+            </div>
           </div>
 
 

@@ -18,13 +18,15 @@ class ApiConfig {
   static const String _env = String.fromEnvironment('ENV', defaultValue: 'dev');
   static const String _devHost = String.fromEnvironment(
     'DEV_HOST',
-    defaultValue: '172.20.10.3',
+    defaultValue: '192.168.1.31',
   );
 
   /// Returns true if production mode:
   /// - Explicitly set via --dart-define=ENV=prod, OR
   /// - Running in release mode (Xcode Archive, flutter build --release)
   static bool get _isProd => _env == 'prod' || kReleaseMode;
+
+  static const String _hostIp = '192.168.1.31';
 
   static const String _port = '8000';
 

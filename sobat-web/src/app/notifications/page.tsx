@@ -52,7 +52,7 @@ export default function NotificationsPage() {
 
     const handleMarkAsRead = async (id?: string) => {
         try {
-            await apiClient.post('/notifications/read', id ? { id } : {});
+            await apiClient.post('/notifications/mark-as-read', id ? { id } : {});
             // Refresh the list
             const response = await apiClient.get('/notifications');
             setNotifications(response.data.data || []);

@@ -343,7 +343,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildDashboardContent(User? user) {
     final homeProvider = Provider.of<HomeProvider>(context);
-    final localeName = Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US';
     return RefreshIndicator(
       onRefresh: _onRefresh,
       color: AppTheme.colorEggplant,

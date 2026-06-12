@@ -3,7 +3,8 @@
 import { ReactNode, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
-import Sidebar from './Sidebar';
+import { AppSidebar } from './AppSidebar';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/animate-ui/components/radix/sidebar';
 
 
 interface DashboardLayoutProps {
@@ -29,11 +30,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <main className="flex-1 overflow-auto">
-        {children}
-      </main>
-    </div>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-white px-4">
+          <SidebarTrigger />
+        </header>
+        <main className="flex-1 overflow-auto bg-gray-50">
+          {children}
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
