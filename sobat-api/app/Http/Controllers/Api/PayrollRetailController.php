@@ -952,7 +952,6 @@ if ($headerRowIndex === -1) {
         $request->validate([
             'division_type' => 'required|string',
             'rows' => 'required|array',
-            'rows.*.employee_name' => 'required|string',
         ]);
 
         try {
@@ -966,7 +965,16 @@ if ($headerRowIndex === -1) {
                 $employeeCache[$cleanName] = $emp;
             });
             
+            // Cache table columns once for filtering
+            $model = $this->getModel($request->division_type);
+            $tableColumns = Schema::getColumnListing($model->getTable());
+            
             foreach ($request->rows as $index => $row) {
+                // Skip rows with missing or non-string employee names (footer/total rows)
+                if (empty($row['employee_name']) || !is_string($row['employee_name'])) {
+                    continue;
+                }
+                
                 // Find employee by full_name - robust lookup for spaces and case
                 $employeeName = trim($row['employee_name']);
                 $employeeName = preg_replace('/\s+/', ' ', $employeeName);
@@ -995,12 +1003,9 @@ if ($headerRowIndex === -1) {
                 }
                 
                 // Filter row data to only include columns that exist in the target table
-                $model = $this->getModel($request->division_type);
-                $tableName = $model->getTable();
-                $tableColumns = Schema::getColumnListing($tableName);
                 $filteredRow = array_intersect_key($row, array_flip($tableColumns));
                 
-                $model->create(array_merge($filteredRow, [
+                $this->getModel($request->division_type)->create(array_merge($filteredRow, [
                     'employee_id' => $employee->id,
                     'status' => 'draft',
                     'adjustment' => $row['adjustment'] ?? 0,
