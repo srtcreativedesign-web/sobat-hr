@@ -670,8 +670,8 @@ if ($headerRowIndex === -1) {
                 'headerRowIndex' => $headerRowIndex,
             ]);
 
-        } catch (\Exception $e) {
-            Log::error('Retail Payroll Parse Error: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Retail Payroll Parse Error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
@@ -725,9 +725,15 @@ if ($headerRowIndex === -1) {
             $dataRows = [];
             $startDataRow = $headerRowIndex + 2; 
             
+            $emptyRows = 0;
             for ($row = $startDataRow; $row <= $highestRow; $row++) {
                 $employeeName = $getCellValue($columnMapping['employee_name'] ?? null, $row);
-                if (empty($employeeName) || !is_string($employeeName)) continue;
+                if (empty($employeeName) || !is_string($employeeName)) {
+                    $emptyRows++;
+                    if ($emptyRows > 15) break; // Prevent memory exhaustion
+                    continue;
+                }
+                $emptyRows = 0;
                 
                 $daysTotal = (int) $getCellValue($columnMapping['days_total'] ?? null, $row);
                 $daysOff = (int) $getCellValue($columnMapping['days_off'] ?? null, $row);
@@ -880,8 +886,8 @@ if ($headerRowIndex === -1) {
                 'rows' => $dataRows,
             ]);
 
-        } catch (\Exception $e) {
-            Log::error('Retail Payroll Simulate Error: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Retail Payroll Simulate Error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
