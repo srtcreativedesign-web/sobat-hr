@@ -728,6 +728,13 @@ if ($headerRowIndex === -1) {
             $dataRows = [];
             $startDataRow = $headerRowIndex + 2; 
             
+            // Cache employees to avoid N+1 queries and prevent timeouts
+            $employeeCache = [];
+            \App\Models\Employee::select('full_name', 'mandatory_overtime_amount')->get()->each(function($emp) use (&$employeeCache) {
+                $cleanName = strtolower(trim(preg_replace('/\s+/', ' ', $emp->full_name)));
+                $employeeCache[$cleanName] = (float)$emp->mandatory_overtime_amount;
+            });
+            
             $emptyRows = 0;
             for ($row = $startDataRow; $row <= $highestRow; $row++) {
                 $employeeName = $getCellValue($columnMapping['employee_name'] ?? null, $row);
@@ -791,13 +798,8 @@ if ($headerRowIndex === -1) {
                 }
                 
                 // Fetch mandatory overtime from Master Data
-                $empNameTrim = trim($employeeName);
-                $empNameTrim = preg_replace('/\s+/', ' ', $empNameTrim);
-                $emp = \App\Models\Employee::whereRaw('LOWER(TRIM(REPLACE(full_name, "  ", " "))) = ?', [strtolower($empNameTrim)])->first();
-                if (!$emp) {
-                    $emp = \App\Models\Employee::where('full_name', 'LIKE', '%' . $empNameTrim . '%')->first();
-                }
-                $masterMandatoryOvertime = $emp ? (float)$emp->mandatory_overtime_amount : 0;
+                $empNameClean = strtolower(trim(preg_replace('/\s+/', ' ', $employeeName)));
+                $masterMandatoryOvertime = $employeeCache[$empNameClean] ?? 0;
                 
                 $mandatoryOvertimeRate = (float)$getCellValue($columnMapping['mandatory_overtime_rate'] ?? null, $row);
                 $mandatoryOvertimeAmount = (float)$getCellValue($columnMapping['mandatory_overtime_amount'] ?? null, $row);
@@ -939,12 +941,20 @@ if ($headerRowIndex === -1) {
             $saved = 0;
             $errors = [];
             
+            // Cache employees to avoid N+1 queries
+            $employeeCache = [];
+            \App\Models\Employee::get()->each(function($emp) use (&$employeeCache) {
+                $cleanName = strtolower(trim(preg_replace('/\s+/', ' ', $emp->full_name)));
+                $employeeCache[$cleanName] = $emp;
+            });
+            
             foreach ($request->rows as $index => $row) {
                 // Find employee by full_name - robust lookup for spaces and case
                 $employeeName = trim($row['employee_name']);
                 $employeeName = preg_replace('/\s+/', ' ', $employeeName);
                 
-                $employee = Employee::whereRaw('LOWER(TRIM(REPLACE(full_name, "  ", " "))) = ?', [strtolower($employeeName)])->first();
+                $empNameClean = strtolower($employeeName);
+                $employee = $employeeCache[$empNameClean] ?? null;
                 
                 if (!$employee) {
                     // Fallback to LIKE if strict match fails (may be risky but helpful for typos)
