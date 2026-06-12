@@ -808,12 +808,22 @@ if ($headerRowIndex === -1) {
                     $overtimeHours = $temp;
                 }
                 
+                // Detect if same column was mapped to both rate and amount (values are identical)
+                if ($overtimeAmount > 0 && $overtimeRate > 0 && abs($overtimeAmount - $overtimeRate) < 1) {
+                    $overtimeAmount = 0; // It's actually the rate, not the total
+                }
+                
                 // Fetch mandatory overtime from Master Data
                 $empNameClean = strtolower(trim(preg_replace('/\s+/', ' ', $employeeName)));
                 $masterMandatoryOvertime = $employeeCache[$empNameClean] ?? 0;
                 
                 $mandatoryOvertimeRate = (float)$getCellValue($columnMapping['mandatory_overtime_rate'] ?? null, $row);
                 $mandatoryOvertimeAmount = (float)$getCellValue($columnMapping['mandatory_overtime_amount'] ?? null, $row);
+                
+                // Detect if same column was mapped to both mandatory rate and amount
+                if ($mandatoryOvertimeAmount > 0 && $mandatoryOvertimeRate > 0 && abs($mandatoryOvertimeAmount - $mandatoryOvertimeRate) < 1) {
+                    $mandatoryOvertimeAmount = 0;
+                }
                 
                 // If excel didn't map it or it's 0, but Master Data has it, use Master Data
                 if ($mandatoryOvertimeAmount <= 0 && $masterMandatoryOvertime > 0) {
@@ -831,6 +841,22 @@ if ($headerRowIndex === -1) {
                 // Fallback: Calculate mandatory overtime amount from rate × days_present if amount not mapped
                 if ($mandatoryOvertimeAmount <= 0 && $mandatoryOvertimeRate > 0 && $daysPresent > 0) {
                     $mandatoryOvertimeAmount = $mandatoryOvertimeRate * $daysPresent;
+                }
+                
+                // Log overtime debug info for first row only
+                if ($index === 0 || count($dataRows) === 0) {
+                    Log::info('Overtime Debug', [
+                        'employee' => $employeeName,
+                        'mapping_overtime_rate' => $columnMapping['overtime_rate'] ?? 'NOT MAPPED',
+                        'mapping_overtime_hours' => $columnMapping['overtime_hours'] ?? 'NOT MAPPED',
+                        'mapping_overtime_amount' => $columnMapping['overtime_amount'] ?? 'NOT MAPPED',
+                        'mapping_mandatory_rate' => $columnMapping['mandatory_overtime_rate'] ?? 'NOT MAPPED',
+                        'mapping_mandatory_amount' => $columnMapping['mandatory_overtime_amount'] ?? 'NOT MAPPED',
+                        'raw_overtime_rate' => $overtimeRate,
+                        'raw_overtime_hours' => $overtimeHours,
+                        'final_overtime_amount' => $overtimeAmount,
+                        'final_mandatory_amount' => $mandatoryOvertimeAmount,
+                    ]);
                 }
                 $targetKoli = $getCellValue($columnMapping['target_koli'] ?? null, $row);
                 $accessoryFee = $getCellValue($columnMapping['accessory_fee'] ?? null, $row);
