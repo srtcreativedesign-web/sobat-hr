@@ -799,8 +799,13 @@ if ($headerRowIndex === -1) {
                 }
                 $masterMandatoryOvertime = $emp ? (float)$emp->mandatory_overtime_amount : 0;
                 
-                // Prioritize Master Data over Excel mapping for mandatory overtime, but combine with regular overtime
-                $overtimeAmount += $masterMandatoryOvertime;
+                $mandatoryOvertimeRate = (float)$getCellValue($columnMapping['mandatory_overtime_rate'] ?? null, $row);
+                $mandatoryOvertimeAmount = (float)$getCellValue($columnMapping['mandatory_overtime_amount'] ?? null, $row);
+                
+                // If excel didn't map it or it's 0, but Master Data has it, use Master Data
+                if ($mandatoryOvertimeAmount <= 0 && $masterMandatoryOvertime > 0) {
+                    $mandatoryOvertimeAmount = $masterMandatoryOvertime;
+                }
                 
                 // Fallback: Infer overtime rate if missing
                 if ($overtimeRate <= 0 && $overtimeAmount > 0 && $overtimeHours > 0) {
@@ -840,7 +845,7 @@ if ($headerRowIndex === -1) {
                 } elseif ($totalSalary1 > 0) {
                     $grossSalary = $totalSalary1;
                 } else {
-                    $grossSalary = (float)$basicSalary + (float)$mealAmount + (float)$attendanceAmount + (float)$transportAmount + (float)$healthAllowance + (float)$positionAllowance + (float)$overtimeAmount + (float)$holidayAllowance + (float)$bonus + (float)$adjustment + (float)$backup + (float)$insentifKehadiran + (float)$targetKoli + (float)$accessoryFee;
+                    $grossSalary = (float)$basicSalary + (float)$mealAmount + (float)$attendanceAmount + (float)$transportAmount + (float)$healthAllowance + (float)$positionAllowance + (float)$overtimeAmount + (float)$mandatoryOvertimeAmount + (float)$targetKoli + (float)$accessoryFee + (float)$backup + (float)$insentifKehadiran + (float)$holidayAllowance + (float)$bonus + (float)$adjustment + (float)$policyHo;
                 }
                 
                 // Skip rows that are clearly not payroll data (e.g. signature section)
@@ -877,6 +882,8 @@ if ($headerRowIndex === -1) {
                     'overtime_rate' => (float) $overtimeRate,
                     'overtime_hours' => (float) $overtimeHours,
                     'overtime_amount' => (float) $overtimeAmount,
+                    'mandatory_overtime_rate' => (float) $mandatoryOvertimeRate,
+                    'mandatory_overtime_amount' => (float) $mandatoryOvertimeAmount,
                     'target_koli' => (float) $targetKoli,
                     'accessory_fee' => (float) $accessoryFee,
                     
@@ -1142,6 +1149,13 @@ if ($headerRowIndex === -1) {
              'amount' => $oAmount,
          ];
 
+         if ((float)$payroll->mandatory_overtime_amount > 0 || (float)$payroll->mandatory_overtime_rate > 0) {
+             $formatted['allowances']['Lembur Wajib'] = [
+                 'rate' => $payroll->mandatory_overtime_rate,
+                 'amount' => $payroll->mandatory_overtime_amount,
+             ];
+         }
+
          $formatted['allowances'] += [
              'Target Koli' => $payroll->target_koli ?? 0,
              'Fee Aksesoris' => $payroll->accessory_fee ?? 0,
@@ -1164,7 +1178,7 @@ if ($headerRowIndex === -1) {
         
         // Dynamic THP calculation with fallback for import anomalies
         $thpResult = $this->calculateThp($payroll, 
-            ['basic_salary', 'attendance_amount', 'transport_amount', 'health_allowance', 'position_allowance', 'overtime_amount', 'target_koli', 'accessory_fee', 'backup', 'insentif_kehadiran', 'holiday_allowance', 'adjustment', 'policy_ho'],
+            ['basic_salary', 'attendance_amount', 'transport_amount', 'health_allowance', 'position_allowance', 'overtime_amount', 'mandatory_overtime_amount', 'target_koli', 'accessory_fee', 'backup', 'insentif_kehadiran', 'holiday_allowance', 'adjustment', 'policy_ho'],
             ['deduction_absent', 'deduction_late', 'deduction_shortage', 'deduction_loan', 'deduction_admin_fee', 'deduction_bpjs_tk']
         );
         $formatted['thp'] = $thpResult['thp'];

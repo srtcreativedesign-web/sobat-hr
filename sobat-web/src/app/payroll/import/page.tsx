@@ -794,6 +794,8 @@ Ada beberapa error:
                         { key: 'attendance_allowance', label: 'Tunj. Kehadiran (Total)' },
                         { key: 'overtime_rate', label: 'Rate Lembur (/ Jam)' },
                         { key: 'overtime_amount', label: 'Uang Lembur (Total)' },
+                        { key: 'mandatory_overtime_rate', label: 'Rate Lembur Wajib (/ Hari)' },
+                        { key: 'mandatory_overtime_amount', label: 'Uang Lembur Wajib (Total)' },
                         { key: 'bonus', label: 'Bonus / Insentif / THR' },
                         { key: 'target_koli', label: 'Target Koli' },
                         { key: 'accessory_fee', label: 'Fee Aksesoris' },
