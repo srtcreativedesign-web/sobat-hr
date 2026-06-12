@@ -829,21 +829,21 @@ if ($headerRowIndex === -1) {
                     $mandatoryOvertimeAmount = 0;
                 }
                 
-                // If excel didn't map it or it's 0, but Master Data has it, use Master Data
-                if ($mandatoryOvertimeAmount <= 0 && $masterMandatoryOvertime > 0) {
-                    $mandatoryOvertimeAmount = $masterMandatoryOvertime;
+                // If excel didn't map the rate or it's 0, but Master Data has it, use Master Data as the RATE
+                if ($mandatoryOvertimeRate <= 0 && $masterMandatoryOvertime > 0) {
+                    $mandatoryOvertimeRate = $masterMandatoryOvertime;
                 }
                 
                 // Fallback: Infer overtime rate if missing
                 if ($overtimeRate <= 0 && $overtimeAmount > 0 && $overtimeHours > 0) {
                     $overtimeRate = $overtimeAmount / $overtimeHours;
                 }
-                // Fallback: Calculate overtime amount from rate × hours if amount not mapped
-                if ($overtimeAmount <= 0 && $overtimeRate > 0 && $overtimeHours > 0) {
+                // Fallback: Calculate overtime amount from rate × hours if amount not mapped or was deduped
+                if ($overtimeAmount <= 0 && $overtimeRate > 0) {
                     $overtimeAmount = $overtimeRate * $overtimeHours;
                 }
-                // Fallback: Calculate mandatory overtime amount from rate × days_present if amount not mapped
-                if ($mandatoryOvertimeAmount <= 0 && $mandatoryOvertimeRate > 0 && $daysPresent > 0) {
+                // Fallback: Calculate mandatory overtime amount from rate × days_present if amount not mapped or was deduped
+                if ($mandatoryOvertimeAmount <= 0 && $mandatoryOvertimeRate > 0) {
                     $mandatoryOvertimeAmount = $mandatoryOvertimeRate * $daysPresent;
                 }
                 
