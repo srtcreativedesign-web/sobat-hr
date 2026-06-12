@@ -823,6 +823,14 @@ if ($headerRowIndex === -1) {
                 if ($overtimeRate <= 0 && $overtimeAmount > 0 && $overtimeHours > 0) {
                     $overtimeRate = $overtimeAmount / $overtimeHours;
                 }
+                // Fallback: Calculate overtime amount from rate × hours if amount not mapped
+                if ($overtimeAmount <= 0 && $overtimeRate > 0 && $overtimeHours > 0) {
+                    $overtimeAmount = $overtimeRate * $overtimeHours;
+                }
+                // Fallback: Calculate mandatory overtime amount from rate × days_present if amount not mapped
+                if ($mandatoryOvertimeAmount <= 0 && $mandatoryOvertimeRate > 0 && $daysPresent > 0) {
+                    $mandatoryOvertimeAmount = $mandatoryOvertimeRate * $daysPresent;
+                }
                 $targetKoli = $getCellValue($columnMapping['target_koli'] ?? null, $row);
                 $accessoryFee = $getCellValue($columnMapping['accessory_fee'] ?? null, $row);
                 $backup = $getCellValue($columnMapping['backup_allowance'] ?? null, $row);
