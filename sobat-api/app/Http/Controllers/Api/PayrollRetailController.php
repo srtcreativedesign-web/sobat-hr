@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use App\Models\Employee;
 use App\Models\Role;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\GroqAiService;
 
@@ -1021,8 +1022,8 @@ if ($headerRowIndex === -1) {
                 'errors' => $errors,
             ]);
 
-        } catch (\Exception $e) {
-            Log::error('Hans Payroll Save Error: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Retail Payroll Save Error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
