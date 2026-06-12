@@ -673,7 +673,7 @@ class PayrollController extends Controller
             $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
             $reader->setReadDataOnly(true); // READ CALCULATED VALUES, NOT FORMULAS
             $spreadsheet = $reader->load($file->getRealPath());
-            $sheet = $spreadsheet->getActiveSheet();
+            $sheet = $spreadsheet->getSheet(0);
 
             $highestRow = $sheet->getHighestRow();
             $highestColumn = $sheet->getHighestColumn();

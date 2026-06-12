@@ -137,7 +137,7 @@ class ThrController extends Controller
             $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile($file->getRealPath());
             $reader->setReadDataOnly(true); // Optimization: Read data only
             $spreadsheet = $reader->load($file->getRealPath());
-            $sheet = $spreadsheet->getActiveSheet();
+            $sheet = $spreadsheet->getSheet(0);
             
             $highestRow = $sheet->getHighestRow();
             $highestColumn = $sheet->getHighestColumn();

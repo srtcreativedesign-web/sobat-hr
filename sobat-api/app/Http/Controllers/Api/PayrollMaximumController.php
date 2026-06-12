@@ -154,7 +154,7 @@ class PayrollMaximumController extends Controller
             $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
             $reader->setReadDataOnly(true); // Read calculated values, not formulas
             $spreadsheet = $reader->load($file->getRealPath());
-            $sheet = $spreadsheet->getActiveSheet();
+            $sheet = $spreadsheet->getSheet(0);
             
             $highestRow = $sheet->getHighestRow();
             $highestColumn = $sheet->getHighestColumn();

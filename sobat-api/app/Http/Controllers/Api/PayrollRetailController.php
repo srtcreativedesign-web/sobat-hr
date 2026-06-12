@@ -121,7 +121,7 @@ class PayrollRetailController extends Controller
             $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
             $reader->setReadDataOnly(true);
             $spreadsheet = $reader->load($file->getRealPath());
-            $sheet = $spreadsheet->getActiveSheet();
+            $sheet = $spreadsheet->getSheet(0);
             
             $highestRow = $sheet->getHighestRow();
             $highestColumn = $sheet->getHighestColumn();
@@ -452,7 +452,7 @@ if ($headerRowIndex === -1) {
             
             $sheet = $spreadsheet->getSheetByName('gabungan');
             if (!$sheet) {
-                $sheet = $spreadsheet->getActiveSheet();
+                $sheet = $spreadsheet->getSheet(0);
             }
             
             $highestRow = $sheet->getHighestRow();
@@ -648,7 +648,7 @@ if ($headerRowIndex === -1) {
             
             $sheet = $spreadsheet->getSheetByName('gabungan');
             if (!$sheet) {
-                $sheet = $spreadsheet->getActiveSheet();
+                $sheet = $spreadsheet->getSheet(0);
             }
             
             $highestRow = $sheet->getHighestRow();
