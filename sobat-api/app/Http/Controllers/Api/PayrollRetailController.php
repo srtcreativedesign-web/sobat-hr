@@ -109,6 +109,49 @@ class PayrollRetailController extends Controller
     /**
      * Import Hans payroll from Excel
      */
+    
+    private function findDataSheet($spreadsheet, &$headerRowIndex)
+    {
+        $sheet = $spreadsheet->getSheetByName('gabungan');
+        $headerRowIndex = -1;
+        
+        if ($sheet) {
+            $highestRow = $sheet->getHighestRow();
+            $highestColumn = $sheet->getHighestColumn();
+            for ($row = 1; $row <= min(30, $highestRow); $row++) {
+                $rowIterator = $sheet->getRowIterator($row, $row)->current();
+                $cellIterator = $rowIterator->getCellIterator('A', $highestColumn);
+                $cellIterator->setIterateOnlyExistingCells(false);
+                foreach ($cellIterator as $cell) {
+                    $cellValue = (string) $cell->getValue();
+                    if ($cellValue && (stripos($cellValue, 'Nama Karyawan') !== false || stripos($cellValue, 'Nama Pegawai') !== false)) {
+                        $headerRowIndex = $row;
+                        return $sheet;
+                    }
+                }
+            }
+        }
+        
+        foreach ($spreadsheet->getAllSheets() as $testSheet) {
+            $highestRow = $testSheet->getHighestRow();
+            $highestColumn = $testSheet->getHighestColumn();
+            for ($row = 1; $row <= min(30, $highestRow); $row++) {
+                $rowIterator = $testSheet->getRowIterator($row, $row)->current();
+                $cellIterator = $rowIterator->getCellIterator('A', $highestColumn);
+                $cellIterator->setIterateOnlyExistingCells(false);
+                foreach ($cellIterator as $cell) {
+                    $cellValue = (string) $cell->getValue();
+                    if ($cellValue && (stripos($cellValue, 'Nama Karyawan') !== false || stripos($cellValue, 'Nama Pegawai') !== false)) {
+                        $headerRowIndex = $row;
+                        return $testSheet;
+                    }
+                }
+            }
+        }
+        
+        return null;
+    }
+
     public function import(Request $request)
     {
         $request->validate([
@@ -650,9 +693,10 @@ if ($headerRowIndex === -1) {
             $reader->setReadDataOnly(true); 
             $spreadsheet = $reader->load($file->getRealPath());
             
-            $sheet = $spreadsheet->getSheetByName('gabungan');
+            $dummyHeaderRowIndex = -1;
+            $sheet = $this->findDataSheet($spreadsheet, $dummyHeaderRowIndex);
             if (!$sheet) {
-                $sheet = $spreadsheet->getSheet(0);
+                return response()->json(['message' => 'Format Excel tidak dikenali di semua sheet.'], 422);
             }
             
             $highestRow = $sheet->getHighestRow();
