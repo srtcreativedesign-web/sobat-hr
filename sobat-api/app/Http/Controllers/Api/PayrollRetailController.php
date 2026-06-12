@@ -696,6 +696,10 @@ if ($headerRowIndex === -1) {
         }
 
         try {
+            // Prevent PHP fatal crashes on large Excel files
+            ini_set('memory_limit', '512M');
+            set_time_limit(120);
+            
             $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
             $reader->setReadDataOnly(true); 
             $spreadsheet = $reader->load($file->getRealPath());
