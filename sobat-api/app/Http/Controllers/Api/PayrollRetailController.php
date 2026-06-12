@@ -112,26 +112,29 @@ class PayrollRetailController extends Controller
     
     private function findDataSheet($spreadsheet, &$headerRowIndex)
     {
-        $sheet = $spreadsheet->getSheetByName('gabungan');
         $headerRowIndex = -1;
         
-        if ($sheet) {
-            $highestRow = $sheet->getHighestRow();
-            $highestColumn = $sheet->getHighestColumn();
-            for ($row = 1; $row <= min(30, $highestRow); $row++) {
-                $rowIterator = $sheet->getRowIterator($row, $row)->current();
-                $cellIterator = $rowIterator->getCellIterator('A', $highestColumn);
-                $cellIterator->setIterateOnlyExistingCells(false);
-                foreach ($cellIterator as $cell) {
-                    $cellValue = (string) $cell->getValue();
-                    if ($cellValue && (stripos($cellValue, 'Nama Karyawan') !== false || stripos($cellValue, 'Nama Pegawai') !== false)) {
-                        $headerRowIndex = $row;
-                        return $sheet;
+        // Prioritize known data sheet names
+        $priorityNames = ['gabungan', 'Gaji', 'payroll', 'Sheet1'];
+        foreach ($priorityNames as $name) {
+            $sheet = $spreadsheet->getSheetByName($name);
+            if ($sheet) {
+                $highestRow = $sheet->getHighestRow();
+                for ($row = 1; $row <= min(30, $highestRow); $row++) {
+                    $cellIterator = $sheet->getRowIterator($row)->current()->getCellIterator();
+                    $cellIterator->setIterateOnlyExistingCells(false);
+                    foreach ($cellIterator as $cell) {
+                        $cellValue = (string) $cell->getValue();
+                        if ($cellValue && (stripos($cellValue, 'Nama Karyawan') !== false || stripos($cellValue, 'Nama Pegawai') !== false)) {
+                            $headerRowIndex = $row;
+                            return $sheet;
+                        }
                     }
                 }
             }
         }
         
+        // Fallback: scan all sheets
         foreach ($spreadsheet->getAllSheets() as $testSheet) {
             $highestRow = $testSheet->getHighestRow();
             $highestColumn = $testSheet->getHighestColumn();
@@ -826,57 +829,57 @@ if ($headerRowIndex === -1) {
                     'period' => $request->period ?? date('Y-m'),
                     'account_number' => $getCellValue($columnMapping['account_number'] ?? null, $row),
                     
-                    'days_total' => $daysTotal,
-                    'days_off' => $daysOff,
-                    'days_sick' => $daysSick,
-                    'days_permission' => $daysPermission,
-                    'days_alpha' => $daysAlpha,
-                    'days_leave' => $daysLeave,
-                    'days_present' => $daysPresent,
+                    'days_total' => (int) $daysTotal,
+                    'days_off' => (int) $daysOff,
+                    'days_sick' => (int) $daysSick,
+                    'days_permission' => (int) $daysPermission,
+                    'days_alpha' => (int) $daysAlpha,
+                    'days_leave' => (int) $daysLeave,
+                    'days_present' => (int) $daysPresent,
                     
-                    'basic_salary' => $basicSalary,
-                    'meal_rate' => $mealRate,
-                    'meal_amount' => $mealAmount,
-                    'attendance_rate' => $attendanceRate,
-                    'attendance_amount' => $attendanceAmount,
-                    'attendance_allowance' => $attendanceAmount, // For money_changer
-                    'transport_rate' => $transportRate,
-                    'transport_amount' => $transportAmount,
-                    'health_allowance' => $healthAllowance,
-                    'position_allowance' => $positionAllowance,
-                    'total_salary_1' => $totalSalary1,
-                    'subtotal_1' => $totalSalary1, // For cellullers
+                    'basic_salary' => (float) $basicSalary,
+                    'meal_rate' => (float) $mealRate,
+                    'meal_amount' => (float) $mealAmount,
+                    'attendance_rate' => (float) $attendanceRate,
+                    'attendance_amount' => (float) $attendanceAmount,
+                    'attendance_allowance' => (float) $attendanceAmount, // For money_changer
+                    'transport_rate' => (float) $transportRate,
+                    'transport_amount' => (float) $transportAmount,
+                    'health_allowance' => (float) $healthAllowance,
+                    'position_allowance' => (float) $positionAllowance,
+                    'total_salary_1' => (float) $totalSalary1,
+                    'subtotal_1' => (float) $totalSalary1, // For cellullers
                     
-                    'overtime_rate' => $overtimeRate,
-                    'overtime_hours' => $overtimeHours,
-                    'overtime_amount' => $overtimeAmount,
-                    'target_koli' => $targetKoli,
-                    'accessory_fee' => $accessoryFee,
+                    'overtime_rate' => (float) $overtimeRate,
+                    'overtime_hours' => (float) $overtimeHours,
+                    'overtime_amount' => (float) $overtimeAmount,
+                    'target_koli' => (float) $targetKoli,
+                    'accessory_fee' => (float) $accessoryFee,
                     
-                    'backup' => $backup,
-                    'insentif_kehadiran' => $insentifKehadiran,
-                    'holiday_allowance' => $holidayAllowance,
-                    'bonus' => $bonus,
-                    'adjustment' => $adjustment,
-                    'total_salary_2' => $grossSalary, 
-                    'gross_salary' => $grossSalary, // For cellullers
-                    'total_salary_gross' => $grossSalary, // For wrapping
-                    'policy_ho' => $policyHo,
+                    'backup' => (float) $backup,
+                    'insentif_kehadiran' => (float) $insentifKehadiran,
+                    'holiday_allowance' => (float) $holidayAllowance,
+                    'bonus' => (float) $bonus,
+                    'adjustment' => (float) $adjustment,
+                    'total_salary_2' => (float) $grossSalary, 
+                    'gross_salary' => (float) $grossSalary, // For cellullers
+                    'total_salary_gross' => (float) $grossSalary, // For wrapping
+                    'policy_ho' => (float) $policyHo,
                     
-                    'deduction_absent' => $deductionAbsent,
-                    'deduction_late' => $deductionLate,
-                    'deduction_shortage' => $deductionShortage,
-                    'deduction_so_shortage' => $deductionShortage, // Alias
-                    'deduction_loan' => $deductionLoan,
-                    'deduction_admin_fee' => $deductionAdminFee,
-                    'deduction_bpjs_tk' => $deductionBpjsTk,
-                    'total_deductions' => $totalDeductions,
-                    'deduction_total' => $totalDeductions, // Alias
-                    'total_deduction' => $totalDeductions, // Alias
+                    'deduction_absent' => (float) $deductionAbsent,
+                    'deduction_late' => (float) $deductionLate,
+                    'deduction_shortage' => (float) $deductionShortage,
+                    'deduction_so_shortage' => (float) $deductionShortage, // Alias
+                    'deduction_loan' => (float) $deductionLoan,
+                    'deduction_admin_fee' => (float) $deductionAdminFee,
+                    'deduction_bpjs_tk' => (float) $deductionBpjsTk,
+                    'total_deductions' => (float) $totalDeductions,
+                    'deduction_total' => (float) $totalDeductions, // Alias
+                    'total_deduction' => (float) $totalDeductions, // Alias
                     
-                    'grand_total' => $grandTotal,
-                    'ewa_amount' => $ewa,
-                    'net_salary' => $netSalary,
+                    'grand_total' => (float) $grandTotal,
+                    'ewa_amount' => (float) $ewa,
+                    'net_salary' => (float) $netSalary,
                 ];
             }
 
