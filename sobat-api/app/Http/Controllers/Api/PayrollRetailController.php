@@ -738,7 +738,9 @@ if ($headerRowIndex === -1) {
             $emptyRows = 0;
             for ($row = $startDataRow; $row <= $highestRow; $row++) {
                 $employeeName = $getCellValue($columnMapping['employee_name'] ?? null, $row);
-                if (empty($employeeName) || !is_string($employeeName)) {
+                $employeeNameStr = is_string($employeeName) ? trim($employeeName) : (is_numeric($employeeName) ? (string)$employeeName : '');
+                
+                if ($employeeNameStr === '') {
                     $emptyRows++;
                     if ($emptyRows > 15) break; // Prevent memory exhaustion
                     continue;
