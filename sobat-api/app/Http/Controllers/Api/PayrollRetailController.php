@@ -824,6 +824,11 @@ if ($headerRowIndex === -1) {
                     $grossSalary = (float)$basicSalary + (float)$mealAmount + (float)$attendanceAmount + (float)$transportAmount + (float)$healthAllowance + (float)$positionAllowance + (float)$overtimeAmount + (float)$holidayAllowance + (float)$bonus + (float)$adjustment + (float)$backup + (float)$insentifKehadiran + (float)$targetKoli + (float)$accessoryFee;
                 }
                 
+                // Skip rows that are clearly not payroll data (e.g. signature section)
+                if ($grossSalary <= 0 && $netSalary <= 0 && $basicSalary <= 0 && $totalDeductions <= 0 && $daysTotal <= 0 && $daysPresent <= 0) {
+                    continue;
+                }
+                
                 $dataRows[] = [
                     'employee_name' => $employeeName,
                     'period' => $request->period ?? date('Y-m'),
