@@ -779,13 +779,32 @@ if ($headerRowIndex === -1) {
                 $healthAllowance = $getCellValue($columnMapping['health_allowance'] ?? null, $row);
                 $positionAllowance = $getCellValue($columnMapping['position_allowance'] ?? null, $row);
                 $totalSalary1 = $getCellValue($columnMapping['total_salary_1'] ?? null, $row);
-                $overtimeRate = $getCellValue($columnMapping['overtime_rate'] ?? null, $row);
-                $overtimeHours = $getCellValue($columnMapping['overtime_hours'] ?? null, $row);
-                $overtimeAmount = $getCellValue($columnMapping['overtime_amount'] ?? null, $row);
+                $overtimeRate = (float)$getCellValue($columnMapping['overtime_rate'] ?? null, $row);
+                $overtimeHours = (float)$getCellValue($columnMapping['overtime_hours'] ?? null, $row);
+                $overtimeAmount = (float)$getCellValue($columnMapping['overtime_amount'] ?? null, $row);
+                
+                // Auto-correct swapped overtime hours and amount (nobody works > 500 hours overtime)
+                if ($overtimeHours > 500 && $overtimeAmount <= 500) {
+                    $temp = $overtimeAmount;
+                    $overtimeAmount = $overtimeHours;
+                    $overtimeHours = $temp;
+                }
+                
+                // Fetch mandatory overtime from Master Data
+                $empNameTrim = trim($employeeName);
+                $empNameTrim = preg_replace('/\s+/', ' ', $empNameTrim);
+                $emp = \App\Models\Employee::whereRaw('LOWER(TRIM(REPLACE(full_name, "  ", " "))) = ?', [strtolower($empNameTrim)])->first();
+                if (!$emp) {
+                    $emp = \App\Models\Employee::where('full_name', 'LIKE', '%' . $empNameTrim . '%')->first();
+                }
+                $masterMandatoryOvertime = $emp ? (float)$emp->mandatory_overtime_amount : 0;
+                
+                // Prioritize Master Data over Excel mapping for mandatory overtime, but combine with regular overtime
+                $overtimeAmount += $masterMandatoryOvertime;
                 
                 // Fallback: Infer overtime rate if missing
-                if ((float)$overtimeRate <= 0 && (float)$overtimeAmount > 0 && (float)$overtimeHours > 0) {
-                    $overtimeRate = (float)$overtimeAmount / (float)$overtimeHours;
+                if ($overtimeRate <= 0 && $overtimeAmount > 0 && $overtimeHours > 0) {
+                    $overtimeRate = $overtimeAmount / $overtimeHours;
                 }
                 $targetKoli = $getCellValue($columnMapping['target_koli'] ?? null, $row);
                 $accessoryFee = $getCellValue($columnMapping['accessory_fee'] ?? null, $row);
@@ -1100,11 +1119,30 @@ if ($headerRowIndex === -1) {
              ],
              'Tunjangan Kesehatan' => $payroll->health_allowance,
              'Tunjangan Jabatan' => $payroll->position_allowance,
-             'Lembur' => [
-                 'rate' => $payroll->overtime_rate,
-                 'hours' => $payroll->overtime_hours,
-                 'amount' => $payroll->overtime_amount,
-             ],
+         ];
+         
+         // Auto-correct swapped overtime for existing drafts
+         $oRate = (float) $payroll->overtime_rate;
+         $oHours = (float) $payroll->overtime_hours;
+         $oAmount = (float) $payroll->overtime_amount;
+         
+         if ($oHours > 500 && $oAmount <= 500) {
+             $temp = $oAmount;
+             $oAmount = $oHours;
+             $oHours = $temp;
+             // Try to infer rate if rate is 0
+             if ($oRate <= 0 && $oHours > 0) {
+                 $oRate = $oAmount / $oHours;
+             }
+         }
+         
+         $formatted['allowances']['Lembur'] = [
+             'rate' => $oRate,
+             'hours' => $oHours,
+             'amount' => $oAmount,
+         ];
+
+         $formatted['allowances'] += [
              'Target Koli' => $payroll->target_koli ?? 0,
              'Fee Aksesoris' => $payroll->accessory_fee ?? 0,
              'Backup' => $payroll->backup ?? 0,

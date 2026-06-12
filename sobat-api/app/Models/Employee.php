@@ -25,6 +25,7 @@ class Employee extends Model
         'department',
         'level',
         'basic_salary',
+        'mandatory_overtime_amount',
         'status',
         'leave_quota',
         'employment_status',

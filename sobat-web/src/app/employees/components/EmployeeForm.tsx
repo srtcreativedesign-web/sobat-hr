@@ -284,6 +284,10 @@ export default function EmployeeForm({ isOpen, onClose, onSuccess, initialData, 
                                     <input type="number" name="basic_salary" value={formData.basic_salary || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none text-gray-900" />
                                 </div>
                                 <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Lembur Wajib (Nominal)</label>
+                                    <input type="number" name="mandatory_overtime_amount" value={formData.mandatory_overtime_amount || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none text-gray-900" />
+                                </div>
+                                <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Nama Atasan Langsung</label>
                                     <input type="text" name="supervisor_name" value={formData.supervisor_name || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none text-gray-900" />
                                 </div>

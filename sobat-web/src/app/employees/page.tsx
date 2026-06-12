@@ -42,6 +42,7 @@ interface Employee {
   supervisor_name?: string;
   supervisor_position?: string;
   basic_salary?: number;
+  mandatory_overtime_amount?: number;
   employment_status?: string;
   contract_end_date?: string;
 }
@@ -750,6 +751,10 @@ export default function EmployeesPage() {
                     <div>
                       <label className="text-sm text-gray-500">Gaji Pokok</label>
                       <p className="font-medium text-gray-900">{formatCurrency(selectedEmployee.basic_salary)}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-gray-500">Lembur Wajib (Nominal)</label>
+                      <p className="font-medium text-gray-900">{formatCurrency(selectedEmployee.mandatory_overtime_amount)}</p>
                     </div>
                     <div>
                       <label className="text-sm text-gray-500">Status</label>

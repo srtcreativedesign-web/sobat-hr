@@ -92,6 +92,7 @@ class EmployeeController extends Controller
             'position' => 'nullable|string',
             'department' => 'nullable|string',
             'base_salary' => 'nullable|numeric|min:0',
+            'mandatory_overtime_amount' => 'nullable|numeric|min:0',
             'status' => 'nullable|in:active,inactive,resigned',
             'job_level' => 'nullable|string',
             'track' => 'nullable|in:operational,office',
@@ -155,6 +156,8 @@ class EmployeeController extends Controller
             $data['basic_salary'] = $validated['base_salary'];
         if (isset($validated['basic_salary']))
             $data['basic_salary'] = $validated['basic_salary'];
+        if (isset($validated['mandatory_overtime_amount']))
+            $data['mandatory_overtime_amount'] = $validated['mandatory_overtime_amount'];
         if (isset($validated['contract_end_date']))
             $data['contract_end_date'] = $validated['contract_end_date'];
         if (isset($validated['contract_type']))
@@ -327,6 +330,7 @@ class EmployeeController extends Controller
             'department' => 'nullable',
             'base_salary' => 'sometimes|numeric|min:0',
             'basic_salary' => 'sometimes|numeric|min:0',
+            'mandatory_overtime_amount' => 'nullable|numeric|min:0',
             'status' => 'sometimes|in:active,inactive,resigned',
             'contract_type' => 'sometimes|in:permanent,contract,probation,mitra',
             'employment_status' => 'sometimes|in:permanent,contract,probation,mitra',
@@ -411,6 +415,8 @@ class EmployeeController extends Controller
             $data['basic_salary'] = $validated['base_salary'];
         if (isset($validated['basic_salary']))
             $data['basic_salary'] = $validated['basic_salary'];
+        if (isset($validated['mandatory_overtime_amount']))
+            $data['mandatory_overtime_amount'] = $validated['mandatory_overtime_amount'];
         if (isset($validated['contract_end_date']))
             $data['contract_end_date'] = $validated['contract_end_date'];
         if (isset($validated['contract_type']))
