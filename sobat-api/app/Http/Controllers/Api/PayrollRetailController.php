@@ -142,14 +142,14 @@ class PayrollRetailController extends Controller
             
             // Detect header row (Look for "Nama Karyawan")
             $headerRowIndex = -1;
-            for ($row = 1; $row <= min(10, $highestRow); $row++) {
+            for ($row = 1; $row <= min(30, $highestRow); $row++) {
                 $rowIterator = $sheet->getRowIterator($row, $row)->current();
                 $cellIterator = $rowIterator->getCellIterator('A', $highestColumn);
                 $cellIterator->setIterateOnlyExistingCells(false);
                 
                 foreach ($cellIterator as $cell) {
-                    $cellValue = $cell->getValue();
-                    if ($cellValue && stripos($cellValue, 'Nama Karyawan') !== false) {
+                    $cellValue = (string) $cell->getValue();
+                    if ($cellValue && (stripos($cellValue, 'Nama Karyawan') !== false || stripos($cellValue, 'Nama Pegawai') !== false)) {
                         $headerRowIndex = $row;
                         break 2;
                     }
@@ -459,14 +459,14 @@ if ($headerRowIndex === -1) {
             $highestColumn = $sheet->getHighestColumn();
             
             $headerRowIndex = -1;
-            for ($row = 1; $row <= min(15, $highestRow); $row++) {
+            for ($row = 1; $row <= min(30, $highestRow); $row++) {
                 $rowIterator = $sheet->getRowIterator($row, $row)->current();
                 $cellIterator = $rowIterator->getCellIterator('A', $highestColumn);
                 $cellIterator->setIterateOnlyExistingCells(false);
                 
                 foreach ($cellIterator as $cell) {
-                    $cellValue = $cell->getValue();
-                    if ($cellValue && stripos($cellValue, 'Nama Karyawan') !== false) {
+                    $cellValue = (string) $cell->getValue();
+                    if ($cellValue && (stripos($cellValue, 'Nama Karyawan') !== false || stripos($cellValue, 'Nama Pegawai') !== false)) {
                         $headerRowIndex = $row;
                         break 2;
                     }
