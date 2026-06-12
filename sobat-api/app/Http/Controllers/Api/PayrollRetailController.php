@@ -739,9 +739,13 @@ if ($headerRowIndex === -1) {
             
             // Cache employees to avoid N+1 queries and prevent timeouts
             $employeeCache = [];
-            \App\Models\Employee::select('full_name', 'mandatory_overtime_amount')->get()->each(function($emp) use (&$employeeCache) {
+            $empColumns = ['full_name'];
+            if (Schema::hasColumn('employees', 'mandatory_overtime_amount')) {
+                $empColumns[] = 'mandatory_overtime_amount';
+            }
+            \App\Models\Employee::select($empColumns)->get()->each(function($emp) use (&$employeeCache) {
                 $cleanName = strtolower(trim(preg_replace('/\s+/', ' ', $emp->full_name)));
-                $employeeCache[$cleanName] = (float)$emp->mandatory_overtime_amount;
+                $employeeCache[$cleanName] = (float)($emp->mandatory_overtime_amount ?? 0);
             });
             
             $emptyRows = 0;
@@ -844,7 +848,7 @@ if ($headerRowIndex === -1) {
                 }
                 
                 // Log overtime debug info for first row only
-                if ($index === 0 || count($dataRows) === 0) {
+                if (count($dataRows) === 0) {
                     Log::info('Overtime Debug', [
                         'employee' => $employeeName,
                         'mapping_overtime_rate' => $columnMapping['overtime_rate'] ?? 'NOT MAPPED',
