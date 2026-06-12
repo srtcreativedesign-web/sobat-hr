@@ -994,7 +994,13 @@ if ($headerRowIndex === -1) {
                     continue;
                 }
                 
-                $this->getModel($request->division_type)->create(array_merge($row, [
+                // Filter row data to only include columns that exist in the target table
+                $model = $this->getModel($request->division_type);
+                $tableName = $model->getTable();
+                $tableColumns = Schema::getColumnListing($tableName);
+                $filteredRow = array_intersect_key($row, array_flip($tableColumns));
+                
+                $model->create(array_merge($filteredRow, [
                     'employee_id' => $employee->id,
                     'status' => 'draft',
                     'adjustment' => $row['adjustment'] ?? 0,
