@@ -802,7 +802,7 @@ if ($headerRowIndex === -1) {
                 $totalDeductions = $getCellValue($columnMapping['total_deduction'] ?? null, $row);
                 
                 if ($totalDeductions <= 0) {
-                    $totalDeductions = abs($deductionAbsent) + abs($deductionLate) + abs($deductionShortage) + abs($deductionLoan) + abs($deductionAdminFee) + abs($deductionBpjsTk);
+                    $totalDeductions = abs((float)$deductionAbsent) + abs((float)$deductionLate) + abs((float)$deductionShortage) + abs((float)$deductionLoan) + abs((float)$deductionAdminFee) + abs((float)$deductionBpjsTk);
                 }
                 
                 $grandTotal = $getCellValue($columnMapping['thp'] ?? null, $row);
@@ -810,7 +810,7 @@ if ($headerRowIndex === -1) {
                 $netSalary = $getCellValue($columnMapping['net_salary'] ?? null, $row);
                 
                 if ($netSalary <= 0 && $grandTotal > 0) {
-                    $netSalary = $grandTotal - $ewa;
+                    $netSalary = (float)$grandTotal - (float)$ewa;
                 }
                 
                 if ($totalSalary2 > 0) {
@@ -818,7 +818,7 @@ if ($headerRowIndex === -1) {
                 } elseif ($totalSalary1 > 0) {
                     $grossSalary = $totalSalary1;
                 } else {
-                    $grossSalary = $basicSalary + $mealAmount + $attendanceAmount + $transportAmount + $healthAllowance + $positionAllowance + $overtimeAmount + $holidayAllowance + $bonus + $adjustment + $backup + $insentifKehadiran + $targetKoli + $accessoryFee;
+                    $grossSalary = (float)$basicSalary + (float)$mealAmount + (float)$attendanceAmount + (float)$transportAmount + (float)$healthAllowance + (float)$positionAllowance + (float)$overtimeAmount + (float)$holidayAllowance + (float)$bonus + (float)$adjustment + (float)$backup + (float)$insentifKehadiran + (float)$targetKoli + (float)$accessoryFee;
                 }
                 
                 $dataRows[] = [
