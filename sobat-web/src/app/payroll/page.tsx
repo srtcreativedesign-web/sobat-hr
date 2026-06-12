@@ -400,14 +400,21 @@ Ada beberapa error:
       // Check structured allowances first
       if (payroll.allowances?.Lembur) {
         const lembur = payroll.allowances.Lembur;
+        let amount = 0;
         if (typeof lembur === 'object' && lembur.amount !== undefined) {
-          return parseFloat(lembur.amount) || 0;
+          amount += parseFloat(lembur.amount) || 0;
+        } else {
+          amount += parseFloat(lembur) || 0;
         }
-        return parseFloat(lembur) || 0;
+        if (payroll.allowances['Lembur Wajib']) {
+          const wajib = payroll.allowances['Lembur Wajib'];
+          amount += parseFloat(typeof wajib === 'object' ? wajib.amount : wajib) || 0;
+        }
+        return amount;
       }
-      return parseFloat(payroll.overtime_amount) || 0;
+      return (parseFloat(payroll.overtime_amount) || 0) + (parseFloat(payroll.mandatory_overtime_amount) || 0);
     }
-    return parseFloat(payroll.overtime_pay) || 0;
+    return (parseFloat(payroll.overtime_pay) || 0) + (parseFloat(payroll.mandatory_overtime_amount) || 0);
   };
 
   // Helper to calculate total deductions for FnB/MM/Ref payroll
