@@ -756,24 +756,24 @@ if ($headerRowIndex === -1) {
                 $attendanceAmount = $getCellValue($columnMapping['attendance_allowance'] ?? null, $row);
                 
                 // Fallback: Infer rate if missing
-                if ($attendanceRate <= 0 && $attendanceAmount > 0 && $daysPresent > 0) {
-                    $attendanceRate = $attendanceAmount / $daysPresent;
+                if ((float)$attendanceRate <= 0 && (float)$attendanceAmount > 0 && $daysPresent > 0) {
+                    $attendanceRate = (float)$attendanceAmount / $daysPresent;
                 }
                 
                 $mealRate = $getCellValue($columnMapping['meal_rate'] ?? null, $row);
                 $mealAmount = $getCellValue($columnMapping['meal_amount'] ?? null, $row);
                 
                 // Fallback: Infer meal rate if missing
-                if ($mealRate <= 0 && $mealAmount > 0 && $daysPresent > 0) {
-                    $mealRate = $mealAmount / $daysPresent;
+                if ((float)$mealRate <= 0 && (float)$mealAmount > 0 && $daysPresent > 0) {
+                    $mealRate = (float)$mealAmount / $daysPresent;
                 }
                 
                 $transportRate = $getCellValue($columnMapping['transport_rate'] ?? null, $row);
                 $transportAmount = $getCellValue($columnMapping['transport_amount'] ?? null, $row);
                 
                 // Fallback: Infer transport rate if missing
-                if ($transportRate <= 0 && $transportAmount > 0 && $daysPresent > 0) {
-                    $transportRate = $transportAmount / $daysPresent;
+                if ((float)$transportRate <= 0 && (float)$transportAmount > 0 && $daysPresent > 0) {
+                    $transportRate = (float)$transportAmount / $daysPresent;
                 }
                 
                 $healthAllowance = $getCellValue($columnMapping['health_allowance'] ?? null, $row);
@@ -784,8 +784,8 @@ if ($headerRowIndex === -1) {
                 $overtimeAmount = $getCellValue($columnMapping['overtime_amount'] ?? null, $row);
                 
                 // Fallback: Infer overtime rate if missing
-                if ($overtimeRate <= 0 && $overtimeAmount > 0 && $overtimeHours > 0) {
-                    $overtimeRate = $overtimeAmount / $overtimeHours;
+                if ((float)$overtimeRate <= 0 && (float)$overtimeAmount > 0 && (float)$overtimeHours > 0) {
+                    $overtimeRate = (float)$overtimeAmount / (float)$overtimeHours;
                 }
                 $targetKoli = $getCellValue($columnMapping['target_koli'] ?? null, $row);
                 $accessoryFee = $getCellValue($columnMapping['accessory_fee'] ?? null, $row);
