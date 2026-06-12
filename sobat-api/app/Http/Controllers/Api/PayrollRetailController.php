@@ -139,24 +139,8 @@ class PayrollRetailController extends Controller
                 }
                 return $value ?? 0;
             };
-            
-            // Detect header row (Look for "Nama Karyawan")
+            $sheet = $spreadsheet->getSheetByName('gabungan');
             $headerRowIndex = -1;
-            for ($row = 1; $row <= min(30, $highestRow); $row++) {
-                $rowIterator = $sheet->getRowIterator($row, $row)->current();
-                $cellIterator = $rowIterator->getCellIterator('A', $highestColumn);
-                $cellIterator->setIterateOnlyExistingCells(false);
-                
-                foreach ($cellIterator as $cell) {
-                    $cellValue = (string) $cell->getValue();
-                    if ($cellValue && (stripos($cellValue, 'Nama Karyawan') !== false || stripos($cellValue, 'Nama Pegawai') !== false)) {
-                        $headerRowIndex = $row;
-                        break 2;
-                    }
-                }
-            }
-            
-
 if ($headerRowIndex === -1) {
                 Log::warning("Hans Import - Header not found. Defaulting to Row 5.");
                 $headerRowIndex = 5;
@@ -451,24 +435,41 @@ if ($headerRowIndex === -1) {
             $spreadsheet = $reader->load($file->getRealPath());
             
             $sheet = $spreadsheet->getSheetByName('gabungan');
-            if (!$sheet) {
-                $sheet = $spreadsheet->getSheet(0);
+            $headerRowIndex = -1;
+            
+            if ($sheet) {
+                $highestRow = $sheet->getHighestRow();
+                $highestColumn = $sheet->getHighestColumn();
+                for ($row = 1; $row <= min(30, $highestRow); $row++) {
+                    $rowIterator = $sheet->getRowIterator($row, $row)->current();
+                    $cellIterator = $rowIterator->getCellIterator('A', $highestColumn);
+                    $cellIterator->setIterateOnlyExistingCells(false);
+                    foreach ($cellIterator as $cell) {
+                        $cellValue = (string) $cell->getValue();
+                        if ($cellValue && (stripos($cellValue, 'Nama Karyawan') !== false || stripos($cellValue, 'Nama Pegawai') !== false)) {
+                            $headerRowIndex = $row;
+                            break 2;
+                        }
+                    }
+                }
             }
             
-            $highestRow = $sheet->getHighestRow();
-            $highestColumn = $sheet->getHighestColumn();
-            
-            $headerRowIndex = -1;
-            for ($row = 1; $row <= min(30, $highestRow); $row++) {
-                $rowIterator = $sheet->getRowIterator($row, $row)->current();
-                $cellIterator = $rowIterator->getCellIterator('A', $highestColumn);
-                $cellIterator->setIterateOnlyExistingCells(false);
-                
-                foreach ($cellIterator as $cell) {
-                    $cellValue = (string) $cell->getValue();
-                    if ($cellValue && (stripos($cellValue, 'Nama Karyawan') !== false || stripos($cellValue, 'Nama Pegawai') !== false)) {
-                        $headerRowIndex = $row;
-                        break 2;
+            if ($headerRowIndex === -1) {
+                foreach ($spreadsheet->getAllSheets() as $testSheet) {
+                    $highestRow = $testSheet->getHighestRow();
+                    $highestColumn = $testSheet->getHighestColumn();
+                    for ($row = 1; $row <= min(30, $highestRow); $row++) {
+                        $rowIterator = $testSheet->getRowIterator($row, $row)->current();
+                        $cellIterator = $rowIterator->getCellIterator('A', $highestColumn);
+                        $cellIterator->setIterateOnlyExistingCells(false);
+                        foreach ($cellIterator as $cell) {
+                            $cellValue = (string) $cell->getValue();
+                            if ($cellValue && (stripos($cellValue, 'Nama Karyawan') !== false || stripos($cellValue, 'Nama Pegawai') !== false)) {
+                                $sheet = $testSheet;
+                                $headerRowIndex = $row;
+                                break 3;
+                            }
+                        }
                     }
                 }
             }
@@ -476,6 +477,9 @@ if ($headerRowIndex === -1) {
             if ($headerRowIndex === -1) {
                 return response()->json(['message' => 'Format Excel tidak dikenali. Pastikan ada kolom "Nama Karyawan".'], 422);
             }
+            
+            $highestRow = $sheet->getHighestRow();
+            $highestColumn = $sheet->getHighestColumn();
             
             $headerPatterns = [
                 'employee_name' => ['Nama Karyawan', 'Nama Pegawai'],
