@@ -691,6 +691,10 @@ if ($headerRowIndex === -1) {
         $columnMapping = json_decode($request->mapping, true);
         $headerRowIndex = (int) $request->headerRowIndex;
 
+        if (empty($columnMapping['employee_name'])) {
+            return response()->json(['message' => 'Kolom Nama Karyawan (employee_name) wajib dipetakan!'], 422);
+        }
+
         try {
             $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
             $reader->setReadDataOnly(true); 
