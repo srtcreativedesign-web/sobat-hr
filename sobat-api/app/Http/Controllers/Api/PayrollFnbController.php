@@ -177,6 +177,7 @@ class PayrollFnbController extends Controller
             $allHeaders = [];
             $allSubs = [];
             $colOrder = [];
+            $uiHeaders = [];
             
             $headerRow = $sheet->getRowIterator($headerRowIndex, $headerRowIndex)->current();
             $cellIterator = $headerRow->getCellIterator('A', $highestColumn);
@@ -185,8 +186,29 @@ class PayrollFnbController extends Controller
             foreach ($cellIterator as $cell) {
                 $col = $cell->getColumn();
                 $colOrder[] = $col;
-                $allHeaders[$col] = $cell->getValue();
-                $allSubs[$col] = $sheet->getCell($col . ($headerRowIndex + 1))->getValue();
+                
+                $headerValue = trim((string)$cell->getValue());
+                $subValue = trim((string)$sheet->getCell($col . ($headerRowIndex + 1))->getValue());
+                
+                $allHeaders[$col] = $headerValue;
+                $allSubs[$col] = $subValue;
+                
+                // Create a meaningful display title for the UI
+                $displayTitle = $headerValue;
+                if (empty($displayTitle)) {
+                    for ($i = count($colOrder) - 1; $i >= 0; $i--) {
+                        if (!empty($allHeaders[$colOrder[$i]])) {
+                            $displayTitle = $allHeaders[$colOrder[$i]];
+                            break;
+                        }
+                    }
+                }
+                
+                if (!empty($subValue)) {
+                    $displayTitle .= empty($displayTitle) ? $subValue : ' - ' . $subValue;
+                }
+                
+                $uiHeaders[$col] = trim($displayTitle);
             }
             
             // BUILD COLUMN MAPPING dynamically
@@ -287,14 +309,10 @@ class PayrollFnbController extends Controller
             $path = $file->storeAs('temp/payrolls', $filename, 'local');
             
             return response()->json([
-                'message' => 'Headers parsed successfully',
-                'headers' => $allHeaders,
-                'subHeaders' => $allSubs,
-                'mapping' => $columnMapping,
-                'file_name' => $file->getClientOriginalName(),
-                'file_path' => $path,
-                'raw_file_name' => $filename,
-                'header_row_index' => $headerRowIndex,
+                'requiresMapping' => true,
+                'headers' => $uiHeaders,
+                'default_mapping' => $columnMapping,
+                'headerRowIndex' => $headerRowIndex,
             ]);
 
         } catch (\Exception $e) {
@@ -309,25 +327,22 @@ class PayrollFnbController extends Controller
     public function simulateImport(Request $request)
     {
         $request->validate([
-            'file_path' => 'required|string',
-            'mapping' => 'required|array',
-            'header_row_index' => 'required|integer',
+            'file' => 'required|file|mimes:xlsx,xls',
+            'mapping' => 'required|string',
+            'headerRowIndex' => 'required|numeric',
         ]);
 
-        $filePath = storage_path('app/' . $request->file_path);
-        if (!file_exists($filePath)) {
-            return response()->json(['message' => 'File Excel tidak ditemukan. Silakan upload ulang.'], 404);
-        }
+        $file = $request->file('file');
+        $columnMapping = json_decode($request->mapping, true);
+        $headerRowIndex = (int) $request->headerRowIndex;
 
         try {
             $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
             $reader->setReadDataOnly(true);
-            $spreadsheet = $reader->load($filePath);
+            $spreadsheet = $reader->load($file->getRealPath());
             $sheet = $spreadsheet->getSheet(0);
             
             $highestRow = $sheet->getHighestRow();
-            $columnMapping = $request->mapping;
-            $headerRowIndex = $request->header_row_index;
             
             $getCellValue = function($col, $row) use ($sheet) {
                 if (!$col) return 0;
