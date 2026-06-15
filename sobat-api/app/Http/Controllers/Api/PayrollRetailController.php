@@ -30,9 +30,9 @@ class PayrollRetailController extends Controller
         $models = [
             'cellular' => \App\Models\PayrollCelluller::class,
             'hans' => \App\Models\PayrollHans::class,
-            'ref' => \App\Models\PayrollRef::class,
+            'reflexiology' => \App\Models\PayrollRef::class,
             'wrapping' => \App\Models\PayrollWrapping::class,
-            'mm' => \App\Models\PayrollMm::class,
+            'minimarket' => \App\Models\PayrollMm::class,
             'money_changer' => \App\Models\PayrollMoneyChanger::class,
         ];
 
