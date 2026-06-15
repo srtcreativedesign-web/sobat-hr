@@ -829,6 +829,11 @@ if ($headerRowIndex === -1) {
                     $mandatoryOvertimeAmount = 0;
                 }
                 
+                // Detect if they mapped the Rate column (which matches Master Data) to the Amount field
+                if ($mandatoryOvertimeAmount > 0 && $masterMandatoryOvertime > 0 && abs($mandatoryOvertimeAmount - $masterMandatoryOvertime) < 1) {
+                    $mandatoryOvertimeAmount = 0;
+                }
+                
                 // If excel didn't map the rate or it's 0, but Master Data has it, use Master Data as the RATE
                 if ($mandatoryOvertimeRate <= 0 && $masterMandatoryOvertime > 0) {
                     $mandatoryOvertimeRate = $masterMandatoryOvertime;
