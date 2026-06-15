@@ -213,8 +213,8 @@ class PayrollFnbController extends Controller
             
             // BUILD COLUMN MAPPING dynamically
             $headerPatterns = [
-                'nama_karyawan' => ['Nama Karyawan', 'Nama Pegawai'],
-                'no_rekening' => ['No Rekening', 'Rekening'],
+                'employee_name' => ['Nama Karyawan', 'Nama Pegawai'],
+                'account_number' => ['No Rekening', 'Rekening'],
                 'days_total' => [['Jumlah', 'Hari']],
                 'days_off' => ['Off'],
                 'days_sick' => ['Sakit'],
@@ -222,35 +222,35 @@ class PayrollFnbController extends Controller
                 'days_alpha' => ['Alfa', 'ALFA', 'Alpa'],
                 'days_leave' => ['Cuti'],
                 'days_present' => ['Ada', 'Hadir'],
-                'gaji_pokok' => ['Gaji Pokok', 'Gapok', 'Basic Salary'],
-                'kehadiran_rate' => [['Kehadiran', '/ Hari']],
-                'kehadiran_jumlah' => [['Kehadiran', 'Jumlah']],
+                'basic_salary' => ['Gaji Pokok', 'Gapok', 'Basic Salary'],
+                'attendance_rate' => [['Kehadiran', '/ Hari']],
+                'attendance_allowance' => [['Kehadiran', 'Jumlah']],
                 'transport_rate' => [['Transport', '/ Hari']],
-                'transport_jumlah' => [['Transport', 'Jumlah']],
-                'kesehatan' => ['Tunj. Kesehatan'],
-                'jabatan' => ['Tunj. Jabatan'],
-                'total_gaji' => ['Total Gaji            ( Rp )', 'Total Gaji'],
-                'lembur_rate' => [['Lembur', '/ Jam']],
-                'lembur_jam' => [['Lembur', 'Jam']],
-                'lembur_jumlah' => [['Lembur', 'Jumlah']],
+                'transport_amount' => [['Transport', 'Jumlah']],
+                'health_allowance' => ['Tunj. Kesehatan'],
+                'position_allowance' => ['Tunj. Jabatan'],
+                'total_salary_1' => ['Total Gaji            ( Rp )', 'Total Gaji'],
+                'overtime_rate' => [['Lembur', '/ Jam']],
+                'overtime_hours' => [['Lembur', 'Jam']],
+                'overtime_amount' => [['Lembur', 'Jumlah']],
                 'backup' => ['Backup'],
                 'insentif_kehadiran' => ['Insentif Kehadrian', 'Insentif Kehadiran'],
-                'insentif_lebaran' => ['Insentif Lebaran'],
+                'bonus' => ['Insentif Lebaran'],
                 'insentif' => ['Insentif '], // Added for Max 600
-                'total_gaji_bonus' => ['Total Gaji    (Rp)', 'Total Gaji & Bonus'],
-                'kebijakan_ho' => ['Kebijakan'],
-                'absen' => ['Absen 1X', 'Absen 1x'],
+                'total_salary_gross' => ['Total Gaji    (Rp)', 'Total Gaji & Bonus'],
+                'policy_ho' => ['Kebijakan'],
+                'deduction_absent' => ['Absen 1X', 'Absen 1x'],
                 'terlambat_menit' => ['terlambat (menit)'],
-                'terlambat' => ['Terlambat'],
-                'selisih' => ['Selisih SO', 'Selisih'],
-                'pinjaman' => ['Pinjaman'],
-                'adm_bank' => ['Adm Bank', 'Admin Bank'],
-                'bpjs_tk' => ['BPJS TK', 'BPJS Ketenagakerjaan'],
-                'jumlah_potongan' => [['Potongan', 'Jumlah'], 'Total Potongan'],
-                'grand_total' => ['Grand Total'],
-                'ewa' => ['EWA', 'Pinjaman ke Stafbook', 'Pinjaman stafbook'],
+                'deduction_late' => ['Terlambat'],
+                'shortage_deduction' => ['Selisih SO', 'Selisih'],
+                'deduction_loan' => ['Pinjaman'],
+                'deduction_admin_fee' => ['Adm Bank', 'Admin Bank'],
+                'deduction_bpjs_tk' => ['BPJS TK', 'BPJS Ketenagakerjaan'],
+                'total_deduction' => [['Potongan', 'Jumlah'], 'Total Potongan'],
+                'thp' => ['Grand Total'],
+                'ewa_amount' => ['EWA', 'Pinjaman ke Stafbook', 'Pinjaman stafbook'],
                 'potongan_ewa' => ['Potongan EWA'],
-                'payroll' => ['Total Gaji Ditransfer', 'Payroll', 'THP'],
+                'net_salary' => ['Total Gaji Ditransfer', 'Payroll', 'THP'],
                 'adjustment' => ['Adj', 'Penyesuaian', 'Kekurangan Gaji'],
             ];
             
@@ -373,7 +373,7 @@ class PayrollFnbController extends Controller
             $startDataRow = $headerRowIndex + 2; 
             
             for ($row = $startDataRow; $row <= $highestRow; $row++) {
-                $employeeName = $getCellValue($columnMapping['nama_karyawan'] ?? null, $row);
+                $employeeName = $getCellValue($columnMapping['employee_name'] ?? null, $row);
                 if (empty($employeeName) || !is_string($employeeName)) continue;
                 
                 $daysTotal = (int) $getCellValue($columnMapping['days_total'] ?? null, $row);
@@ -389,42 +389,42 @@ class PayrollFnbController extends Controller
                     if ($daysPresent < 0) $daysPresent = 0;
                 }
                 
-                $basicSalary = $getCellValue($columnMapping['gaji_pokok'] ?? null, $row);
-                $attendanceRate = $getCellValue($columnMapping['kehadiran_rate'] ?? null, $row);
-                $attendanceAmount = $getCellValue($columnMapping['kehadiran_jumlah'] ?? null, $row);
+                $basicSalary = $getCellValue($columnMapping['basic_salary'] ?? null, $row);
+                $attendanceRate = $getCellValue($columnMapping['attendance_rate'] ?? null, $row);
+                $attendanceAmount = $getCellValue($columnMapping['attendance_allowance'] ?? null, $row);
                 $transportRate = $getCellValue($columnMapping['transport_rate'] ?? null, $row);
-                $transportAmount = $getCellValue($columnMapping['transport_jumlah'] ?? null, $row);
-                $healthAllowance = $getCellValue($columnMapping['kesehatan'] ?? null, $row);
-                $positionAllowance = $getCellValue($columnMapping['jabatan'] ?? null, $row);
-                $totalSalary1 = $getCellValue($columnMapping['total_gaji'] ?? null, $row);
+                $transportAmount = $getCellValue($columnMapping['transport_amount'] ?? null, $row);
+                $healthAllowance = $getCellValue($columnMapping['health_allowance'] ?? null, $row);
+                $positionAllowance = $getCellValue($columnMapping['position_allowance'] ?? null, $row);
+                $totalSalary1 = $getCellValue($columnMapping['total_salary_1'] ?? null, $row);
                 
-                $overtimeRate = $getCellValue($columnMapping['lembur_rate'] ?? null, $row);
-                $overtimeHours = $getCellValue($columnMapping['lembur_jam'] ?? null, $row);
-                $overtimeAmount = $getCellValue($columnMapping['lembur_jumlah'] ?? null, $row);
+                $overtimeRate = $getCellValue($columnMapping['overtime_rate'] ?? null, $row);
+                $overtimeHours = $getCellValue($columnMapping['overtime_hours'] ?? null, $row);
+                $overtimeAmount = $getCellValue($columnMapping['overtime_amount'] ?? null, $row);
                 
                 $backup = $getCellValue($columnMapping['backup'] ?? null, $row);
                 $insentif = $getCellValue($columnMapping['insentif'] ?? null, $row);
                 $insentifKehadiran = $getCellValue($columnMapping['insentif_kehadiran'] ?? null, $row);
-                $holidayAllowance = $getCellValue($columnMapping['insentif_lebaran'] ?? null, $row);
+                $holidayAllowance = $getCellValue($columnMapping['bonus'] ?? null, $row);
                 $adjustment = $getCellValue($columnMapping['adjustment'] ?? null, $row);
-                $totalSalary2 = $getCellValue($columnMapping['total_gaji_bonus'] ?? null, $row);
-                $policyHo = $getCellValue($columnMapping['kebijakan_ho'] ?? null, $row);
+                $totalSalary2 = $getCellValue($columnMapping['total_salary_gross'] ?? null, $row);
+                $policyHo = $getCellValue($columnMapping['policy_ho'] ?? null, $row);
                 
-                $deductionAbsent = $getCellValue($columnMapping['absen'] ?? null, $row);
-                $deductionLate = $getCellValue($columnMapping['terlambat'] ?? null, $row);
-                $deductionShortage = $getCellValue($columnMapping['selisih'] ?? null, $row);
-                $deductionLoan = $getCellValue($columnMapping['pinjaman'] ?? null, $row);
-                $deductionAdminFee = $getCellValue($columnMapping['adm_bank'] ?? null, $row);
-                $deductionBpjsTk = $getCellValue($columnMapping['bpjs_tk'] ?? null, $row);
-                $totalDeductions = $getCellValue($columnMapping['jumlah_potongan'] ?? null, $row);
+                $deductionAbsent = $getCellValue($columnMapping['deduction_absent'] ?? null, $row);
+                $deductionLate = $getCellValue($columnMapping['deduction_late'] ?? null, $row);
+                $deductionShortage = $getCellValue($columnMapping['shortage_deduction'] ?? null, $row);
+                $deductionLoan = $getCellValue($columnMapping['deduction_loan'] ?? null, $row);
+                $deductionAdminFee = $getCellValue($columnMapping['deduction_admin_fee'] ?? null, $row);
+                $deductionBpjsTk = $getCellValue($columnMapping['deduction_bpjs_tk'] ?? null, $row);
+                $totalDeductions = $getCellValue($columnMapping['total_deduction'] ?? null, $row);
                 
                 if ($totalDeductions <= 0) {
                     $totalDeductions = abs($deductionAbsent) + abs($deductionLate) + abs($deductionShortage) + abs($deductionLoan) + abs($deductionAdminFee) + abs($deductionBpjsTk);
                 }
                 
-                $grandTotal = $getCellValue($columnMapping['grand_total'] ?? null, $row);
-                $ewa = $getCellValue($columnMapping['ewa'] ?? null, $row);
-                $netSalary = $getCellValue($columnMapping['payroll'] ?? null, $row);
+                $grandTotal = $getCellValue($columnMapping['thp'] ?? null, $row);
+                $ewa = $getCellValue($columnMapping['ewa_amount'] ?? null, $row);
+                $netSalary = $getCellValue($columnMapping['net_salary'] ?? null, $row);
                 
                 if ($netSalary <= 0 && $grandTotal > 0) {
                     $netSalary = $grandTotal;
@@ -441,7 +441,7 @@ class PayrollFnbController extends Controller
                 $parsed = [
                     'employee_name' => $employeeName,
                     'period' => $request->period ?? date('Y-m'),
-                    'account_number' => $getCellValue($columnMapping['no_rekening'] ?? null, $row),
+                    'account_number' => $getCellValue($columnMapping['account_number'] ?? null, $row),
                     'outlet_name' => $outletName,
                     
                     'days_total' => $daysTotal,

@@ -429,10 +429,13 @@ Ada beberapa error:
         (parseFloat(payroll.bonus) || 0) +
         (parseFloat(payroll.incentive) || 0) +
         (parseFloat(payroll.target_koli) || 0) +
-        (parseFloat(payroll.fee_aksesoris) || 0) +
+        (parseFloat(payroll.accessory_fee) || 0) +
         (parseFloat(payroll.adj_bpjs) || 0) +
-        (parseFloat(payroll.training_salary) || 0) +
-        (parseFloat(payroll.mandatory_overtime) || 0)
+        (parseFloat(payroll.gaji_training) || 0) +
+        (parseFloat(payroll.mandatory_overtime_amount) || 0) +
+        (parseFloat(payroll.backup) || 0) +
+        (parseFloat(payroll.insentif_kehadiran) || 0) +
+        (parseFloat(payroll.insentif) || 0)
       );
     }
     // Generic payroll - allowances is a single number
