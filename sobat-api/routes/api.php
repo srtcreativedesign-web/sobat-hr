@@ -129,7 +129,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // FnB Payroll routes (MUST be before apiResource to avoid route conflict)
     Route::prefix('payrolls/fnb')->group(function () {
         Route::get('/', [App\Http\Controllers\Api\PayrollFnbController::class, 'index']);
-        Route::post('/import', [App\Http\Controllers\Api\PayrollFnbController::class, 'import']);
+        Route::post('/import/parse-headers', [App\Http\Controllers\Api\PayrollFnbController::class, 'parseHeaders']);
+        Route::post('/import/simulate', [App\Http\Controllers\Api\PayrollFnbController::class, 'simulateImport']);
         Route::post('/import/save', [App\Http\Controllers\Api\PayrollFnbController::class, 'saveImport']);
         Route::get('/{id}', [App\Http\Controllers\Api\PayrollFnbController::class, 'show']);
         Route::patch('/{id}/status', [App\Http\Controllers\Api\PayrollFnbController::class, 'updateStatus']);

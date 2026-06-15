@@ -134,9 +134,9 @@ class PayrollFnbController extends Controller
     }
 
     /**
-     * Import FnB payroll from Excel
+     * Parse Excel headers for FnB
      */
-    public function import(Request $request)
+    public function parseHeaders(Request $request)
     {
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls',
@@ -145,39 +145,13 @@ class PayrollFnbController extends Controller
         $file = $request->file('file');
 
         try {
-            // Use PhpSpreadsheet to read calculated values
             $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
-            $reader->setReadDataOnly(true); // Read calculated values, not formulas
+            $reader->setReadDataOnly(true);
             $spreadsheet = $reader->load($file->getRealPath());
             $sheet = $spreadsheet->getSheet(0);
             
             $highestRow = $sheet->getHighestRow();
             $highestColumn = $sheet->getHighestColumn();
-            
-            // Helper to get calculated cell value (null-safe)
-            $getCellValue = function($col, $row) use ($sheet) {
-                if (!$col) return 0;
-                try {
-                    $cell = $sheet->getCell($col . $row);
-                    $value = $cell->getCalculatedValue();
-                    
-                    if (is_numeric($value)) {
-                        return (float) $value;
-                    }
-                    
-                    if (is_string($value)) {
-                        $cleaned = preg_replace('/[^0-9\.\,\-]/', '', $value);
-                        if ($cleaned !== '' && is_numeric($cleaned)) {
-                            return (float) $cleaned;
-                        }
-                        return $value;
-                    }
-                    
-                    return $value ?? 0;
-                } catch (\Exception $e) {
-                    return 0;
-                }
-            };
             
             // Detect header row
             $headerRowIndex = -1;
@@ -188,8 +162,7 @@ class PayrollFnbController extends Controller
                 
                 foreach ($cellIterator as $cell) {
                     $cellValue = $cell->getValue();
-                    
-                    if ($cellValue && stripos($cellValue, 'Nama Karyawan') !== false) {
+                    if ($cellValue && (stripos((string)$cellValue, 'Nama Karyawan') !== false || stripos((string)$cellValue, 'Nama Pegawai') !== false)) {
                         $headerRowIndex = $row;
                         break 2;
                     }
@@ -200,7 +173,23 @@ class PayrollFnbController extends Controller
                 return response()->json(['message' => 'Format Excel tidak dikenali. Pastikan ada kolom "Nama Karyawan".'], 422);
             }
             
-            // BUILD COLUMN MAPPING dynamically from headers
+            // Build header lookup
+            $allHeaders = [];
+            $allSubs = [];
+            $colOrder = [];
+            
+            $headerRow = $sheet->getRowIterator($headerRowIndex, $headerRowIndex)->current();
+            $cellIterator = $headerRow->getCellIterator('A', $highestColumn);
+            $cellIterator->setIterateOnlyExistingCells(false);
+            
+            foreach ($cellIterator as $cell) {
+                $col = $cell->getColumn();
+                $colOrder[] = $col;
+                $allHeaders[$col] = $cell->getValue();
+                $allSubs[$col] = $sheet->getCell($col . ($headerRowIndex + 1))->getValue();
+            }
+            
+            // BUILD COLUMN MAPPING dynamically
             $headerPatterns = [
                 'nama_karyawan' => ['Nama Karyawan', 'Nama Pegawai'],
                 'no_rekening' => ['No Rekening', 'Rekening'],
@@ -243,44 +232,23 @@ class PayrollFnbController extends Controller
                 'adjustment' => ['Adj', 'Penyesuaian', 'Kekurangan Gaji'],
             ];
             
-            // Build header lookup (supports merged cells)
-            $allHeaders = [];
-            $allSubs = [];
-            $colOrder = [];
-            
-            $headerRow = $sheet->getRowIterator($headerRowIndex, $headerRowIndex)->current();
-            $cellIterator = $headerRow->getCellIterator('A', $highestColumn);
-            $cellIterator->setIterateOnlyExistingCells(false);
-            
-            foreach ($cellIterator as $cell) {
-                $col = $cell->getColumn();
-                $colOrder[] = $col;
-                $allHeaders[$col] = $cell->getValue();
-                $allSubs[$col] = $sheet->getCell($col . ($headerRowIndex + 1))->getValue();
-            }
-            
             $columnMapping = [];
-            $lastHeader = '';
-            $usedColumns = []; // Track used columns to prevent double-mapping (like U for both rate and jam)
+            $usedColumns = [];
             
             foreach ($headerPatterns as $key => $patterns) {
                 $alternativePatterns = is_array($patterns) ? $patterns : [$patterns];
-                
                 foreach ($alternativePatterns as $pattern) {
                     $matched = false;
-                    
                     foreach ($colOrder as $col) {
                         if (in_array($col, $usedColumns)) continue;
                         
                         $headerValue = $allHeaders[$col];
                         $unitsValue = $allSubs[$col];
                         
-                        // Proper merged cell resolution
                         $effectiveHeader = '';
                         if (!empty($headerValue)) {
                             $effectiveHeader = $headerValue;
                         } else {
-                            // Find the last non-empty header before this col
                             foreach ($colOrder as $c) {
                                 if (!empty($allHeaders[$c])) $effectiveHeader = $allHeaders[$c];
                                 if ($c === $col) break;
@@ -289,13 +257,10 @@ class PayrollFnbController extends Controller
                         
                         if (is_array($pattern)) {
                             $headerMatch = $effectiveHeader && stripos($effectiveHeader, $pattern[0]) !== false;
-                            $unitsMatch = $unitsValue && stripos($unitsValue, $pattern[1]) !== false;
-                            
-                            // Prevent 'Jam' matching '/ Jam' by checking exact match
-                            if ($pattern[1] === 'Jam' && $unitsMatch && stripos($unitsValue, '/ Jam') !== false) {
+                            $unitsMatch = $unitsValue && stripos((string)$unitsValue, $pattern[1]) !== false;
+                            if ($pattern[1] === 'Jam' && $unitsMatch && stripos((string)$unitsValue, '/ Jam') !== false) {
                                 $unitsMatch = false; 
                             }
-                            
                             if ($headerMatch && $unitsMatch) {
                                 $columnMapping[$key] = $col;
                                 $usedColumns[] = $col;
@@ -304,8 +269,7 @@ class PayrollFnbController extends Controller
                             }
                         } else {
                             $matchedHeader = $effectiveHeader && stripos($effectiveHeader, $pattern) !== false;
-                            $matchedSub = $unitsValue && stripos($unitsValue, $pattern) !== false;
-                            
+                            $matchedSub = $unitsValue && stripos((string)$unitsValue, $pattern) !== false;
                             if ($matchedHeader || $matchedSub) {
                                 $columnMapping[$key] = $col;
                                 $usedColumns[] = $col;
@@ -314,13 +278,74 @@ class PayrollFnbController extends Controller
                             }
                         }
                     }
-                    if ($matched) break; // Move to next key in headerPatterns
+                    if ($matched) break;
                 }
             }
             
-            Log::info('FnB Column Mapping Detected', $columnMapping);
+            // Store file temporarily
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs('temp/payrolls', $filename, 'local');
             
-            // Detect outlet name from first cell
+            return response()->json([
+                'message' => 'Headers parsed successfully',
+                'headers' => $allHeaders,
+                'subHeaders' => $allSubs,
+                'mapping' => $columnMapping,
+                'file_name' => $file->getClientOriginalName(),
+                'file_path' => $path,
+                'raw_file_name' => $filename,
+                'header_row_index' => $headerRowIndex,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('FnB Payroll Parse Headers Error: ' . $e->getMessage());
+            return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Simulate FnB payroll import using mapped columns
+     */
+    public function simulateImport(Request $request)
+    {
+        $request->validate([
+            'file_path' => 'required|string',
+            'mapping' => 'required|array',
+            'header_row_index' => 'required|integer',
+        ]);
+
+        $filePath = storage_path('app/' . $request->file_path);
+        if (!file_exists($filePath)) {
+            return response()->json(['message' => 'File Excel tidak ditemukan. Silakan upload ulang.'], 404);
+        }
+
+        try {
+            $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
+            $reader->setReadDataOnly(true);
+            $spreadsheet = $reader->load($filePath);
+            $sheet = $spreadsheet->getSheet(0);
+            
+            $highestRow = $sheet->getHighestRow();
+            $columnMapping = $request->mapping;
+            $headerRowIndex = $request->header_row_index;
+            
+            $getCellValue = function($col, $row) use ($sheet) {
+                if (!$col) return 0;
+                try {
+                    $cell = $sheet->getCell($col . $row);
+                    $value = $cell->getCalculatedValue();
+                    if (is_numeric($value)) return (float) $value;
+                    if (is_string($value)) {
+                        $cleaned = preg_replace('/[^0-9\.\,\-]/', '', $value);
+                        if ($cleaned !== '' && is_numeric($cleaned)) return (float) $cleaned;
+                        return $value;
+                    }
+                    return $value ?? 0;
+                } catch (\Exception $e) {
+                    return 0;
+                }
+            };
+            
             $firstCell = $sheet->getCell('A1')->getValue();
             $outletName = 'FnB';
             if ($firstCell && stripos($firstCell, 'Tung Tau') !== false) {
@@ -330,15 +355,12 @@ class PayrollFnbController extends Controller
             }
             
             $dataRows = [];
-            $startDataRow = $headerRowIndex + 2; // Skip header and units row
+            $startDataRow = $headerRowIndex + 2; 
             
             for ($row = $startDataRow; $row <= $highestRow; $row++) {
                 $employeeName = $getCellValue($columnMapping['nama_karyawan'] ?? null, $row);
-                
-                // Skip if no employee name
                 if (empty($employeeName) || !is_string($employeeName)) continue;
                 
-                // Read all values dynamically
                 $daysTotal = (int) $getCellValue($columnMapping['days_total'] ?? null, $row);
                 $daysOff = (int) $getCellValue($columnMapping['days_off'] ?? null, $row);
                 $daysSick = (int) $getCellValue($columnMapping['days_sick'] ?? null, $row);
@@ -347,21 +369,18 @@ class PayrollFnbController extends Controller
                 $daysLeave = (int) $getCellValue($columnMapping['days_leave'] ?? null, $row);
                 $daysPresent = (int) $getCellValue($columnMapping['days_present'] ?? null, $row);
                 
-                // If days_present not detected, calculate it
                 if ($daysPresent <= 0 && $daysTotal > 0) {
                     $daysPresent = $daysTotal - $daysOff - $daysSick - $daysPermission - $daysAlpha - $daysLeave;
                     if ($daysPresent < 0) $daysPresent = 0;
                 }
                 
                 $basicSalary = $getCellValue($columnMapping['gaji_pokok'] ?? null, $row);
-                
                 $attendanceRate = $getCellValue($columnMapping['kehadiran_rate'] ?? null, $row);
                 $attendanceAmount = $getCellValue($columnMapping['kehadiran_jumlah'] ?? null, $row);
                 $transportRate = $getCellValue($columnMapping['transport_rate'] ?? null, $row);
                 $transportAmount = $getCellValue($columnMapping['transport_jumlah'] ?? null, $row);
                 $healthAllowance = $getCellValue($columnMapping['kesehatan'] ?? null, $row);
                 $positionAllowance = $getCellValue($columnMapping['jabatan'] ?? null, $row);
-                
                 $totalSalary1 = $getCellValue($columnMapping['total_gaji'] ?? null, $row);
                 
                 $overtimeRate = $getCellValue($columnMapping['lembur_rate'] ?? null, $row);
@@ -369,11 +388,10 @@ class PayrollFnbController extends Controller
                 $overtimeAmount = $getCellValue($columnMapping['lembur_jumlah'] ?? null, $row);
                 
                 $backup = $getCellValue($columnMapping['backup'] ?? null, $row);
-                $insentif = $getCellValue($columnMapping['insentif'] ?? null, $row); // For max 600
+                $insentif = $getCellValue($columnMapping['insentif'] ?? null, $row);
                 $insentifKehadiran = $getCellValue($columnMapping['insentif_kehadiran'] ?? null, $row);
                 $holidayAllowance = $getCellValue($columnMapping['insentif_lebaran'] ?? null, $row);
                 $adjustment = $getCellValue($columnMapping['adjustment'] ?? null, $row);
-                
                 $totalSalary2 = $getCellValue($columnMapping['total_gaji_bonus'] ?? null, $row);
                 $policyHo = $getCellValue($columnMapping['kebijakan_ho'] ?? null, $row);
                 
@@ -383,23 +401,20 @@ class PayrollFnbController extends Controller
                 $deductionLoan = $getCellValue($columnMapping['pinjaman'] ?? null, $row);
                 $deductionAdminFee = $getCellValue($columnMapping['adm_bank'] ?? null, $row);
                 $deductionBpjsTk = $getCellValue($columnMapping['bpjs_tk'] ?? null, $row);
-                
                 $totalDeductions = $getCellValue($columnMapping['jumlah_potongan'] ?? null, $row);
                 
-                // Fallback: calculate total deductions from individual items if not detected
                 if ($totalDeductions <= 0) {
                     $totalDeductions = abs($deductionAbsent) + abs($deductionLate) + abs($deductionShortage) + abs($deductionLoan) + abs($deductionAdminFee) + abs($deductionBpjsTk);
                 }
+                
                 $grandTotal = $getCellValue($columnMapping['grand_total'] ?? null, $row);
                 $ewa = $getCellValue($columnMapping['ewa'] ?? null, $row);
                 $netSalary = $getCellValue($columnMapping['payroll'] ?? null, $row);
                 
-                // Fallback: if net_salary is 0 but grand_total exists
                 if ($netSalary <= 0 && $grandTotal > 0) {
                     $netSalary = $grandTotal;
                 }
                 
-                // Use best available gross salary
                 if ($totalSalary2 > 0) {
                     $grossSalary = $totalSalary2;
                 } elseif ($totalSalary1 > 0) {
@@ -414,7 +429,6 @@ class PayrollFnbController extends Controller
                     'account_number' => $getCellValue($columnMapping['no_rekening'] ?? null, $row),
                     'outlet_name' => $outletName,
                     
-                    // Attendance
                     'days_total' => $daysTotal,
                     'days_off' => $daysOff,
                     'days_sick' => $daysSick,
@@ -423,7 +437,6 @@ class PayrollFnbController extends Controller
                     'days_leave' => $daysLeave,
                     'days_present' => $daysPresent,
                     
-                    // Salary
                     'basic_salary' => $basicSalary,
                     'attendance_rate' => $attendanceRate,
                     'attendance_amount' => $attendanceAmount,
@@ -433,20 +446,17 @@ class PayrollFnbController extends Controller
                     'position_allowance' => $positionAllowance,
                     'total_salary_1' => $totalSalary1,
                     
-                    // Overtime
                     'overtime_rate' => $overtimeRate,
                     'overtime_hours' => $overtimeHours,
                     'overtime_amount' => $overtimeAmount,
                     
-                    // Other Income
                     'backup' => $backup,
                     'insentif_kehadiran' => $insentifKehadiran,
                     'holiday_allowance' => $holidayAllowance,
                     'adjustment' => $adjustment,
-                    'total_salary_2' => $grossSalary, // Frontend uses total_salary_2 as gross_salary
+                    'total_salary_2' => $grossSalary,
                     'policy_ho' => $policyHo,
                     
-                    // Deductions
                     'deduction_absent' => $deductionAbsent,
                     'deduction_late' => $deductionLate,
                     'deduction_shortage' => $deductionShortage,
@@ -455,7 +465,6 @@ class PayrollFnbController extends Controller
                     'deduction_bpjs_tk' => $deductionBpjsTk,
                     'total_deductions' => $totalDeductions,
                     
-                    // Finals
                     'grand_total' => $grandTotal,
                     'ewa_amount' => $ewa,
                     'net_salary' => $netSalary,
@@ -465,17 +474,16 @@ class PayrollFnbController extends Controller
             }
 
             return response()->json([
-                'message' => 'File parsed successfully',
-                'file_name' => $file->getClientOriginalName(),
-                'rows_count' => count($dataRows),
+                'message' => 'Simulasi berhasil',
                 'rows' => $dataRows,
             ]);
 
         } catch (\Exception $e) {
-            Log::error('FnB Payroll Import Error: ' . $e->getMessage());
+            Log::error('FnB Payroll Simulate Error: ' . $e->getMessage());
             return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
+
 
     /**
      * Save imported FnB payroll data

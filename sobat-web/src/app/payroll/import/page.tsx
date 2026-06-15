@@ -220,11 +220,10 @@ export default function ImportPayrollPage() {
       // Use division-specific import endpoint
       let importEndpoint = '';
       if (selectedDivision === 'office') importEndpoint = '/payrolls/ho/import'; // Use HO endpoint
-      if (selectedDivision === 'fnb') importEndpoint = '/payrolls/fnb/import';
       if (selectedDivision === 'maximum') importEndpoint = '/payrolls/maximum/import';
       if (selectedDivision === 'tungtau') importEndpoint = '/payrolls/tungtau/import';
-      if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) {
-        importEndpoint = '/payrolls/retail/import/parse-headers';
+      if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer', 'fnb'].includes(selectedDivision)) {
+        importEndpoint = selectedDivision === 'fnb' ? '/payrolls/fnb/import/parse-headers' : '/payrolls/retail/import/parse-headers';
         formData.append('division_type', selectedDivision);
       }
 
@@ -287,7 +286,9 @@ Ada beberapa error:
         simFormData.append('period', period);
       }
       
-      const simulateResponse = await apiClient.post('/payrolls/retail/import/simulate', simFormData, {
+      simFormData.append('division_type', selectedDivision);
+      const simulateEndpoint = selectedDivision === 'fnb' ? '/payrolls/fnb/import/simulate' : '/payrolls/retail/import/simulate';
+      const simulateResponse = await apiClient.post(simulateEndpoint, simFormData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       const data = simulateResponse.data;
