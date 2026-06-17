@@ -174,12 +174,6 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       roles: ['super_admin'],
     },
     {
-      name: 'Reset Requests',
-      href: '/admin/reset-requests',
-      icon: <RotateCcw />,
-      roles: ['super_admin', 'admin_cabang'],
-    },
-    {
       name: 'Announcements',
       href: '/announcements',
       icon: <Megaphone />,
