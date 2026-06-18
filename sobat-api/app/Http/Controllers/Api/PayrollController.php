@@ -235,10 +235,18 @@ class PayrollController extends Controller
         }
         // IF WEB: Admin can see everything, others are filtered.
         else {
-            $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR, Role::HRD, Role::ADMIN_CABANG]);
+            $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR, Role::HRD, Role::ADMIN_CABANG, 'admin_hr']);
             if (! $isAdmin) {
                 $query->where('employee_id', $user->employee?->id);
                 $query->whereIn('status', ['approved', 'paid']);
+            }
+
+            if ($roleName === 'admin_hr') {
+                $query->whereHas('employee', function($q) {
+                    $q->where(function($subQ) {
+                        $subQ->where('track', '!=', 'office')->orWhereNull('track');
+                    });
+                });
             }
 
             // Allow admin on web to filter by specific employee_id if provided
@@ -393,10 +401,14 @@ class PayrollController extends Controller
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR]);
+        $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR, 'admin_hr']);
 
         if (! $isAdmin && $payroll->employee_id !== $user->employee?->id) {
             return response()->json(['message' => 'Anda tidak memiliki akses ke data payroll ini.'], 403);
+        }
+
+        if ($roleName === 'admin_hr' && $payroll->employee && strtolower($payroll->employee->track) === 'office') {
+            return response()->json(['message' => 'Anda tidak memiliki akses ke data payroll Head Office.'], 403);
         }
 
         $data = $payroll->toArray();

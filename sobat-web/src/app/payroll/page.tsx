@@ -40,7 +40,8 @@ interface Payroll {
 
 export default function PayrollPage() {
   const router = useRouter();
-  const { isAuthenticated, checkAuth } = useAuthStore();
+  const { isAuthenticated, checkAuth, user } = useAuthStore();
+  const isAdminHr = user?.role === 'admin_hr' || (user?.role as any)?.name === 'admin_hr';
   const [payrolls, setPayrolls] = useState<Payroll[]>([]);
   const [loading, setLoading] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -548,7 +549,7 @@ Ada beberapa error:
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#1C3ECA] text-sm font-medium"
             >
               <option value="all">Semua Divisi (Bulk Download)</option>
-              <option value="office">Office (Pusat)</option>
+              {!isAdminHr && <option value="office">Office (Pusat)</option>}
               <option value="fnb">FnB</option>
               <option value="tungtau">FnB Tungtau</option>
             <option value="maximum">FnB Maximum 600</option>

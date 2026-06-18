@@ -61,6 +61,13 @@ class RoleSeeder extends Seeder
                 'description' => 'COO dengan akses approval level 3 untuk pengajuan manager',
                 'approval_level' => 3,
             ],
+            // Admin HR
+            [
+                'name' => 'admin_hr',
+                'display_name' => 'Admin HR',
+                'description' => 'Admin HR dengan akses ke semua fitur kecuali Payroll HO',
+                'approval_level' => 3,
+            ],
             // Super Admin (Full Access)
             [
                 'name' => 'super_admin',
