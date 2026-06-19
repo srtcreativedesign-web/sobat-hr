@@ -80,8 +80,8 @@ class _GradientHeaderDelegate extends SliverPersistentHeaderDelegate {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Color(0xFF1C3ECA), // AppTheme.colorPrimary
-                Color(0xFF4F70E6), // Slightly lighter blue
+                Color.fromARGB(255, 5, 34, 150), // AppTheme.colorPrimary
+                Color.fromARGB(255, 9, 20, 66), // Slightly lighter blue
               ],
             ),
             borderRadius: BorderRadius.circular(24),

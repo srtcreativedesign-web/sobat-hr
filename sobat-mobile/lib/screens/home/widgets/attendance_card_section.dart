@@ -168,11 +168,11 @@ class _AttendanceCardSectionState extends State<AttendanceCardSection> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: const Color(0xFF2D2A6E),
+        color: const Color.fromARGB(255, 35, 98, 235),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2D2A6E).withValues(alpha: 0.2),
+            color: const Color.fromARGB(255, 1, 24, 119).withValues(alpha: 0.2),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -195,7 +195,7 @@ class _AttendanceCardSectionState extends State<AttendanceCardSection> {
                         Text(
                           formattedDate,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.7),
+                            color: const Color.fromARGB(255, 255, 255, 255).withValues(alpha: 0.7),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
@@ -215,7 +215,7 @@ class _AttendanceCardSectionState extends State<AttendanceCardSection> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
+                          color: const Color.fromARGB(255, 255, 255, 255).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Column(
@@ -251,7 +251,7 @@ class _AttendanceCardSectionState extends State<AttendanceCardSection> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: const BoxDecoration(
-              color: Color(0xFFF9F9F9),
+              color: Color.fromARGB(255, 246, 246, 248),
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(24),
                 bottomRight: Radius.circular(24),
@@ -294,8 +294,8 @@ class _AttendanceCardSectionState extends State<AttendanceCardSection> {
                             }
                           },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF2D2A6E),
+                      backgroundColor: const Color.fromARGB(255, 1, 129, 249),
+                      foregroundColor: const Color.fromARGB(255, 243, 243, 246),
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
