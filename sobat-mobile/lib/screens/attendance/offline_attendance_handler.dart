@@ -4,6 +4,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:geolocator_android/geolocator_android.dart';
+import 'package:geolocator_apple/geolocator_apple.dart';
 import 'package:dio/dio.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
@@ -562,9 +564,10 @@ class OfflineAttendanceHandler {
                     accuracy: LocationAccuracy.medium,
                     timeLimit: const Duration(seconds: 5),
                   )
-                : const LocationSettings(
+                : AndroidSettings(
                     accuracy: LocationAccuracy.medium,
-                    timeLimit: Duration(seconds: 5),
+                    forceLocationManager: true,
+                    timeLimit: const Duration(seconds: 5),
                   ),
           );
           lat = position.latitude;
@@ -602,9 +605,10 @@ class OfflineAttendanceHandler {
                 timeLimit: const Duration(seconds: 30),
                 distanceFilter: 10,
               )
-            : const LocationSettings(
+            : AndroidSettings(
                 accuracy: LocationAccuracy.high,
-                timeLimit: Duration(seconds: 30),
+                forceLocationManager: true,
+                timeLimit: const Duration(seconds: 30),
               ),
       );
 

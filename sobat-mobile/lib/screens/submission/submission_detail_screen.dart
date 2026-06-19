@@ -1,7 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
 import 'dart:convert'; // Added for base64Encode
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -20,6 +23,30 @@ class SubmissionDetailScreen extends StatefulWidget {
 
 class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
   bool _isDownloading = false;
+  bool _isUploading = false;
+  final ImagePicker _picker = ImagePicker();
+  Timer? _timer;
+  DateTime _now = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.submission['status'] == 'spl_open') {
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (mounted) {
+          setState(() {
+            _now = DateTime.now();
+          });
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   String _mapTypeToTitle(BuildContext context, String? type) {
     if (type == 'leave') return AppLocalizations.of(context)!.leave;
@@ -56,7 +83,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
       final filePath = '${dir.path}/Proof-REQ-$id.pdf';
 
       await dio.download(
-        '${ApiConfig.baseUrl}/requests/$id/proof',
+        '${ApiConfig.baseUrl}requests/$id/proof',
         filePath,
         options: Options(
           headers: {
@@ -155,6 +182,15 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
     } else if (status == 'rejected') {
       statusColor = Colors.red;
       statusLabel = AppLocalizations.of(context)!.rejected;
+    } else if (status == 'spl_approved') {
+      statusColor = Colors.blue;
+      statusLabel = 'SPL APPROVED (Menunggu Mulai)';
+    } else if (status == 'spl_open') {
+      statusColor = Colors.green;
+      statusLabel = 'LEMBUR BERJALAN';
+    } else if (status == 'pending_final') {
+      statusColor = Colors.orange;
+      statusLabel = 'MENUNGGU APPROVAL FINAL';
     } else {
       statusColor = Colors.orange;
       statusLabel = AppLocalizations.of(context)!.pending;
@@ -162,6 +198,20 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      bottomNavigationBar: ((status == 'spl_open' || status == 'pending_final' || status == 'approved') && widget.submission['type'] == 'overtime') ? Container(
+        padding: const EdgeInsets.all(16),
+        child: ElevatedButton(
+          onPressed: _isUploading ? null : _showUploadModal,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.colorCyan,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          child: _isUploading 
+              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white))
+              : Text(status == 'spl_open' ? 'Selesaikan Lembur' : 'Upload Foto Susulan', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        ),
+      ) : null,
       appBar: AppBar(
         title: Text(
           AppLocalizations.of(context)!.submissionDetailTitle,
@@ -206,6 +256,47 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                       letterSpacing: 1,
                     ),
                   ),
+                  if (status == 'spl_open' && widget.submission['detail']?['start_time'] != null) ...[
+                    const SizedBox(height: 12),
+                    Builder(
+                      builder: (context) {
+                        try {
+                          final stString = widget.submission['detail']['start_time'];
+                          final dtString = widget.submission['detail']['date'] ?? widget.submission['start_date'];
+                          final st = DateTime.parse('${dtString.split("T")[0]} $stString');
+                          final diff = _now.difference(st);
+                          final h = diff.inHours.toString().padLeft(2, '0');
+                          final m = diff.inMinutes.remainder(60).toString().padLeft(2, '0');
+                          final s = diff.inSeconds.remainder(60).toString().padLeft(2, '0');
+                          final durString = diff.isNegative ? '00:00:00' : '$h:$m:$s';
+                          return Column(
+                            children: [
+                              Text(
+                                durString,
+                                style: const TextStyle(
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 32,
+                                  fontFeatures: [FontFeature.tabularFigures()],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Jam Mulai: $stString  |  Saat Ini: ${DateFormat('HH:mm:ss').format(_now)}',
+                                style: const TextStyle(
+                                  color: Colors.black54,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          );
+                        } catch (e) {
+                          return const SizedBox();
+                        }
+                      },
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -462,5 +553,142 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
         ),
       ],
     );
+  }
+
+  void _showUploadModal() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Upload Bukti Selesai Lembur',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildSourceOption(
+                  icon: Icons.camera_alt,
+                  label: 'Kamera',
+                  onTap: () => _pickImage(ImageSource.camera),
+                ),
+                _buildSourceOption(
+                  icon: Icons.photo_library,
+                  label: 'Galeri',
+                  onTap: () => _pickImage(ImageSource.gallery),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSourceOption({required IconData icon, required String label, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: () {
+        Navigator.pop(context);
+        onTap();
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: 100,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 32, color: AppTheme.colorCyan),
+            const SizedBox(height: 8),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? picked = await _picker.pickImage(
+        source: source,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 30,
+      );
+      if (picked != null) {
+        _submitFinishOvertime(File(picked.path));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    }
+  }
+
+  Future<void> _submitFinishOvertime(File imageFile) async {
+    setState(() => _isUploading = true);
+    try {
+      final bytes = await imageFile.readAsBytes();
+      final base64String = base64Encode(bytes);
+      List<String> attachmentsList = ['data:image/jpeg;base64,$base64String'];
+      
+      final storage = const FlutterSecureStorage();
+      String? token = await storage.read(key: 'auth_token');
+
+      final dio = Dio();
+      final response = await dio.post(
+        '${ApiConfig.baseUrl}requests/${widget.submission['id']}/overtime-finish',
+        data: {
+          'proof_image': jsonEncode(attachmentsList)
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Lembur berhasil diselesaikan!'), backgroundColor: Colors.green),
+        );
+        Navigator.pop(context, true); // Return true to refresh list
+      }
+    } on DioException catch (e) {
+      if (mounted) {
+        String msg = e.message ?? 'Unknown error';
+        if (e.response?.data is Map) {
+          msg = e.response?.data['message'] ?? msg;
+        } else if (e.response?.statusCode == 413) {
+          msg = 'Ukuran file foto terlalu besar. Silakan coba lagi.';
+        } else if (e.response?.data is String && e.response!.data.toString().isNotEmpty) {
+          msg = 'Terjadi kesalahan pada server (${e.response?.statusCode}).';
+        }
+        
+        if (mounted) setState(() => _isUploading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal: $msg'), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+      }
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
   }
 }

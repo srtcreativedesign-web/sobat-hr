@@ -25,10 +25,14 @@ export default function ApprovalsPage() {
                 const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
                 // We will fetch approvals.
                 // Note: The ApprovalController needs to support filtering by "my pending action".
-                const query = new URLSearchParams({
-                    page: currentPage.toString(),
-                    status: activeTab === 'history' ? 'approved,rejected' : 'pending' // pending is default
-                });
+                const query = new URLSearchParams();
+                query.append('page', currentPage.toString());
+                
+                let fetchStatus = 'pending,pending_final';
+                if (activeTab === 'history') fetchStatus = 'approved,rejected';
+                if (activeTab === 'spl_open') fetchStatus = 'spl_open';
+                
+                query.append('status', fetchStatus);
 
                 if (activeType !== 'all') {
                     query.append('type', activeType);
@@ -95,6 +99,15 @@ export default function ApprovalsPage() {
                                 }`}
                         >
                             History
+                        </button>
+                        <button
+                            onClick={() => { setActiveTab('spl_open'); setCurrentPage(1); }}
+                            className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'spl_open'
+                                ? 'bg-white text-[#1C3ECA] shadow-sm'
+                                : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                        >
+                            SPL Open
                         </button>
                     </div>
                 </div>

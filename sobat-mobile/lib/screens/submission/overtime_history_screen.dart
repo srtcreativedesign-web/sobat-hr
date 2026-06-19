@@ -315,6 +315,15 @@ class _OvertimeHistoryScreenState extends State<OvertimeHistoryScreen> {
     } else if (status == 'rejected') {
       statusColor = Colors.red;
       statusLabel = loc.rejected;
+    } else if (status == 'spl_open') {
+      statusColor = Colors.green;
+      statusLabel = 'LEMBUR BERJALAN';
+    } else if (status == 'spl_approved') {
+      statusColor = Colors.blue;
+      statusLabel = 'MENUNGGU MULAI';
+    } else if (status == 'pending_final') {
+      statusColor = Colors.orange;
+      statusLabel = 'MENUNGGU FINAL';
     } else {
       statusColor = Colors.orange;
       statusLabel = loc.pending;
@@ -335,7 +344,8 @@ class _OvertimeHistoryScreenState extends State<OvertimeHistoryScreen> {
     String timeInfo = '';
     if (item['overtime_detail'] != null) {
       final detail = item['overtime_detail'];
-      timeInfo = '${detail['start_time']} - ${detail['end_time']}';
+      final eTime = detail['end_time'] ?? '...';
+      timeInfo = '${detail['start_time']} - $eTime';
     }
 
     return Card(

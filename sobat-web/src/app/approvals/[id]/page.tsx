@@ -290,6 +290,38 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                             </div>
                                         </div>
                                     </>
+                                ) : request.type === 'overtime' && request.detail ? (
+                                    <>
+                                        <div className="space-y-1">
+                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Start Time</label>
+                                            <div className="font-semibold text-lg text-gray-900">{request.detail.start_time || '-'}</div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">End Time (Actual)</label>
+                                            <div className="font-semibold text-lg text-gray-900">{request.detail.end_time || '-'}</div>
+                                        </div>
+                                        
+                                        {/* Proof Image Section */}
+                                        {request.detail.proof_image_done && request.detail.proof_image_done.length > 0 && (
+                                            <div className="space-y-2 md:col-span-2 pt-4 border-t border-gray-100">
+                                                <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Bukti Selesai Lembur</label>
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-2">
+                                                    {request.detail.proof_image_done.map((img: string, idx: number) => (
+                                                        <a key={idx} href={`${process.env.NEXT_PUBLIC_API_URL}/storage/${img}`} target="_blank" rel="noopener noreferrer" className="block relative aspect-square rounded-xl overflow-hidden border border-gray-200 hover:border-[#1C3ECA] transition-colors shadow-sm">
+                                                            <img 
+                                                                src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${img}`} 
+                                                                alt={`Proof ${idx + 1}`} 
+                                                                className="object-cover w-full h-full"
+                                                            />
+                                                            <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+                                                                <span className="bg-white/90 text-[#1C3ECA] text-xs font-bold px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">Lihat Penuh</span>
+                                                            </div>
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
                                 ) : (
                                     <>
                                         <div className="space-y-1">
@@ -353,6 +385,48 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                         </div>
                     )}
 
+                    {/* Final Proof Image for Overtime */}
+                    {request.type === 'overtime' && request.detail?.proof_image_done && Array.isArray(request.detail.proof_image_done) && request.detail.proof_image_done.length > 0 && (
+                        <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100/50 p-8 mt-6">
+                            <h3 className="text-xl font-bold text-[#1C3ECA] mb-6 flex items-center gap-2">
+                                <svg className="w-5 h-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                Bukti Selesai Lembur
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {request.detail.proof_image_done.map((att: string, idx: number) => (
+                                    <div key={idx} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+                                        {typeof att === 'string' && att.startsWith('data:image') ? (
+                                            <img
+                                                src={att}
+                                                alt={`Final Proof ${idx + 1}`}
+                                                className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                                onClick={() => {
+                                                    const w = window.open("");
+                                                    w?.document.write('<img src="' + att + '" style="max-width:100%"/>');
+                                                }}
+                                            />
+                                        ) : (
+                                            <a href={att} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-4 hover:bg-gray-100 transition-colors">
+                                                <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
+                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
+                                                </div>
+                                                <div className="overflow-hidden">
+                                                    <p className="text-sm font-semibold text-gray-900 truncate">Proof {idx + 1}</p>
+                                                    <p className="text-xs text-gray-500">Click to view</p>
+                                                </div>
+                                            </a>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Right Column: Timeline & Actions */}
                     <div className="space-y-6">
                         {/* Timeline */}
@@ -361,7 +435,7 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                         </div>
 
                         {/* Action Panel - ONLY show if it's THIS user's turn */}
-                        {request.status === 'pending' && (() => {
+                        {['pending', 'pending_final'].includes(request.status) && (() => {
                             // Find the current pending step
                             const pendingStep = request.approvals?.find(a => a.status === 'pending');
 
@@ -371,7 +445,8 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                             // The backend modification prevented the action, so this is just UI.
 
                             // Optimization: Check simply if the user is the assigned approver for the current step.
-                            const isMyTurn = pendingStep && pendingStep.approver?.id === user?.employee?.id;
+                            const isAdmin = ['super_admin', 'admin', 'hrd'].includes(user?.role?.name || user?.role || '');
+                            const isMyTurn = isAdmin || (pendingStep && pendingStep.approver?.id === user?.employee?.id);
 
                             if (!isMyTurn) {
                                 return (

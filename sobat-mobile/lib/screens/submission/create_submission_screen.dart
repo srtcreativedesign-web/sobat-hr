@@ -353,6 +353,8 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
                         _buildDatePicker(),
                         const SizedBox(height: 20),
                         _buildTimeRangePicker(),
+                        const SizedBox(height: 20),
+                        _buildUploadButton(label: AppLocalizations.of(context)!.uploadProofLabel),
                       ] else if (widget.type == 'Reimbursement') ...[
                         _buildTextInput(
                           _titleCtrl,
@@ -570,28 +572,6 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
                     initialTime: TimeOfDay.now(),
                   );
                   if (picked != null) setState(() => _startTime = picked);
-                },
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              child: Icon(
-                Icons.horizontal_rule,
-                size: 20,
-                color: AppTheme.textLight,
-              ),
-            ),
-            Expanded(
-              child: _buildClickableInput(
-                icon: Icons.access_time_filled,
-                value: _endTime?.format(context) ?? AppLocalizations.of(context)!.endOvertime,
-                isPlaceholder: _endTime == null,
-                onTap: () async {
-                  final picked = await showTimePicker(
-                    context: context,
-                    initialTime: TimeOfDay.now(),
-                  );
-                  if (picked != null) setState(() => _endTime = picked);
                 },
               ),
             ),
@@ -1189,24 +1169,9 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
         };
 
         // Add Specific Fields
-        if (apiType == 'overtime' && _startTime != null && _endTime != null) {
+        if (apiType == 'overtime' && _startTime != null) {
           data['start_time'] =
               '${_startTime!.hour.toString().padLeft(2, "0")}:${_startTime!.minute.toString().padLeft(2, "0")}';
-          data['end_time'] =
-              '${_endTime!.hour.toString().padLeft(2, "0")}:${_endTime!.minute.toString().padLeft(2, "0")}';
-
-          final start = DateTime(
-            2024,
-            1,
-            1,
-            _startTime!.hour,
-            _startTime!.minute,
-          );
-          var end = DateTime(2024, 1, 1, _endTime!.hour, _endTime!.minute);
-          if (end.isBefore(start)) {
-            end = end.add(const Duration(days: 1));
-          }
-          data['duration'] = end.difference(start).inMinutes;
         }
 
         if (apiType == 'business_trip') {

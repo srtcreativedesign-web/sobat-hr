@@ -18,6 +18,7 @@ export const ROLES = {
   CREW: 'crew',
   STAFF: 'staff',
   TEAM_LEADER: 'team_leader',
+  PERSONALIA: 'personalia',
   DEVELOPER: 'developer',
 } as const;
 

@@ -9,6 +9,7 @@ import { STORAGE_KEYS } from '@/lib/config';
 
 interface Request {
     id: number;
+    request_id: number;
     employee_id: number;
     employee: {
         id: number;
@@ -255,7 +256,11 @@ export default function OvertimePage() {
                                     </tr>
                                 ) : (
                                     requests.map((req) => (
-                                        <tr key={req.id} className="hover:bg-[#1C3ECA]/5 transition-colors">
+                                        <tr 
+                                            key={req.id} 
+                                            className="hover:bg-[#1C3ECA]/5 transition-colors cursor-pointer"
+                                            onClick={() => router.push(`/approvals/${req.request_id}`)}
+                                        >
                                             <td className="px-6 py-4 text-sm font-medium text-[#1C3ECA]">
                                                 {req.employee?.full_name}
                                             </td>

@@ -90,9 +90,9 @@ class _SlideActionWidgetState extends State<SlideActionWidget>
       key: _containerKey,
       height: 56,
       decoration: BoxDecoration(
-        color: widget.backgroundColor.withOpacity(0.1),
+        color: widget.backgroundColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: widget.backgroundColor.withOpacity(0.3), width: 1.5),
+        border: Border.all(color: widget.backgroundColor.withValues(alpha: 0.3), width: 1.5),
       ),
       child: Stack(
         alignment: Alignment.centerLeft,
@@ -129,7 +129,7 @@ class _SlideActionWidgetState extends State<SlideActionWidget>
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: widget.backgroundColor.withOpacity(0.4),
+                      color: widget.backgroundColor.withValues(alpha: 0.4),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     )

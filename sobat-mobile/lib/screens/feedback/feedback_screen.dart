@@ -72,7 +72,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       }
 
       final response = await dio.post(
-        '${ApiConfig.baseUrl}/feedbacks',
+        '${ApiConfig.baseUrl}feedbacks',
         data: formData,
       );
 
