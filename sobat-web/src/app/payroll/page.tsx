@@ -960,23 +960,29 @@ Ada beberapa error:
                             if (!value || value === 0 || value === '0.00') return null;
 
                             // Handle nested objects (like Kehadiran, Transport, Lembur)
-                            if (typeof value === 'object' && value.amount) {
+                            if (typeof value === 'object' && value !== null) {
+                              const amount = parseFloat(value.amount || 0);
+                              if (isNaN(amount) || amount === 0) return null;
+
                               return (
                                 <div key={key} className="flex justify-between text-sm">
                                   <span className="text-gray-600">
                                     {key} {value.rate ? `(${formatCurrency(parseFloat(value.rate))} /hari)` : ''}
                                     {value.hours ? `(${value.hours} Jam)` : ''}
                                   </span>
-                                  <span className="font-medium text-gray-800">{formatCurrency(parseFloat(value.amount))}</span>
+                                  <span className="font-medium text-gray-800">{formatCurrency(amount)}</span>
                                 </div>
                               );
                             }
 
                             // Handle simple values
+                            const numValue = parseFloat(value);
+                            if (isNaN(numValue) || numValue === 0) return null;
+
                             return (
                               <div key={key} className="flex justify-between text-sm">
                                 <span className="text-gray-600">{key}</span>
-                                <span className="font-medium text-gray-800">{formatCurrency(parseFloat(value))}</span>
+                                <span className="font-medium text-gray-800">{formatCurrency(numValue)}</span>
                               </div>
                             );
                           })}
