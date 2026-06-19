@@ -1162,7 +1162,7 @@ Ada beberapa error:
                       <p className="text-indigo-100 text-sm font-medium">TOTAL DITRANSFER (PAYROLL)</p>
                       <p className="text-4xl font-black">
                         {formatCurrency(
-                          selectedDivision === 'cellular' && selectedPayroll.final_payment
+                          selectedDivision === 'cellular' && Number(selectedPayroll.final_payment) > 0
                             ? selectedPayroll.final_payment
                             : selectedPayroll.net_salary
                         )}
