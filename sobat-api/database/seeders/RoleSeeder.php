@@ -68,6 +68,13 @@ class RoleSeeder extends Seeder
                 'description' => 'Admin HR dengan akses ke semua fitur kecuali Payroll HO',
                 'approval_level' => 3,
             ],
+            // Personalia (Full Access except Payroll)
+            [
+                'name' => 'personalia',
+                'display_name' => 'Personalia',
+                'description' => 'Personalia dengan akses penuh kecuali modul payroll',
+                'approval_level' => null,
+            ],
             // Super Admin (Full Access)
             [
                 'name' => 'super_admin',

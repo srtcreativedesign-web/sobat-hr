@@ -285,7 +285,7 @@ class EmployeeController extends Controller
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::ADMIN_CABANG]);
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::ADMIN_CABANG, \App\Models\Role::PERSONALIA]);
 
         if (!$isAdmin && $employee->id !== $user->employee?->id) {
             return response()->json(['message' => 'Anda tidak memiliki akses ke data karyawan ini.'], 403);
@@ -304,7 +304,7 @@ class EmployeeController extends Controller
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::ADMIN_CABANG]);
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::ADMIN_CABANG, \App\Models\Role::PERSONALIA]);
 
         if (!$isAdmin && $employee->id !== $user->employee?->id) {
             return response()->json(['message' => 'Anda tidak memiliki akses untuk mengubah data karyawan ini.'], 403);
@@ -509,7 +509,7 @@ class EmployeeController extends Controller
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::ADMIN_CABANG]);
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::ADMIN_CABANG, \App\Models\Role::PERSONALIA]);
 
         if (!$isAdmin) {
             return response()->json(['message' => 'Hanya Admin yang dapat menghapus data karyawan.'], 403);
@@ -549,7 +549,7 @@ class EmployeeController extends Controller
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::ADMIN_CABANG]);
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::ADMIN_CABANG, \App\Models\Role::PERSONALIA]);
 
         if (!$isAdmin && $employee->id !== $user->employee?->id) {
             return response()->json(['message' => 'Anda tidak memiliki akses ke data payroll karyawan ini.'], 403);

@@ -16,9 +16,11 @@ class OvertimeDetail extends Model
         'end_time',
         'duration',
         'reason',
+        'proof_image_done',
     ];
 
     protected $casts = [
         'date' => 'date',
+        'proof_image_done' => 'array',
     ];
 }

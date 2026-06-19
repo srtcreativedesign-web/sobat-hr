@@ -22,7 +22,7 @@ class AttendanceController extends Controller
         // --- IDOR GUARD: Non-admin users can only see their own attendance ---
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::HRD, \App\Models\Role::ADMIN_CABANG]);
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::HRD, \App\Models\Role::ADMIN_CABANG, \App\Models\Role::PERSONALIA]);
 
         // EAGER LOADING: employee
         $with = ['employee.division'];
@@ -181,7 +181,9 @@ class AttendanceController extends Controller
             if ($trackType === 'operational' && !empty($validated['shift_start_time'])) {
                 $workStartTime = Carbon::parse($validated['date'] . ' ' . $validated['shift_start_time']);
 
-                if ($clockInTime->gt($workStartTime)) {
+                $toleranceTime = $workStartTime->copy()->addSeconds(59);
+
+                if ($clockInTime->gt($toleranceTime)) {
                     $lateDuration = abs($clockInTime->diffInMinutes($workStartTime));
                     $validated['late_duration'] = $lateDuration;
 
@@ -213,7 +215,9 @@ class AttendanceController extends Controller
                         $workStartTime = Carbon::parse($validated['date'] . ' ' . $defaultStartTime);
                     }
 
-                    if ($clockInTime->gt($workStartTime)) {
+                    $toleranceTime = $workStartTime->copy()->addSeconds(59);
+
+                    if ($clockInTime->gt($toleranceTime)) {
                         $lateDuration = abs($clockInTime->diffInMinutes($workStartTime));
                         $validated['late_duration'] = $lateDuration;
 
@@ -368,7 +372,7 @@ class AttendanceController extends Controller
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR]);
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::PERSONALIA]);
 
         if (!$isAdmin && $attendance->employee_id !== $user->employee?->id) {
             return response()->json(['message' => 'Anda tidak memiliki akses ke data absensi ini.'], 403);
@@ -392,7 +396,7 @@ class AttendanceController extends Controller
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR]);
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::PERSONALIA]);
 
         if (!$isAdmin && $attendance->employee_id !== $user->employee?->id) {
             return response()->json(['message' => 'Anda tidak memiliki akses untuk mengubah data absensi ini.'], 403);
@@ -482,7 +486,7 @@ class AttendanceController extends Controller
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR]);
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::PERSONALIA]);
 
         if (!$isAdmin) {
             return response()->json(['message' => 'Hanya Admin/HR yang dapat menghapus data absensi.'], 403);
@@ -669,7 +673,7 @@ class AttendanceController extends Controller
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR]);
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::PERSONALIA]);
 
         if (!$isAdmin) {
             return response()->json(['message' => 'Hanya Admin/HR yang dapat melakukan bulk approval.'], 403);

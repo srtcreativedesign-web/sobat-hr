@@ -23,7 +23,7 @@ class ApprovalController extends Controller
 
         // Check Role
         $roleName = $user->role ? $user->role->name : '';
-        $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD]);
+        $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD, Role::PERSONALIA]);
 
         if (!$isAdmin) {
              if (!$user->employee) {
@@ -71,7 +71,7 @@ class ApprovalController extends Controller
             // Check Role
             $user->load('role');
             $roleName = $user->role ? $user->role->name : '';
-            $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD]);
+            $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD, Role::PERSONALIA]);
 
             if (!$isAdmin) {
                  if (!$user->employee) {
@@ -81,6 +81,9 @@ class ApprovalController extends Controller
             }
 
             $approvals = $query->where('status', 'pending')
+                ->whereHasMorph('approvable', [\App\Models\RequestModel::class], function ($q) {
+                    $q->where('status', '!=', 'spl_open');
+                })
                 ->orderBy('created_at', 'desc')
                 ->paginate(20);
 

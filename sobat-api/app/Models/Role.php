@@ -22,6 +22,7 @@ class Role extends Model
     const CREW = 'crew';
     const STAFF = 'staff';
     const TEAM_LEADER = 'team_leader';
+    const PERSONALIA = 'personalia';
 
     protected $fillable = [
         'name',

@@ -59,7 +59,7 @@ class OrganizationController extends Controller
         // --- Authorization: Only admins can create organizations ---
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        if (!in_array($roleName, [\App\Models\Role::SUPER_ADMIN, \App\Models\Role::ADMIN, \App\Models\Role::ADMIN_CABANG])) {
+        if (!in_array($roleName, [\App\Models\Role::SUPER_ADMIN, \App\Models\Role::ADMIN, \App\Models\Role::ADMIN_CABANG, \App\Models\Role::PERSONALIA])) {
             return response()->json(['message' => 'Anda tidak memiliki akses untuk membuat organisasi.'], 403);
         }
 
@@ -88,7 +88,7 @@ class OrganizationController extends Controller
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::ADMIN_CABANG]);
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::ADMIN_CABANG, \App\Models\Role::PERSONALIA]);
 
         // Non-admin can only see their own division data if linked,
         // but since organizations are now separate from employees, 
@@ -106,7 +106,7 @@ class OrganizationController extends Controller
         // --- Authorization: Only admins can update organizations ---
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        if (!in_array($roleName, [\App\Models\Role::SUPER_ADMIN, \App\Models\Role::ADMIN, \App\Models\Role::ADMIN_CABANG])) {
+        if (!in_array($roleName, [\App\Models\Role::SUPER_ADMIN, \App\Models\Role::ADMIN, \App\Models\Role::ADMIN_CABANG, \App\Models\Role::PERSONALIA])) {
             return response()->json(['message' => 'Anda tidak memiliki akses untuk mengubah organisasi.'], 403);
         }
 
@@ -134,7 +134,7 @@ class OrganizationController extends Controller
         // --- Authorization: Only super_admin can delete organizations ---
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        if (!in_array($roleName, [\App\Models\Role::SUPER_ADMIN, \App\Models\Role::ADMIN])) {
+        if (!in_array($roleName, [\App\Models\Role::SUPER_ADMIN, \App\Models\Role::ADMIN, \App\Models\Role::PERSONALIA])) {
             return response()->json(['message' => 'Anda tidak memiliki akses untuk menghapus organisasi.'], 403);
         }
 

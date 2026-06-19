@@ -18,6 +18,11 @@ class ApprovalService
      */
     public function createApprovalSteps(Model $request, array $approverIds)
     {
+        // For overtime, duplicate the first approver (Supervisor) to approve SPL and Final
+        if ($request->type === 'overtime' && count($approverIds) > 0) {
+            array_splice($approverIds, 1, 0, [$approverIds[0]]);
+        }
+
         DB::transaction(function () use ($request, $approverIds) {
             foreach ($approverIds as $index => $approverId) {
                 Approval::create([
@@ -60,19 +65,34 @@ class ApprovalService
                 ->where('status', 'pending')
                 ->first();
 
+            $actorRole = $actor->user->role->name ?? '';
+            $isAdmin = in_array($actorRole, ['super_admin', 'admin', 'hrd']);
+
             if (! $currentStep) {
-                // Check if already approved?
-                $alreadyApproved = Approval::where('approvable_type', get_class($request))
-                    ->where('approvable_id', $request->id)
-                    ->where('approver_id', $actor->id)
-                    ->where('status', 'approved')
-                    ->exists();
+                if ($isAdmin) {
+                    $currentStep = Approval::where('approvable_type', get_class($request))
+                        ->where('approvable_id', $request->id)
+                        ->where('status', 'pending')
+                        ->orderBy('level', 'asc')
+                        ->first();
+                        
+                    if (!$currentStep) {
+                        throw new \Exception('Tidak ada tahap persetujuan yang pending.');
+                    }
+                } else {
+                    // Check if already approved?
+                    $alreadyApproved = Approval::where('approvable_type', get_class($request))
+                        ->where('approvable_id', $request->id)
+                        ->where('approver_id', $actor->id)
+                        ->where('status', 'approved')
+                        ->exists();
 
-                if ($alreadyApproved) {
-                    throw new \Exception('Anda sudah menyetujui pengajuan ini.');
+                    if ($alreadyApproved) {
+                        throw new \Exception('Anda sudah menyetujui pengajuan ini.');
+                    }
+
+                    throw new \Exception('Unauthorized or Invalid Approval Step. (Anda tidak memiliki akses untuk menyetujui saat ini)');
                 }
-
-                throw new \Exception('Unauthorized or Invalid Approval Step. (Anda tidak memiliki akses untuk menyetujui saat ini)');
             }
 
             // 2. Mark This Step as Approved
@@ -84,6 +104,13 @@ class ApprovalService
             ]);
 
             Log::info("Step Level {$currentStep->level} approved by {$actor->full_name}");
+
+            // INTERCEPT OVERTIME: Change status to spl_approved after first approval
+            if ($request->type === 'overtime' && $currentStep->level == 1) {
+                if ($request->status === 'pending') {
+                    $request->update(['status' => 'spl_approved']);
+                }
+            }
 
             // 3. Determine Next State
             // Check if there are any remaining pending approvals
@@ -167,8 +194,23 @@ class ApprovalService
                 ->where('approver_id', $actor->id)
                 ->first();
 
+            $actorRole = $actor->user->role->name ?? '';
+            $isAdmin = in_array($actorRole, ['super_admin', 'admin', 'hrd']);
+
             if (! $currentStep) {
-                throw new \Exception('Unauthorized Rejection.');
+                if ($isAdmin) {
+                    $currentStep = Approval::where('approvable_type', get_class($request))
+                        ->where('approvable_id', $request->id)
+                        ->where('status', 'pending')
+                        ->orderBy('level', 'asc')
+                        ->first();
+                        
+                    if (!$currentStep) {
+                        throw new \Exception('Tidak ada tahap persetujuan yang pending.');
+                    }
+                } else {
+                    throw new \Exception('Unauthorized Rejection.');
+                }
             }
 
             // 1. Mark Current Step Rejected
@@ -214,17 +256,31 @@ class ApprovalService
 
         Log::info("Determining approvers for Employee ID: {$requester->id} ({$requester->full_name}), Track: {$track}, Division ID: {$divisionId}");
 
+        $hasSpv = false;
         // Step 1: Supervisor (Priority if exists)
         if ($requester->supervisor_id) {
             $approvers[] = $requester->supervisor_id;
             Log::info("Added Direct Supervisor: {$requester->supervisor_id}");
-        } else {
-            // If no direct supervisor, use SPV as first step (common for both tracks)
-            $spv = $this->findApproverByRoleName('spv', $divisionId);
-            if ($spv) {
-                $approvers[] = $spv->id;
-                Log::info("Found SPV: {$spv->id} - {$spv->full_name}");
+            $hasSpv = true;
+        }
+
+        if (!$hasSpv) {
+            if ($request) {
+                // Mark the request if no SPV was found
+                $request->update([
+                    'description' => $request->description . "\n[Direct to Admin - No SPV]"
+                ]);
             }
+
+            // Route directly to admin or super admin
+            $approvers = [];
+            $admin = $this->findApproverByRoleName(['admin_hr', 'super_admin']);
+            if ($admin) {
+                $approvers[] = $admin->id;
+                Log::info("Routed directly to Admin/Super Admin: {$admin->id}");
+            }
+
+            return array_values(array_unique($approvers));
         }
 
         // Step 2: Manager Level (Track Specific)

@@ -27,7 +27,7 @@ Route::get('/public/divisions', [App\Http\Controllers\Api\DivisionController::cl
 Route::get('/organizations', [App\Http\Controllers\Api\OrganizationController::class, 'index']); // Public Organizations List
 Route::get('/organizations/divisions', [App\Http\Controllers\Api\OrganizationController::class, 'divisions']); // Public Divisions List
 
-Route::middleware(['auth:sanctum', 'role:super_admin,admin_cabang'])->group(function () {
+Route::middleware(['auth:sanctum', 'role:super_admin,admin_cabang,personalia'])->group(function () {
     Route::get('/admin/password-requests', [App\Http\Controllers\Api\PasswordResetController::class, 'index']);
     Route::post('/admin/password-requests/{id}/approve', [App\Http\Controllers\Api\PasswordResetController::class, 'approve']);
     Route::post('/admin/password-requests/{id}/reject', [App\Http\Controllers\Api\PasswordResetController::class, 'reject']);
@@ -90,7 +90,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/attendance/resolve-qr', [App\Http\Controllers\Api\OfflineSyncController::class, 'resolveQrCode']);
 
     // Offline Attendance Admin Routes
-    Route::middleware('role:super_admin,admin_cabang,hr')->group(function () {
+        Route::middleware('role:super_admin,admin_cabang,hr,personalia')->group(function () {
         Route::get('/attendance/offline-submissions', [App\Http\Controllers\Api\OfflineSyncController::class, 'getOfflineSubmissions']);
         Route::post('/attendance/offline-submissions/{id}/review', [App\Http\Controllers\Api\OfflineSyncController::class, 'reviewSubmission']);
         Route::get('/attendance/offline-statistics', [App\Http\Controllers\Api\OfflineSyncController::class, 'getStatistics']);
@@ -112,6 +112,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('requests', App\Http\Controllers\Api\RequestController::class);
     Route::post('/requests/{id}/submit', [App\Http\Controllers\Api\RequestController::class, 'submit']);
     Route::post('/requests/{id}/approve', [App\Http\Controllers\Api\RequestController::class, 'approve']);
+    Route::post('/requests/{id}/overtime-finish', [App\Http\Controllers\Api\RequestController::class, 'finishOvertime']);
     Route::post('/requests/{id}/reject', [App\Http\Controllers\Api\RequestController::class, 'reject']);
 
     // Manager-level request print routes (for offline COO approval)
@@ -259,7 +260,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Dashboard & Analytics (Super Admin)
-    Route::middleware('role:super_admin,admin_cabang')->group(function () {
+    Route::middleware('role:super_admin,admin_cabang,personalia')->group(function () {
         Route::get('/dashboard/analytics', [App\Http\Controllers\Api\DashboardController::class, 'analytics']);
         Route::get('/dashboard/turnover', [App\Http\Controllers\Api\DashboardController::class, 'turnover']);
         Route::get('/dashboard/attendance-heatmap', [App\Http\Controllers\Api\DashboardController::class, 'attendanceHeatmap']);
@@ -277,7 +278,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // AI Context Route
 
     // Staff Invitation routes (Admin only)
-    Route::middleware('role:super_admin,admin_cabang')->group(function () {
+    Route::middleware('role:super_admin,admin_cabang,personalia')->group(function () {
         Route::post('/staff/import', [App\Http\Controllers\StaffInvitationController::class, 'import']);
         Route::get('/staff/invitations', [App\Http\Controllers\StaffInvitationController::class, 'index']);
         Route::get('/staff/invitations/export', [App\Http\Controllers\StaffInvitationController::class, 'export']);

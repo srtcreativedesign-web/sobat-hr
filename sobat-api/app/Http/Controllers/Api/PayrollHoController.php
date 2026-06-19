@@ -16,7 +16,7 @@ class PayrollHoController extends Controller
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            if (auth()->check() && auth()->user()->role && strtolower(auth()->user()->role->name) === 'admin_hr') {
+            if (auth()->check() && auth()->user()->role && in_array(strtolower(auth()->user()->role->name), ['admin_hr', 'personalia'])) {
                 abort(403, 'Anda tidak memiliki akses ke Payroll Head Office.');
             }
             return $next($request);

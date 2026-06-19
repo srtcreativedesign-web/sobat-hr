@@ -13,7 +13,7 @@ class JobPositionController extends Controller
     {
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        if (!in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN, Role::ADMIN_CABANG, Role::HR])) {
+        if (!in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN, Role::ADMIN_CABANG, Role::HR, Role::PERSONALIA])) {
             return ['message' => 'Anda tidak memiliki akses untuk operasi ini.'];
         }
         return null;
@@ -74,7 +74,7 @@ class JobPositionController extends Controller
         // --- SECURITY GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::ADMIN_CABANG]);
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::ADMIN_CABANG, \App\Models\Role::PERSONALIA]);
 
         // Non-admin check (simplified: only allow self-position or if they are supervisor)
         if (!$isAdmin && $jobPosition->id !== $user->employee?->job_position_id) {

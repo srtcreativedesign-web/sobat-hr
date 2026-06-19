@@ -22,7 +22,7 @@ class RequestController extends Controller
 
         // Check Role
         $roleName = $user->role ? $user->role->name : '';
-        $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD, Role::ADMIN]);
+        $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD, Role::ADMIN, Role::PERSONALIA]);
 
         \Illuminate\Support\Facades\Log::info('User Info:', ['id' => $user->id, 'role' => $roleName, 'isAdmin' => $isAdmin]);
 
@@ -218,8 +218,8 @@ class RequestController extends Controller
                             'request_id' => $requestModel->id,
                             'date' => $request->start_date ?? $request->date, // Mobile sends start_date usually
                             'start_time' => $request->start_time,
-                            'end_time' => $request->end_time,
-                            'duration' => $request->duration,
+                            'end_time' => null,
+                            'duration' => null,
                             'reason' => $request->description,
                         ]);
                         break;
@@ -320,12 +320,22 @@ class RequestController extends Controller
 
     public function show(string $id)
     {
-        $requestModel = RequestModel::with(['employee', 'approvals.approver'])->findOrFail($id);
+        $requestModel = RequestModel::with([
+            'employee', 
+            'approvals.approver',
+            'leaveDetail',
+            'overtimeDetail',
+            'sickLeaveDetail',
+            'businessTripDetail',
+            'reimbursementDetail',
+            'assetDetail',
+            'resignationDetail'
+        ])->findOrFail($id);
 
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? $user->role->name : '';
-        $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD, Role::ADMIN]);
+        $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD, Role::ADMIN, Role::PERSONALIA]);
 
         if (! $isAdmin && $requestModel->employee_id !== $user->employee?->id) {
             return response()->json(['message' => 'Anda tidak memiliki akses ke data pengajuan ini.'], 403);
@@ -375,7 +385,7 @@ class RequestController extends Controller
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? $user->role->name : '';
-        $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD, Role::ADMIN]);
+        $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD, Role::ADMIN, Role::PERSONALIA]);
 
         if (! $isAdmin && $requestModel->employee_id !== $user->employee?->id) {
             return response()->json(['message' => 'Anda tidak memiliki akses untuk menghapus pengajuan ini.'], 403);
@@ -443,7 +453,7 @@ class RequestController extends Controller
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? $user->role->name : '';
-        $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD, Role::ADMIN]);
+        $isAdmin = in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN_CABANG, Role::HRD, Role::ADMIN, Role::PERSONALIA]);
 
         if (! $isAdmin && $requestModel->employee_id !== $user->employee?->id) {
             return response()->json(['message' => 'Anda tidak memiliki akses ke dokumen ini.'], 403);
@@ -531,6 +541,78 @@ class RequestController extends Controller
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 403);
         }
+    }
+
+    /**
+     * Finish overtime request (Employee uploads proof)
+     */
+    public function finishOvertime(Request $request, string $id, \App\Services\ApprovalService $approvalService)
+    {
+        $validated = $request->validate([
+            'proof_image' => 'required|json', // Base64 array
+        ]);
+
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($id, $validated, $approvalService) {
+            $requestModel = RequestModel::findOrFail($id);
+
+            if ($requestModel->type !== 'overtime') {
+                return response()->json(['message' => 'Status request tidak valid untuk diselesaikan'], 400);
+            }
+
+            if (!in_array($requestModel->status, ['spl_open', 'pending_final', 'approved'])) {
+                return response()->json(['message' => 'Hanya tiket open atau closed yang bisa upload foto'], 400);
+            }
+
+            // Update overtime detail with proof image
+            if ($requestModel->overtimeDetail) {
+                // If already has photos (susulan), merge them
+                $existingPhotos = $requestModel->overtimeDetail->proof_image_done ?? [];
+                $newPhotos = json_decode($validated['proof_image'], true);
+                if (!is_array($existingPhotos)) $existingPhotos = [];
+                if (is_array($newPhotos)) {
+                    $mergedPhotos = array_merge($existingPhotos, $newPhotos);
+                    $requestModel->overtimeDetail->update([
+                        'proof_image_done' => $mergedPhotos,
+                    ]);
+                }
+            }
+
+            // Jika status masih spl_open (bukan susulan), kita tutup tiketnya
+            if ($requestModel->status === 'spl_open') {
+                $now = now()->timezone('Asia/Jakarta');
+                $startTime = \Carbon\Carbon::parse($requestModel->overtimeDetail->date->format('Y-m-d') . ' ' . $requestModel->overtimeDetail->start_time, 'Asia/Jakarta');
+                $durationInMinutes = $startTime->diffInMinutes($now);
+
+                $requestModel->overtimeDetail->update([
+                    'end_time' => $now->format('H:i:s'),
+                    'duration' => $durationInMinutes,
+                ]);
+
+                // Update request status to pending_final
+                $requestModel->update([
+                    'status' => 'pending_final',
+                    'amount' => $durationInMinutes / 60,
+                ]);
+
+                // Notify the next approver (Supervisor level 2)
+                $nextPendingStep = \App\Models\Approval::where('approvable_type', get_class($requestModel))
+                    ->where('approvable_id', $requestModel->id)
+                    ->where('status', 'pending')
+                    ->orderBy('level', 'asc')
+                    ->first();
+
+                if ($nextPendingStep && $nextPendingStep->approver && $nextPendingStep->approver->user) {
+                    try {
+                        $nextPendingStep->approver->user->notify(new \App\Notifications\RequestNotification($requestModel, 'pending'));
+                        $this->sendFcmToUser($nextPendingStep->approver->user, 'Persetujuan Diperlukan', 'Lembur telah selesai dan menunggu persetujuan Anda.');
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::error('Failed to notify approver: '.$e->getMessage());
+                    }
+                }
+            }
+
+            return response()->json(['message' => 'Lembur berhasil diselesaikan', 'request' => $requestModel->fresh()]);
+        });
     }
 
     /**

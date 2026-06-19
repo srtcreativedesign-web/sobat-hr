@@ -15,7 +15,7 @@ class AnnouncementController extends Controller
     {
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        if (!in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN, Role::ADMIN_CABANG, Role::HR])) {
+        if (!in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN, Role::ADMIN_CABANG, Role::HR, Role::PERSONALIA])) {
             return ['message' => 'Anda tidak memiliki akses untuk operasi ini.'];
         }
         return null;
