@@ -134,8 +134,13 @@
     
     @php
         $attachments = [];
-        if (!empty($request->attachment)) {
-            $attachments[] = $request->attachment;
+        if (!empty($request->attachments)) {
+            $reqAtt = is_string($request->attachments) ? json_decode($request->attachments, true) : $request->attachments;
+            if (is_array($reqAtt)) {
+                foreach($reqAtt as $a) {
+                    $attachments[] = $a;
+                }
+            }
         }
         if ($request->type == 'overtime' && !empty($request->overtimeDetail->proof_image_done)) {
             $proofs = is_string($request->overtimeDetail->proof_image_done) ? json_decode($request->overtimeDetail->proof_image_done, true) : $request->overtimeDetail->proof_image_done;
@@ -153,13 +158,17 @@
         <div style="text-align: center;">
             @foreach($attachments as $path)
                 @php
-                    $fullPath = storage_path('app/public/' . $path);
                     $base64 = '';
-                    if (file_exists($fullPath)) {
-                        $type = pathinfo($fullPath, PATHINFO_EXTENSION);
-                        if (in_array(strtolower($type), ['jpg', 'jpeg', 'png', 'gif'])) {
-                            $data = file_get_contents($fullPath);
-                            $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+                    if (str_starts_with($path, 'data:image')) {
+                        $base64 = $path;
+                    } else {
+                        $fullPath = storage_path('app/public/' . $path);
+                        if (file_exists($fullPath)) {
+                            $type = pathinfo($fullPath, PATHINFO_EXTENSION);
+                            if (in_array(strtolower($type), ['jpg', 'jpeg', 'png', 'gif'])) {
+                                $data = file_get_contents($fullPath);
+                                $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+                            }
                         }
                     }
                 @endphp
