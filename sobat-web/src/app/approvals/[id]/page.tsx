@@ -10,6 +10,37 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef, use as ReactUse } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
 
+const LiveTimer = ({ startTime, date }: { startTime: string, date: string }) => {
+    const [duration, setDuration] = useState('00:00:00');
+
+    useEffect(() => {
+        const updateTimer = () => {
+            const now = new Date();
+            const dateOnly = date.split('T')[0];
+            const startStr = `${dateOnly}T${startTime}`;
+            const start = new Date(startStr);
+            if (isNaN(start.getTime())) return;
+            
+            const diffInSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
+            if (diffInSeconds < 0) return;
+
+            const h = Math.floor(diffInSeconds / 3600);
+            const m = Math.floor((diffInSeconds % 3600) / 60);
+            const s = diffInSeconds % 60;
+            
+            setDuration(
+                `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+            );
+        };
+        
+        updateTimer(); // Initial call
+        const interval = setInterval(updateTimer, 1000);
+        return () => clearInterval(interval);
+    }, [startTime, date]);
+
+    return <span className="font-mono text-[#1C3ECA] font-bold">{duration}</span>;
+};
+
 export default function ApprovalDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
     const { user } = useAuthStore();
@@ -245,16 +276,26 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                             {request.type === 'asset'
                                                 ? `IDR ${request.amount?.toLocaleString('id-ID')}`
                                                 : (() => {
+                                                    if (request.type === 'overtime') {
+                                                        if (request.status === 'spl_open') {
+                                                            return <LiveTimer startTime={request.detail?.start_time} date={request.detail?.date} />;
+                                                        }
+                                                        if (['pending', 'spl_approved'].includes(request.status)) {
+                                                            return '-';
+                                                        }
+                                                    }
                                                     const val = request.amount || (request.start_date && request.end_date ? differenceInDays(new Date(request.end_date), new Date(request.start_date)) + 1 : 1);
                                                     return Number(val).toLocaleString('id-ID', { maximumFractionDigits: 0 });
                                                 })()
                                             }
                                             <span className="text-sm text-gray-500 ml-1 font-normal">
-                                                {
-                                                    ['leave', 'business_trip', 'sick_leave'].includes(request.type) ? 'Days' :
-                                                        request.type === 'overtime' ? 'Hours' :
-                                                            ['reimbursement', 'asset', 'resignation'].includes(request.type) ? '' : 'Units'
-                                                }
+                                                {(() => {
+                                                    if (request.type === 'overtime' && ['spl_open', 'pending', 'spl_approved'].includes(request.status)) return '';
+                                                    if (['leave', 'business_trip', 'sick_leave'].includes(request.type)) return 'Days';
+                                                    if (request.type === 'overtime') return 'Hours';
+                                                    if (['reimbursement', 'asset', 'resignation'].includes(request.type)) return '';
+                                                    return 'Units';
+                                                })()}
                                             </span>
                                         </div>
                                     </div>
