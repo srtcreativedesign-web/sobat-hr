@@ -36,8 +36,7 @@ class PayrollHoController extends Controller
         $query->where(function($q) {
             $q->whereNull('details')
               ->orWhere('details', '')
-              ->orWhereNull('details->division_type')
-              ->orWhereNotIn('details->division_type', ['money_changer', 'fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'tungtau', 'maximum']);
+              ->orWhere('details', 'not like', '%"division_type"%');
         });
 
         // Scope access
