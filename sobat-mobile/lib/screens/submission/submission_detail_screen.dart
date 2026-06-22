@@ -370,9 +370,9 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
 
             const SizedBox(height: 32),
 
-            _buildDetailRow(AppLocalizations.of(context)!.submissionType, typeStr),
+            _buildDetailRow(AppLocalizations.of(context)!.submissionType, typeStr, Icons.category_outlined),
             const SizedBox(height: 16),
-            _buildDetailRow(AppLocalizations.of(context)!.date, duration),
+            _buildDetailRow(AppLocalizations.of(context)!.date, duration, Icons.calendar_today_outlined),
             if (amount.isNotEmpty &&
                 ![
                   'leave',
@@ -382,7 +382,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                   'overtime',
                 ].contains(rawType)) ...[
               const SizedBox(height: 16),
-              _buildDetailRow(AppLocalizations.of(context)!.nominalLabel, amount),
+              _buildDetailRow(AppLocalizations.of(context)!.nominalLabel, amount, Icons.attach_money_outlined),
             ],
             if (widget.submission['type'] == 'business_trip' &&
                 widget.submission['detail'] != null &&
@@ -391,10 +391,11 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
               _buildDetailRow(
                 'Tujuan',
                 widget.submission['detail']['destination'].toString(),
+                Icons.location_on_outlined,
               ),
             ],
             const SizedBox(height: 16),
-            _buildDetailRow(AppLocalizations.of(context)!.description, reason),
+            _buildDetailRow(AppLocalizations.of(context)!.description, reason, Icons.description_outlined),
 
             // Asset Details
             if (widget.submission['type'] == 'asset' &&
@@ -403,11 +404,13 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
               _buildDetailRow(
                 AppLocalizations.of(context)!.brandOrMake,
                 widget.submission['detail']['brand'] ?? '-',
+                Icons.devices_outlined,
               ),
               const SizedBox(height: 16),
               _buildDetailRow(
                 AppLocalizations.of(context)!.specification,
                 widget.submission['detail']['specification'] ?? '-',
+                Icons.info_outline,
               ),
               const SizedBox(height: 16),
               _buildDetailRow(
@@ -416,6 +419,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                         widget.submission['detail']['is_urgent'] == 1)
                     ? AppLocalizations.of(context)!.urgencyUrgent
                     : AppLocalizations.of(context)!.urgencyNormal,
+                Icons.priority_high_outlined,
               ),
             ],
 
@@ -432,9 +436,10 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                         ),
                       )
                     : '-',
+                Icons.work_history_outlined,
               ),
               const SizedBox(height: 16),
-              _buildDetailRow(AppLocalizations.of(context)!.resignationType, AppLocalizations.of(context)!.resignationDefaultType),
+              _buildDetailRow(AppLocalizations.of(context)!.resignationType, AppLocalizations.of(context)!.resignationDefaultType, Icons.exit_to_app_outlined),
             ],
 
             // Attachments
@@ -572,20 +577,61 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-        ),
-      ],
+  Widget _buildDetailRow(String label, String value, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade100),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(icon, color: AppTheme.colorCyan, size: 22),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
