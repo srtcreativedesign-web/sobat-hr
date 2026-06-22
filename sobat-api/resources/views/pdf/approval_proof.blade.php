@@ -155,7 +155,7 @@
     @if(count($attachments) > 0)
     <div style="page-break-before: always;">
         <h3>Attachments / Evidence</h3>
-        <div style="text-align: center;">
+        <div style="text-align: left;">
             @foreach($attachments as $path)
                 @php
                     $base64 = '';
@@ -173,11 +173,12 @@
                     }
                 @endphp
                 @if($base64)
-                    <div style="margin-bottom: 20px;">
-                        <img src="{{ $base64 }}" style="max-width: 100%; max-height: 800px; border: 1px solid #ddd; border-radius: 8px;">
+                    <div style="display: inline-block; width: 45%; margin-right: 2%; margin-bottom: 20px; text-align: center; vertical-align: middle;">
+                        <img src="{{ $base64 }}" style="max-width: 100%; max-height: 300px; border: 1px solid #ddd; border-radius: 8px;">
                     </div>
                 @endif
             @endforeach
+            <div style="clear: both;"></div>
         </div>
     </div>
     @endif
