@@ -21,7 +21,7 @@ class OvertimeOpenTicket extends Command
      *
      * @var string
      */
-    protected $description = 'Automatically open SPL overtime tickets when their start time is reached';
+    protected $description = 'Automatically cancel SPL overtime tickets if not started within 2 hours of schedule';
 
     /**
      * Execute the console command.
@@ -41,14 +41,15 @@ class OvertimeOpenTicket extends Command
             if (!$detail || !$detail->date || !$detail->start_time) continue;
 
             $startTime = Carbon::parse($detail->date->format('Y-m-d') . ' ' . $detail->start_time, 'Asia/Jakarta');
+            $cancelTime = $startTime->copy()->addHours(2);
 
-            if ($now->greaterThanOrEqualTo($startTime)) {
-                $request->update(['status' => 'spl_open']);
-                Log::info("OvertimeOpenTicket: Request ID {$request->id} opened automatically.");
+            if ($now->greaterThanOrEqualTo($cancelTime)) {
+                $request->update(['status' => 'cancelled']);
+                Log::info("OvertimeOpenTicket: Request ID {$request->id} cancelled automatically because employee did not start it within 2 hours.");
                 $count++;
             }
         }
 
-        $this->info("Opened {$count} overtime tickets.");
+        $this->info("Cancelled {$count} missed overtime tickets.");
     }
 }

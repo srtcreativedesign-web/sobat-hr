@@ -46,4 +46,14 @@ class RequestService extends BaseService {
       throw Exception(AppErrorHandler.getErrorMessage(e));
     }
   }
+  Future<Map<String, dynamic>> startOvertime(int id) async {
+    try {
+      final response = await dio.post('requests/$id/overtime-start');
+      return response.data;
+    } on DioException catch (e) {
+      throw Exception(AppErrorHandler.getErrorMessage(e));
+    } catch (e) {
+      throw Exception(AppErrorHandler.getErrorMessage(e));
+    }
+  }
 }

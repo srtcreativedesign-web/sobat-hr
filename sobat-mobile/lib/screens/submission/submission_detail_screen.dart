@@ -198,10 +198,10 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      bottomNavigationBar: ((status == 'spl_open' || status == 'pending_final' || status == 'approved') && widget.submission['type'] == 'overtime') ? Container(
+      bottomNavigationBar: ((status == 'spl_open' || status == 'pending_final' || status == 'approved' || status == 'spl_approved') && widget.submission['type'] == 'overtime') ? Container(
         padding: const EdgeInsets.all(16),
         child: ElevatedButton(
-          onPressed: _isUploading ? null : _showUploadModal,
+          onPressed: _isUploading ? null : (status == 'spl_approved' ? _startOvertime : _showUploadModal),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.colorCyan,
             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -209,7 +209,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
           ),
           child: _isUploading 
               ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white))
-              : Text(status == 'spl_open' ? 'Selesaikan Lembur' : 'Upload Foto Susulan', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              : Text(status == 'spl_approved' ? 'Mulai Lembur' : (status == 'spl_open' ? 'Selesaikan Lembur' : 'Upload Foto Susulan'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ),
       ) : null,
       appBar: AppBar(
@@ -553,6 +553,27 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> _startOvertime() async {
+    setState(() => _isUploading = true);
+    try {
+      final response = await _requestService.startOvertime(widget.submission['id']);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response['message'] ?? 'Lembur berhasil dimulai'), backgroundColor: Colors.green),
+        );
+        Navigator.pop(context, true); // Go back and refresh list
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
   }
 
   void _showUploadModal() {

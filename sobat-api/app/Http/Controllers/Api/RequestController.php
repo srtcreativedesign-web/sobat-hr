@@ -544,6 +544,47 @@ class RequestController extends Controller
     }
 
     /**
+     * Start overtime manually by Employee
+     */
+    public function startOvertime(Request $request, string $id)
+    {
+        $requestModel = RequestModel::with('overtimeDetail')->findOrFail($id);
+        $user = $request->user();
+
+        if ($requestModel->employee_id !== $user->employee?->id) {
+            return response()->json(['message' => 'Hanya pemilik pengajuan yang dapat memulai lembur ini.'], 403);
+        }
+
+        if ($requestModel->type !== 'overtime') {
+            return response()->json(['message' => 'Bukan pengajuan lembur.'], 400);
+        }
+
+        if ($requestModel->status !== 'spl_approved') {
+            return response()->json(['message' => 'Status request tidak valid untuk dimulai.'], 400);
+        }
+
+        $now = now()->timezone('Asia/Jakarta');
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($requestModel, $now) {
+            $requestModel->update([
+                'status' => 'spl_open',
+            ]);
+
+            if ($requestModel->overtimeDetail) {
+                $requestModel->overtimeDetail->update([
+                    'start_time' => $now->format('H:i:s'),
+                    'date' => $now->format('Y-m-d'),
+                ]);
+            }
+        });
+
+        return response()->json([
+            'message' => 'Lembur berhasil dimulai',
+            'request' => $requestModel->fresh(['overtimeDetail']),
+        ]);
+    }
+
+    /**
      * Finish overtime request (Employee uploads proof)
      */
     public function finishOvertime(Request $request, string $id, \App\Services\ApprovalService $approvalService)
