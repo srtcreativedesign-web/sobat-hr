@@ -388,19 +388,19 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {attachmentsArray.map((att: string, idx: number) => (
-                                    <div key={idx} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+                                    <div key={`start-${idx}`} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50 flex flex-col">
                                         {typeof att === 'string' && att.startsWith('data:image') ? (
                                             <img
                                                 src={att}
                                                 alt={`Attachment ${idx + 1}`}
-                                                className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                                className="w-full aspect-square object-cover cursor-pointer hover:opacity-90 transition-opacity"
                                                 onClick={() => {
                                                     const w = window.open("");
                                                     w?.document.write('<img src="' + att + '" style="max-width:100%"/>');
                                                 }}
                                             />
                                         ) : (
-                                            <a href={att} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-4 hover:bg-gray-100 transition-colors">
+                                            <a href={att} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-4 hover:bg-gray-100 transition-colors flex-1">
                                                 <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
                                                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -412,43 +412,42 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                                 </div>
                                             </a>
                                         )}
+                                        {request.type === 'overtime' && (
+                                            <div className="bg-gray-100 p-2 text-center border-t border-gray-200 mt-auto">
+                                                <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">Bukti Mulai</p>
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
+
+                                {(() => {
+                                    let proofDoneArray = (request.type === 'overtime' && request.detail?.proof_image_done) ? request.detail.proof_image_done : [];
+                                    if (!Array.isArray(proofDoneArray)) proofDoneArray = [];
+                                    
+                                    return proofDoneArray.map((att: string, idx: number) => (
+                                        <div key={`done-${idx}`} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50 flex flex-col">
+                                            {typeof att === 'string' ? (
+                                                <img
+                                                    src={att.startsWith('data:image') ? att : `${process.env.NEXT_PUBLIC_API_URL}/storage/${att}`}
+                                                    alt={`Final Proof ${idx + 1}`}
+                                                    className="w-full aspect-square object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                                    onClick={() => {
+                                                        const imgUrl = att.startsWith('data:image') ? att : `${process.env.NEXT_PUBLIC_API_URL}/storage/${att}`;
+                                                        const w = window.open("");
+                                                        w?.document.write('<img src="' + imgUrl + '" style="max-width:100%"/>');
+                                                    }}
+                                                />
+                                            ) : null}
+                                            <div className="bg-gray-100 p-2 text-center border-t border-gray-200 mt-auto">
+                                                <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">Bukti Selesai</p>
+                                            </div>
+                                        </div>
+                                    ));
+                                })()}
                             </div>
                         </div>
                         ) : null;
                     })()}
-
-                    {/* Final Proof Image for Overtime */}
-                    {request.type === 'overtime' && request.detail?.proof_image_done && Array.isArray(request.detail.proof_image_done) && request.detail.proof_image_done.length > 0 && (
-                        <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100/50 p-8 mt-6">
-                            <h3 className="text-xl font-bold text-[#1C3ECA] mb-6 flex items-center gap-2">
-                                <svg className="w-5 h-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                                Bukti Selesai Lembur
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {request.detail.proof_image_done.map((att: string, idx: number) => (
-                                    <div key={idx} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
-                                        {typeof att === 'string' ? (
-                                            <img
-                                                src={att.startsWith('data:image') ? att : `${process.env.NEXT_PUBLIC_API_URL}/storage/${att}`}
-                                                alt={`Final Proof ${idx + 1}`}
-                                                className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity aspect-square"
-                                                onClick={() => {
-                                                    const imgUrl = att.startsWith('data:image') ? att : `${process.env.NEXT_PUBLIC_API_URL}/storage/${att}`;
-                                                    const w = window.open("");
-                                                    w?.document.write('<img src="' + imgUrl + '" style="max-width:100%"/>');
-                                                }}
-                                            />
-                                        ) : null}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
 
                     {/* Right Column: Timeline & Actions */}
                     <div className="space-y-6">
