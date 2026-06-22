@@ -30,7 +30,7 @@ export default function ApprovalsPage() {
                 
                 let fetchStatus = 'pending,pending_final';
                 if (activeTab === 'history') fetchStatus = 'approved,rejected';
-                if (activeTab === 'spl_open') fetchStatus = 'spl_open';
+                if (activeTab === 'spl_open') fetchStatus = 'spl_approved,spl_open';
                 
                 query.append('status', fetchStatus);
 
@@ -206,9 +206,11 @@ export default function ApprovalsPage() {
                                                 <td className="px-6 py-4">
                                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold capitalize shadow-sm
                                                         ${req.status === 'approved' ? 'bg-green-50 text-green-700 border border-green-100' :
+                                                            req.status === 'spl_open' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                                                            req.status === 'spl_approved' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
                                                             req.status === 'rejected' ? 'bg-red-50 text-red-700 border border-red-100' :
                                                                 'bg-amber-50 text-amber-700 border border-amber-100'}`}>
-                                                        {req.status}
+                                                        {req.status === 'spl_open' ? 'Lembur Berjalan' : req.status === 'spl_approved' ? 'Menunggu Mulai' : req.status}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4">

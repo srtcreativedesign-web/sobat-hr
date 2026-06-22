@@ -201,10 +201,12 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
 
                     <div className={`px-5 py-2 rounded-full text-sm font-bold tracking-wide uppercase shadow-sm border
                         ${request.status === 'approved' ? 'bg-green-50 text-green-700 border-green-100' :
+                            request.status === 'spl_open' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                            request.status === 'spl_approved' ? 'bg-blue-50 text-blue-700 border-blue-100' :
                             request.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-100' :
                                 request.status === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-gray-50 text-gray-700 border-gray-200'
                         }`}>
-                        {request.status}
+                        {request.status === 'spl_open' ? 'Lembur Berjalan' : request.status === 'spl_approved' ? 'Menunggu Mulai' : request.status}
                     </div>
                 </div>
 
