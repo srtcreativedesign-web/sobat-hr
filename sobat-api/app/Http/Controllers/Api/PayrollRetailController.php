@@ -22,7 +22,7 @@ class PayrollRetailController extends Controller
     {
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        return in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN, Role::ADMIN_CABANG, Role::HR]);
+        return in_array($roleName, [Role::SUPER_ADMIN, Role::ADMIN, Role::ADMIN_CABANG, Role::HR, 'admin_hr']);
     }
 
     private function getModel($divisionType)

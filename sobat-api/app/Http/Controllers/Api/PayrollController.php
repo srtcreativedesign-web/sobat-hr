@@ -491,7 +491,7 @@ class PayrollController extends Controller
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR]);
+        $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR, 'admin_hr']);
 
         if (! $isAdmin) {
             return response()->json(['message' => 'Hanya Admin/HR yang dapat mengubah data payroll.'], 403);
@@ -521,7 +521,7 @@ class PayrollController extends Controller
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR]);
+        $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR, 'admin_hr']);
 
         if (! $isAdmin) {
             return response()->json(['message' => 'Hanya Admin/HR yang dapat menghapus data payroll.'], 403);
@@ -560,7 +560,7 @@ class PayrollController extends Controller
         // --- IDOR GUARD ---
         $user = auth()->user();
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR]);
+        $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR, 'admin_hr']);
 
         if (! $isAdmin && $payroll->employee_id !== $user->employee?->id) {
             return response()->json(['message' => 'Anda tidak memiliki akses ke slip gaji ini.'], 403);
