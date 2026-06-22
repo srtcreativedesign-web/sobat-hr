@@ -283,6 +283,16 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                                         if (['pending', 'spl_approved'].includes(request.status)) {
                                                             return '-';
                                                         }
+                                                        const val = request.amount || 0;
+                                                        const h = Math.floor(val);
+                                                        const m = Math.round((val - h) * 60);
+                                                        return (
+                                                            <span className="flex items-baseline gap-1">
+                                                                {h > 0 && <><span className="font-semibold">{h}</span><span className="text-sm text-gray-500 font-normal mr-1">h</span></>}
+                                                                {m > 0 && <><span className="font-semibold">{m}</span><span className="text-sm text-gray-500 font-normal">m</span></>}
+                                                                {h === 0 && m === 0 && <><span className="font-semibold">0</span><span className="text-sm text-gray-500 font-normal">m</span></>}
+                                                            </span>
+                                                        );
                                                     }
                                                     const val = request.amount || (request.start_date && request.end_date ? differenceInDays(new Date(request.end_date), new Date(request.start_date)) + 1 : 1);
                                                     return Number(val).toLocaleString('id-ID', { maximumFractionDigits: 0 });
@@ -290,9 +300,8 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                             }
                                             <span className="text-sm text-gray-500 ml-1 font-normal">
                                                 {(() => {
-                                                    if (request.type === 'overtime' && ['spl_open', 'pending', 'spl_approved'].includes(request.status)) return '';
+                                                    if (request.type === 'overtime') return '';
                                                     if (['leave', 'business_trip', 'sick_leave'].includes(request.type)) return 'Days';
-                                                    if (request.type === 'overtime') return 'Hours';
                                                     if (['reimbursement', 'asset', 'resignation'].includes(request.type)) return '';
                                                     return 'Units';
                                                 })()}
