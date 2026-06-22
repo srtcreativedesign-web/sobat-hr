@@ -94,13 +94,13 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       name: 'Dashboard',
       href: '/dashboard',
       icon: <LayoutDashboard />,
-      roles: ['super_admin', 'admin_cabang', 'personalia'],
+      roles: ['super_admin', 'admin_cabang', 'personalia', 'admin_hr'],
     },
     {
       name: 'Employees',
       href: '/employees',
       icon: <Users />,
-      roles: ['super_admin', 'admin_cabang', 'manager', 'personalia'],
+      roles: ['super_admin', 'admin_cabang', 'manager', 'personalia', 'admin_hr'],
       subItems: [
         { name: 'Employee List', href: '/employees' },
         { name: 'Master Data', href: '/employees/master' },
@@ -112,13 +112,13 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       name: 'Struktur Organisasi',
       href: '/organizations',
       icon: <Building2 />,
-      roles: ['super_admin', 'admin_cabang', 'personalia'],
+      roles: ['super_admin', 'admin_cabang', 'personalia', 'admin_hr'],
     },
     {
       name: 'Manajemen Outlet',
       href: '/organizations/outlets',
       icon: <Store />,
-      roles: ['super_admin', 'admin_cabang', 'personalia'],
+      roles: ['super_admin', 'admin_cabang', 'personalia', 'admin_hr'],
       subItems: [
         { name: 'Daftar Outlet', href: '/organizations/outlets' },
         { name: 'QR Generator', href: '/attendance/qr-generator' }
@@ -139,7 +139,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       name: 'Attendance',
       href: '/attendance',
       icon: <CalendarCheck />,
-      roles: ['super_admin', 'admin_cabang', 'hr', 'personalia'],
+      roles: ['super_admin', 'admin_cabang', 'hr', 'personalia', 'admin_hr'],
       subItems: [
         { name: 'Head Office', href: '/attendance' },
         { name: 'Operasional', href: '/attendance/operasional' }
@@ -149,7 +149,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       name: 'Payroll',
       href: '/payroll',
       icon: <Banknote />,
-      roles: ['super_admin', 'admin_cabang'],
+      roles: ['super_admin', 'admin_cabang', 'admin_hr'],
       subItems: [
         { name: 'Payroll List', href: '/payroll' },
         { name: 'Overtime', href: '/payroll/overtime' }
@@ -159,13 +159,13 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       name: 'THR (Holiday Bonus)',
       href: '/payroll/thr',
       icon: <Gift />,
-      roles: ['super_admin', 'admin_cabang', 'personalia'],
+      roles: ['super_admin', 'admin_cabang', 'personalia', 'admin_hr'],
     },
     {
       name: 'Approvals',
       href: '/approvals',
       icon: <CheckSquare />,
-      roles: ['super_admin', 'admin_cabang', 'manager', 'personalia'],
+      roles: ['super_admin', 'admin_cabang', 'manager', 'personalia', 'admin_hr'],
     },
     {
       name: 'Roles',
@@ -177,19 +177,19 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       name: 'Announcements',
       href: '/announcements',
       icon: <Megaphone />,
-      roles: ['super_admin', 'admin_cabang', 'hr', 'personalia'],
+      roles: ['super_admin', 'admin_cabang', 'hr', 'personalia', 'admin_hr'],
     },
     {
       name: 'HR Policies',
       href: '/hr-policies',
       icon: <FileText />,
-      roles: ['super_admin', 'admin_cabang', 'personalia'],
+      roles: ['super_admin', 'admin_cabang', 'personalia', 'admin_hr'],
     },
     {
       name: 'Feedback',
       href: '/feedback',
       icon: <MessageSquare />,
-      roles: ['super_admin', 'admin_cabang', 'personalia'],
+      roles: ['super_admin', 'admin_cabang', 'personalia', 'admin_hr'],
     },
   ];
 
