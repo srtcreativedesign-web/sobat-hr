@@ -11,6 +11,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../config/theme.dart';
 import '../../config/api_config.dart';
 import '../../l10n/app_localizations.dart';
+import '../../services/request_service.dart';
 
 class SubmissionDetailScreen extends StatefulWidget {
   final Map<String, dynamic> submission;
@@ -25,6 +26,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
   bool _isDownloading = false;
   bool _isUploading = false;
   final ImagePicker _picker = ImagePicker();
+  final RequestService _requestService = RequestService();
   Timer? _timer;
   DateTime _now = DateTime.now();
 
