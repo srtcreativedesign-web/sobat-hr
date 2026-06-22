@@ -112,7 +112,7 @@ export interface Request {
   start_date?: string;
   end_date?: string;
   amount?: number;
-  status: 'draft' | 'pending' | 'approved' | 'rejected' | 'cancelled';
+  status: 'draft' | 'pending' | 'approved' | 'rejected' | 'cancelled' | 'spl_open' | 'spl_approved' | 'pending_final';
   step_now?: number;
   submitted_at?: string;
   attachments?: string[] | string; // Flexible for JSON string or array
