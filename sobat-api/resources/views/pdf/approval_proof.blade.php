@@ -153,7 +153,7 @@
     @endphp
 
     @if(count($attachments) > 0)
-    <div style="page-break-before: always;">
+    <div style="margin-top: 30px;">
         <h3>Attachments / Evidence</h3>
         <div style="text-align: left;">
             @foreach($attachments as $path)
