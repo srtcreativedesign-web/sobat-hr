@@ -6,6 +6,15 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth-store';
 import { Role } from '@/types';
+import { cn } from '@/lib/utils';
+import {
+  Files,
+  FolderItem,
+  FolderTrigger,
+  FolderPanel,
+  FileItem,
+  SubFiles,
+} from '@/components/ui/file-tree';
 
 interface MenuItem {
   name: string;
@@ -358,80 +367,81 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto custom-scrollbar">
-        {filteredMenuItems.map((item) => {
-          const isActive = pathname === item.href || (item.subItems && item.subItems.some(sub => pathname === sub.href));
-          const isExpanded = expandedMenus.includes(item.name);
-          const hasSubItems = item.subItems && item.subItems.length > 0;
+      <nav className="flex-1 px-2 py-2 overflow-y-auto custom-scrollbar">
+        <Files 
+          open={expandedMenus} 
+          onOpenChange={(val: any) => setExpandedMenus(val)} 
+          className="text-white/70"
+        >
+          {filteredMenuItems.map((item) => {
+            const isActive = pathname === item.href || (item.subItems && item.subItems.some(sub => pathname === sub.href));
+            const hasSubItems = item.subItems && item.subItems.length > 0;
+            const showBadge = item.name === 'Attendance' && pendingAttendanceCount > 0;
 
-          // Badge Logic
-          const showBadge = item.name === 'Attendance' && pendingAttendanceCount > 0;
-
-          return (
-            <div key={item.name}>
-              <button
-                onClick={() => hasSubItems ? toggleMenu(item.name) : router.push(item.href)}
-                className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 relative overflow-hidden ${isActive
-                  ? 'bg-white text-[#1C3ECA] shadow-lg font-bold'
-                  : 'text-white/70 hover:text-white hover:bg-white/10'
-                  } ${isCollapsed ? 'justify-center' : ''}`}
-              >
-                {isActive && (
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#1C3ECA]"></div>
-                )}
-
-                <span className={`transform transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
-                  {item.icon}
-                </span>
-
-                {!isCollapsed && (
-                  <>
-                    <span className="text-sm tracking-wide flex-1 text-left">{item.name}</span>
-
-                    {/* Badge */}
-                    {showBadge && (
-                      <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">
-                        {pendingAttendanceCount}
+            if (hasSubItems) {
+              return (
+                <FolderItem key={item.name} value={item.name}>
+                  <FolderTrigger 
+                    className={cn(
+                      'transition-colors px-2',
+                      isActive ? 'text-white font-bold' : 'hover:text-white',
+                      isCollapsed ? 'justify-center' : ''
+                    )}
+                  >
+                    {!isCollapsed && (
+                      <span className="flex-1 flex items-center justify-between">
+                        {item.name}
+                        {showBadge && (
+                          <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse ml-2">
+                            {pendingAttendanceCount}
+                          </span>
+                        )}
                       </span>
                     )}
-
-                    {hasSubItems && (
-                      <svg className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
+                    {isCollapsed && showBadge && (
+                      <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-[#0A1647]"></div>
                     )}
-                  </>
-                )}
+                  </FolderTrigger>
+                  {!isCollapsed && (
+                    <FolderPanel>
+                      <SubFiles className="text-white/70 space-y-1">
+                        {item.subItems?.map((sub) => {
+                          const isSubActive = pathname === sub.href;
+                          return (
+                            <button key={sub.href} onClick={() => router.push(sub.href)} className="w-full text-left">
+                              <FileItem 
+                                className={cn(
+                                  'transition-colors py-1.5',
+                                  isSubActive ? 'text-white font-bold' : 'hover:text-white'
+                                )}
+                              >
+                                {sub.name}
+                              </FileItem>
+                            </button>
+                          );
+                        })}
+                      </SubFiles>
+                    </FolderPanel>
+                  )}
+                </FolderItem>
+              );
+            }
 
-                {/* Collapsed Badge (Dot) */}
-                {isCollapsed && showBadge && (
-                  <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></div>
-                )}
+            return (
+              <button key={item.name} onClick={() => router.push(item.href)} className="w-full text-left">
+                <FileItem 
+                  className={cn(
+                    'transition-colors px-2',
+                    isActive ? 'text-white font-bold' : 'hover:text-white',
+                    isCollapsed ? 'justify-center' : ''
+                  )}
+                >
+                  {!isCollapsed && <span className="flex-1">{item.name}</span>}
+                </FileItem>
               </button>
-
-              {/* Submenu */}
-              {!isCollapsed && hasSubItems && isExpanded && (
-                <div className="ml-4 mt-1 space-y-1 border-l-2 border-white/10 pl-2">
-                  {item.subItems?.map((sub) => {
-                    const isSubActive = pathname === sub.href;
-                    return (
-                      <button
-                        key={sub.href}
-                        onClick={() => router.push(sub.href)}
-                        className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition-all ${isSubActive
-                          ? 'bg-white/10 text-white shadow-sm font-bold border border-white/20'
-                          : 'text-white/60 hover:text-white hover:bg-white/5'
-                          }`}
-                      >
-                        {sub.name}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </Files>
       </nav>
 
       {/* Footer Actions */}
