@@ -260,7 +260,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Dashboard & Analytics (Super Admin)
-    Route::middleware('role:super_admin,admin_cabang,personalia')->group(function () {
+    Route::middleware('role:super_admin,admin_cabang,personalia,admin_hr')->group(function () {
         Route::get('/dashboard/analytics', [App\Http\Controllers\Api\DashboardController::class, 'analytics']);
         Route::get('/dashboard/turnover', [App\Http\Controllers\Api\DashboardController::class, 'turnover']);
         Route::get('/dashboard/attendance-heatmap', [App\Http\Controllers\Api\DashboardController::class, 'attendanceHeatmap']);

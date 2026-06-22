@@ -22,7 +22,7 @@ class DashboardController extends Controller
                     !$request->hasHeader('Origin') || 
                     str_contains($request->userAgent(), 'Dart');
         $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::PERSONALIA]);
+        $isAdmin = in_array($roleName, [\App\Models\Role::ADMIN, \App\Models\Role::SUPER_ADMIN, \App\Models\Role::HR, \App\Models\Role::PERSONALIA, 'admin_hr']);
 
         $now = Carbon::now();
         $currentMonth = $now->month;
