@@ -34,7 +34,9 @@ class PayrollHoController extends Controller
         // Filter out retail divisions from the generic payrolls table
         // This ensures the Mobile App (which calls /payrolls/ho) doesn't get duplicate retail employees
         $query->where(function($q) {
-            $q->whereNull('details->division_type')
+            $q->whereNull('details')
+              ->orWhere('details', '')
+              ->orWhereNull('details->division_type')
               ->orWhereNotIn('details->division_type', ['money_changer', 'fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'tungtau', 'maximum']);
         });
 
@@ -56,6 +58,8 @@ class PayrollHoController extends Controller
         } elseif ($request->has('month') && $request->has('year') && $request->month != 0 && $request->year != 0) {
             $periodString = sprintf('%04d-%02d', $request->year, $request->month);
             $query->where('period', $periodString);
+        } elseif (!$request->has('period') && $request->has('year') && !empty($request->year)) {
+            $query->where('period', 'like', $request->year . '-%');
         }
 
         if ($request->has('status')) {
