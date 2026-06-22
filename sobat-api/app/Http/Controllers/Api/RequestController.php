@@ -153,7 +153,7 @@ class RequestController extends Controller
                     'start_date' => $validated['start_date'] ?? $validated['date'] ?? null,
                     'end_date' => $validated['end_date'] ?? $validated['date'] ?? null,
                     'amount' => $validated['amount'] ?? $validated['budget'] ?? (($validated['duration'] ?? 0) ? ($validated['duration'] / 60) : null),
-                    'attachments' => $validated['attachments'] ?? null,
+                    'attachments' => isset($validated['attachments']) ? (is_string($validated['attachments']) ? json_decode($validated['attachments'], true) : $validated['attachments']) : null,
                 ];
 
                 $requestModel = RequestModel::create($masterData);

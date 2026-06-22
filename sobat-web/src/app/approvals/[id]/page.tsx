@@ -345,7 +345,16 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                     </div>
 
                     {/* Attachments Card (Only show if present) */}
-                    {request.attachments && Array.isArray(request.attachments) && request.attachments.length > 0 && (
+                    {(() => {
+                        let attachmentsArray = request.attachments;
+                        if (typeof attachmentsArray === 'string') {
+                            try {
+                                attachmentsArray = JSON.parse(attachmentsArray);
+                            } catch (e) {
+                                attachmentsArray = [];
+                            }
+                        }
+                        return attachmentsArray && Array.isArray(attachmentsArray) && attachmentsArray.length > 0 ? (
                         <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100/50 p-8">
                             <h3 className="text-xl font-bold text-[#1C3ECA] mb-6 flex items-center gap-2">
                                 <svg className="w-5 h-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -354,7 +363,7 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                 Attachments
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {request.attachments.map((att: string, idx: number) => (
+                                {attachmentsArray.map((att: string, idx: number) => (
                                     <div key={idx} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
                                         {typeof att === 'string' && att.startsWith('data:image') ? (
                                             <img
@@ -383,7 +392,8 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                 ))}
                             </div>
                         </div>
-                    )}
+                        ) : null;
+                    })()}
 
                     {/* Final Proof Image for Overtime */}
                     {request.type === 'overtime' && request.detail?.proof_image_done && Array.isArray(request.detail.proof_image_done) && request.detail.proof_image_done.length > 0 && (
