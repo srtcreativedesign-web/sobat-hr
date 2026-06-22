@@ -10,17 +10,21 @@ use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\GroqAiService;
 use Carbon\Carbon;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class PayrollHoController extends Controller
+class PayrollHoController extends Controller implements HasMiddleware
 {
-    public function __construct()
+    public static function middleware(): array
     {
-        $this->middleware(function ($request, $next) {
-            if (auth()->check() && auth()->user()->role && in_array(strtolower(auth()->user()->role->name), ['admin_hr', 'personalia'])) {
-                abort(403, 'Anda tidak memiliki akses ke Payroll Head Office.');
-            }
-            return $next($request);
-        });
+        return [
+            new Middleware(function ($request, $next) {
+                if (auth()->check() && auth()->user()->role && in_array(strtolower(auth()->user()->role->name), ['admin_hr', 'personalia'])) {
+                    abort(403, 'Anda tidak memiliki akses ke Payroll Head Office.');
+                }
+                return $next($request);
+            }),
+        ];
     }
 
     /**
