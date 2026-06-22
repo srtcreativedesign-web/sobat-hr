@@ -154,8 +154,10 @@
 
     @if(count($attachments) > 0)
     <div style="margin-top: 30px;">
-        <h3>Attachments / Evidence</h3>
-        <div style="text-align: left;">
+        <h3 style="margin-bottom: 15px;">Attachments / Evidence</h3>
+        <table style="width: 100%; border: none; margin: 0; padding: 0;">
+            <tr>
+            @php $colCount = 0; @endphp
             @foreach($attachments as $path)
                 @php
                     $base64 = '';
@@ -173,13 +175,19 @@
                     }
                 @endphp
                 @if($base64)
-                    <div style="display: inline-block; width: 45%; margin-right: 2%; margin-bottom: 20px; text-align: center; vertical-align: middle;">
-                        <img src="{{ $base64 }}" style="max-width: 100%; max-height: 300px; border: 1px solid #ddd; border-radius: 8px;">
-                    </div>
+                    <td style="width: 50%; padding: 5px; text-align: left; border: none; vertical-align: top;">
+                        <img src="{{ $base64 }}" style="max-width: 100%; max-height: 200px; border: 1px solid #ddd; border-radius: 4px;">
+                    </td>
+                    @php 
+                        $colCount++; 
+                        if ($colCount % 2 == 0) {
+                            echo '</tr><tr>';
+                        }
+                    @endphp
                 @endif
             @endforeach
-            <div style="clear: both;"></div>
-        </div>
+            </tr>
+        </table>
     </div>
     @endif
     
