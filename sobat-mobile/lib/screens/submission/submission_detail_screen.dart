@@ -228,78 +228,110 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Status Card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: statusColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+            // Status Card (Boarding Pass Ticket Design)
+            CustomPaint(
+              painter: TicketPainter(
+                bgColor: Colors.white,
+                borderColor: statusColor.withValues(alpha: 0.3),
               ),
-              child: Column(
-                children: [
-                  Icon(
-                    status == 'approved'
-                        ? Icons.check_circle_outline
-                        : status == 'rejected'
-                        ? Icons.cancel_outlined
-                        : Icons.hourglass_empty,
-                    color: statusColor,
-                    size: 40,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    statusLabel.toUpperCase(),
-                    style: TextStyle(
-                      color: statusColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      letterSpacing: 1,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Column(
+                  children: [
+                    // Top Section (Header)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            status == 'approved'
+                                ? Icons.check_circle_outline
+                                : status == 'rejected'
+                                ? Icons.cancel_outlined
+                                : Icons.flight_takeoff,
+                            color: statusColor,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            statusLabel.toUpperCase(),
+                            style: TextStyle(
+                              color: statusColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  if (status == 'spl_open' && widget.submission['detail']?['start_time'] != null) ...[
-                    const SizedBox(height: 12),
-                    Builder(
-                      builder: (context) {
-                        try {
-                          final stString = widget.submission['detail']['start_time'];
-                          final dtString = widget.submission['detail']['date'] ?? widget.submission['start_date'];
-                          final st = DateTime.parse('${dtString.split("T")[0]} $stString');
-                          final diff = _now.difference(st);
-                          final h = diff.inHours.toString().padLeft(2, '0');
-                          final m = diff.inMinutes.remainder(60).toString().padLeft(2, '0');
-                          final s = diff.inSeconds.remainder(60).toString().padLeft(2, '0');
-                          final durString = diff.isNegative ? '00:00:00' : '$h:$m:$s';
-                          return Column(
-                            children: [
-                              Text(
-                                durString,
-                                style: const TextStyle(
-                                  color: Colors.black87,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 32,
-                                  fontFeatures: [FontFeature.tabularFigures()],
+                    const SizedBox(height: 30), // Spacing to align with the hole (holeY is 65)
+                    
+                    // Bottom Section (Timer)
+                    if (status == 'spl_open' && widget.submission['detail']?['start_time'] != null) ...[
+                      const SizedBox(height: 10),
+                      Builder(
+                        builder: (context) {
+                          try {
+                            final stString = widget.submission['detail']['start_time'];
+                            final dtString = widget.submission['detail']['date'] ?? widget.submission['start_date'];
+                            final st = DateTime.parse('${dtString.split("T")[0]} $stString');
+                            final diff = _now.difference(st);
+                            final h = diff.inHours.toString().padLeft(2, '0');
+                            final m = diff.inMinutes.remainder(60).toString().padLeft(2, '0');
+                            final s = diff.inSeconds.remainder(60).toString().padLeft(2, '0');
+                            final durString = diff.isNegative ? '00:00:00' : '$h:$m:$s';
+                            return Column(
+                              children: [
+                                Text(
+                                  durString,
+                                  style: const TextStyle(
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 40,
+                                    letterSpacing: 2,
+                                    fontFeatures: [FontFeature.tabularFigures()],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Jam Mulai: $stString  |  Saat Ini: ${DateFormat('HH:mm:ss').format(_now)}',
-                                style: const TextStyle(
-                                  color: Colors.black54,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    'Mulai: $stString  •  Sekarang: ${DateFormat('HH:mm:ss').format(_now)}',
+                                    style: const TextStyle(
+                                      color: Colors.black54,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          );
-                        } catch (e) {
-                          return const SizedBox();
-                        }
-                      },
-                    ),
+                              ],
+                            );
+                          } catch (e) {
+                            return const SizedBox();
+                          }
+                        },
+                      ),
+                    ] else ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        status == 'spl_approved' ? 'MENUNGGU MULAI' : 'SELESAI',
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
 
@@ -715,3 +747,84 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
     }
   }
 }
+
+class TicketPainter extends CustomPainter {
+  final Color bgColor;
+  final Color borderColor;
+
+  TicketPainter({required this.bgColor, required this.borderColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = bgColor
+      ..style = PaintingStyle.fill;
+
+    final borderPaint = Paint()
+      ..color = borderColor
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
+    final path = Path();
+    const radius = 16.0;
+    const holeRadius = 12.0;
+    const holeY = 65.0; // Fixed y position for the hole (between header and body)
+
+    // Start at top-left
+    path.moveTo(radius, 0);
+    // Top line
+    path.lineTo(size.width - radius, 0);
+    // Top-right corner
+    path.arcToPoint(Offset(size.width, radius), radius: const Radius.circular(radius));
+    
+    // Right line down to hole
+    path.lineTo(size.width, holeY - holeRadius);
+    // Right hole (anti-clockwise)
+    path.arcToPoint(Offset(size.width, holeY + holeRadius), radius: const Radius.circular(holeRadius), clockwise: false);
+    
+    // Right line down to bottom
+    path.lineTo(size.width, size.height - radius);
+    // Bottom-right corner
+    path.arcToPoint(Offset(size.width - radius, size.height), radius: const Radius.circular(radius));
+    
+    // Bottom line
+    path.lineTo(radius, size.height);
+    // Bottom-left corner
+    path.arcToPoint(Offset(0, size.height - radius), radius: const Radius.circular(radius));
+    
+    // Left line up to hole
+    path.lineTo(0, holeY + holeRadius);
+    // Left hole (anti-clockwise)
+    path.arcToPoint(Offset(0, holeY - holeRadius), radius: const Radius.circular(holeRadius), clockwise: false);
+    
+    // Left line up to top
+    path.lineTo(0, radius);
+    // Top-left corner
+    path.arcToPoint(const Offset(radius, 0), radius: const Radius.circular(radius));
+    
+    path.close();
+
+    // Draw shadow
+    canvas.drawShadow(path, Colors.black.withOpacity(0.1), 8.0, true);
+    // Draw background
+    canvas.drawPath(path, paint);
+    // Draw border
+    canvas.drawPath(path, borderPaint);
+
+    // Draw dashed line
+    final dashPaint = Paint()
+      ..color = borderColor
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
+    double dashWidth = 6, dashSpace = 4, startX = holeRadius + 10;
+    while (startX < size.width - holeRadius - 10) {
+      canvas.drawLine(Offset(startX, holeY), Offset(startX + dashWidth, holeY), dashPaint);
+      startX += dashWidth + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
