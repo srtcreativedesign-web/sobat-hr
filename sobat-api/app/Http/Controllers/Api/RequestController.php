@@ -610,8 +610,32 @@ class RequestController extends Controller
                 $existingPhotos = $requestModel->overtimeDetail->proof_image_done ?? [];
                 $newPhotos = json_decode($validated['proof_image'], true);
                 if (!is_array($existingPhotos)) $existingPhotos = [];
+                
+                $savedPaths = [];
                 if (is_array($newPhotos)) {
-                    $mergedPhotos = array_merge($existingPhotos, $newPhotos);
+                    foreach ($newPhotos as $photoStr) {
+                        if (preg_match('/^data:image\/(\w+);base64,/', $photoStr, $type)) {
+                            $photoStr = substr($photoStr, strpos($photoStr, ',') + 1);
+                            $type = strtolower($type[1]);
+                            if (!in_array($type, ['jpg', 'jpeg', 'png', 'gif'])) {
+                                $type = 'jpg';
+                            }
+                            $photoStr = str_replace(' ', '+', $photoStr);
+                            $photoData = base64_decode($photoStr);
+
+                            if ($photoData !== false) {
+                                $filename = 'proofs/' . uniqid() . '.' . $type;
+                                \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $photoData);
+                                $savedPaths[] = $filename;
+                            }
+                        } else {
+                            $savedPaths[] = $photoStr;
+                        }
+                    }
+                }
+
+                if (count($savedPaths) > 0) {
+                    $mergedPhotos = array_merge($existingPhotos, $savedPaths);
                     $requestModel->overtimeDetail->update([
                         'proof_image_done' => $mergedPhotos,
                     ]);

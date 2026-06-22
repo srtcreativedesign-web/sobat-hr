@@ -442,6 +442,99 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
               _buildDetailRow(AppLocalizations.of(context)!.resignationType, AppLocalizations.of(context)!.resignationDefaultType, Icons.exit_to_app_outlined),
             ],
 
+            // Proof Image Done
+            if (widget.submission['detail'] != null && 
+                widget.submission['detail']['proof_image_done'] != null && 
+                (widget.submission['detail']['proof_image_done'] as List).isNotEmpty) ...[
+              const SizedBox(height: 24),
+              const Text(
+                'Bukti Selesai Lembur',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 200,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: (widget.submission['detail']['proof_image_done'] as List).length,
+                  itemBuilder: (context, index) {
+                    final att = (widget.submission['detail']['proof_image_done'] as List)[index];
+                    String imageUrl = '';
+                    bool isBase64 = false;
+                    
+                    if (att is String) {
+                      if (att.startsWith('data:image')) {
+                        isBase64 = true;
+                        imageUrl = att.split(',').last;
+                      } else {
+                        imageUrl = '${ApiConfig.baseUrl.replaceAll('/api/', '')}/storage/$att';
+                      }
+                    } else {
+                      return const SizedBox.shrink();
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: GestureDetector(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => Dialog(
+                              backgroundColor: Colors.transparent,
+                              insetPadding: EdgeInsets.zero,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  InteractiveViewer(
+                                    child: isBase64
+                                      ? Image.memory(base64Decode(imageUrl))
+                                      : Image.network(imageUrl),
+                                  ),
+                                  Positioned(
+                                    top: 20,
+                                    right: 20,
+                                    child: IconButton(
+                                      icon: const Icon(
+                                        Icons.close,
+                                        color: Colors.white,
+                                        size: 30,
+                                      ),
+                                      onPressed: () => Navigator.pop(ctx),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: isBase64 
+                            ? Image.memory(
+                                base64Decode(imageUrl),
+                                height: 200,
+                                width: 200,
+                                fit: BoxFit.cover,
+                              )
+                            : Image.network(
+                                imageUrl,
+                                height: 200,
+                                width: 200,
+                                fit: BoxFit.cover,
+                                errorBuilder: (ctx, _, _) => Container(
+                                  width: 200,
+                                  color: Colors.grey.shade200,
+                                  child: const Center(child: Icon(Icons.broken_image)),
+                                ),
+                              ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+
             // Attachments
             if (attachments.isNotEmpty) ...[
               const SizedBox(height: 24),
