@@ -418,23 +418,35 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
                         Row(
                           children: [
                             Expanded(
-                              child: RadioListTile<String>(
-                                title: const Text('Dinas', style: TextStyle(fontSize: 14)),
-                                value: 'dinas',
-                                groupValue: _permitType,
-                                contentPadding: EdgeInsets.zero,
-                                activeColor: AppTheme.primary,
-                                onChanged: (val) => setState(() => _permitType = val!),
+                              child: GestureDetector(
+                                onTap: () => setState(() => _permitType = 'dinas'),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  color: Colors.transparent,
+                                  child: Row(
+                                    children: [
+                                      Icon(_permitType == 'dinas' ? Icons.radio_button_checked : Icons.radio_button_unchecked, color: AppTheme.colorPrimary, size: 20),
+                                      const SizedBox(width: 8),
+                                      const Text('Dinas', style: TextStyle(fontSize: 14)),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                             Expanded(
-                              child: RadioListTile<String>(
-                                title: const Text('Pribadi', style: TextStyle(fontSize: 14)),
-                                value: 'pribadi',
-                                groupValue: _permitType,
-                                contentPadding: EdgeInsets.zero,
-                                activeColor: AppTheme.primary,
-                                onChanged: (val) => setState(() => _permitType = val!),
+                              child: GestureDetector(
+                                onTap: () => setState(() => _permitType = 'pribadi'),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  color: Colors.transparent,
+                                  child: Row(
+                                    children: [
+                                      Icon(_permitType == 'pribadi' ? Icons.radio_button_checked : Icons.radio_button_unchecked, color: AppTheme.colorPrimary, size: 20),
+                                      const SizedBox(width: 8),
+                                      const Text('Pribadi', style: TextStyle(fontSize: 14)),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           ],
@@ -1315,7 +1327,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
           }
           final sigBytes = await _signatureController.toPngBytes();
           if (sigBytes != null) {
-            data['signature'] = 'data:image/png;base64,' + base64Encode(sigBytes);
+            data['signature'] = 'data:image/png;base64,${base64Encode(sigBytes)}';
           }
         }
 
