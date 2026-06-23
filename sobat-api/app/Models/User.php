@@ -58,7 +58,7 @@ class User extends Authenticatable
 
     public function getHasPinAttribute()
     {
-        return ! is_null($this->security_pin);
+        return ! empty($this->security_pin);
     }
 
     /**
