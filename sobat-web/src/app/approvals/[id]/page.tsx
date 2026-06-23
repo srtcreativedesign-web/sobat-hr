@@ -241,7 +241,7 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                     {/* Left Column: Details */}
                     <div className="lg:col-span-2 space-y-6">
                         {/* Main Detail Card */}
@@ -427,7 +427,6 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                             
 
                         </div>
-                    </div>
 
                     {/* Attachments Card (Only show if present) */}
                     {(() => {
@@ -510,10 +509,10 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                         ) : null;
                     })()}
 
-                </div>
+                    </div>
 
-                {/* Bottom Row: Timeline & Actions */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                    {/* Right Column: Timeline & Actions */}
+                    <div className="lg:col-span-1 space-y-6 sticky top-24">
                     {/* Timeline */}
                     <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100/50 p-6 md:p-8">
                         <ApprovalTimeline approvals={request.approvals || []} />
