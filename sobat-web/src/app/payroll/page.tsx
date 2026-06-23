@@ -650,7 +650,8 @@ Ada beberapa error:
 
                     const response = await apiClient.post('/payrolls/approve-all', {
                       month: selectedMonth,
-                      year: selectedYear
+                      year: selectedYear,
+                      division: selectedDivision === 'all' ? 'office' : selectedDivision
                     });
 
                     alert(response.data.message);

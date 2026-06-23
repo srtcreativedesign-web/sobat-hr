@@ -1168,11 +1168,43 @@ class PayrollController extends Controller
         $request->validate([
             'month' => 'required|integer|min:1|max:12',
             'year' => 'required|integer|min:2020',
+            'division' => 'nullable|string|in:office,fnb,minimarket,reflexiology,wrapping,hans,cellular,money_changer,tungtau,maximum',
         ]);
+
+        $division = $request->input('division', 'office');
+
+        $model = Payroll::class;
+        if ($division === 'fnb') {
+            $model = \App\Models\PayrollFnb::class;
+        }
+        if ($division === 'minimarket') {
+            $model = \App\Models\PayrollMm::class;
+        }
+        if ($division === 'reflexiology') {
+            $model = \App\Models\PayrollRef::class;
+        }
+        if ($division === 'wrapping') {
+            $model = \App\Models\PayrollWrapping::class;
+        }
+        if ($division === 'hans') {
+            $model = \App\Models\PayrollHans::class;
+        }
+        if ($division === 'cellular') {
+            $model = \App\Models\PayrollCelluller::class;
+        }
+        if ($division === 'money_changer') {
+            $model = \App\Models\PayrollMoneyChanger::class;
+        }
+        if ($division === 'tungtau') {
+            $model = \App\Models\PayrollTungtau::class;
+        }
+        if ($division === 'maximum') {
+            $model = \App\Models\PayrollMaximum::class;
+        }
 
         $periodString = sprintf('%04d-%02d', $request->year, $request->month);
 
-        $payrolls = Payroll::where('period', $periodString)
+        $payrolls = $model::where('period', $periodString)
             ->where('status', 'draft')
             ->get();
 
