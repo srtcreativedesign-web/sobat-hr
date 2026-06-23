@@ -267,7 +267,7 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                     </div>
                                 </div>
 
-                                {request.type !== 'resignation' && (
+                                {!['resignation', 'exit_permit'].includes(request.type) && (
                                     <div className="space-y-1">
                                         <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">
                                             {request.type === 'asset' ? 'Estimated Cost' : 'Duration / Amount'}
@@ -356,28 +356,55 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
 
                                     </>
                                 ) : request.type === 'exit_permit' && request.detail ? (
-                                    <>
-                                        <div className="space-y-1">
-                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Keperluan</label>
-                                            <div className="font-semibold text-lg text-gray-900 capitalize">{request.detail.permit_type || '-'}</div>
+                                    <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-indigo-50/80 to-blue-50/40 rounded-2xl p-6 border border-indigo-100/50 mt-2">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                            {/* Left side: Permit details */}
+                                            <div className="flex-1 space-y-6">
+                                                <div className="grid grid-cols-2 gap-6">
+                                                    <div>
+                                                        <label className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold mb-2 block">Keperluan</label>
+                                                        <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold ${request.detail.permit_type?.toLowerCase() === 'dinas' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                                                            {request.detail.permit_type?.toLowerCase() === 'dinas' ? '🏢 Dinas' : '👤 Pribadi'}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold mb-1 block">Tujuan</label>
+                                                        <div className="font-bold text-gray-900 flex items-center gap-2">
+                                                            <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                                            {request.detail.destination || '-'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-6">
+                                                    <div>
+                                                        <label className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold mb-1 block">Waktu Keluar</label>
+                                                        <div className="font-semibold text-gray-800 flex items-center gap-1.5 text-sm">
+                                                            <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                                            {request.detail.date ? format(new Date(request.detail.date), 'dd MMM yyyy') : '-'}
+                                                            <span className="text-indigo-300 mx-0.5">•</span>
+                                                            <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                            {request.detail.start_time || '-'} - {request.detail.end_time || 'Selesai'}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold mb-1 block">No Polisi</label>
+                                                        <div className="font-semibold text-gray-800 flex items-center gap-1.5 text-sm">
+                                                            <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" /></svg>
+                                                            {request.detail.vehicle_plate || '-'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Right side: Signature */}
+                                            {request.detail.signature && (
+                                                <div className="shrink-0 bg-white/80 p-5 rounded-2xl border border-indigo-100/60 shadow-sm flex flex-col items-center min-w-[160px]">
+                                                    <span className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold mb-3">Tanda Tangan</span>
+                                                    <img src={request.detail.signature} alt="Signature" className="h-16 object-contain mix-blend-multiply" />
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Tujuan</label>
-                                            <div className="font-semibold text-lg text-gray-900">{request.detail.destination || '-'}</div>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Tanggal</label>
-                                            <div className="font-semibold text-lg text-gray-900">{request.detail.date ? format(new Date(request.detail.date), 'dd MMM yyyy') : '-'}</div>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Waktu</label>
-                                            <div className="font-semibold text-lg text-gray-900">{request.detail.start_time || '-'} s/d {request.detail.end_time || 'Selesai'}</div>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">No Polisi</label>
-                                            <div className="font-semibold text-lg text-gray-900">{request.detail.vehicle_plate || '-'}</div>
-                                        </div>
-                                    </>
+                                    </div>
                                 ) : (
                                     <>
                                         <div className="space-y-1">
@@ -398,14 +425,7 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                 </div>
                             </div>
                             
-                            {request.type === 'exit_permit' && request.detail?.signature && (
-                                <div className="mt-8 pt-8 border-t border-gray-100">
-                                    <label className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-3 block">Tanda Tangan Pemohon</label>
-                                    <div className="bg-white rounded-2xl p-4 border border-gray-100 inline-block">
-                                        <img src={request.detail.signature} alt="Signature" className="h-24 object-contain" />
-                                    </div>
-                                </div>
-                            )}
+
                         </div>
                     </div>
 
