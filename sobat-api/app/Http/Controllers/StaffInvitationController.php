@@ -371,7 +371,6 @@ class StaffInvitationController extends Controller
             $org = \App\Models\Organization::first();
             $employeeData = [
                 'user_id' => $user->id,
-                'organization_id' => $org ? $org->id : 1,
                 'employee_code' => 'EMP-' . str_pad($user->id, 4, '0', STR_PAD_LEFT),
                 'full_name' => $user->name,
                 'email' => $user->email,
