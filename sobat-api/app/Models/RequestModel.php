@@ -83,6 +83,11 @@ class RequestModel extends Model
         return $this->hasOne(ResignationDetail::class, 'request_id');
     }
 
+    public function exitPermitDetail()
+    {
+        return $this->hasOne(ExitPermitDetail::class, 'request_id');
+    }
+
     public function getDetailAttribute()
     {
         switch ($this->type) {
@@ -98,12 +103,14 @@ class RequestModel extends Model
                 return $this->overtimeDetail;
             case 'reimbursement': // used for Reimburse
                 return $this->reimbursementDetail;
-            case 'asset':
-                return $this->assetDetail;
+            case 'business_trip': // used for Perjalanan Dinas
+                return $this->businessTripDetail;
             case 'resignation':
                 return $this->resignationDetail;
-            case 'business_trip':
-                return $this->businessTripDetail;
+            case 'asset':
+                return $this->assetDetail;
+            case 'exit_permit':
+                return $this->exitPermitDetail;
             default:
                 return null;
         }

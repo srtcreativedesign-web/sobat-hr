@@ -106,7 +106,7 @@ export interface Shift {
 export interface Request {
   id: number;
   employee_id: number;
-  type: 'leave' | 'overtime' | 'reimbursement' | 'resignation' | 'business_trip' | 'sick_leave' | 'asset';
+  type: 'leave' | 'overtime' | 'reimbursement' | 'resignation' | 'business_trip' | 'sick_leave' | 'asset' | 'exit_permit';
   title: string;
   description: string;
   start_date?: string;

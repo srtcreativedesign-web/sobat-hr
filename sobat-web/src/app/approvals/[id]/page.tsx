@@ -355,6 +355,29 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                         
 
                                     </>
+                                ) : request.type === 'exit_permit' && request.detail ? (
+                                    <>
+                                        <div className="space-y-1">
+                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Keperluan</label>
+                                            <div className="font-semibold text-lg text-gray-900 capitalize">{request.detail.permit_type || '-'}</div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Tujuan</label>
+                                            <div className="font-semibold text-lg text-gray-900">{request.detail.destination || '-'}</div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Tanggal</label>
+                                            <div className="font-semibold text-lg text-gray-900">{request.detail.date ? format(new Date(request.detail.date), 'dd MMM yyyy') : '-'}</div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Waktu</label>
+                                            <div className="font-semibold text-lg text-gray-900">{request.detail.start_time || '-'} s/d {request.detail.end_time || 'Selesai'}</div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">No Polisi</label>
+                                            <div className="font-semibold text-lg text-gray-900">{request.detail.vehicle_plate || '-'}</div>
+                                        </div>
+                                    </>
                                 ) : (
                                     <>
                                         <div className="space-y-1">
@@ -374,6 +397,15 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
                                     {request.description}
                                 </div>
                             </div>
+                            
+                            {request.type === 'exit_permit' && request.detail?.signature && (
+                                <div className="mt-8 pt-8 border-t border-gray-100">
+                                    <label className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-3 block">Tanda Tangan Pemohon</label>
+                                    <div className="bg-white rounded-2xl p-4 border border-gray-100 inline-block">
+                                        <img src={request.detail.signature} alt="Signature" className="h-24 object-contain" />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 

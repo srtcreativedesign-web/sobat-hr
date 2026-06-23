@@ -265,6 +265,20 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           ),
           _buildMenuItem(
             context,
+            assetIcon: 'assets/icons/leave.png',
+            iconColor: const Color(0xFF534AB7),
+            bgColor: const Color(0xFFEEEDFE),
+            title: 'Izin Keluar',
+            subtitle: 'Surat jalan untuk keluar kantor saat jam kerja',
+            onTap:
+                () => Navigator.pushNamed(
+                  context,
+                  '/submission/create',
+                  arguments: 'Izin Keluar',
+                ),
+          ),
+          _buildMenuItem(
+            context,
             assetIcon: 'assets/icons/history.png',
             iconColor: const Color(0xFF3B6D11),
             bgColor: const Color(0xFFEAF3DE),

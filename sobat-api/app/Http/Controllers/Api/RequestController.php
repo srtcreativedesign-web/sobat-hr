@@ -108,7 +108,7 @@ class RequestController extends Controller
         // Note: added business_trip, sick_leave to allowed types
         $validated = $request->validate([
             'employee_id' => 'required|exists:employees,id',
-            'type' => 'required|in:leave,sick_leave,overtime,reimbursement,business_trip,resignation,asset',
+            'type' => 'required|in:leave,sick_leave,overtime,reimbursement,business_trip,resignation,asset,exit_permit',
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'reason' => 'nullable|string', // Optional override
@@ -129,6 +129,10 @@ class RequestController extends Controller
             'is_urgent' => 'nullable|boolean',
             // Resignation fields
             'last_working_date' => 'nullable|date',
+            // Exit Permit fields
+            'permit_type' => 'nullable|in:dinas,pribadi',
+            'vehicle_plate' => 'nullable|string',
+            'signature' => 'nullable|string',
         ]);
 
         // Prevent Double Submission using Atomic Lock
@@ -265,6 +269,19 @@ class RequestController extends Controller
                             'last_working_date' => $request->last_working_date,
                             // Default to normal for now, can be expanded later
                             'resign_type' => 'normal',
+                        ]);
+                        break;
+
+                    case 'exit_permit':
+                        \App\Models\ExitPermitDetail::create([
+                            'request_id' => $requestModel->id,
+                            'permit_type' => $request->permit_type ?? 'dinas',
+                            'destination' => $request->destination ?? $request->title,
+                            'vehicle_plate' => $request->vehicle_plate,
+                            'date' => $request->date ?? $request->start_date ?? date('Y-m-d'),
+                            'start_time' => $request->start_time,
+                            'end_time' => $request->end_time,
+                            'signature' => $request->signature,
                         ]);
                         break;
                 }
@@ -448,7 +465,7 @@ class RequestController extends Controller
 
     public function exportProof($id)
     {
-        $requestModel = RequestModel::with(['employee', 'approvals.approver', 'businessTripDetail', 'leaveDetail', 'reimbursementDetail', 'assetDetail', 'overtimeDetail'])->findOrFail($id);
+        $requestModel = RequestModel::with(['employee', 'approvals.approver', 'businessTripDetail', 'leaveDetail', 'reimbursementDetail', 'assetDetail', 'overtimeDetail', 'exitPermitDetail'])->findOrFail($id);
 
         // --- IDOR GUARD ---
         $user = auth()->user();
@@ -465,6 +482,8 @@ class RequestController extends Controller
             $pdf = Pdf::loadView('pdf.approval_proof_reimbursement', ['request' => $requestModel]);
         } elseif ($requestModel->type == 'resignation') {
             $pdf = Pdf::loadView('pdf.approval_proof_resignation', ['request' => $requestModel]);
+        } elseif ($requestModel->type == 'exit_permit') {
+            $pdf = Pdf::loadView('pdf.approval_proof_exit_permit', ['request' => $requestModel]);
         } else {
             $pdf = Pdf::loadView('pdf.approval_proof', ['request' => $requestModel]);
         }

@@ -423,6 +423,50 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
               ),
             ],
 
+            // Exit Permit Details
+            if (widget.submission['type'] == 'exit_permit' &&
+                widget.submission['detail'] != null) ...[
+              const SizedBox(height: 16),
+              _buildDetailRow(
+                'Keperluan',
+                (widget.submission['detail']['permit_type'] ?? '-').toString().toUpperCase(),
+                Icons.category_outlined,
+              ),
+              const SizedBox(height: 16),
+              _buildDetailRow(
+                'Tujuan',
+                widget.submission['detail']['destination'] ?? '-',
+                Icons.location_on_outlined,
+              ),
+              const SizedBox(height: 16),
+              _buildDetailRow(
+                'No Polisi',
+                widget.submission['detail']['vehicle_plate'] ?? '-',
+                Icons.directions_car_outlined,
+              ),
+              if (widget.submission['detail']['signature'] != null && widget.submission['detail']['signature'].toString().contains(',')) ...[
+                const SizedBox(height: 16),
+                const Text(
+                  'Tanda Tangan Pemohon',
+                  style: TextStyle(fontSize: 12, color: AppTheme.textLight, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.grey.shade200),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Image.memory(
+                    base64Decode(widget.submission['detail']['signature'].toString().split(',').last),
+                    height: 100,
+                    errorBuilder: (ctx, _, __) => const Icon(Icons.broken_image),
+                  ),
+                ),
+              ],
+            ],
+
             // Resignation Details
             if (widget.submission['type'] == 'resignation' &&
                 widget.submission['detail'] != null) ...[
@@ -689,7 +733,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
               border: Border.all(color: Colors.grey.shade100),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -944,7 +988,7 @@ class TicketPainter extends CustomPainter {
     path.close();
 
     // Draw shadow
-    canvas.drawShadow(path, Colors.black.withOpacity(0.1), 8.0, true);
+    canvas.drawShadow(path, Colors.black.withValues(alpha: 0.1), 8.0, true);
     // Draw background
     canvas.drawPath(path, paint);
     // Draw border

@@ -27,6 +27,8 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
   final _titleCtrl =
       TextEditingController(); // New: Judul Pengajuan (Reimbursement)
   final _destinationCtrl = TextEditingController(); // New: Tujuan (Business Trip)
+  final _vehiclePlateCtrl = TextEditingController(); // New: No Polisi (Izin Keluar)
+  String _permitType = 'dinas'; // New: Keperluan (Izin Keluar)
 
   bool _isUrgent = false; // New: Urgent/Tidak
   File? _selectedFile; // Renamed from _selectedImage to allow PDF
@@ -185,6 +187,7 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
     _specCtrl.dispose();
     _titleCtrl.dispose();
     _destinationCtrl.dispose();
+    _vehiclePlateCtrl.dispose();
     _signatureController.dispose();
     super.dispose();
   }
@@ -410,6 +413,108 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
                         ),
                         const SizedBox(height: 20),
                         _buildUploadButton(label: AppLocalizations.of(context)!.resignationLabel),
+                      ] else if (widget.type == 'Izin Keluar') ...[
+                        _buildLabel('Keperluan'),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: RadioListTile<String>(
+                                title: const Text('Dinas', style: TextStyle(fontSize: 14)),
+                                value: 'dinas',
+                                groupValue: _permitType,
+                                contentPadding: EdgeInsets.zero,
+                                activeColor: AppTheme.primary,
+                                onChanged: (val) => setState(() => _permitType = val!),
+                              ),
+                            ),
+                            Expanded(
+                              child: RadioListTile<String>(
+                                title: const Text('Pribadi', style: TextStyle(fontSize: 14)),
+                                value: 'pribadi',
+                                groupValue: _permitType,
+                                contentPadding: EdgeInsets.zero,
+                                activeColor: AppTheme.primary,
+                                onChanged: (val) => setState(() => _permitType = val!),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        _buildTextInput(
+                          _destinationCtrl,
+                          'Tujuan',
+                          'Misal: Bandara Soekarno Hatta',
+                        ),
+                        const SizedBox(height: 20),
+                        _buildTextInput(
+                          _vehiclePlateCtrl,
+                          'No Polisi Kendaraan (Opsional)',
+                          'Misal: B 1234 ABC',
+                        ),
+                        const SizedBox(height: 20),
+                        _buildLabel('Tanggal Keluar'),
+                        _buildClickableInput(
+                          icon: Icons.calendar_today,
+                          value: _startDate != null
+                              ? DateFormat('dd MMM yyyy', Localizations.localeOf(context).languageCode == 'id' ? 'id_ID' : 'en_US').format(_startDate!)
+                              : 'Pilih Tanggal',
+                          isPlaceholder: _startDate == null,
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                              lastDate: DateTime.now().add(const Duration(days: 30)),
+                            );
+                            if (picked != null) setState(() => _startDate = picked);
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildLabel('Jam Keluar'),
+                                  _buildClickableInput(
+                                    icon: Icons.access_time,
+                                    value: _startTime?.format(context) ?? 'Pilih Waktu',
+                                    isPlaceholder: _startTime == null,
+                                    onTap: () async {
+                                      final picked = await showTimePicker(
+                                        context: context,
+                                        initialTime: TimeOfDay.now(),
+                                      );
+                                      if (picked != null) setState(() => _startTime = picked);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildLabel('Jam Selesai'),
+                                  _buildClickableInput(
+                                    icon: Icons.access_time,
+                                    value: _endTime?.format(context) ?? 'Selesai',
+                                    isPlaceholder: _endTime == null,
+                                    onTap: () async {
+                                      final picked = await showTimePicker(
+                                        context: context,
+                                        initialTime: TimeOfDay.now(),
+                                      );
+                                      if (picked != null) setState(() => _endTime = picked);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
 
                       const SizedBox(height: 20),
@@ -1149,6 +1254,9 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
           case 'Resign':
             apiType = 'resignation';
             break;
+          case 'Izin Keluar':
+            apiType = 'exit_permit';
+            break;
 
           default:
         }
@@ -1193,6 +1301,22 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
           // it uses: 'last_working_date' => $request->last_working_date
           // So I need to send 'last_working_date'.
           data['last_working_date'] = _startDate?.toIso8601String();
+        }
+
+        if (apiType == 'exit_permit') {
+          data['permit_type'] = _permitType;
+          data['destination'] = _destinationCtrl.text;
+          data['vehicle_plate'] = _vehiclePlateCtrl.text;
+          if (_startTime != null) {
+            data['start_time'] = '${_startTime!.hour.toString().padLeft(2, "0")}:${_startTime!.minute.toString().padLeft(2, "0")}';
+          }
+          if (_endTime != null) {
+            data['end_time'] = '${_endTime!.hour.toString().padLeft(2, "0")}:${_endTime!.minute.toString().padLeft(2, "0")}';
+          }
+          final sigBytes = await _signatureController.toPngBytes();
+          if (sigBytes != null) {
+            data['signature'] = 'data:image/png;base64,' + base64Encode(sigBytes);
+          }
         }
 
         // Process Attachments (Image/PDF)

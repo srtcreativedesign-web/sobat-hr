@@ -18,7 +18,7 @@ class ApiConfig {
   static const String _env = String.fromEnvironment('ENV', defaultValue: 'dev');
   static const String _devHost = String.fromEnvironment(
     'DEV_HOST',
-    defaultValue: '192.168.1.8',
+    defaultValue: '192.168.1.9',
   );
 
   /// Returns true if production mode:
@@ -26,7 +26,7 @@ class ApiConfig {
   /// - Running in release mode (Xcode Archive, flutter build --release)
   static bool get _isProd => _env == 'prod' || kReleaseMode;
 
-  static const String _hostIp = '192.168.1.8';
+  static const String _hostIp = '192.168.1.9';
 
   static const String _port = '8000';
 
