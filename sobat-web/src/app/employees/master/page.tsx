@@ -5,7 +5,8 @@ import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
 import EmployeeForm from '../components/EmployeeForm';
 import { DataTable } from '@/components/ui/data-table';
-import { User, Chip, Button } from '@nextui-org/react';
+import { User, Chip, Button, Input } from '@nextui-org/react';
+import { Search } from 'lucide-react';
 
 export default function EmployeeMasterPage() {
     const [employees, setEmployees] = useState<any[]>([]);
@@ -173,16 +174,25 @@ export default function EmployeeMasterPage() {
                 {/* Search */}
                 <div className="bg-white p-4 rounded-xl shadow-sm mb-6 border border-gray-100">
                     <form onSubmit={handleSearch} className="flex gap-4">
-                        <input
-                            type="text"
+                        <Input
+                            isClearable
+                            classNames={{
+                                base: "flex-1",
+                                inputWrapper: "border border-gray-200 bg-white hover:bg-gray-50 focus-within:ring-2 focus-within:ring-[#60A5FA] h-full",
+                            }}
                             placeholder="Cari nama atau NIK..."
-                            className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#60A5FA] outline-none"
+                            startContent={<Search className="text-gray-400" size={18} />}
                             value={searchTerm}
+                            onClear={() => setSearchTerm('')}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
-                        <button type="submit" className="px-6 py-2 bg-[#60A5FA] text-[#1C3ECA] font-bold rounded-lg hover:bg-[#8fdad0]">
+                        <Button 
+                            type="submit" 
+                            color="primary" 
+                            className="px-6 font-bold bg-[#60A5FA] text-[#1C3ECA]"
+                        >
                             Cari
-                        </button>
+                        </Button>
                     </form>
                 </div>
 

@@ -9,6 +9,8 @@ import apiClient from '@/lib/api-client';
 import SignatureCanvas from 'react-signature-canvas';
 import { NavTabs } from '@/components/ui/tabs';
 import { DataTable } from '@/components/ui/data-table';
+import { Input } from '@nextui-org/react';
+import { Search } from 'lucide-react';
 
 interface Payroll {
   id: number;
@@ -708,19 +710,18 @@ Ada beberapa error:
           </div>
 
           <div className="flex items-center gap-2 flex-grow max-w-sm px-4">
-             <div className="relative w-full">
-               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                 <svg className="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                   <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
-                 </svg>
-               </div>
-               <input 
-                 type="text" 
-                 className="block w-full p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg focus:ring-[#1C3ECA] focus:border-[#1C3ECA]" 
-                 placeholder="Cari nama karyawan..." 
-                 value={searchQuery}
-                 onChange={(e) => setSearchQuery(e.target.value)}
-               />
+             <div className="w-full">
+                <Input
+                  isClearable
+                  classNames={{
+                    inputWrapper: "border border-gray-300 bg-white hover:bg-gray-50 focus-within:ring-2 focus-within:ring-[#1C3ECA]",
+                  }}
+                  placeholder="Cari nama karyawan..."
+                  startContent={<Search className="text-gray-400" size={18} />}
+                  value={searchQuery}
+                  onClear={() => setSearchQuery('')}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
              </div>
           </div>
 

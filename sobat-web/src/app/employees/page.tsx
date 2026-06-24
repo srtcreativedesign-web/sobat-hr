@@ -7,7 +7,8 @@ import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
 import Swal from 'sweetalert2';
 import { DataTable } from '@/components/ui/data-table';
-import { User, Chip, Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@nextui-org/react';
+import { User, Chip, Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Input } from '@nextui-org/react';
+import { Search } from 'lucide-react';
 
 interface Employee {
   id: number;
@@ -511,12 +512,16 @@ export default function EmployeesPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Cari Karyawan
                 </label>
-                <input
-                  type="text"
+                <Input
+                  isClearable
+                  classNames={{
+                    inputWrapper: "border border-gray-300 bg-white hover:bg-gray-50 focus-within:ring-2 focus-within:ring-[#1C3ECA]",
+                  }}
                   placeholder="Nama atau NIK..."
+                  startContent={<Search className="text-gray-400" size={18} />}
                   value={searchTerm}
+                  onClear={() => setSearchTerm('')}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:border-transparent"
                 />
               </div>
 

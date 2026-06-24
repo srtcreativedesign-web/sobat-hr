@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth-store';
 import apiClient from '@/lib/api-client';
 import Swal from 'sweetalert2';
+import { Input } from '@nextui-org/react';
+import { Search } from 'lucide-react';
 
 interface Division {
     id: number;
@@ -157,17 +159,16 @@ export default function ManageDivisionsPage() {
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-4 border-b border-gray-100 flex gap-4">
-                    <div className="relative flex-1 max-w-md">
-                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </span>
-                        <input
-                            type="text"
+                    <div className="w-full md:w-64">
+                        <Input
+                            isClearable
+                            classNames={{
+                                inputWrapper: "border border-gray-300 bg-white hover:bg-gray-50 focus-within:ring-2 focus-within:ring-[#1C3ECA]",
+                            }}
                             placeholder="Cari Divisi..."
-                            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            startContent={<Search className="text-gray-400" size={18} />}
                             value={search}
+                            onClear={() => setSearch('')}
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>

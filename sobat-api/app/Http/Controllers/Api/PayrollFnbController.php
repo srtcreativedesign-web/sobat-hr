@@ -389,42 +389,42 @@ class PayrollFnbController extends Controller
                     if ($daysPresent < 0) $daysPresent = 0;
                 }
                 
-                $basicSalary = $getCellValue($columnMapping['basic_salary'] ?? null, $row);
-                $attendanceRate = $getCellValue($columnMapping['attendance_rate'] ?? null, $row);
-                $attendanceAmount = $getCellValue($columnMapping['attendance_allowance'] ?? null, $row);
-                $transportRate = $getCellValue($columnMapping['transport_rate'] ?? null, $row);
-                $transportAmount = $getCellValue($columnMapping['transport_amount'] ?? null, $row);
-                $healthAllowance = $getCellValue($columnMapping['health_allowance'] ?? null, $row);
-                $positionAllowance = $getCellValue($columnMapping['position_allowance'] ?? null, $row);
-                $totalSalary1 = $getCellValue($columnMapping['total_salary_1'] ?? null, $row);
+                $basicSalary = (float) $getCellValue($columnMapping['basic_salary'] ?? null, $row);
+                $attendanceRate = (float) $getCellValue($columnMapping['attendance_rate'] ?? null, $row);
+                $attendanceAmount = (float) $getCellValue($columnMapping['attendance_allowance'] ?? null, $row);
+                $transportRate = (float) $getCellValue($columnMapping['transport_rate'] ?? null, $row);
+                $transportAmount = (float) $getCellValue($columnMapping['transport_amount'] ?? null, $row);
+                $healthAllowance = (float) $getCellValue($columnMapping['health_allowance'] ?? null, $row);
+                $positionAllowance = (float) $getCellValue($columnMapping['position_allowance'] ?? null, $row);
+                $totalSalary1 = (float) $getCellValue($columnMapping['total_salary_1'] ?? null, $row);
                 
-                $overtimeRate = $getCellValue($columnMapping['overtime_rate'] ?? null, $row);
-                $overtimeHours = $getCellValue($columnMapping['overtime_hours'] ?? null, $row);
-                $overtimeAmount = $getCellValue($columnMapping['overtime_amount'] ?? null, $row);
+                $overtimeRate = (float) $getCellValue($columnMapping['overtime_rate'] ?? null, $row);
+                $overtimeHours = (float) $getCellValue($columnMapping['overtime_hours'] ?? null, $row);
+                $overtimeAmount = (float) $getCellValue($columnMapping['overtime_amount'] ?? null, $row);
                 
-                $backup = $getCellValue($columnMapping['backup'] ?? null, $row);
-                $insentif = $getCellValue($columnMapping['insentif'] ?? null, $row);
-                $insentifKehadiran = $getCellValue($columnMapping['insentif_kehadiran'] ?? null, $row);
-                $holidayAllowance = $getCellValue($columnMapping['bonus'] ?? null, $row);
-                $adjustment = $getCellValue($columnMapping['adjustment'] ?? null, $row);
-                $totalSalary2 = $getCellValue($columnMapping['total_salary_gross'] ?? null, $row);
-                $policyHo = $getCellValue($columnMapping['policy_ho'] ?? null, $row);
+                $backup = (float) $getCellValue($columnMapping['backup'] ?? null, $row);
+                $insentif = (float) $getCellValue($columnMapping['insentif'] ?? null, $row);
+                $insentifKehadiran = (float) $getCellValue($columnMapping['insentif_kehadiran'] ?? null, $row);
+                $holidayAllowance = (float) $getCellValue($columnMapping['bonus'] ?? null, $row);
+                $adjustment = (float) $getCellValue($columnMapping['adjustment'] ?? null, $row);
+                $totalSalary2 = (float) $getCellValue($columnMapping['total_salary_gross'] ?? null, $row);
+                $policyHo = (float) $getCellValue($columnMapping['policy_ho'] ?? null, $row);
                 
-                $deductionAbsent = $getCellValue($columnMapping['deduction_absent'] ?? null, $row);
-                $deductionLate = $getCellValue($columnMapping['deduction_late'] ?? null, $row);
-                $deductionShortage = $getCellValue($columnMapping['shortage_deduction'] ?? null, $row);
-                $deductionLoan = $getCellValue($columnMapping['deduction_loan'] ?? null, $row);
-                $deductionAdminFee = $getCellValue($columnMapping['deduction_admin_fee'] ?? null, $row);
-                $deductionBpjsTk = $getCellValue($columnMapping['deduction_bpjs_tk'] ?? null, $row);
-                $totalDeductions = $getCellValue($columnMapping['total_deduction'] ?? null, $row);
+                $deductionAbsent = (float) $getCellValue($columnMapping['deduction_absent'] ?? null, $row);
+                $deductionLate = (float) $getCellValue($columnMapping['deduction_late'] ?? null, $row);
+                $deductionShortage = (float) $getCellValue($columnMapping['shortage_deduction'] ?? null, $row);
+                $deductionLoan = (float) $getCellValue($columnMapping['deduction_loan'] ?? null, $row);
+                $deductionAdminFee = (float) $getCellValue($columnMapping['deduction_admin_fee'] ?? null, $row);
+                $deductionBpjsTk = (float) $getCellValue($columnMapping['deduction_bpjs_tk'] ?? null, $row);
+                $totalDeductions = (float) $getCellValue($columnMapping['total_deduction'] ?? null, $row);
                 
                 if ($totalDeductions <= 0) {
                     $totalDeductions = abs($deductionAbsent) + abs($deductionLate) + abs($deductionShortage) + abs($deductionLoan) + abs($deductionAdminFee) + abs($deductionBpjsTk);
                 }
                 
-                $grandTotal = $getCellValue($columnMapping['thp'] ?? null, $row);
-                $ewa = $getCellValue($columnMapping['ewa_amount'] ?? null, $row);
-                $netSalary = $getCellValue($columnMapping['net_salary'] ?? null, $row);
+                $grandTotal = (float) $getCellValue($columnMapping['thp'] ?? null, $row);
+                $ewa = (float) $getCellValue($columnMapping['ewa_amount'] ?? null, $row);
+                $netSalary = (float) $getCellValue($columnMapping['net_salary'] ?? null, $row);
                 
                 if ($netSalary <= 0 && $grandTotal > 0) {
                     $netSalary = $grandTotal;

@@ -773,34 +773,34 @@ if ($headerRowIndex === -1) {
                     if ($daysPresent < 0) $daysPresent = 0;
                 }
                 
-                $basicSalary = $getCellValue($columnMapping['basic_salary'] ?? null, $row);
-                $attendanceRate = $getCellValue($columnMapping['attendance_rate'] ?? null, $row);
-                $attendanceAmount = $getCellValue($columnMapping['attendance_allowance'] ?? null, $row);
+                $basicSalary = (float)$getCellValue($columnMapping['basic_salary'] ?? null, $row);
+                $attendanceRate = (float)$getCellValue($columnMapping['attendance_rate'] ?? null, $row);
+                $attendanceAmount = (float)$getCellValue($columnMapping['attendance_allowance'] ?? null, $row);
                 
                 // Fallback: Infer rate if missing
                 if ((float)$attendanceRate <= 0 && (float)$attendanceAmount > 0 && $daysPresent > 0) {
                     $attendanceRate = (float)$attendanceAmount / $daysPresent;
                 }
                 
-                $mealRate = $getCellValue($columnMapping['meal_rate'] ?? null, $row);
-                $mealAmount = $getCellValue($columnMapping['meal_amount'] ?? null, $row);
+                $mealRate = (float)$getCellValue($columnMapping['meal_rate'] ?? null, $row);
+                $mealAmount = (float)$getCellValue($columnMapping['meal_amount'] ?? null, $row);
                 
                 // Fallback: Infer meal rate if missing
                 if ((float)$mealRate <= 0 && (float)$mealAmount > 0 && $daysPresent > 0) {
                     $mealRate = (float)$mealAmount / $daysPresent;
                 }
                 
-                $transportRate = $getCellValue($columnMapping['transport_rate'] ?? null, $row);
-                $transportAmount = $getCellValue($columnMapping['transport_amount'] ?? null, $row);
+                $transportRate = (float)$getCellValue($columnMapping['transport_rate'] ?? null, $row);
+                $transportAmount = (float)$getCellValue($columnMapping['transport_amount'] ?? null, $row);
                 
                 // Fallback: Infer transport rate if missing
                 if ((float)$transportRate <= 0 && (float)$transportAmount > 0 && $daysPresent > 0) {
                     $transportRate = (float)$transportAmount / $daysPresent;
                 }
                 
-                $healthAllowance = $getCellValue($columnMapping['health_allowance'] ?? null, $row);
-                $positionAllowance = $getCellValue($columnMapping['position_allowance'] ?? null, $row);
-                $totalSalary1 = $getCellValue($columnMapping['total_salary_1'] ?? null, $row);
+                $healthAllowance = (float)$getCellValue($columnMapping['health_allowance'] ?? null, $row);
+                $positionAllowance = (float)$getCellValue($columnMapping['position_allowance'] ?? null, $row);
+                $totalSalary1 = (float)$getCellValue($columnMapping['total_salary_1'] ?? null, $row);
                 $overtimeRate = (float)$getCellValue($columnMapping['overtime_rate'] ?? null, $row);
                 $overtimeHours = (float)$getCellValue($columnMapping['overtime_hours'] ?? null, $row);
                 $overtimeAmount = (float)$getCellValue($columnMapping['overtime_amount'] ?? null, $row);
@@ -869,33 +869,34 @@ if ($headerRowIndex === -1) {
                         'final_mandatory_amount' => $mandatoryOvertimeAmount,
                     ]);
                 }
-                $targetKoli = $getCellValue($columnMapping['target_koli'] ?? null, $row);
-                $accessoryFee = $getCellValue($columnMapping['accessory_fee'] ?? null, $row);
-                $backup = $getCellValue($columnMapping['backup_allowance'] ?? null, $row);
-                $insentifKehadiran = $getCellValue($columnMapping['attendance_incentive'] ?? null, $row);
-                $holidayAllowance = $getCellValue($columnMapping['holiday_allowance'] ?? null, $row);
-                $bonus = $getCellValue($columnMapping['bonus'] ?? null, $row);
-                $adjustment = $getCellValue($columnMapping['adjustment'] ?? null, $row);
-                $totalSalary2 = $getCellValue($columnMapping['total_salary_gross'] ?? null, $row);
-                $policyHo = $getCellValue($columnMapping['policy_ho_amount'] ?? null, $row);
-                $deductionAbsent = $getCellValue($columnMapping['deduction_absent'] ?? null, $row);
-                $deductionLate = $getCellValue($columnMapping['deduction_late'] ?? null, $row);
-                $deductionShortage = $getCellValue($columnMapping['shortage_deduction'] ?? null, $row);
-                $deductionLoan = $getCellValue($columnMapping['deduction_loan'] ?? null, $row);
-                $deductionAdminFee = $getCellValue($columnMapping['bank_fee'] ?? null, $row);
-                $deductionBpjsTk = $getCellValue($columnMapping['bpjs_tk_deduction'] ?? null, $row);
-                $totalDeductions = $getCellValue($columnMapping['total_deduction'] ?? null, $row);
+                $targetKoli = (float)$getCellValue($columnMapping['target_koli'] ?? null, $row);
+                $accessoryFee = (float)$getCellValue($columnMapping['accessory_fee'] ?? null, $row);
+                $backup = (float)$getCellValue($columnMapping['backup_allowance'] ?? null, $row);
+                $insentifKehadiran = (float)$getCellValue($columnMapping['attendance_incentive'] ?? null, $row);
+                $holidayAllowance = (float)$getCellValue($columnMapping['holiday_allowance'] ?? null, $row);
+                $bonus = (float)$getCellValue($columnMapping['bonus'] ?? null, $row);
+                $adjustment = (float)$getCellValue($columnMapping['adjustment'] ?? null, $row);
+                $totalSalary2 = (float)$getCellValue($columnMapping['total_salary_gross'] ?? null, $row);
+                $policyHo = (float)$getCellValue($columnMapping['policy_ho_amount'] ?? null, $row);
+                
+                $deductionAbsent = (float)$getCellValue($columnMapping['deduction_absent'] ?? null, $row);
+                $deductionLate = (float)$getCellValue($columnMapping['deduction_late'] ?? null, $row);
+                $deductionShortage = (float)$getCellValue($columnMapping['shortage_deduction'] ?? null, $row);
+                $deductionLoan = (float)$getCellValue($columnMapping['deduction_loan'] ?? null, $row);
+                $deductionAdminFee = (float)$getCellValue($columnMapping['deduction_admin_fee'] ?? null, $row);
+                $deductionBpjsTk = (float)$getCellValue($columnMapping['deduction_bpjs_tk'] ?? null, $row);
+                $totalDeductions = (float)$getCellValue($columnMapping['total_deduction'] ?? null, $row);
                 
                 if ($totalDeductions <= 0) {
-                    $totalDeductions = abs((float)$deductionAbsent) + abs((float)$deductionLate) + abs((float)$deductionShortage) + abs((float)$deductionLoan) + abs((float)$deductionAdminFee) + abs((float)$deductionBpjsTk);
+                    $totalDeductions = abs($deductionAbsent) + abs($deductionLate) + abs($deductionShortage) + abs($deductionLoan) + abs($deductionAdminFee) + abs($deductionBpjsTk);
                 }
                 
-                $grandTotal = $getCellValue($columnMapping['thp'] ?? null, $row);
-                $ewa = $getCellValue($columnMapping['ewa_amount'] ?? null, $row);
-                $netSalary = $getCellValue($columnMapping['net_salary'] ?? null, $row);
+                $grandTotal = (float)$getCellValue($columnMapping['thp'] ?? null, $row);
+                $ewa = (float)$getCellValue($columnMapping['ewa_amount'] ?? null, $row);
+                $netSalary = (float)$getCellValue($columnMapping['net_salary'] ?? null, $row);
                 
                 if ($netSalary <= 0 && $grandTotal > 0) {
-                    $netSalary = (float)$grandTotal - (float)$ewa;
+                    $netSalary = $grandTotal - $ewa;
                 }
                 
                 if ($totalSalary2 > 0) {
