@@ -534,6 +534,26 @@ class PayrollFnbController extends Controller
                     'status' => 'draft'
                 ]);
                 
+                // Sanitize all numeric fields to prevent "Incorrect decimal value" errors
+                $numericFields = [
+                    'days_total', 'days_off', 'days_sick', 'days_permission', 'days_alpha', 'days_leave', 'days_present',
+                    'basic_salary', 'attendance_rate', 'attendance_amount', 'transport_rate', 'transport_amount',
+                    'health_allowance', 'position_allowance', 'total_salary_1', 'overtime_rate', 'overtime_hours',
+                    'overtime_amount', 'holiday_allowance', 'adjustment', 'total_salary_2', 'policy_ho',
+                    'deduction_absent', 'deduction_late', 'deduction_shortage', 'deduction_loan', 'deduction_admin_fee',
+                    'deduction_bpjs_tk', 'total_deductions', 'grand_total', 'ewa_amount', 'net_salary'
+                ];
+                
+                foreach ($numericFields as $field) {
+                    if (isset($payrollData[$field])) {
+                        if ($payrollData[$field] === '' || $payrollData[$field] === null || $payrollData[$field] === '#N/A') {
+                            $payrollData[$field] = 0;
+                        } else {
+                            $payrollData[$field] = (float) $payrollData[$field];
+                        }
+                    }
+                }
+                
                 if ($existing) {
                     $existing->update($payrollData);
                 } else {

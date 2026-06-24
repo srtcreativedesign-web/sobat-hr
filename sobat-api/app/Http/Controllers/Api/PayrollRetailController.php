@@ -1044,6 +1044,26 @@ if ($headerRowIndex === -1) {
                 // Filter row data to only include columns that exist in the target table
                 $filteredRow = array_intersect_key($row, array_flip($tableColumns));
                 
+                // Sanitize all numeric fields to prevent "Incorrect decimal value" errors
+                $numericFields = [
+                    'days_total', 'days_off', 'days_sick', 'days_permission', 'days_alpha', 'days_leave', 'days_present',
+                    'basic_salary', 'attendance_rate', 'attendance_amount', 'transport_rate', 'transport_amount',
+                    'health_allowance', 'position_allowance', 'total_salary_1', 'overtime_rate', 'overtime_hours',
+                    'overtime_amount', 'holiday_allowance', 'adjustment', 'total_salary_2', 'policy_ho', 'target_koli', 'accessory_fee', 'backup_allowance', 'attendance_incentive', 'bonus', 'policy_ho_amount', 'deduction_so_shortage',
+                    'deduction_absent', 'deduction_late', 'deduction_shortage', 'deduction_loan', 'deduction_admin_fee',
+                    'deduction_bpjs_tk', 'total_deductions', 'grand_total', 'ewa_amount', 'net_salary', 'meal_rate', 'meal_amount'
+                ];
+                
+                foreach ($numericFields as $field) {
+                    if (isset($filteredRow[$field])) {
+                        if ($filteredRow[$field] === '' || $filteredRow[$field] === null || $filteredRow[$field] === '#N/A') {
+                            $filteredRow[$field] = 0;
+                        } else {
+                            $filteredRow[$field] = (float) $filteredRow[$field];
+                        }
+                    }
+                }
+                
                 $this->getModel($request->division_type)->create(array_merge($filteredRow, [
                     'employee_id' => $employee->id,
                     'status' => 'draft',
