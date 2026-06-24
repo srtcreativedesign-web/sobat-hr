@@ -350,15 +350,19 @@ export default function EmployeesPage() {
     try {
       const response = await apiClient.post(`/admin/impersonate/${employeeId}`);
       if (response.data.success) {
-        // Save current admin token to return later
-        const currentToken = localStorage.getItem('token');
-        if (currentToken) {
-            localStorage.setItem('admin_token', currentToken);
+        // Save current auth storage string to return later
+        const authStorage = localStorage.getItem('auth-storage');
+        if (authStorage) {
+            localStorage.setItem('admin_auth_backup', authStorage);
         }
         
-        // Save new token
-        localStorage.setItem('token', response.data.data.access_token);
-        localStorage.setItem('user', JSON.stringify(response.data.data.user));
+        // Update Zustand store directly
+        useAuthStore.setState({
+            token: response.data.data.access_token,
+            user: response.data.data.user,
+            isAuthenticated: true,
+            lastActivity: Date.now()
+        });
         
         Swal.fire({
           title: 'Success!',

@@ -24,15 +24,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setIsAdminImpersonating(!!localStorage.getItem('admin_token'));
+      setIsAdminImpersonating(!!localStorage.getItem('admin_auth_backup'));
     }
   }, []);
 
   const handleStopImpersonating = () => {
-    const adminToken = localStorage.getItem('admin_token');
-    if (adminToken) {
-      localStorage.setItem('token', adminToken);
-      localStorage.removeItem('admin_token');
+    const backup = localStorage.getItem('admin_auth_backup');
+    if (backup) {
+      localStorage.setItem('auth-storage', backup);
+      localStorage.removeItem('admin_auth_backup');
       // Forcing a full page reload to clear store states and re-fetch admin data
       window.location.href = '/dashboard';
     }
