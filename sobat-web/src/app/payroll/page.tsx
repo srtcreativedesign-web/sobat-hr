@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
@@ -8,6 +8,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
 import SignatureCanvas from 'react-signature-canvas';
 import { NavTabs } from '@/components/ui/tabs';
+import { DataTable } from '@/components/ui/data-table';
 
 interface Payroll {
   id: number;
@@ -323,12 +324,14 @@ Ada beberapa error:
     sigPad.current?.clear();
   };
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (amount: number | string | undefined | null) => {
+    const num = typeof amount === 'string' ? parseFloat(amount) : (amount || 0);
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0,
-    }).format(value);
+      maximumFractionDigits: 0
+    }).format(num || 0);
   };
 
   // Helper to calculate total allowances for FnB/MM/Ref/Wrapping payroll
@@ -466,6 +469,148 @@ Ada beberapa error:
       paid: 'bg-green-100 text-green-700 border-green-200',
     };
     return styles[status as keyof typeof styles] || styles.pending;
+  };
+
+  const columns = [
+    { name: "EMPLOYEE", uid: "employee" },
+    { name: "PERIOD", uid: "period" },
+    { name: "BASIC SALARY", uid: "basic_salary" },
+    { name: "TOTAL ALLOWANCES", uid: "allowances" },
+    { name: "OVERTIME", uid: "overtime" },
+    { name: "GROSS SALARY", uid: "gross_salary" },
+    { name: "TOTAL DEDUCTIONS", uid: "deductions" },
+    { name: "NET SALARY", uid: "net_salary" },
+    { name: "STATUS", uid: "status" },
+    { name: "ACTIONS", uid: "actions" },
+  ];
+
+  const disabledKeys = useMemo(() => new Set(
+    payrolls.filter(p => !['pending', 'draft'].includes(p.status)).map(p => String(p.id))
+  ), [payrolls]);
+
+  const renderCell = (payroll: any, columnKey: React.Key) => {
+    switch (columnKey) {
+      case "employee":
+        return (
+          <div>
+            <p className="text-sm font-semibold text-gray-900">{payroll.employee?.full_name}</p>
+            <p className="text-xs text-gray-500">{payroll.employee?.employee_code}</p>
+          </div>
+        );
+      case "period":
+        return (
+          <div className="text-sm text-gray-900">
+            {payroll.period
+              ? new Date(payroll.period + '-01').toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })
+              : new Date(payroll.period_start).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })
+            }
+          </div>
+        );
+      case "basic_salary":
+        return <div className="text-right text-sm text-gray-900">{formatCurrency(payroll.basic_salary)}</div>;
+      case "allowances":
+        return <div className="text-right text-sm text-gray-900">{formatCurrency(calculateTotalAllowances(payroll))}</div>;
+      case "overtime":
+        return <div className="text-right text-sm text-green-600">{formatCurrency(calculateOvertimePay(payroll))}</div>;
+      case "gross_salary":
+        return <div className="text-right text-sm font-bold text-gray-800">{formatCurrency(calculateGrossSalary(payroll))}</div>;
+      case "deductions":
+        return <div className="text-right text-sm font-bold text-red-600">-{formatCurrency(calculateTotalDeductions(payroll))}</div>;
+      case "net_salary":
+        return <div className="text-right text-sm font-bold text-[#1C3ECA]">{formatCurrency(payroll.net_salary)}</div>;
+      case "status":
+        return (
+          <div className="flex justify-center">
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBadge(payroll.status)}`}>
+              {payroll.status.charAt(0).toUpperCase() + payroll.status.slice(1)}
+            </span>
+          </div>
+        );
+      case "actions":
+        return (
+          <div className="flex items-center justify-center gap-1">
+            <button
+              onClick={() => setSelectedPayroll(payroll)}
+              className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+              title="Lihat Detail"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </button>
+
+            <button
+              onClick={async () => {
+                try {
+                  const endpoint = selectedDivision === 'maximum'
+                    ? `/payrolls/maximum/${payroll.id}/slip`
+                    : selectedDivision === 'tungtau'
+                    ? `/payrolls/tungtau/${payroll.id}/slip`
+                    : selectedDivision === 'fnb'
+                    ? `/payrolls/fnb/${payroll.id}/slip`
+                    : ['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)
+                      ? `/payrolls/retail/${payroll.id}/slip?division_type=${selectedDivision}`
+                      : selectedDivision === 'office'
+                        ? `/payrolls/ho/${payroll.id}/slip`
+                        : `/payrolls/${payroll.id}/slip`;
+
+                  const response = await apiClient.get(endpoint, {
+                    responseType: 'blob',
+                  });
+                  const url = window.URL.createObjectURL(new Blob([response.data]));
+                  const link = document.createElement('a');
+                  link.href = url;
+                  const periodStr = payroll.period || payroll.period_start;
+                  const dateStr = periodStr ? new Date(periodStr).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }) : 'Unknown';
+                  link.setAttribute('download', `Slip_Gaji_${payroll.employee?.full_name}_${dateStr}.pdf`);
+                  document.body.appendChild(link);
+                  link.click();
+                  link.remove();
+                } catch (error) {
+                  console.error(error);
+                  alert('Gagal download slip gaji');
+                }
+              }}
+              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              title="Download Slip Gaji (AI-Enhanced)"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </button>
+
+            {['pending', 'draft'].includes(payroll.status) && (
+              <button
+                onClick={() => {
+                  setPendingApprovalId(Number(payroll.id));
+                  setIsBulkApproval(false);
+                  setShowSignatureModal(true);
+                }}
+                className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors ml-2"
+                title="Approve"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </button>
+            )}
+            {payroll.status === 'draft' && (
+              <button
+                onClick={() => {/* handle edit */ }}
+                className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors ml-2"
+                title="Edit"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+            )}
+          </div>
+        );
+      default:
+        return null;
+    }
   };
 
   if (!isAuthenticated) {
@@ -692,211 +837,28 @@ Ada beberapa error:
               <p className="text-gray-400 text-sm mt-1">Upload file Excel untuk memulai</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="py-4 px-6 w-10">
-                      <input
-                        type="checkbox"
-                        className="rounded border-gray-300 text-[#1C3ECA] focus:ring-[#1C3ECA] cursor-pointer"
-                        checked={
-                          payrolls.length > 0 &&
-                          payrolls.some(p => ['pending', 'draft'].includes(p.status)) &&
-                          payrolls.filter(p => ['pending', 'draft'].includes(p.status)).every(p => selectedIds.includes(Number(p.id)))
-                        }
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            // Select all PENDING/DRAFT only
-                            const pendingIds = payrolls
-                              .filter(p => ['pending', 'draft'].includes(p.status))
-                              .map(p => Number(p.id));
-                            setSelectedIds(pendingIds);
-                          } else {
-                            setSelectedIds([]);
-                          }
-                        }}
-                      />
-                    </th>
-                    <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">Employee</th>
-                    <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">Period</th>
-                    <th className="text-right py-4 px-6 text-sm font-semibold text-gray-600">Basic Salary</th>
-                    <th className="text-right py-4 px-6 text-sm font-semibold text-gray-600">Total Allowances</th>
-                    <th className="text-right py-4 px-6 text-sm font-semibold text-gray-600">Overtime</th>
-                    <th className="text-right py-4 px-6 text-sm font-bold text-gray-700 bg-gray-100">Gross Salary</th>
-                    <th className="text-right py-4 px-6 text-sm font-bold text-red-600 bg-red-50">Total Deductions</th>
-                    <th className="text-right py-4 px-6 text-sm font-bold text-[#1C3ECA]">Net Salary</th>
-                    <th className="text-center py-4 px-6 text-sm font-semibold text-gray-600">Status</th>
-                    <th className="text-center py-4 px-6 text-sm font-semibold text-gray-600">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {payrolls.map((payroll) => (
-                    <tr key={payroll.id} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${selectedIds.includes(payroll.id) ? 'bg-blue-50' : ''}`}>
-                      <td className="py-4 px-6">
-                        {['pending', 'draft'].includes(payroll.status) && (
-                          <input
-                            type="checkbox"
-                            className="rounded border-gray-300 text-[#1C3ECA] focus:ring-[#1C3ECA] cursor-pointer"
-                            checked={selectedIds.includes(Number(payroll.id))}
-                            onChange={(e) => {
-                              const id = Number(payroll.id);
-                              if (e.target.checked) {
-                                setSelectedIds(prev => [...prev, id]);
-                              } else {
-                                setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
-                              }
-                            }}
-                          />
-                        )}
-                      </td>
-                      <td className="py-4 px-6">
-                        <p className="text-sm font-semibold text-gray-900">{payroll.employee.full_name}</p>
-                        <p className="text-xs text-gray-500">{payroll.employee.employee_code}</p>
-                      </td>
-                      <td className="py-4 px-6 text-sm text-gray-900">
-                        {(payroll as any).period
-                          ? new Date((payroll as any).period + '-01').toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })
-                          : new Date(payroll.period_start).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })
-                        }
-                      </td>
-                      <td className="py-4 px-6 text-right text-sm text-gray-900">{formatCurrency(payroll.basic_salary)}</td>
-                      <td className="py-4 px-6 text-right text-sm text-gray-900">{formatCurrency(calculateTotalAllowances(payroll))}</td>
-                      <td className="py-4 px-6 text-right text-sm text-green-600">{formatCurrency(calculateOvertimePay(payroll))}</td>
-                      <td className="py-4 px-6 text-right text-sm font-bold text-gray-800 bg-gray-50">{formatCurrency(calculateGrossSalary(payroll))}</td>
-                      <td className="py-4 px-6 text-right text-sm font-bold text-red-600 bg-red-50">-{formatCurrency(calculateTotalDeductions(payroll))}</td>
-                      <td className="py-4 px-6 text-right text-sm font-bold text-[#1C3ECA]">{formatCurrency(payroll.net_salary)}</td>
-                      <td className="py-4 px-6 text-center">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBadge(payroll.status)}`}>
-                          {payroll.status.charAt(0).toUpperCase() + payroll.status.slice(1)}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          {/* View Detail Button */}
-                          <button
-                            onClick={() => setSelectedPayroll(payroll)}
-                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                            title="Lihat Detail"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                          </button>
-
-                          <button
-                            onClick={async () => {
-                              try {
-                                const endpoint = selectedDivision === 'maximum'
-                                  ? `/payrolls/maximum/${payroll.id}/slip`
-                                  : selectedDivision === 'tungtau'
-                                  ? `/payrolls/tungtau/${payroll.id}/slip`
-                                  : selectedDivision === 'fnb'
-                                  ? `/payrolls/fnb/${payroll.id}/slip`
-                                  : ['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)
-                                    ? `/payrolls/retail/${payroll.id}/slip?division_type=${selectedDivision}`
-                                    : selectedDivision === 'office'
-                                      ? `/payrolls/ho/${payroll.id}/slip`
-                                      : `/payrolls/${payroll.id}/slip`;
-
-                                const response = await apiClient.get(endpoint, {
-                                  responseType: 'blob',
-                                });
-                                const url = window.URL.createObjectURL(new Blob([response.data]));
-                                const link = document.createElement('a');
-                                link.href = url;
-                                const periodStr = (payroll as any).period || payroll.period_start;
-                                const dateStr = periodStr ? new Date(periodStr).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }) : 'Unknown';
-                                link.setAttribute('download', `Slip_Gaji_${payroll.employee.full_name}_${dateStr}.pdf`);
-                                document.body.appendChild(link);
-                                link.click();
-                                link.remove();
-                              } catch (error) {
-                                console.error(error);
-                                alert('Gagal download slip gaji');
-                              }
-                            }}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Download Slip Gaji (AI-Enhanced)"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                          </button>
-
-                          {['pending', 'draft'].includes(payroll.status) && (
-                            <button
-                              onClick={() => {
-                                setPendingApprovalId(Number(payroll.id));
-                                setIsBulkApproval(false);
-                                setShowSignatureModal(true);
-                              }}
-                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors ml-2"
-                              title="Approve"
-                            >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            </button>
-                          )}
-                          {(payroll as any).status === 'draft' && (
-                            <button
-                              onClick={() => {/* handle edit */ }}
-                              className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors ml-2"
-                              title="Edit"
-                            >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Pagination Controls */}
-          {totalItems > 0 && (
-            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-b-2xl">
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    Menampilkan <span className="font-medium">{(currentPage - 1) * 20 + 1}</span> sampai <span className="font-medium">{Math.min(currentPage * 20, totalItems)}</span> dari <span className="font-medium">{totalItems}</span> data
-                  </p>
-                </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                      disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <span className="sr-only">Previous</span>
-                      <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                    <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                      Hal. {currentPage} dari {lastPage}
-                    </span>
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, lastPage))}
-                      disabled={currentPage === lastPage}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <span className="sr-only">Next</span>
-                      <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                  </nav>
-                </div>
-              </div>
+            <div className="p-4">
+              <DataTable
+                columns={columns}
+                data={payrolls}
+                renderCell={renderCell}
+                page={currentPage}
+                pages={lastPage}
+                onPageChange={(page) => setCurrentPage(page)}
+                selectionMode="multiple"
+                selectedKeys={new Set(selectedIds.map(String))}
+                onSelectionChange={(keys) => {
+                  if (keys === "all") {
+                    const pendingIds = payrolls
+                      .filter(p => ['pending', 'draft'].includes(p.status))
+                      .map(p => Number(p.id));
+                    setSelectedIds(pendingIds);
+                  } else {
+                    setSelectedIds(Array.from(keys).map(Number));
+                  }
+                }}
+                disabledKeys={disabledKeys}
+              />
             </div>
           )}
         </div>

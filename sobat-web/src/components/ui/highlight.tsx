@@ -34,7 +34,7 @@ export function HighlightItem({ children, activeClassName }: any) {
   if (!ctx) return <>{children}</>;
   const { hoveredId, setHoveredId } = ctx;
 
-  const child = React.isValidElement(children) ? children : null;
+  const child = React.isValidElement(children) ? (children as React.ReactElement<any>) : null;
   if (!child) return <>{children}</>;
 
   const isActive = child.props["data-active"] === true || child.props["data-active"] === "true";

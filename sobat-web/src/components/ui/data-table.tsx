@@ -29,9 +29,11 @@ export interface DataTableProps<T> {
   pages?: number;
   onPageChange?: (page: number) => void;
   selectionMode?: "none" | "single" | "multiple";
+  selectedKeys?: "all" | Iterable<React.Key>;
   onSelectionChange?: (keys: "all" | Set<React.Key>) => void;
   onRowAction?: (key: React.Key) => void;
   primaryKey?: string;
+  disabledKeys?: Iterable<React.Key>;
 }
 
 export function DataTable<T extends Record<string, any>>({
@@ -45,9 +47,11 @@ export function DataTable<T extends Record<string, any>>({
   pages = 1,
   onPageChange,
   selectionMode = "none",
+  selectedKeys,
   onSelectionChange,
   onRowAction,
   primaryKey = "id",
+  disabledKeys,
 }: DataTableProps<T>) {
   const bottomContent = (
     <div className="flex w-full justify-between items-center px-2 py-2">
@@ -93,10 +97,12 @@ export function DataTable<T extends Record<string, any>>({
         td: "border-b border-default-200",
       }}
       selectionMode={selectionMode}
+      selectedKeys={selectedKeys as any}
       onSelectionChange={onSelectionChange as any}
       onRowAction={onRowAction}
       topContent={topContent}
       topContentPlacement="outside"
+      disabledKeys={disabledKeys as any}
     >
       <TableHeader columns={columns}>
         {(column) => (
