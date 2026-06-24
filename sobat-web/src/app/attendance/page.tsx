@@ -7,6 +7,8 @@ import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
 import { API_URL } from '@/lib/config';
 import Swal from 'sweetalert2';
+import { DataTable } from '@/components/ui/data-table';
+import { User, Chip, Button } from '@nextui-org/react';
 
 interface Attendance {
     id: number;
@@ -300,6 +302,103 @@ export default function AttendancePage() {
         }
     };
 
+    const columns = [
+        { name: "KARYAWAN", uid: "employee" },
+        { name: "TANGGAL", uid: "date" },
+        { name: "JAM MASUK", uid: "check_in" },
+        { name: "JAM KELUAR", uid: "check_out" },
+        { name: "TIPE/MODE", uid: "type" },
+        { name: "STATUS", uid: "status" },
+        { name: "LOKASI", uid: "location" },
+        { name: "AKSI", uid: "actions" },
+    ];
+
+    const getStatusColor = (status: string) => {
+        const map: Record<string, "success" | "danger" | "warning" | "default" | "primary"> = {
+            present: "success",
+            late: "warning",
+            absent: "danger",
+            leave: "primary",
+            sick: "primary",
+            pending: "default"
+        };
+        return map[status] || "default";
+    };
+
+    const getStatusText = (status: string) => {
+        const map: Record<string, string> = {
+            present: 'Hadir',
+            late: 'Terlambat',
+            absent: 'Alpa',
+            leave: 'Izin',
+            sick: 'Sakit',
+            pending: 'Pending'
+        };
+        return map[status] || status;
+    };
+
+    const renderCell = (att: Attendance, columnKey: React.Key) => {
+        switch (columnKey) {
+            case "employee":
+                return (
+                    <User
+                        avatarProps={{ radius: "lg", name: att.employee?.full_name?.[0]?.toUpperCase() }}
+                        description={att.employee?.employee_code}
+                        name={att.employee?.full_name || '-'}
+                    >
+                        {att.employee?.full_name || '-'}
+                    </User>
+                );
+            case "date":
+                return <p className="text-sm">{formatDate(att.date)}</p>;
+            case "check_in":
+                return <p className="text-sm font-mono">{att.check_in ? att.check_in.substring(0, 5) : '-'}</p>;
+            case "check_out":
+                return <p className="text-sm font-mono">{att.check_out ? att.check_out.substring(0, 5) : '-'}</p>;
+            case "type":
+                return (
+                    <div className="flex flex-col gap-1">
+                        <Chip size="sm" variant="flat" color={att.attendance_type === 'field' ? "primary" : "default"}>
+                            {att.attendance_type === 'field' ? 'DINAS LUAR' : 'KANTOR'}
+                        </Chip>
+                        {att.is_offline && (
+                            <Chip size="sm" variant="bordered" color="warning" className="border-warning text-warning-600">
+                                OFFLINE
+                            </Chip>
+                        )}
+                    </div>
+                );
+            case "status":
+                return (
+                    <Chip size="sm" variant="flat" color={getStatusColor(att.status)}>
+                        {getStatusText(att.status)}
+                    </Chip>
+                );
+            case "location":
+                return (
+                    <p className="text-xs text-gray-500 max-w-[200px] truncate" title={att.location_address || '-'}>
+                        {att.location_address || '-'}
+                    </p>
+                );
+            case "actions":
+                return (
+                    <Button color="primary" variant="light" size="sm" onPress={() => setSelectedAttendance(att)}>
+                        Detail
+                    </Button>
+                );
+            default:
+                return null;
+        }
+    };
+
+    const handleSelectionChange = (keys: "all" | Set<React.Key>) => {
+        if (keys === "all") {
+            setSelectedIds(attendances.map(a => a.id));
+        } else {
+            setSelectedIds(Array.from(keys).map(k => Number(k)));
+        }
+    };
+
     return (
         <DashboardLayout>
             <div className="p-6">
@@ -409,150 +508,30 @@ export default function AttendancePage() {
                 </div>
 
                 {/* Table */}
-                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                    {loading ? (
-                        <div className="p-12 text-center">
-                            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#60A5FA] border-t-transparent"></div>
-                            <p className="mt-4 text-gray-600">Memuat data...</p>
-                        </div>
-                    ) : attendances.length === 0 ? (
-                        <div className="p-12 text-center">
-                            {!hasFiltered ? (
-                                <div>
-                                    <svg className="mx-auto h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <DataTable
+                        columns={columns}
+                        data={attendances}
+                        isLoading={loading}
+                        renderCell={renderCell}
+                        primaryKey="id"
+                        page={currentPage}
+                        pages={lastPage}
+                        onPageChange={(page) => goToPage(page)}
+                        selectionMode="multiple"
+                        onSelectionChange={handleSelectionChange}
+                        emptyContent={
+                            !hasFiltered ? (
+                                <div className="p-8 flex flex-col items-center">
+                                    <svg className="h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
                                     <p className="text-gray-500 text-lg font-medium mb-2">Belum ada data ditampilkan</p>
                                     <p className="text-gray-400">Silakan pilih rentang tanggal dan klik <strong>Filter</strong> untuk menampilkan data kehadiran.</p>
                                 </div>
-                            ) : (
-                                <p className="text-gray-600">Tidak ada data kehadiran untuk rentang tanggal tersebut.</p>
-                            )}
-                        </div>
-                    ) : (
-                        <>
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-4 py-3 text-left">
-                                                <input
-                                                    type="checkbox"
-                                                    className="rounded border-gray-300 text-[#1C3ECA] focus:ring-[#1C3ECA]"
-                                                    checked={attendances.length > 0 && selectedIds.length === attendances.length}
-                                                    onChange={toggleSelectAll}
-                                                />
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Karyawan</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Masuk</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Keluar</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe/Mode</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lokasi</th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {attendances.map((att) => (
-                                            <tr key={att.id} className={`hover:bg-gray-50 ${selectedIds.includes(att.id) ? 'bg-blue-50' : ''}`}>
-                                                <td className="px-4 py-4 whitespace-nowrap">
-                                                    <input
-                                                        type="checkbox"
-                                                        className="rounded border-gray-300 text-[#1C3ECA] focus:ring-[#1C3ECA]"
-                                                        checked={selectedIds.includes(att.id)}
-                                                        onChange={() => toggleSelectOne(att.id)}
-                                                    />
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    <div className="text-sm font-medium text-gray-900">{att.employee?.full_name || '-'}</div>
-                                                    <div className="text-xs text-gray-500">{att.employee?.employee_code}</div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {formatDate(att.date)}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                                                    {att.check_in ? att.check_in.substring(0, 5) : '-'}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                                                    {att.check_out ? att.check_out.substring(0, 5) : '-'}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className={`px-2 py-0.5 inline-flex text-[10px] leading-4 font-bold rounded-full w-fit ${att.attendance_type === 'field' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
-                                                            {att.attendance_type === 'field' ? 'DINAS LUAR' : 'KANTOR'}
-                                                        </span>
-                                                        {att.is_offline && (
-                                                            <span className="px-2 py-0.5 inline-flex text-[10px] leading-4 font-bold rounded-full bg-orange-100 text-orange-800 w-fit ring-1 ring-orange-200">
-                                                                OFFLINE
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(att.status)}`}>
-                                                        {att.status.toUpperCase()}
-                                                    </span>
-                                                    {att.notes && <div className="text-xs text-gray-500 mt-1 max-w-[150px] truncate">{att.notes}</div>}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-[200px] truncate">
-                                                    {att.location_address || '-'}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <button
-                                                        onClick={() => setSelectedAttendance(att)}
-                                                        className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-md transition-colors"
-                                                    >
-                                                        Detail
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {/* Pagination */}
-                            <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
-                                <div className="text-sm text-gray-600">
-                                    Menampilkan <span className="font-medium">{(currentPage - 1) * perPage + 1}</span> sampai <span className="font-medium">{Math.min(currentPage * perPage, totalData)}</span> dari <span className="font-medium">{totalData}</span> data
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => goToPage(1)}
-                                        disabled={currentPage <= 1}
-                                        className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        First
-                                    </button>
-                                    <button
-                                        onClick={() => goToPage(currentPage - 1)}
-                                        disabled={currentPage <= 1}
-                                        className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        Prev
-                                    </button>
-                                    <span className="px-3 py-1.5 text-sm font-medium text-gray-700">
-                                        Halaman {currentPage} dari {lastPage}
-                                    </span>
-                                    <button
-                                        onClick={() => goToPage(currentPage + 1)}
-                                        disabled={currentPage >= lastPage}
-                                        className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        Next
-                                    </button>
-                                    <button
-                                        onClick={() => goToPage(lastPage)}
-                                        disabled={currentPage >= lastPage}
-                                        className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        Last
-                                    </button>
-                                </div>
-                            </div>
-                        </>
-                    )}
+                            ) : "Tidak ada data kehadiran untuk rentang tanggal tersebut."
+                        }
+                    />
                 </div>
             </div>
 

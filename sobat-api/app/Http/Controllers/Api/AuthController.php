@@ -239,4 +239,50 @@ class AuthController extends Controller
             'message' => 'FCM token updated successfully',
         ]);
     }
+
+    /**
+     * Impersonate a user (Admin only)
+     */
+    public function impersonate($user_id)
+    {
+        try {
+            $adminUser = auth()->user();
+            
+            // Allow admin roles
+            $allowedRoles = [\App\Models\Role::SUPER_ADMIN, 'admin_cabang', 'personalia', 'hr'];
+            if (!$adminUser->role || !in_array($adminUser->role->name, $allowedRoles)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized. Only admins can impersonate users.',
+                ], 403);
+            }
+
+            $targetUser = User::with(['role', 'employee.division', 'employee.jobPosition', 'employee.shift'])->find($user_id);
+
+            if (!$targetUser) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not found.',
+                ], 404);
+            }
+
+            // Create new token for target user (without affecting device_id binding logic since this is from web)
+            $token = $targetUser->createToken('impersonate_token')->plainTextToken;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Impersonating ' . $targetUser->name,
+                'data' => [
+                    'access_token' => $token,
+                    'token_type' => 'Bearer',
+                    'user' => new \App\Http\Resources\UserResource($targetUser),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
 import EmployeeForm from '../components/EmployeeForm';
+import { DataTable } from '@/components/ui/data-table';
+import { User, Chip, Button } from '@nextui-org/react';
 
 export default function EmployeeMasterPage() {
     const [employees, setEmployees] = useState<any[]>([]);
@@ -84,6 +86,73 @@ export default function EmployeeMasterPage() {
         return diffDays <= 30 && diffDays >= 0;
     };
 
+    const columns = [
+        { name: "KARYAWAN", uid: "employee" },
+        { name: "JABATAN & DIVISI", uid: "position" },
+        { name: "SISA CUTI", uid: "leave" },
+        { name: "STATUS", uid: "status" },
+        { name: "KONTRAK BERAKHIR", uid: "contract" },
+        { name: "ACTIONS", uid: "actions" },
+    ];
+
+    const renderCell = (emp: any, columnKey: React.Key) => {
+        switch (columnKey) {
+            case "employee":
+                return (
+                    <User
+                        avatarProps={{ radius: "lg", name: emp.full_name?.[0]?.toUpperCase() }}
+                        description={emp.employee_code}
+                        name={emp.full_name}
+                    >
+                        {emp.full_name}
+                    </User>
+                );
+            case "position":
+                return (
+                    <div className="flex flex-col">
+                        <p className="text-bold text-sm capitalize">{emp.position || '-'}</p>
+                        <p className="text-bold text-sm capitalize text-default-400">{emp.division?.name || '-'}</p>
+                    </div>
+                );
+            case "leave":
+                return (
+                    <Chip className="capitalize" color={emp.leave_balance !== '-' ? "success" : "default"} size="sm" variant="flat">
+                        {emp.leave_balance || '-'}
+                    </Chip>
+                );
+            case "status":
+                const statusColorMap: Record<string, "success" | "danger" | "warning" | "default"> = {
+                    active: "success",
+                    resigned: "danger",
+                    inactive: "default",
+                };
+                return (
+                    <Chip className="capitalize" color={statusColorMap[emp.status?.toLowerCase()] || "default"} size="sm" variant="flat">
+                        {emp.status}
+                    </Chip>
+                );
+            case "contract":
+                return emp.contract_end_date ? (
+                    <div className="flex flex-col">
+                        <p className="text-sm">{new Date(emp.contract_end_date).toLocaleDateString('id-ID')}</p>
+                        {isExpiringSoon(emp.contract_end_date) && (
+                            <Chip size="sm" color="danger" variant="flat" className="mt-1">
+                                Expiring Soon
+                            </Chip>
+                        )}
+                    </div>
+                ) : <p className="text-sm">-</p>;
+            case "actions":
+                return (
+                    <Button color="primary" variant="light" size="sm" onPress={() => handleEdit(emp)}>
+                        Edit Lengkap
+                    </Button>
+                );
+            default:
+                return null;
+        }
+    };
+
     return (
         <DashboardLayout>
             <div className="p-6">
@@ -119,77 +188,13 @@ export default function EmployeeMasterPage() {
 
                 {/* Table */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    {loading ? (
-                        <div className="p-12 text-center">
-                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#60A5FA] border-t-transparent"></div>
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Karyawan</th>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Jabatan & Divisi</th>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Sisa Cuti</th>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Kontrak Berakhir</th>
-                                        <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {employees.map((emp) => (
-                                        <tr key={emp.id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center">
-                                                    <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-500">
-                                                        {emp.full_name?.[0]?.toUpperCase()}
-                                                    </div>
-                                                    <div className="ml-4">
-                                                        <div className="text-sm font-medium text-gray-900">{emp.full_name}</div>
-                                                        <div className="text-xs text-gray-500">{emp.employee_code}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">{emp.position || '-'}</div>
-                                                <div className="text-xs text-gray-500">{emp.division?.name || '-'}</div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`text-sm font-semibold ${emp.leave_balance !== '-' ? 'text-green-600 bg-green-50 px-2 py-1 rounded-md' : 'text-gray-400'}`}>
-                                                    {emp.leave_balance || '-'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(emp.status)}`}>
-                                                    {emp.status}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {emp.contract_end_date ? (
-                                                    <div>
-                                                        <p>{new Date(emp.contract_end_date).toLocaleDateString('id-ID')}</p>
-                                                        {isExpiringSoon(emp.contract_end_date) && (
-                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 mt-1">
-                                                                Expiring Soon
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                ) : '-'}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <button
-                                                    onClick={() => handleEdit(emp)}
-                                                    className="text-indigo-600 hover:text-indigo-900 mr-4"
-                                                >
-                                                    Edit Lengkap
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
+                    <DataTable
+                        columns={columns}
+                        data={employees}
+                        isLoading={loading}
+                        renderCell={renderCell}
+                        primaryKey="id"
+                    />
                 </div>
             </div>
 

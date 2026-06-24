@@ -5,6 +5,8 @@ import { STORAGE_KEYS } from '@/lib/config';
 import { useAuthStore } from '@/store/auth-store';
 import { Approval, PaginatedResponse } from '@/types';
 import { format, differenceInDays } from 'date-fns';
+import { DataTable } from '@/components/ui/data-table';
+import { User, Chip, Button } from '@nextui-org/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -72,6 +74,101 @@ export default function ApprovalsPage() {
         fetchApprovals();
     }, [activeTab, activeType, currentPage]); // Dependencies for re-fetching
 
+    const columns = [
+        { name: "REQUESTER", uid: "requester" },
+        { name: "REQUEST TYPE", uid: "type" },
+        { name: "DETAILS", uid: "details" },
+        { name: "SUBMITTED", uid: "submitted" },
+        { name: "STATUS", uid: "status" },
+        { name: "ACTION", uid: "action" }
+    ];
+
+    const getTypeColor = (type: string) => {
+        const map: Record<string, "primary" | "secondary" | "success" | "warning" | "danger" | "default"> = {
+            leave: "primary",
+            overtime: "secondary",
+            business_trip: "warning",
+            sick_leave: "danger",
+            reimbursement: "success",
+            asset: "default",
+            resignation: "danger"
+        };
+        return map[type] || "default";
+    };
+
+    const getStatusColor = (status: string) => {
+        const map: Record<string, "success" | "danger" | "warning" | "primary" | "default"> = {
+            approved: "success",
+            spl_open: "primary",
+            spl_approved: "primary",
+            rejected: "danger",
+            pending: "warning",
+            pending_final: "warning"
+        };
+        return map[status] || "default";
+    };
+
+    const getStatusLabel = (status: string) => {
+        if (status === 'spl_open') return 'Lembur Berjalan';
+        if (status === 'spl_approved') return 'Menunggu Mulai';
+        return status;
+    };
+
+    const renderCell = (req: any, columnKey: React.Key) => {
+        switch (columnKey) {
+            case "requester":
+                return (
+                    <User
+                        avatarProps={{ radius: "lg", name: req.employee?.full_name?.charAt(0) || '?' }}
+                        description={req.employee?.position || 'Staff'}
+                        name={req.employee?.full_name || 'Unknown'}
+                    >
+                        {req.employee?.full_name}
+                    </User>
+                );
+            case "type":
+                return (
+                    <Chip size="sm" variant="flat" color={getTypeColor(req.type)} className="capitalize">
+                        {req.type?.replace(/_/g, ' ')}
+                    </Chip>
+                );
+            case "details":
+                return (
+                    <div className="flex flex-col">
+                        <p className="text-sm font-medium line-clamp-1">{req.title || req.description}</p>
+                        <p className="text-xs text-default-400 mt-0.5">
+                            {['asset', 'reimbursement'].includes(req.type)
+                                ? `IDR ${Number(req.amount).toLocaleString('id-ID')}`
+                                : req.type === 'resignation'
+                                    ? `${req.detail?.last_working_date ? format(new Date(req.detail.last_working_date), 'dd MMM yyyy') : req.start_date ? format(new Date(req.start_date), 'dd MMM yyyy') : '-'}`
+                                    : `${req.amount || (req.start_date && req.end_date ? differenceInDays(new Date(req.end_date), new Date(req.start_date)) + 1 : 1)} ${['leave', 'business_trip', 'sick_leave'].includes(req.type) ? 'Days' : req.type === 'overtime' ? 'Hours' : 'Units'} • ${req.start_date ? format(new Date(req.start_date), 'dd MMM yyyy') : '-'}`
+                            }
+                        </p>
+                    </div>
+                );
+            case "submitted":
+                return (
+                    <p className="text-sm text-default-500">
+                        {req.submitted_at ? new Date(req.submitted_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '-'}
+                    </p>
+                );
+            case "status":
+                return (
+                    <Chip size="sm" variant="flat" color={getStatusColor(req.status)} className="capitalize">
+                        {getStatusLabel(req.status)}
+                    </Chip>
+                );
+            case "action":
+                return req.id ? (
+                    <Button color="primary" variant="light" size="sm" onPress={() => router.push(`/approvals/${req.id}`)}>
+                        Review
+                    </Button>
+                ) : null;
+            default:
+                return null;
+        }
+    };
+
     return (
         <DashboardLayout>
             <div className="p-6 md:p-8">
@@ -138,98 +235,24 @@ export default function ApprovalsPage() {
                 </div>
 
                 <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden min-h-[400px]">
-                    {isLoading ? (
-                        <div className="flex flex-col items-center justify-center h-[400px] gap-3">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1C3ECA]"></div>
-                            <p className="text-gray-500 text-sm">Loading approvals...</p>
-                        </div>
-                    ) : approvals.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-[400px] text-center p-8 bg-gray-50/50">
-                            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(0,0,0,0.05)] mb-6">
-                                <span className="text-3xl">📭</span>
+                    <DataTable
+                        columns={columns}
+                        data={approvals}
+                        isLoading={isLoading}
+                        renderCell={renderCell}
+                        primaryKey="id"
+                        page={currentPage}
+                        pages={1}
+                        emptyContent={
+                            <div className="flex flex-col items-center justify-center p-8 text-center">
+                                <div className="w-20 h-20 bg-default-100 rounded-full flex items-center justify-center mb-6">
+                                    <span className="text-3xl">📭</span>
+                                </div>
+                                <h3 className="text-xl font-bold text-default-900 mb-2">No Approvals Pending</h3>
+                                <p className="text-default-500">You're all caught up! There are no requests awaiting your review.</p>
                             </div>
-                            <h3 className="text-xl font-bold text-[#1C3ECA] mb-2">No Approvals Pending</h3>
-                            <p className="text-[#1C3ECA]/60">You're all caught up! There are no requests awaiting your review.</p>
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead className="bg-[#1C3ECA]/5 border-b border-[#1C3ECA]/10">
-                                    <tr>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#1C3ECA]/70 uppercase tracking-wider">Requester</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#1C3ECA]/70 uppercase tracking-wider">Request Type</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#1C3ECA]/70 uppercase tracking-wider">Details</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#1C3ECA]/70 uppercase tracking-wider">Submitted</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#1C3ECA]/70 uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-[#1C3ECA]/70 uppercase tracking-wider">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-[#1C3ECA]/5">
-                                    {approvals.map((req: any) => {
-                                        // The API returns RequestModel objects directly when using /requests endpoint
-
-                                        return (
-                                            <tr key={req.id} className="hover:bg-[#1C3ECA]/[0.02] transition-colors group">
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center">
-                                                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#1C3ECA] to-[#2d1e24] flex items-center justify-center text-white text-xs font-bold mr-3 shadow-md">
-                                                            {req.employee?.full_name?.charAt(0) || '?'}
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-sm font-bold text-[#1C3ECA] group-hover:text-[#2d1e24] transition-colors">{req.employee?.full_name}</div>
-                                                            <div className="text-xs text-[#1C3ECA]/60">{req.employee?.position || 'Staff'}</div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold capitalize shadow-sm
-                                            ${req.type === 'leave' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
-                                                            req.type === 'overtime' ? 'bg-purple-50 text-purple-700 border border-purple-100' :
-                                                                'bg-gray-50 text-gray-700 border border-gray-100'}`}>
-                                                        {req.type?.replace(/_/g, ' ')}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="text-sm font-medium text-[#1C3ECA] line-clamp-1">{req.title || req.description}</div>
-                                                    <div className="text-xs text-[#1C3ECA]/60 mt-0.5">
-                                                        {['asset', 'reimbursement'].includes(req.type)
-                                                            ? `IDR ${Number(req.amount).toLocaleString('id-ID')}`
-                                                            : req.type === 'resignation'
-                                                                ? `${req.detail?.last_working_date ? format(new Date(req.detail.last_working_date), 'dd MMM yyyy') : req.start_date ? format(new Date(req.start_date), 'dd MMM yyyy') : '-'}`
-                                                                : `${req.amount || (req.start_date && req.end_date ? differenceInDays(new Date(req.end_date), new Date(req.start_date)) + 1 : 1)} ${['leave', 'business_trip', 'sick_leave'].includes(req.type) ? 'Days' : req.type === 'overtime' ? 'Hours' : 'Units'} • ${req.start_date ? format(new Date(req.start_date), 'dd MMM yyyy') : '-'}`
-                                                        }
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-sm text-[#1C3ECA]/50">
-                                                    {new Date(req.submitted_at || '').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold capitalize shadow-sm
-                                                        ${req.status === 'approved' ? 'bg-green-50 text-green-700 border border-green-100' :
-                                                            req.status === 'spl_open' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
-                                                            req.status === 'spl_approved' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
-                                                            req.status === 'rejected' ? 'bg-red-50 text-red-700 border border-red-100' :
-                                                                'bg-amber-50 text-amber-700 border border-amber-100'}`}>
-                                                        {req.status === 'spl_open' ? 'Lembur Berjalan' : req.status === 'spl_approved' ? 'Menunggu Mulai' : req.status}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    {req.id && (
-                                                        <button
-                                                            onClick={() => router.push(`/approvals/${req.id}`)}
-                                                            className="inline-flex items-center px-4 py-1.5 border border-[#1C3ECA]/20 text-sm font-bold rounded-lg text-[#1C3ECA] bg-white hover:bg-[#1C3ECA] hover:text-white hover:border-[#1C3ECA] transition-all shadow-sm hover:shadow-md"
-                                                        >
-                                                            Review
-                                                        </button>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
+                        }
+                    />
                 </div>
             </div>
         </DashboardLayout>

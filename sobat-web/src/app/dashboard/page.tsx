@@ -6,6 +6,9 @@ import { useAuthStore } from '@/store/auth-store';
 import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
 import LatenessChart from '@/components/dashboard/LatenessChart';
+import TopLateLeaderboard from '@/components/dashboard/TopLateLeaderboard';
+import TopOnTimeLeaderboard from '@/components/dashboard/TopOnTimeLeaderboard';
+import MetricCard from '@/components/dashboard/MetricCard';
 import TextType from '@/components/TextType';
 
 interface DashboardStats {
@@ -174,6 +177,17 @@ export default function DashboardPage() {
 
 
 
+
+  const dummyTrend1 = [
+    { value: 40 }, { value: 45 }, { value: 42 }, { value: 50 }, { value: 48 }, { value: 55 }, { value: 58 }
+  ];
+  const dummyTrend2 = [
+    { value: 80 }, { value: 85 }, { value: 82 }, { value: 90 }, { value: 88 }, { value: 95 }, { value: 96 }
+  ];
+  const dummyTrend3 = [
+    { value: 5 }, { value: 8 }, { value: 6 }, { value: 10 }, { value: 7 }, { value: 4 }, { value: 2 }
+  ];
+
   return (
     <DashboardLayout>
       {/* Header */}
@@ -223,26 +237,32 @@ export default function DashboardPage() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatsCard
+          <MetricCard
             title="Total Employees"
             value={stats?.employees.total || 0}
-            subtext={`${stats?.employees.active || 0} Active`}
-            colorClass="from-[#1C3ECA] to-[#93C5FD]"
-            icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
+            trend={2.4}
+            trendLabel="vs last month"
+            data={dummyTrend1}
+            dataKey="value"
+            color="#8b5cf6"
           />
-          <StatsCard
-            title="Attendance"
+          <MetricCard
+            title="Attendance Rate"
             value={`${attendanceRate}%`}
-            subtext={`${totalAttendance} Present Today`}
-            colorClass="from-[#60A5FA] to-[#93C5FD]"
-            icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+            trend={1.2}
+            trendLabel="vs last month"
+            data={dummyTrend2}
+            dataKey="value"
+            color="#10b981"
           />
-          <StatsCard
+          <MetricCard
             title="Pending Requests"
             value={stats?.requests.pending || 0}
-            subtext="Requires Attention"
-            colorClass="from-orange-400 to-orange-600"
-            icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+            trend={-5.6}
+            trendLabel="vs last month"
+            data={dummyTrend3}
+            dataKey="value"
+            color="#f59e0b"
           />
         </div>
 
@@ -257,62 +277,10 @@ export default function DashboardPage() {
             {/* Leaderboards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Top Late */}
-              <div className="glass-card p-6 bg-white/50 border border-red-100/50">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-2 h-6 bg-red-500 rounded-full"></span>
-                  <h3 className="text-lg font-bold text-gray-800">Top 5 Sering Telat</h3>
-                  <span className="ml-auto text-xs bg-red-100 text-red-600 px-2 py-1 rounded-md font-semibold mb-1">Bulan Ini</span>
-                </div>
-                {loading ? (
-                   <div className="animate-pulse space-y-3"><div className="h-12 bg-gray-100 rounded-lg"></div><div className="h-12 bg-gray-100 rounded-lg"></div></div>
-                ) : stats?.leaderboards?.top_late?.length === 0 ? (
-                   <div className="py-6 text-center border border-dashed border-gray-200 rounded-lg"><p className="text-sm text-gray-400">Belum ada data telat bulan ini 🎉</p></div>
-                ) : (
-                  <div className="space-y-3">
-                    {stats?.leaderboards?.top_late?.map((item, idx) => (
-                      <div key={`late-${item.employee_id}`} className="flex justify-between items-center p-3 bg-red-50/50 rounded-lg border border-red-100 hover:bg-red-50 transition-colors">
-                        <div className="flex items-center gap-3">
-                           <span className="text-lg font-bold text-red-300 w-4">{idx + 1}</span>
-                           <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold text-xs">{item.employee?.user?.name?.charAt(0) || '?'}</div>
-                           <div>
-                             <p className="text-sm font-semibold text-gray-800">{item.employee?.user?.name || 'Unknown'}</p>
-                             <p className="text-xs text-red-500 font-medium">{item.total} kali terlambat</p>
-                           </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <TopLateLeaderboard data={stats?.leaderboards?.top_late} loading={loading} />
 
               {/* Top Paling Rajin (On-Time) */}
-              <div className="glass-card p-6 bg-white/50 border border-green-100/50">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-2 h-6 bg-green-500 rounded-full"></span>
-                  <h3 className="text-lg font-bold text-gray-800">Top 5 Paling Rajin</h3>
-                  <span className="ml-auto text-xs bg-green-100 text-green-600 px-2 py-1 rounded-md font-semibold mb-1">Bulan Ini</span>
-                </div>
-                {loading ? (
-                   <div className="animate-pulse space-y-3"><div className="h-12 bg-gray-100 rounded-lg"></div><div className="h-12 bg-gray-100 rounded-lg"></div></div>
-                ) : stats?.leaderboards?.top_on_time?.length === 0 ? (
-                   <div className="py-6 text-center border border-dashed border-gray-200 rounded-lg"><p className="text-sm text-gray-400">Belum ada data kehadirans.</p></div>
-                ) : (
-                  <div className="space-y-3">
-                    {stats?.leaderboards?.top_on_time?.map((item, idx) => (
-                      <div key={`early-${item.employee_id}`} className="flex justify-between items-center p-3 bg-green-50/50 rounded-lg border border-green-100 hover:bg-green-50 transition-colors">
-                        <div className="flex items-center gap-3">
-                           <span className="text-lg font-bold text-green-300 w-4">{idx + 1}</span>
-                           <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-bold text-xs">{item.employee?.user?.name?.charAt(0) || '?'}</div>
-                           <div>
-                             <p className="text-sm font-semibold text-gray-800">{item.employee?.user?.name || 'Unknown'}</p>
-                             <p className="text-xs text-green-600 font-medium">{item.total} kali tepat waktu</p>
-                           </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <TopOnTimeLeaderboard data={stats?.leaderboards?.top_on_time} loading={loading} />
             </div>
 
             <div className="glass-card p-6 bg-white/50">

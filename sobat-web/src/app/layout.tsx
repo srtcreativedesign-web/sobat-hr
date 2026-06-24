@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
+import { NextUIProviderWrapper } from "@/components/nextui-provider";
 
 export const metadata: Metadata = {
   title: "SOBAT HR - Admin Dashboard",
@@ -27,7 +28,9 @@ export default function RootLayout({
       <body className="antialiased">
         <AuthProvider>
           <SessionProvider>
-            {children}
+            <NextUIProviderWrapper>
+              {children}
+            </NextUIProviderWrapper>
           </SessionProvider>
         </AuthProvider>
       </body>

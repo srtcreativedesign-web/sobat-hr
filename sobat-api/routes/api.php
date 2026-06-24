@@ -73,6 +73,7 @@ Route::middleware(['auth:sanctum', 'role:super_admin,admin_cabang,personalia'])-
     Route::get('/admin/password-requests', [App\Http\Controllers\Api\PasswordResetController::class, 'index']);
     Route::post('/admin/password-requests/{id}/approve', [App\Http\Controllers\Api\PasswordResetController::class, 'approve']);
     Route::post('/admin/password-requests/{id}/reject', [App\Http\Controllers\Api\PasswordResetController::class, 'reject']);
+    Route::post('/admin/impersonate/{user_id}', [App\Http\Controllers\Api\AuthController::class, 'impersonate']);
 });
 
 // Protected routes

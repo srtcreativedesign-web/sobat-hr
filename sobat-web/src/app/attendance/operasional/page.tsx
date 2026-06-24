@@ -6,6 +6,8 @@ import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
 import { API_URL } from '@/lib/config';
 import Swal from 'sweetalert2';
+import { DataTable } from '@/components/ui/data-table';
+import { User, Chip, Button } from '@nextui-org/react';
 
 interface Attendance {
   id: number;
@@ -241,6 +243,81 @@ export default function OperasionalAttendancePage() {
     return '-';
   };
 
+  const columns = [
+    { name: "KARYAWAN", uid: "employee" },
+    { name: "TANGGAL", uid: "date" },
+    { name: "CHECK IN", uid: "check_in" },
+    { name: "SHIFT", uid: "shift" },
+    { name: "OUTLET", uid: "outlet" },
+    { name: "VALIDASI", uid: "validation" },
+    { name: "STATUS", uid: "status" },
+    { name: "AKSI", uid: "actions" }
+  ];
+
+  const getChipColor = (status: string) => {
+    const map: Record<string, "success" | "danger" | "warning" | "default"> = {
+      present: "success",
+      late: "warning",
+      absent: "danger",
+      pending: "default"
+    };
+    return map[status?.toLowerCase()] || "default";
+  };
+
+  const renderCell = (att: Attendance, columnKey: React.Key) => {
+    switch (columnKey) {
+      case "employee":
+        return (
+          <User
+            avatarProps={{ radius: "lg", name: att.employee?.full_name?.[0]?.toUpperCase() }}
+            description={att.employee?.employee_code || '-'}
+            name={att.employee?.full_name || '-'}
+          >
+            {att.employee?.full_name || '-'}
+          </User>
+        );
+      case "date":
+        return <p className="text-sm">{formatDate(att)}</p>;
+      case "check_in":
+        return <p className="text-sm font-mono">{formatDateTime(att.check_in || att.device_timestamp)}</p>;
+      case "shift":
+        return (
+          <p className="text-sm">
+            {att.shift_start_time && att.shift_end_time
+              ? `${att.shift_start_time.substring(0, 5)} - ${att.shift_end_time.substring(0, 5)}`
+              : '-'}
+          </p>
+        );
+      case "outlet":
+        return (
+          <div className="flex flex-col">
+            <p className="text-sm font-medium">{getOutletNameDisplay(att)}</p>
+            {att.floor_number && <p className="text-xs text-default-400">LT-{att.floor_number}</p>}
+          </div>
+        );
+      case "validation":
+        return att.validation_method ? (
+          <Chip size="sm" variant="flat" color={att.validation_method === 'qr_code' ? "secondary" : "primary"}>
+            {att.validation_method === 'qr_code' ? 'QR Code' : 'GPS'}
+          </Chip>
+        ) : <span className="text-default-400">-</span>;
+      case "status":
+        return (
+          <Chip size="sm" variant="flat" color={getChipColor(att.status)} className="capitalize">
+            {att.status}
+          </Chip>
+        );
+      case "actions":
+        return (
+          <Button color="primary" variant="light" size="sm" onPress={() => setSelectedAttendance(att)}>
+            Detail
+          </Button>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="p-6">
@@ -293,117 +370,28 @@ export default function OperasionalAttendancePage() {
           </form>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          {loading ? (
-            <div className="p-12 text-center">
-              <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent"></div>
-              <p className="mt-3 text-gray-400">Memuat data...</p>
-            </div>
-          ) : attendances.length === 0 ? (
-            <div className="p-12 text-center">
-              {!hasFiltered ? (
-                <div>
-                  <svg className="mx-auto h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <DataTable
+            columns={columns}
+            data={attendances}
+            isLoading={loading}
+            renderCell={renderCell}
+            primaryKey="id"
+            page={currentPage}
+            pages={lastPage}
+            onPageChange={(page) => goToPage(page)}
+            emptyContent={
+              !hasFiltered ? (
+                <div className="p-8 flex flex-col items-center">
+                  <svg className="h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   <p className="text-gray-500 text-lg font-medium mb-2">Belum ada data ditampilkan</p>
                   <p className="text-gray-400">Silakan pilih rentang tanggal dan klik <strong>Filter</strong> untuk menampilkan data absensi operasional.</p>
                 </div>
-              ) : (
-                <p className="text-gray-400">Tidak ada data absensi operasional untuk rentang tanggal tersebut.</p>
-              )}
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Karyawan</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Tanggal</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Check In</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Shift</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Outlet</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Validasi</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Status</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {attendances.map(att => (
-                      <tr key={att.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3">
-                          <div className="font-medium text-gray-800">{att.employee?.full_name || '-'}</div>
-                          <div className="text-xs text-gray-400">{att.employee?.employee_code || ''}</div>
-                        </td>
-                        <td className="px-4 py-3 text-gray-600">{formatDate(att)}</td>
-                        <td className="px-4 py-3 text-gray-600">{formatDateTime(att.check_in || att.device_timestamp)}</td>
-                        <td className="px-4 py-3 text-gray-600">
-                          {att.shift_start_time && att.shift_end_time
-                            ? `${att.shift_start_time.substring(0, 5)} - ${att.shift_end_time.substring(0, 5)}`
-                            : '-'}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="text-gray-800">{getOutletNameDisplay(att)}</div>
-                          {att.floor_number && <div className="text-xs text-gray-400">LT-{att.floor_number}</div>}
-                        </td>
-                        <td className="px-4 py-3">
-                          {att.validation_method ? (
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                              att.validation_method === 'qr_code' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
-                            }`}>
-                              {att.validation_method === 'qr_code' ? 'QR Code' : 'GPS'}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-gray-400">-</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusBadge(att.status)}`}>
-                            {att.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <button onClick={() => setSelectedAttendance(att)}
-                            className="px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                            Detail
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
-                <div className="text-sm text-gray-600">
-                  Menampilkan <span className="font-medium">{(currentPage - 1) * perPage + 1}</span> sampai <span className="font-medium">{Math.min(currentPage * perPage, totalData)}</span> dari <span className="font-medium">{totalData}</span> data
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => goToPage(1)} disabled={currentPage <= 1}
-                    className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                    First
-                  </button>
-                  <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage <= 1}
-                    className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                    Prev
-                  </button>
-                  <span className="px-3 py-1.5 text-sm font-medium text-gray-700">
-                    Halaman {currentPage} dari {lastPage}
-                  </span>
-                  <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= lastPage}
-                    className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                    Next
-                  </button>
-                  <button onClick={() => goToPage(lastPage)} disabled={currentPage >= lastPage}
-                    className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                    Last
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
+              ) : "Tidak ada data absensi operasional untuk rentang tanggal tersebut."
+            }
+          />
         </div>
       </div>
 

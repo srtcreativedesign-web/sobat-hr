@@ -6,9 +6,12 @@ import { useAuthStore } from '@/store/auth-store';
 import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
 import Swal from 'sweetalert2';
+import { DataTable } from '@/components/ui/data-table';
+import { User, Chip, Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@nextui-org/react';
 
 interface Employee {
   id: number;
+  user_id?: number;
   employee_code: string;
   full_name: string;
   email: string;
@@ -332,6 +335,139 @@ export default function EmployeesPage() {
     }
   };
 
+    const columns = [
+        { name: "KARYAWAN", uid: "employee" },
+        { name: "JABATAN", uid: "position" },
+        { name: "DIVISI", uid: "division" },
+        { name: "TRACK", uid: "track" },
+        { name: "KONTRAK BERAKHIR", uid: "contract" },
+        { name: "STATUS", uid: "status" },
+        { name: "AKSI", uid: "actions" },
+    ];
+
+  
+  const handleImpersonate = async (employeeId: number) => {
+    try {
+      const response = await apiClient.post(`/admin/impersonate/${employeeId}`);
+      if (response.data.success) {
+        // Save current admin token to return later
+        const currentToken = localStorage.getItem('token');
+        if (currentToken) {
+            localStorage.setItem('admin_token', currentToken);
+        }
+        
+        // Save new token
+        localStorage.setItem('token', response.data.data.access_token);
+        localStorage.setItem('user', JSON.stringify(response.data.data.user));
+        
+        Swal.fire({
+          title: 'Success!',
+          text: `Logged in as ${response.data.data.user.name}`,
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false
+        }).then(() => {
+            window.location.href = '/dashboard';
+        });
+      }
+    } catch (error: any) {
+      Swal.fire({
+        title: 'Error',
+        text: error.response?.data?.message || 'Failed to impersonate user.',
+        icon: 'error'
+      });
+    }
+  };
+
+  const getChipColor = (status: string) => {
+        const statusColorMap: Record<string, "success" | "danger" | "warning" | "default"> = {
+            active: "success",
+            resigned: "danger",
+            inactive: "default",
+        };
+        return statusColorMap[status?.toLowerCase()] || "default";
+    };
+
+
+    const renderCell = (emp: any, columnKey: React.Key) => {
+        switch (columnKey) {
+            case "employee":
+                return (
+                    <User
+                        avatarProps={{ radius: "lg", name: emp.full_name?.[0]?.toUpperCase() }}
+                        description={emp.employee_code}
+                        name={emp.full_name}
+                    >
+                        {emp.full_name}
+                    </User>
+                );
+            case "position":
+                return (
+                    <div className="flex flex-col">
+                        <p className="text-bold text-sm capitalize">{emp.position || '-'}</p>
+                        {emp.level && <p className="text-bold text-sm capitalize text-default-400">{emp.level}</p>}
+                    </div>
+                );
+            case "division":
+                return <p className="text-sm">{emp.division?.name || '-'}</p>;
+            case "track":
+                return (
+                    <Chip 
+                        className="capitalize" 
+                        color={emp.track === 'operational' ? "warning" : "primary"} 
+                        size="sm" 
+                        variant="flat"
+                    >
+                        {emp.track === 'operational' ? 'Operational' : 'Head Office'}
+                    </Chip>
+                );
+            case "contract":
+                return emp.contract_end_date ? (
+                    <div className="flex flex-col">
+                        <p className="text-sm">{formatDate(emp.contract_end_date)}</p>
+                        {isExpiringSoon(emp.contract_end_date) && (
+                            <Chip size="sm" color="danger" variant="flat" className="mt-1">
+                                Expiring Soon
+                            </Chip>
+                        )}
+                    </div>
+                ) : <span className="text-default-400 italic text-sm">Permanent</span>;
+            case "status":
+                return (
+                    <Chip className="capitalize" color={getChipColor(emp.status)} size="sm" variant="flat">
+                        {emp.status === 'active' ? 'Aktif' : emp.status === 'inactive' ? 'Tidak Aktif' : 'Resign'}
+                    </Chip>
+                );
+            case "actions":
+                return (
+                    <div className="flex items-center gap-2">
+                        <Button color="primary" variant="light" size="sm" onPress={() => handleViewDetails(emp)}>
+                            Detail
+                        </Button>
+                        <Dropdown>
+                            <DropdownTrigger>
+                                <Button isIconOnly size="sm" variant="light">
+                                    <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" /></svg>
+                                </Button>
+                            </DropdownTrigger>
+                            <DropdownMenu aria-label="Employee Actions">
+                                <DropdownItem 
+                                    key="impersonate" 
+                                    className="text-primary"
+                                    color="primary"
+                                    onPress={() => handleImpersonate(emp.user_id || emp.id)}
+                                >
+                                    Login As
+                                </DropdownItem>
+                            </DropdownMenu>
+                        </Dropdown>
+                    </div>
+                );
+            default:
+                return null;
+        }
+    };
+
   return (
     <DashboardLayout>
       <div className="p-6">
@@ -440,150 +576,20 @@ export default function EmployeesPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          {loading ? (
-            <div className="p-12 text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#60A5FA] border-t-transparent"></div>
-              <p className="mt-4 text-gray-600">Memuat data...</p>
-            </div>
-          ) : employees.length === 0 ? (
-            <div className="p-12 text-center">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-              <p className="mt-4 text-gray-600">Tidak ada data karyawan</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      NIK
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Nama Lengkap
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Jabatan
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Divisi
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Track
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Kontrak Berakhir
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Aksi
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {employees.map((employee) => (
-                    <tr key={employee.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {employee.employee_code}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{employee.full_name}</div>
-                        <div className="text-sm text-gray-500">{employee.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {employee.position}
-                        {employee.level && <div className="text-xs text-gray-500">{employee.level}</div>}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {employee.division?.name || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          employee.track === 'operational' 
-                            ? 'bg-amber-100 text-amber-800' 
-                            : 'bg-indigo-100 text-indigo-800'
-                        }`}>
-                          {employee.track === 'operational' ? 'Operational' : 'Head Office'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {employee.contract_end_date ? (
-                          <div>
-                            <p>{formatDate(employee.contract_end_date)}</p>
-                            {isExpiringSoon(employee.contract_end_date) && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 mt-1">
-                                Expiring Soon
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400 italic">Permanent</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(employee.status)}`}>
-                          {employee.status === 'active' ? 'Aktif' : employee.status === 'inactive' ? 'Tidak Aktif' : 'Resign'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => handleViewDetails(employee)}
-                          className="text-[#1C3ECA] hover:text-[#2d1e24] font-medium"
-                        >
-                          Detail
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <DataTable
+            columns={columns}
+            data={employees}
+            isLoading={loading}
+            renderCell={renderCell}
+            primaryKey="id"
+            page={currentPage}
+            pages={totalPages}
+            onPageChange={(page) => setCurrentPage(page)}
+            emptyContent="Tidak ada data karyawan"
+          />
         </div>
 
-        {/* Pagination Controls */}
-        {!loading && employees.length > 0 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Menampilkan <span className="font-medium">{(currentPage - 1) * 20 + 1}</span> sampai <span className="font-medium">{Math.min(currentPage * 20, totalItems)}</span> dari <span className="font-medium">{totalItems}</span> hasil
-                </p>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className="sr-only">Previous</span>
-                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                  <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                    Hal. {currentPage} dari {totalPages}
-                  </span>
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className="sr-only">Next</span>
-                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </nav>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Detail Modal */}
