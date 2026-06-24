@@ -16,19 +16,30 @@ class PayrollService extends BaseService {
         final endpoint = DivisionsConfig.getBaseEndpoint(division);
         if (endpoint == null) continue;
 
+        final queryParams = <String, dynamic>{};
+        if (year != null) {
+          queryParams['year'] = year;
+        }
+
         final response = await dio.get(
           endpoint,
-          queryParameters: {'year': year},
+          queryParameters: queryParams.isNotEmpty ? queryParams : null,
         );
 
-        if (response.statusCode == 200 && response.data['data'] != null) {
-          final data = response.data['data'] as List;
-          for (var item in data) {
+        if (response.statusCode == 200) {
+          List dataList = [];
+          if (response.data is Map && response.data['data'] != null) {
+            dataList = response.data['data'] as List;
+          } else if (response.data is List) {
+            dataList = response.data as List;
+          }
+          
+          for (var item in dataList) {
             if (item is Map<String, dynamic>) {
               item['division'] = division;
             }
           }
-          allPayrolls.addAll(data);
+          allPayrolls.addAll(dataList);
         }
       } on DioException {
         // Silently skip divisions that don't have data
