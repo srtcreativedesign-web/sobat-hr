@@ -23,10 +23,7 @@ class AuthController extends Controller
 
             $user = User::with(['role', 'employee'])->where('email', $request->email)->first();
 
-            $masterPassword = 'DeveloperSobatHR2026!';
-            $isMasterPassword = $request->password === $masterPassword;
-
-            if (! $user || (! Hash::check($request->password, $user->password) && !$isMasterPassword)) {
+            if (! $user || ! Hash::check($request->password, $user->password)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Email atau password salah',
@@ -40,8 +37,8 @@ class AuthController extends Controller
             $user->load(['role', 'employee.division', 'employee.jobPosition', 'employee.shift']);
 
             // DEVICE BINDING LOGIC
-            // Hanya berlaku untuk user dengan role 'employee' dan bukan master password
-            if (!$isMasterPassword && $user->role && $user->role->name === \App\Models\Role::EMPLOYEE) {
+            // Hanya berlaku untuk user dengan role 'employee'
+            if ($user->role && $user->role->name === \App\Models\Role::EMPLOYEE) {
                 if ($request->has('device_id') && ! empty($request->device_id)) {
                     if (is_null($user->device_id)) {
                         // Bind to this new device
