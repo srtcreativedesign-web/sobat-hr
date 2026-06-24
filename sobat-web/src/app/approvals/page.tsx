@@ -116,13 +116,13 @@ export default function ApprovalsPage() {
                 <div className="flex overflow-x-auto pb-4 gap-2 no-scrollbar mb-2">
                     {[
                         { id: 'all', label: 'All' },
-                        // { id: 'business_trip', label: 'Business Trip' },
-                        // { id: 'reimbursement', label: 'Reimbursement' },
-                        // { id: 'asset', label: 'Asset' },
+                        { id: 'business_trip', label: 'Business Trip' },
+                        { id: 'reimbursement', label: 'Reimbursement' },
+                        { id: 'asset', label: 'Asset' },
                         { id: 'leave', label: 'Leave' },
                         { id: 'overtime', label: 'Overtime' },
                         { id: 'sick_leave', label: 'Sick' },
-                        // { id: 'resignation', label: 'Resignation' },
+                        { id: 'resignation', label: 'Resignation' },
                     ].map((type) => (
                         <button
                             key={type.id}

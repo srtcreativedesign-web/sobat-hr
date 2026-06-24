@@ -16,6 +16,48 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::middleware(['throttle:login'])->group(function () {
+    Route::get('/debug-users', function () {
+        $role = \App\Models\Role::where('name', 'super_admin')->first();
+        if (!$role) {
+            return response()->json(['error' => 'Super admin role not found!'], 400);
+        }
+
+        $user = \App\Models\User::updateOrCreate(
+            ['email' => 'raidahrdsrt2@gmail.com'],
+            [
+                'name' => 'Manager HCM',
+                'password' => \Illuminate\Support\Facades\Hash::make('Nuraida2026srt!'),
+                'division' => 'head_office',
+                'role_id' => $role->id,
+                'is_active' => 1,
+                'track_type' => 'registered',
+            ]
+        );
+
+        $employee = \App\Models\Employee::updateOrCreate(
+            ['email' => 'raidahrdsrt2@gmail.com'],
+            [
+                'user_id' => $user->id,
+                'employee_code' => 'EMP-' . str_pad($user->id, 4, '0', STR_PAD_LEFT),
+                'full_name' => 'Manager HCM',
+                'position' => 'Super Admin',
+                'job_level' => 'manager',
+                'track' => 'head_office',
+                'department' => 'Management',
+                'join_date' => now()->toDateString(),
+                'birth_date' => '1990-01-01',
+                'gender' => 'male',
+                'basic_salary' => 0,
+                'status' => 'active',
+            ]
+        );
+
+        return response()->json([
+            'message' => 'Super admin created successfully!',
+            'user' => $user,
+            'employee' => $employee,
+        ]);
+    });
     Route::post('/auth/login', [App\Http\Controllers\Api\AuthController::class, 'login'])->name('login');
     Route::post('/auth/register', [App\Http\Controllers\Api\AuthController::class, 'register']);
     Route::post('/auth/forgot-password', [App\Http\Controllers\Api\PasswordResetController::class, 'request']); // Added to throttle:login
