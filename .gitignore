@@ -69,3 +69,4 @@ compare_*.php
 create_*.php
 *.tsv
 inspect_*.py
+node_modules/
