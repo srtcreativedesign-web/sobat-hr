@@ -61,7 +61,7 @@ class PayrollHoController extends Controller implements HasMiddleware
         } elseif ($request->has('month') && $request->has('year') && $request->month != 0 && $request->year != 0) {
             $periodString = sprintf('%04d-%02d', $request->year, $request->month);
             $query->where('period', $periodString);
-        } elseif (!$request->has('period') && $request->has('year') && !empty($request->year)) {
+        } elseif (!$request->has('period') && $request->has('year') && !empty($request->year) && $request->year !== 'null') {
             $query->where('period', 'like', $request->year . '-%');
         }
 

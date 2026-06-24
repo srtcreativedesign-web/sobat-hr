@@ -30,9 +30,9 @@ class PayrollRetailController extends Controller
         $models = [
             'cellular' => \App\Models\PayrollCelluller::class,
             'hans' => \App\Models\PayrollHans::class,
-            'reflexiology' => \App\Models\PayrollRef::class,
+            'ref' => \App\Models\PayrollRef::class, // Fixed key from reflexiology to ref
             'wrapping' => \App\Models\PayrollWrapping::class,
-            'minimarket' => \App\Models\PayrollMm::class,
+            'mm' => \App\Models\PayrollMm::class, // Fixed key from minimarket to mm
             'money_changer' => \App\Models\PayrollMoneyChanger::class,
         ];
 
@@ -78,7 +78,7 @@ class PayrollRetailController extends Controller
             $query->where('period', $period);
         }
         // Filter by year only (used by Mobile App Riwayat Gaji)
-        elseif (!$request->has('period') && $request->has('year') && !empty($request->year)) {
+        elseif (!$request->has('period') && $request->has('year') && !empty($request->year) && $request->year !== 'null') {
             $query->where('period', 'like', $request->year . '-%');
         }
         
