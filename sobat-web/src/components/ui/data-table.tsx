@@ -49,9 +49,12 @@ export function DataTable<T extends Record<string, any>>({
   onRowAction,
   primaryKey = "id",
 }: DataTableProps<T>) {
-  const bottomContent =
-    pages > 0 && onPageChange ? (
-      <div className="flex w-full justify-center">
+  const bottomContent = (
+    <div className="flex w-full justify-between items-center px-2 py-2">
+      <span className="text-small text-default-400">
+        Total {data.length} baris di halaman ini
+      </span>
+      {pages > 1 && onPageChange ? (
         <Pagination
           isCompact
           showControls
@@ -61,8 +64,22 @@ export function DataTable<T extends Record<string, any>>({
           total={pages}
           onChange={onPageChange}
         />
-      </div>
-    ) : null;
+      ) : (
+        pages === 1 && onPageChange ? (
+           <Pagination
+            isCompact
+            showControls
+            showShadow
+            color="primary"
+            page={1}
+            total={1}
+            onChange={onPageChange}
+            isDisabled
+          />
+        ) : null
+      )}
+    </div>
+  );
 
   return (
     <Table
