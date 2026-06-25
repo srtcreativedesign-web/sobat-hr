@@ -737,69 +737,25 @@ class RequestController extends Controller
     /**
      * Get leave balance for current user
      */
-    public function leaveBalance(Request $request)
+    public function leaveBalance(Request $request, \App\Services\LeaveBalanceService $leaveBalanceService)
     {
         $user = $request->user();
         $employee = $user->employee;
 
-        if (! $employee->join_date) {
-            // Handle case where join_date is missing. Assume eligible? Or not?
-            // User requirement says criteria is join date. If missing, safer to say not eligible or ask admin.
-            // For now, return 0 eligible.
+        if (!$employee) {
             return response()->json([
                 'eligible' => false,
-                'message' => 'Tanggal bergabung belum diatur',
+                'message' => 'Employee profile not found',
                 'quota' => 0,
                 'used' => 0,
                 'balance' => 0,
                 'years_of_service' => 0,
-            ]);
+            ], 404);
         }
 
-        $yearsOfService = $employee->join_date->diffInYears(now());
+        $balanceData = $leaveBalanceService->calculateForEmployee($employee);
 
-        if ($yearsOfService < 1) {
-            return response()->json([
-                'eligible' => false,
-                'message' => 'Masa kerja belum mencapai 1 tahun',
-                'quota' => 0,
-                'used' => 0,
-                'balance' => 0,
-                'years_of_service' => $yearsOfService,
-            ]);
-        }
-
-        $quota = 12;
-
-        // Calculate used leave
-        // Assuming 'amount' is days, or fallback to date diff
-        $used = RequestModel::where('employee_id', $employee->id)
-            ->where('type', 'leave')
-            ->where('status', 'approved')
-            ->whereYear('start_date', now()->year)
-            ->get()
-            ->sum(function ($req) {
-                if ($req->amount > 0) {
-                    return $req->amount;
-                }
-                if ($req->start_date && $req->end_date) {
-                    $s = \Carbon\Carbon::parse($req->start_date);
-                    $e = \Carbon\Carbon::parse($req->end_date);
-
-                    return $s->diffInDays($e) + 1;
-                }
-
-                return 0;
-            });
-
-        return response()->json([
-            'eligible' => true,
-            'message' => 'Eligible',
-            'quota' => $quota,
-            'used' => $used,
-            'balance' => max(0, $quota - $used), // No negative balance
-            'years_of_service' => $yearsOfService,
-        ]);
+        return response()->json($balanceData);
     }
 
     /**
@@ -807,133 +763,8 @@ class RequestController extends Controller
      */
     private function getApprovalSteps(\App\Models\Employee $requester)
     {
-        $steps = [];
-        $jobLevel = strtolower($requester->job_level ?? '');
-        // Determine Track: Operational vs Office
-        // Based on user request:
-        // Operational: crew, spv, manager divisi, HRD
-        // Office: staff, spv, manager, deputy manager, HRD
-        $isOperational = in_array($jobLevel, ['crew']); // Simple heuristic
-
-        // Helper to find employee by level
-        $findApprover = function ($level, $sameDepartment = true) use ($requester) {
-            $query = \App\Models\Employee::where('job_level', $level)
-                ->where('status', 'active');
-
-            if ($sameDepartment && $requester->department) {
-                // Try same department first
-                $query->where('department', $requester->department);
-            }
-
-            $approver = $query->inRandomOrder()->value('id');
-
-            // If failed to find in department, fallback to any active employee of that level?
-            // User implies strict hierarchy, but let's be safe.
-            if (! $approver && $sameDepartment) {
-                $approver = \App\Models\Employee::where('job_level', $level)
-                    ->where('status', 'active')
-                    ->inRandomOrder()
-                    ->value('id');
-            }
-
-            return $approver;
-        };
-
-        // HRD is always the final step
-        // HRD is always the final step
-        $hrdId = $findApprover('hrd', false); // Any HRD
-        if (! $hrdId) {
-            // Fallback: Find Manager of HRD department if no explicit 'hrd' level
-            $hrdId = \App\Models\Employee::where('department', 'HRD')
-                ->whereIn('job_level', ['manager', 'manager_divisi'])
-                ->value('id');
-        }
-        // User Requirement: Super Admin must be HRD (Fallback)
-        if (! $hrdId) {
-            $superAdmin = \App\Models\User::whereHas('role', fn ($q) => $q->where('name', 'super_admin'))
-                ->with('employee')->first();
-            $hrdId = $superAdmin?->employee?->id;
-        }
-
-        // --- Logic Implementation ---
-
-        // 1. If Requester is SPV
-        if ($jobLevel === 'spv') {
-            // Step 1: Manager (Direct)
-            if ($isOperational) {
-                // Operational: Manager Divisi
-                $managerId = $findApprover('manager_divisi', true);
-                // Fallback if no manager_divisi, try 'manager'
-                if (! $managerId) {
-                    $managerId = $findApprover('manager', true);
-                }
-            } else {
-                // Office: Manager or Deputy Manager
-                $managerId = $findApprover('manager', true);
-                if (! $managerId) {
-                    $managerId = $findApprover('deputy_manager', true);
-                }
-            }
-            if ($managerId) {
-                $steps[] = $managerId;
-            }
-
-            // Step 2: HRD / Super Admin (Final)
-            if ($hrdId) {
-                $steps[] = $hrdId;
-            }
-        }
-
-        // 2. If Requester is Manager (or Manager Divisi, Deputy Manager)
-        elseif (in_array($jobLevel, ['manager', 'manager_divisi', 'deputy_manager'])) {
-            // Step 1: HRD / Super Admin (Direct)
-            if ($hrdId) {
-                $steps[] = $hrdId;
-            }
-        }
-
-        // 3. Current Default Logic (Crew, Staff, Team Leader, etc)
-        elseif (in_array($jobLevel, ['crew', 'staff', 'team_leader'])) {
-            // Step 1: SPV
-            $spvId = $findApprover('spv', true);
-            if ($spvId) {
-                $steps[] = $spvId;
-            }
-
-            // Step 2: Manager
-            if ($isOperational) {
-                $managerId = $findApprover('manager_divisi', true);
-                if (! $managerId) {
-                    $managerId = $findApprover('manager', true);
-                } // Fallback
-            } else {
-                $managerId = $findApprover('manager', true);
-                if (! $managerId) {
-                    $managerId = $findApprover('deputy_manager', true);
-                }
-            }
-            if ($managerId) {
-                $steps[] = $managerId;
-            }
-
-            // Step 3: HRD (Final)
-            if ($hrdId) {
-                $steps[] = $hrdId;
-            }
-        }
-
-        // 4. Fallback for others (Director, etc) - Direct to HRD
-        else {
-            if ($hrdId) {
-                $steps[] = $hrdId;
-            }
-        }
-
-        // Remove duplicates and self-approval
-        $steps = array_unique($steps);
-        $steps = array_filter($steps, fn ($id) => $id != $requester->id);
-
-        return array_values($steps);
+        $hierarchyService = app(\App\Services\ApprovalHierarchyService::class);
+        return $hierarchyService->getApprovalSteps($requester);
     }
 
     public function exportOvertime(Request $request)
