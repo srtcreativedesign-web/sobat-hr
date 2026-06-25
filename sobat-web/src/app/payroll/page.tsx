@@ -40,7 +40,7 @@ export default function PayrollPage() {
   const [isBulkApproval, setIsBulkApproval] = useState(false);
 
   // Division selector
-  const [selectedDivision, setSelectedDivision] = useState<'all' | 'office' | 'fnb' | 'minimarket' | 'reflexiology' | 'wrapping' | 'hans' | 'cellular' | 'money_changer' | 'tungtau' | 'maximum'>('fnb');
+  const [selectedDivision, setSelectedDivision] = useState<'all' | 'office' | 'fnb' | 'minimarket' | 'reflexiology' | 'wrapping' | 'hans' | 'cellular' | 'money_changer'>('fnb');
 
   // Filter States
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // Default current month
@@ -89,7 +89,7 @@ export default function PayrollPage() {
       // Use division-specific endpoint
       let endpoint = '';
       if (selectedDivision === 'office') endpoint = '/payrolls/ho';
-      if (['fnb', 'maximum', 'tungtau'].includes(selectedDivision)) endpoint = '/payrolls/fnb';
+      if (['fnb'].includes(selectedDivision)) endpoint = '/payrolls/fnb';
       if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) endpoint = '/payrolls/retail';
 
       const response = await apiClient.get(endpoint, {
@@ -182,7 +182,7 @@ export default function PayrollPage() {
       } else if (pendingApprovalId) {
         // Single Approve
         let endpoint = `/payrolls/${pendingApprovalId}/status`;
-        if (['fnb', 'maximum', 'tungtau'].includes(selectedDivision)) endpoint = `/payrolls/fnb/${pendingApprovalId}/status`;
+        if (['fnb'].includes(selectedDivision)) endpoint = `/payrolls/fnb/${pendingApprovalId}/status`;
         if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) {
           endpoint = `/payrolls/retail/${pendingApprovalId}/status`;
         }
@@ -279,7 +279,7 @@ export default function PayrollPage() {
             <button
               onClick={async () => {
                 try {
-                  const endpoint = ['fnb', 'maximum', 'tungtau'].includes(selectedDivision)
+                  const endpoint = ['fnb'].includes(selectedDivision)
                     ? `/payrolls/fnb/${payroll.id}/slip`
                     : ['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)
                       ? `/payrolls/retail/${payroll.id}/slip?division_type=${selectedDivision}`
@@ -426,9 +426,7 @@ export default function PayrollPage() {
               <option value="all">Semua Divisi (Bulk Download)</option>
               {!isAdminHr && <option value="office">Office (Pusat)</option>}
               <option value="fnb">FnB</option>
-              <option value="tungtau">FnB Tungtau</option>
-              <option value="maximum">FnB Maximum 600</option>
-              <option value="minimarket">Minimarket</option>
+                                          <option value="minimarket">Minimarket</option>
               <option value="reflexiology">Reflexiology</option>
               <option value="wrapping">Wrapping</option>
               <option value="hans">Hans</option>

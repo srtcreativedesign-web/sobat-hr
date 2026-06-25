@@ -30,7 +30,7 @@ export const getStatusBadge = (status: string) => {
 
 // Helper to calculate total allowances for FnB/MM/Ref/Wrapping payroll
 export const calculateTotalAllowances = (payroll: any, selectedDivision: string) => {
-    if (['fnb', 'tungtau', 'maximum', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) {
+    if (['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) {
         // FnB/MM/Ref backend returns structured allowances object
         if (payroll.allowances && typeof payroll.allowances === 'object') {
             const allowances = payroll.allowances;
@@ -94,7 +94,7 @@ export const calculateTotalAllowances = (payroll: any, selectedDivision: string)
 
 // Helper to calculate overtime pay for FnB/MM/Ref/Wrapping payroll
 export const calculateOvertimePay = (payroll: any, selectedDivision: string) => {
-    if (['fnb', 'tungtau', 'maximum', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) {
+    if (['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) {
         // Check structured allowances first
         if (payroll.allowances?.Lembur) {
             const lembur = payroll.allowances.Lembur;
@@ -137,7 +137,7 @@ export const calculateGrossSalary = (payroll: any, selectedDivision: string) => 
     if (selectedDivision === 'cellular') {
         return parseFloat(payroll.gross_salary) || 0;
     }
-    if (['fnb', 'tungtau', 'maximum', 'minimarket', 'reflexiology', 'hans', 'money_changer'].includes(selectedDivision)) {
+    if (['fnb', 'minimarket', 'reflexiology', 'hans', 'money_changer'].includes(selectedDivision)) {
         // For FnB/MM/Ref, use total_salary_2 which includes everything
         return parseFloat(payroll.total_salary_2) || 0;
     }

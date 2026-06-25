@@ -43,7 +43,7 @@ export default function ImportPayrollPage() {
   const [isBulkApproval, setIsBulkApproval] = useState(false);
 
   // Division selector
-  const [selectedDivision, setSelectedDivision] = useState<'all' | 'office' | 'fnb' | 'minimarket' | 'reflexiology' | 'wrapping' | 'hans' | 'cellular' | 'money_changer' | 'tungtau' | 'maximum'>('fnb');
+  const [selectedDivision, setSelectedDivision] = useState<'all' | 'office' | 'fnb' | 'minimarket' | 'reflexiology' | 'wrapping' | 'hans' | 'cellular' | 'money_changer'>('fnb');
 
   // Filter States
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // Default current month
@@ -92,7 +92,7 @@ export default function ImportPayrollPage() {
       // Use division-specific endpoint
       let endpoint = '';
       if (selectedDivision === 'office') endpoint = '/payrolls/ho';
-      if (['fnb', 'maximum', 'tungtau'].includes(selectedDivision)) endpoint = '/payrolls/fnb';
+      if (['fnb'].includes(selectedDivision)) endpoint = '/payrolls/fnb';
       
       
       if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) endpoint = '/payrolls/retail';
@@ -198,7 +198,7 @@ export default function ImportPayrollPage() {
       
       
       if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer', 'fnb'].includes(selectedDivision)) {
-        importEndpoint = ['fnb', 'maximum', 'tungtau'].includes(selectedDivision) ? '/payrolls/fnb/import/parse-headers' : '/payrolls/retail/import/parse-headers';
+        importEndpoint = ['fnb'].includes(selectedDivision) ? '/payrolls/fnb/import/parse-headers' : '/payrolls/retail/import/parse-headers';
         formData.append('division_type', selectedDivision);
       }
 
@@ -260,7 +260,7 @@ export default function ImportPayrollPage() {
       }
       
       simFormData.append('division_type', selectedDivision);
-      const simulateEndpoint = ['fnb', 'maximum', 'tungtau'].includes(selectedDivision) ? '/payrolls/fnb/import/simulate' : '/payrolls/retail/import/simulate';
+      const simulateEndpoint = ['fnb'].includes(selectedDivision) ? '/payrolls/fnb/import/simulate' : '/payrolls/retail/import/simulate';
       const simulateResponse = await apiClient.post(simulateEndpoint, simFormData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -292,7 +292,7 @@ export default function ImportPayrollPage() {
       } else if (pendingApprovalId) {
         // Single Approve
         let endpoint = `/payrolls/${pendingApprovalId}/status`;
-        if (['fnb', 'maximum', 'tungtau'].includes(selectedDivision)) endpoint = `/payrolls/fnb/${pendingApprovalId}/status`;
+        if (['fnb'].includes(selectedDivision)) endpoint = `/payrolls/fnb/${pendingApprovalId}/status`;
         
         
         if (selectedDivision === 'minimarket') endpoint = `/payrolls/mm/${pendingApprovalId}/status`;
@@ -395,9 +395,7 @@ export default function ImportPayrollPage() {
               <option value="all">Semua Divisi (Bulk Download)</option>
               <option value="office">Office (Pusat)</option>
               <option value="fnb">FnB</option>
-              <option value="tungtau">FnB Tungtau</option>
-              <option value="maximum">FnB Maximum 600</option>
-              <option value="minimarket">Minimarket</option>
+                                          <option value="minimarket">Minimarket</option>
               <option value="reflexiology">Reflexiology</option>
               <option value="wrapping">Wrapping</option>
               <option value="hans">Hans</option>
@@ -662,7 +660,7 @@ export default function ImportPayrollPage() {
                       try {
                         let saveEndpoint = '/payrolls/import/save';
                         if (selectedDivision === 'office') saveEndpoint = '/payrolls/ho/import/save';
-                        if (['fnb', 'maximum', 'tungtau'].includes(selectedDivision)) saveEndpoint = '/payrolls/fnb/import/save';
+                        if (['fnb'].includes(selectedDivision)) saveEndpoint = '/payrolls/fnb/import/save';
                         
                         
                         if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) { saveEndpoint = '/payrolls/retail/import/save'; }

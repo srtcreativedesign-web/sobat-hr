@@ -26,7 +26,7 @@ export default function PayrollDetailModal({
 
     const handleDownload = async () => {
         try {
-            const endpoint = ['fnb', 'maximum', 'tungtau'].includes(selectedDivision)
+            const endpoint = ['fnb'].includes(selectedDivision)
                 ? `/payrolls/fnb/${selectedPayroll.id}/slip`
                 : selectedDivision === 'office'
                 ? `/payrolls/ho/${selectedPayroll.id}/slip`
@@ -76,7 +76,7 @@ export default function PayrollDetailModal({
 
                 <div className="p-6 overflow-y-auto flex-1">
                     {/* Attendance Summary (for FnB/MM/Ref/Wrapping/Cellular) */}
-                    {['fnb', 'tungtau', 'maximum', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision) && (selectedPayroll as any).attendance && (
+                    {['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision) && (selectedPayroll as any).attendance && (
                         <div className="mb-6 bg-blue-50 p-4 rounded-xl">
                             <h4 className="text-sm font-bold text-blue-700 uppercase tracking-wider mb-3">Data Kehadiran</h4>
                             <div className="grid grid-cols-4 gap-2 text-xs">
@@ -101,7 +101,7 @@ export default function PayrollDetailModal({
                                 </div>
 
                                 {/* FnB/MM/Ref/Wrapping/Cellular Allowances Breakdown */}
-                                {['fnb', 'tungtau', 'maximum', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision) && selectedPayroll.allowances && (
+                                {['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision) && selectedPayroll.allowances && (
                                     <>
                                         {Object.entries(selectedPayroll.allowances).map(([key, value]: [string, any]) => {
                                             if (!value || value === 0 || value === '0.00') return null;
@@ -137,7 +137,7 @@ export default function PayrollDetailModal({
                                 )}
 
                                 {/* Generic Payroll Allowances */}
-                                {!['fnb', 'tungtau', 'maximum', 'minimarket', 'reflexiology', 'wrapping', 'hans'].includes(selectedDivision) && (
+                                {!['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans'].includes(selectedDivision) && (
                                     <>
                                         {selectedPayroll.details?.transport_allowance > 0 && (
                                             <div className="flex justify-between text-sm">
@@ -223,7 +223,7 @@ export default function PayrollDetailModal({
                             <h4 className="text-sm font-bold text-red-500 uppercase tracking-wider mb-4 border-b border-red-100 pb-2">Potongan</h4>
                             <div className="space-y-3">
                                 {/* FnB/MM/Ref/Wrapping/Hans/Office/Cellular Deductions Breakdown */}
-                                {(selectedDivision === 'tungtau' || selectedDivision === 'maximum' || selectedDivision === 'fnb' || selectedDivision === 'minimarket' || selectedDivision === 'reflexiology' || selectedDivision === 'wrapping' || selectedDivision === 'hans' || selectedDivision === 'office' || selectedDivision === 'cellular' || selectedDivision === 'money_changer') && selectedPayroll.deductions && (
+                                {(selectedDivision === 'fnb' || selectedDivision === 'minimarket' || selectedDivision === 'reflexiology' || selectedDivision === 'wrapping' || selectedDivision === 'hans' || selectedDivision === 'office' || selectedDivision === 'cellular' || selectedDivision === 'money_changer') && selectedPayroll.deductions && (
                                     <>
                                         {Object.entries(selectedPayroll.deductions).map(([key, value]: [string, any]) => {
                                             const numValue = parseFloat(value);
@@ -243,7 +243,7 @@ export default function PayrollDetailModal({
                                 )}
 
                                 {/* Generic Payroll Deductions */}
-                                {selectedDivision !== 'tungtau' && selectedDivision !== 'fnb' && selectedDivision !== 'minimarket' && selectedDivision !== 'reflexiology' && selectedDivision !== 'wrapping' && selectedDivision !== 'hans' && selectedDivision !== 'cellular' && selectedDivision !== 'money_changer' && (
+                                {selectedDivision !== 'fnb' && selectedDivision !== 'minimarket' && selectedDivision !== 'reflexiology' && selectedDivision !== 'wrapping' && selectedDivision !== 'hans' && selectedDivision !== 'cellular' && selectedDivision !== 'money_changer' && (
                                     <>
                                         {selectedPayroll.bpjs_health > 0 && (
                                             <div className="flex justify-between text-sm">
