@@ -1,57 +1,36 @@
 'use client';
 
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
 import DashboardLayout from '@/components/DashboardLayout';
 import apiClient from '@/lib/api-client';
-import SignatureCanvas from 'react-signature-canvas';
 import { NavTabs } from '@/components/ui/tabs';
 import { DataTable } from '@/components/ui/data-table';
 import { Input } from '@nextui-org/react';
 import { Search } from 'lucide-react';
 
-interface Payroll {
-  id: number;
-  employee: {
-    employee_code: string;
-    full_name: string;
-  };
-  period_start: string;
-  period_end: string;
-  basic_salary: number;
-  allowances: any; // Allow object or number
-  overtime_pay: number;
-  deductions: any;
-  total_deductions: number; // Added from backend calculation
-  bpjs_health: number;
-  bpjs_employment: number;
-  tax: number;
-  gross_salary: number;
-  net_salary: number;
-  details: any; // Flexible JSON
-  status: 'draft' | 'pending' | 'approved' | 'paid';
-  // FnB Specific Properties
-  attendance?: Record<string, number>;
-  ewa_amount?: number | string;
-  approval_signature?: string;
-  final_payment?: number; // Added for Cellular
-  account_number?: string; // Added for detail display
-  thp?: number | string; // Added for THP display
-}
+// Refactored Components & Types
+import { Payroll } from './types';
+import { 
+  formatCurrency, 
+  calculateTotalAllowances, 
+  calculateOvertimePay, 
+  calculateTotalDeductions, 
+  calculateGrossSalary, 
+  getStatusBadge 
+} from './utils';
+import PayrollDetailModal from './components/PayrollDetailModal';
+import SignatureModal from './components/SignatureModal';
 
 export default function PayrollPage() {
   const router = useRouter();
   const { isAuthenticated, checkAuth, user } = useAuthStore();
   const isAdminHr = user?.role === 'admin_hr' || (user?.role as any)?.name === 'admin_hr';
+  
   const [payrolls, setPayrolls] = useState<Payroll[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
 
-  const [parsedRows, setParsedRows] = useState<any[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null);
 
@@ -59,9 +38,6 @@ export default function PayrollPage() {
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [pendingApprovalId, setPendingApprovalId] = useState<number | null>(null);
   const [isBulkApproval, setIsBulkApproval] = useState(false);
-  const [signerName, setSignerName] = useState('');
-  const [approvalNotes, setApprovalNotes] = useState('');
-  const sigPad = useRef<SignatureCanvas>(null);
 
   // Division selector
   const [selectedDivision, setSelectedDivision] = useState<'all' | 'office' | 'fnb' | 'minimarket' | 'reflexiology' | 'wrapping' | 'hans' | 'cellular' | 'money_changer' | 'tungtau' | 'maximum'>('fnb');
@@ -115,7 +91,7 @@ export default function PayrollPage() {
       if (selectedDivision === 'office') endpoint = '/payrolls/ho';
       if (selectedDivision === 'fnb') endpoint = '/payrolls/fnb';
       if (selectedDivision === 'maximum') endpoint = '/payrolls/maximum';
-    if (selectedDivision === 'tungtau') endpoint = '/payrolls/tungtau';
+      if (selectedDivision === 'tungtau') endpoint = '/payrolls/tungtau';
       if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) endpoint = '/payrolls/retail';
 
       const response = await apiClient.get(endpoint, {
@@ -192,88 +168,8 @@ export default function PayrollPage() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
-    }
-  };
-
-  const handleUpload = async () => {
-    if (!selectedFile) return;
-
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-
-    // If month and year are selected, send it as period
-    if (selectedMonth !== 0 && selectedYear !== 0) {
-      const period = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
-      formData.append('period', period);
-    }
-
+  const handleConfirmApproval = async (signatureData: string, signerName: string, approvalNotes: string) => {
     try {
-      setUploadProgress(0);
-      setParsedRows([]);
-
-      // Use division-specific import endpoint
-      // Use division-specific import endpoint
-      let importEndpoint = '';
-      if (selectedDivision === 'office') importEndpoint = '/payrolls/ho/import'; // Use HO endpoint
-      if (selectedDivision === 'fnb') importEndpoint = '/payrolls/fnb/import';
-      if (selectedDivision === 'maximum') importEndpoint = '/payrolls/maximum/import';
-      if (selectedDivision === 'tungtau') importEndpoint = '/payrolls/tungtau/import';
-      if (selectedDivision === 'minimarket') importEndpoint = '/payrolls/mm/import';
-      if (selectedDivision === 'reflexiology') importEndpoint = '/payrolls/ref/import';
-      if (selectedDivision === 'wrapping') importEndpoint = '/payrolls/wrapping/import';
-      if (selectedDivision === 'hans') importEndpoint = '/payrolls/hans/import';
-      if (selectedDivision === 'cellular') importEndpoint = '/payroll-cellullers/import'; // New Endpoint
-      if (selectedDivision === 'money_changer') importEndpoint = '/payrolls/money-changer/import';
-
-      const response = await apiClient.post(importEndpoint, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        onUploadProgress: (progressEvent) => {
-          const progress = progressEvent.total
-            ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
-            : 0;
-          setUploadProgress(progress);
-        },
-      });
-
-      const data = response.data;
-      if (data && Array.isArray(data.rows)) {
-        setParsedRows(data.rows);
-        setUploadProgress(100);
-      } else {
-        // Handle save response
-        if (data.saved === 0 && data.errors && data.errors.length > 0) {
-          alert(`Gagal menyimpan data:\n` + data.errors.join(`\n`));
-        } else if (data.errors && data.errors.length > 0) {
-          alert(`Berhasil menyimpan ${data.saved} data.
-Ada beberapa error:
-` + data.errors.join(`\n`));
-        } else {
-          alert(data.message || 'Import berhasil');
-        }
-        setShowUploadModal(false);
-        setSelectedFile(null);
-        fetchPayrolls();
-      }
-    } catch (error: any) {
-      alert(error.response?.data?.message || 'Import gagal');
-    }
-  };
-
-  const handleConfirmApproval = async () => {
-    if (sigPad.current?.isEmpty()) {
-      alert('Harap tanda tangan terlebih dahulu');
-      return;
-    }
-
-    const signatureData = sigPad.current?.getCanvas().toDataURL('image/png');
-
-    try {
-      setLoading(true);
       if (isBulkApproval) {
         // Bulk Approve Logic with Signature
         const response = await apiClient.post('/payrolls/bulk-approve', {
@@ -296,11 +192,6 @@ Ada beberapa error:
         }
         if (selectedDivision === 'office') endpoint = `/payrolls/ho/${pendingApprovalId}/status`;
 
-        // Note: FNB uses updateStatus which takes 'status' and 'approval_signature'
-        // Generic Controller might need update. Assuming Generic uses PATCH /payrolls/{id}/status
-
-        // console.log('Approving with Endpoint:', endpoint, 'ID:', pendingApprovalId); // DEBUG
-
         await apiClient.patch(endpoint, {
           status: 'approved',
           approval_signature: signatureData,
@@ -317,160 +208,7 @@ Ada beberapa error:
 
     } catch (error: any) {
       alert(error.response?.data?.message || 'Approval failed');
-    } finally {
-      setLoading(false);
     }
-  };
-
-  const clearSignature = () => {
-    sigPad.current?.clear();
-  };
-
-  const formatCurrency = (amount: number | string | undefined | null) => {
-    const num = typeof amount === 'string' ? parseFloat(amount) : (amount || 0);
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(num || 0);
-  };
-
-  // Helper to calculate total allowances for FnB/MM/Ref/Wrapping payroll
-  const calculateTotalAllowances = (payroll: any) => {
-    if (['fnb', 'tungtau', 'maximum', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) {
-      // FnB/MM/Ref backend returns structured allowances object
-      if (payroll.allowances && typeof payroll.allowances === 'object') {
-        const allowances = payroll.allowances;
-
-        // Helper to parse value (handles both strings and numbers)
-        const parseValue = (val: any) => {
-          if (typeof val === 'object' && val?.amount !== undefined) {
-            return parseFloat(val.amount) || 0;
-          }
-          return parseFloat(val) || 0;
-        };
-
-        // Common keys plus new ones for MM
-        return (
-          parseValue(allowances['Kehadiran']) +
-          parseValue(allowances['Transport']) +
-          parseValue(allowances['Tunjangan Kesehatan']) +
-          parseValue(allowances['Tunjangan Jabatan']) +
-          // Exclude Lembur from Total Allowances if it's shown in its own column
-          (selectedDivision === 'minimarket' || selectedDivision === 'fnb' || selectedDivision === 'wrapping' ? 0 : parseValue(allowances['Lembur'])) +
-          parseValue(allowances['Insentif Lebaran'] || allowances['THR']) +
-          parseValue(allowances['Adjustment']) +
-          parseValue(allowances['Kebijakan HO']) +
-          // MM specific
-          parseValue(allowances['Uang Makan']) +
-          parseValue(allowances['Bonus']) +
-          parseValue(allowances['Insentif']) +
-          // Wrapping specific
-          parseValue(allowances['Target Koli']) +
-          parseValue(allowances['Fee Aksesoris']) +
-          parseValue(allowances['Adj BPJS']) +
-          parseValue(allowances['Gaji Training']) +
-          // Cellular specific
-          parseValue(allowances['Lembur Wajib'])
-        );
-      }
-      // Fallback to direct fields if structured object not available
-      return (
-        (parseFloat(payroll.attendance_amount) || 0) +
-        (parseFloat(payroll.transport_amount) || 0) +
-        (parseFloat(payroll.health_allowance) || 0) +
-        (parseFloat(payroll.position_allowance) || 0) +
-        // Exclude overtime_amount if shown separately
-        (selectedDivision === 'minimarket' || selectedDivision === 'fnb' || selectedDivision === 'wrapping' ? 0 : (parseFloat(payroll.overtime_amount) || 0)) +
-        (parseFloat(payroll.holiday_allowance) || 0) +
-        (parseFloat(payroll.adjustment) || 0) +
-        (parseFloat(payroll.policy_ho) || 0) +
-        (parseFloat(payroll.meal_amount) || 0) +
-        (parseFloat(payroll.bonus) || 0) +
-        (parseFloat(payroll.incentive) || 0) +
-        (parseFloat(payroll.target_koli) || 0) +
-        (parseFloat(payroll.fee_aksesoris) || 0) +
-        (parseFloat(payroll.adj_bpjs) || 0) +
-        (parseFloat(payroll.training_salary) || 0) +
-        (parseFloat(payroll.mandatory_overtime) || 0)
-      );
-    }
-    // Generic payroll - allowances is a single number
-    return parseFloat(payroll.allowances) || 0;
-  };
-
-  // Helper to calculate overtime pay for FnB/MM/Ref/Wrapping payroll
-  const calculateOvertimePay = (payroll: any) => {
-    if (['fnb', 'tungtau', 'maximum', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) {
-      // Check structured allowances first
-      if (payroll.allowances?.Lembur) {
-        const lembur = payroll.allowances.Lembur;
-        let amount = 0;
-        if (typeof lembur === 'object' && lembur.amount !== undefined) {
-          amount += parseFloat(lembur.amount) || 0;
-        } else {
-          amount += parseFloat(lembur) || 0;
-        }
-        if (payroll.allowances['Lembur Wajib']) {
-          const wajib = payroll.allowances['Lembur Wajib'];
-          amount += parseFloat(typeof wajib === 'object' ? wajib.amount : wajib) || 0;
-        }
-        return amount;
-      }
-      return (parseFloat(payroll.overtime_amount) || 0) + (parseFloat(payroll.mandatory_overtime_amount) || 0);
-    }
-    return (parseFloat(payroll.overtime_pay) || 0) + (parseFloat(payroll.mandatory_overtime_amount) || 0);
-  };
-
-  // Helper to calculate total deductions for FnB/MM/Ref payroll
-  const calculateTotalDeductions = (payroll: any) => {
-    let baseDeduction = 0;
-    if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'money_changer'].includes(selectedDivision)) {
-      baseDeduction = parseFloat(payroll.deduction_total) || 0;
-    } else if (selectedDivision === 'cellular') {
-      baseDeduction = parseFloat(payroll.total_deduction) || 0;
-    } else {
-      // Generic / FnB
-      baseDeduction = parseFloat(payroll.total_deductions) || 0;
-    }
-    
-
-    
-    return baseDeduction;
-  };
-
-  // Helper to calculate gross salary for FnB/MM/Ref/Wrapping payroll
-  const calculateGrossSalary = (payroll: any) => {
-    if (selectedDivision === 'wrapping') {
-      return parseFloat(payroll.total_salary_gross) || 0;
-    }
-    if (selectedDivision === 'cellular') {
-      return parseFloat(payroll.gross_salary) || 0;
-    }
-    if (['fnb', 'tungtau', 'maximum', 'minimarket', 'reflexiology', 'hans', 'money_changer'].includes(selectedDivision)) {
-      // For FnB/MM/Ref, use total_salary_2 which includes everything
-      return parseFloat(payroll.total_salary_2) || 0;
-    }
-    return parseFloat(payroll.gross_salary) || 0;
-  };
-
-  const formatSmartValue = (amount: number, unit: string = '') => {
-    if (amount === undefined || amount === null || isNaN(amount)) return '0';
-    // If small value (assuming day/unit) and not 0, display as unit
-    if (Math.abs(amount) < 1000 && amount !== 0) {
-      return `${amount} ${unit}`;
-    }
-    return formatCurrency(amount);
-  };
-
-  const getStatusBadge = (status: string) => {
-    const styles = {
-      pending: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-      approved: 'bg-blue-100 text-blue-700 border-blue-200',
-      paid: 'bg-green-100 text-green-700 border-green-200',
-    };
-    return styles[status as keyof typeof styles] || styles.pending;
   };
 
   const columns = [
@@ -511,13 +249,13 @@ Ada beberapa error:
       case "basic_salary":
         return <div className="text-right text-sm text-gray-900">{formatCurrency(payroll.basic_salary)}</div>;
       case "allowances":
-        return <div className="text-right text-sm text-gray-900">{formatCurrency(calculateTotalAllowances(payroll))}</div>;
+        return <div className="text-right text-sm text-gray-900">{formatCurrency(calculateTotalAllowances(payroll, selectedDivision))}</div>;
       case "overtime":
-        return <div className="text-right text-sm text-green-600">{formatCurrency(calculateOvertimePay(payroll))}</div>;
+        return <div className="text-right text-sm text-green-600">{formatCurrency(calculateOvertimePay(payroll, selectedDivision))}</div>;
       case "gross_salary":
-        return <div className="text-right text-sm font-bold text-gray-800">{formatCurrency(calculateGrossSalary(payroll))}</div>;
+        return <div className="text-right text-sm font-bold text-gray-800">{formatCurrency(calculateGrossSalary(payroll, selectedDivision))}</div>;
       case "deductions":
-        return <div className="text-right text-sm font-bold text-red-600">-{formatCurrency(calculateTotalDeductions(payroll))}</div>;
+        return <div className="text-right text-sm font-bold text-red-600">-{formatCurrency(calculateTotalDeductions(payroll, selectedDivision))}</div>;
       case "net_salary":
         return <div className="text-right text-sm font-bold text-[#1C3ECA]">{formatCurrency(payroll.net_salary)}</div>;
       case "status":
@@ -670,19 +408,17 @@ Ada beberapa error:
         </div>
       </div>
 
-          <div className="px-8 pt-4 pb-2">
-            <div className="w-[400px]">
-              <NavTabs 
-                activeValue="data" 
-                tabs={[
-                  { label: "Data Payroll", value: "data", href: "/payroll" },
-                  { label: "Import / Export", value: "import", href: "/payroll/import" }
-                ]} 
-              />
-            </div>
-          </div>
-
-
+      <div className="px-8 pt-4 pb-2">
+        <div className="w-[400px]">
+          <NavTabs 
+            activeValue="data" 
+            tabs={[
+              { label: "Data Payroll", value: "data", href: "/payroll" },
+              { label: "Import / Export", value: "import", href: "/payroll/import" }
+            ]} 
+          />
+        </div>
+      </div>
 
       {/* Filter Section */}
       <div className="bg-white border-b border-gray-200 px-8 py-4">
@@ -699,7 +435,7 @@ Ada beberapa error:
               {!isAdminHr && <option value="office">Office (Pusat)</option>}
               <option value="fnb">FnB</option>
               <option value="tungtau">FnB Tungtau</option>
-            <option value="maximum">FnB Maximum 600</option>
+              <option value="maximum">FnB Maximum 600</option>
               <option value="minimarket">Minimarket</option>
               <option value="reflexiology">Reflexiology</option>
               <option value="wrapping">Wrapping</option>
@@ -786,8 +522,6 @@ Ada beberapa error:
 
                   try {
                     setLoading(true);
-                    // If no period selected, warn user? Or use current year/month? 
-                    // API requires month/year.
                     if (selectedMonth === 0 || selectedYear === 0) {
                       alert('Please select specific Month and Year to approve all.');
                       setLoading(false);
@@ -866,424 +600,25 @@ Ada beberapa error:
       </div>
 
       {/* Detail Modal */}
-      {
-        selectedPayroll && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-            <div className="bg-white rounded-2xl shadow-2xl p-0 max-w-2xl w-full my-8 flex flex-col max-h-[90vh]">
-              <div className="p-6 border-b border-gray-100 flex justify-between items-start sticky top-0 bg-white rounded-t-2xl z-10">
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900">{selectedPayroll.employee.full_name}</h3>
-                  <p className="text-gray-500">
-                    Periode: {(selectedPayroll as any).period || new Date(selectedPayroll.period_start).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
-                  </p>
-                  <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBadge(selectedPayroll.status)}`}>
-                    {selectedPayroll.status.toUpperCase()}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setSelectedPayroll(null)}
-                  className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Close"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="p-6 overflow-y-auto flex-1">
-                {/* Attendance Summary (for FnB/MM/Ref/Wrapping/Cellular) */}
-                {['fnb', 'tungtau', 'maximum', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision) && (selectedPayroll as any).attendance && (
-                  <div className="mb-6 bg-blue-50 p-4 rounded-xl">
-                    <h4 className="text-sm font-bold text-blue-700 uppercase tracking-wider mb-3">Data Kehadiran</h4>
-                    <div className="grid grid-cols-4 gap-2 text-xs">
-                      {Object.entries((selectedPayroll as any).attendance).map(([key, value]: [string, any]) => (
-                        <div key={key} className="text-center">
-                          <div className="font-semibold text-blue-900">{value}</div>
-                          <div className="text-blue-600">{key}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {/* Earnings */}
-                  <div>
-                    <h4 className="text-sm font-bold text-[#93C5FD] uppercase tracking-wider mb-4 border-b border-[#60A5FA] pb-2">Pendapatan</h4>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Gaji Pokok</span>
-                        <span className="font-semibold">{formatCurrency(selectedPayroll.basic_salary)}</span>
-                      </div>
-
-                      {/* FnB/MM/Ref/Wrapping/Cellular Allowances Breakdown */}
-                      {['fnb', 'tungtau', 'maximum', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision) && selectedPayroll.allowances && (
-                        <>
-                          {Object.entries(selectedPayroll.allowances).map(([key, value]: [string, any]) => {
-                            if (!value || value === 0 || value === '0.00') return null;
-
-                            // Handle nested objects (like Kehadiran, Transport, Lembur)
-                            if (typeof value === 'object' && value !== null) {
-                              const amount = parseFloat(value.amount || 0);
-                              if (isNaN(amount) || amount === 0) return null;
-
-                              return (
-                                <div key={key} className="flex justify-between text-sm">
-                                  <span className="text-gray-600">
-                                    {key} {value.rate ? `(${formatCurrency(parseFloat(value.rate))} /hari)` : ''}
-                                    {value.hours ? `(${value.hours} Jam)` : ''}
-                                  </span>
-                                  <span className="font-medium text-gray-800">{formatCurrency(amount)}</span>
-                                </div>
-                              );
-                            }
-
-                            // Handle simple values
-                            const numValue = parseFloat(value);
-                            if (isNaN(numValue) || numValue === 0) return null;
-
-                            return (
-                              <div key={key} className="flex justify-between text-sm">
-                                <span className="text-gray-600">{key}</span>
-                                <span className="font-medium text-gray-800">{formatCurrency(numValue)}</span>
-                              </div>
-                            );
-                          })}
-                        </>
-                      )}
-
-                      {/* Generic Payroll Allowances */}
-                      {!['fnb', 'tungtau', 'maximum', 'minimarket', 'reflexiology', 'wrapping', 'hans'].includes(selectedDivision) && (
-                        <>
-                          {selectedPayroll.details?.transport_allowance > 0 && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">Transportasi</span>
-                              <span className="font-medium text-gray-800">{formatSmartValue(selectedPayroll.details.transport_allowance, 'Hari')}</span>
-                            </div>
-                          )}
-                          {selectedPayroll.details?.health_allowance > 0 && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">Tunj. Kesehatan</span>
-                              <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.details.health_allowance)}</span>
-                            </div>
-                          )}
-                          {selectedPayroll.details?.position_allowance > 0 && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">Tunj. Jabatan</span>
-                              <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.details.position_allowance)}</span>
-                            </div>
-                          )}
-                          {selectedPayroll.details?.attendance_allowance > 0 && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">Tunj. Kehadiran</span>
-                              <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.details.attendance_allowance)}</span>
-                            </div>
-                          )}
-                          {selectedPayroll.details?.insentif_kehadiran > 0 && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">Insentif Kehadiran</span>
-                              <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.details.insentif_kehadiran)}</span>
-                            </div>
-                          )}
-                          {selectedPayroll.details?.insentif_luar_kota > 0 && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">Insentif Luar Kota</span>
-                              <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.details.insentif_luar_kota)}</span>
-                            </div>
-                          )}
-                          {selectedPayroll.details?.piket_um_sabtu > 0 && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">Piket & UM Sabtu</span>
-                              <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.details.piket_um_sabtu)}</span>
-                            </div>
-                          )}
-                          {selectedPayroll.details?.adjustment && selectedPayroll.details?.adjustment !== 0 ? (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">Adj Gaji</span>
-                              <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.details.adjustment)}</span>
-                            </div>
-                          ) : null}
-                          {/* Add Generic Overtime if available in details */}
-                          {selectedPayroll.details?.overtime_hours > 0 && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">Lembur ({selectedPayroll.details.overtime_hours} Jam)</span>
-                              <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.overtime_pay)}</span>
-                            </div>
-                          )}
-                          {!selectedPayroll.details?.overtime_hours && selectedPayroll.overtime_pay > 0 && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">Lembur</span>
-                              <span className="font-medium text-gray-800">{formatCurrency(selectedPayroll.overtime_pay)}</span>
-                            </div>
-                          )}
-                        </>
-                      )}
-                      {/* Deductions - FnB EWA */}
-
-                      {selectedDivision === 'cellular' && selectedPayroll.details?.subtotal_1 > 0 && (
-                        <div className="flex justify-between text-sm italic font-medium pt-1 border-t border-dashed border-gray-100">
-                          <span className="text-gray-500">Subtotal Gaji Rutin</span>
-                          <span className="text-gray-700">{formatCurrency(parseFloat(selectedPayroll.details.subtotal_1))}</span>
-                        </div>
-                      )}
-
-                      <div className="pt-2 border-t border-gray-100 flex justify-between font-bold text-gray-900 mt-2">
-                        <span>{selectedDivision === 'cellular' ? 'Total Gaji & Bonus (Gross)' : 'Total Pendapatan'}</span>
-                        <span>{formatCurrency(calculateGrossSalary(selectedPayroll))}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Deductions */}
-                  <div>
-                    <h4 className="text-sm font-bold text-red-500 uppercase tracking-wider mb-4 border-b border-red-100 pb-2">Potongan</h4>
-                    <div className="space-y-3">
-                      {/* FnB/MM/Ref/Wrapping/Hans/Office/Cellular Deductions Breakdown */}
-                      {(selectedDivision === 'tungtau' || selectedDivision === 'maximum' || selectedDivision === 'fnb' || selectedDivision === 'minimarket' || selectedDivision === 'reflexiology' || selectedDivision === 'wrapping' || selectedDivision === 'hans' || selectedDivision === 'office' || selectedDivision === 'cellular' || selectedDivision === 'money_changer') && selectedPayroll.deductions && (
-                        <>
-                          {Object.entries(selectedPayroll.deductions).map(([key, value]: [string, any]) => {
-                            const numValue = parseFloat(value);
-                            if (!numValue || numValue === 0) return null;
-                            
-                            // Skip EWA/Stafbook from general deductions as it's shown at the end (except for office where it's part of regular deductions)
-                            if (selectedDivision !== 'office' && (key.toLowerCase().includes('ewa') || key.toLowerCase().includes('stafbook'))) return null;
-
-                            return (
-                              <div key={key} className="flex justify-between text-sm">
-                                <span className="text-gray-600">{key}</span>
-                                <span className="font-medium text-red-600">-{formatCurrency(numValue)}</span>
-                              </div>
-                            );
-                          })}
-                        </>
-                      )}
-
-                      {/* Generic Payroll Deductions */}
-                      {selectedDivision !== 'tungtau' && selectedDivision !== 'fnb' && selectedDivision !== 'minimarket' && selectedDivision !== 'reflexiology' && selectedDivision !== 'wrapping' && selectedDivision !== 'hans' && selectedDivision !== 'cellular' && selectedDivision !== 'money_changer' && (
-                        <>
-                          {selectedPayroll.bpjs_health > 0 && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">BPJS Kesehatan</span>
-                              <span className="font-medium text-red-600">-{formatCurrency(selectedPayroll.bpjs_health)}</span>
-                            </div>
-                          )}
-                          {selectedPayroll.tax > 0 && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">PPh 21</span>
-                              <span className="font-medium text-red-600">-{formatCurrency(selectedPayroll.tax)}</span>
-                            </div>
-                          )}
-                        </>
-                      )}
-
-
-
-                      <div className="pt-2 border-t border-gray-100 flex justify-between font-bold text-gray-900 mt-2">
-                        <span>Total Potongan</span>
-                        <span className="text-red-600">
-                          -{formatCurrency(calculateTotalDeductions(selectedPayroll))}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Net Salary Summary */}
-                <div className="mt-8 bg-[#1C3ECA] text-white p-6 rounded-xl space-y-4 shadow-lg">
-                  {selectedDivision !== 'office' && selectedDivision !== 'all' && selectedPayroll.thp !== undefined ? (
-                    <>
-                      <div className="flex items-center justify-between border-b border-white/20 pb-4">
-                        <div>
-                          <p className="text-indigo-100 text-xs font-medium uppercase tracking-wider">Total Pendapatan (THP)</p>
-                          <p className="text-2xl font-bold">{formatCurrency(Number(
-                            selectedDivision === 'cellular'
-                              ? (selectedPayroll.net_salary || selectedPayroll.thp || 0)
-                              : (selectedPayroll.thp || 0)
-                          ))}</p>
-                        </div>
-                      </div>
-                      {parseFloat(String(selectedPayroll.ewa_amount || 0)) > 0 && (
-                        <div className="flex items-center justify-between border-b border-white/20 pb-4 text-red-200">
-                          <div>
-                            <p className="text-xs font-medium uppercase tracking-wider">Potongan Stafbook (EWA)</p>
-                             <p className="text-2xl font-bold">-{formatCurrency(typeof selectedPayroll.ewa_amount === 'string' ? (parseFloat(selectedPayroll.ewa_amount) || 0) : (selectedPayroll.ewa_amount || 0))}</p>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="flex items-center justify-between border-b border-white/20 pb-4">
-                      <div>
-                        <p className="text-indigo-100 text-xs font-medium uppercase tracking-wider">Grand Total</p>
-                        <p className="text-2xl font-bold">{formatCurrency(selectedPayroll.gross_salary || selectedPayroll.net_salary)}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-indigo-100 text-sm font-medium">TOTAL DITRANSFER (PAYROLL)</p>
-                      <p className="text-4xl font-black">
-                        {formatCurrency(
-                          selectedDivision === 'cellular' && Number(selectedPayroll.final_payment) > 0
-                            ? selectedPayroll.final_payment
-                            : selectedPayroll.net_salary
-                        )}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-indigo-200">Ditransfer ke</p>
-                      <p className="font-semibold">Rekening Karyawan</p>
-                      {selectedPayroll.account_number && (
-                        <p className="text-xs opacity-80">{selectedPayroll.account_number}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-between items-center">
-                <div className="flex gap-2">
-                  {/* Download Payslip Button */}
-                  <button
-                    onClick={async () => {
-                      try {
-                        const endpoint = selectedDivision === 'maximum'
-                          ? `/payrolls/maximum/${selectedPayroll.id}/slip`
-                          : selectedDivision === 'tungtau'
-                          ? `/payrolls/tungtau/${selectedPayroll.id}/slip`
-                          : selectedDivision === 'fnb'
-                          ? `/payrolls/fnb/${selectedPayroll.id}/slip`
-                          : selectedDivision === 'office'
-                          ? `/payrolls/ho/${selectedPayroll.id}/slip`
-                          : ['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)
-                          ? `/payrolls/retail/${selectedPayroll.id}/slip?division_type=${selectedDivision}`
-                          : `/payrolls/${selectedPayroll.id}/slip`;
-
-                        const response = await apiClient.get(endpoint, {
-                          responseType: 'blob',
-                        });
-                        const url = window.URL.createObjectURL(new Blob([response.data]));
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.setAttribute('download', `payslip-${selectedPayroll.employee.full_name}.pdf`);
-                        document.body.appendChild(link);
-                        link.click();
-                        link.remove();
-                      } catch (error) {
-                        console.error(error);
-                        alert('Gagal download slip gaji');
-                      }
-                    }}
-                    className="flex-1 bg-[#1C3ECA] text-white px-4 py-3 rounded-xl font-semibold hover:bg-[#523640] transition-colors flex items-center justify-center gap-2"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Download Slip Gaji (PDF)
-                  </button>
-
-                  {/* Approve Button (only for draft/pending status) */}
-                  {(selectedPayroll.status === 'draft' || selectedPayroll.status === 'pending') && (
-                    <button
-                      onClick={() => {
-                        setPendingApprovalId(Number(selectedPayroll.id));
-                        setIsBulkApproval(false);
-                        setShowSignatureModal(true);
-                      }}
-                      className="flex-1 bg-green-600 text-white px-4 py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Approve
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => setSelectedPayroll(null)}
-                    className="px-6 py-3 border border-gray-300 rounded-xl font-semibold hover:bg-white transition-colors"
-                  >
-                    Tutup
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-      }
+      <PayrollDetailModal
+        selectedPayroll={selectedPayroll}
+        selectedDivision={selectedDivision}
+        onClose={() => setSelectedPayroll(null)}
+        onApprove={(id) => {
+            setPendingApprovalId(Number(id));
+            setIsBulkApproval(false);
+            setShowSignatureModal(true);
+        }}
+      />
 
       {/* Signature Modal */}
-      {
-        showSignatureModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4 text-black">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold text-gray-900">Tanda Tangan Approval</h3>
-                <button onClick={() => setShowSignatureModal(false)} className="text-gray-400 hover:text-gray-600">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <p className="text-sm text-gray-500 mb-4">
-                Silakan tanda tangan di bawah ini untuk menyetujui payroll {isBulkApproval ? `(${selectedIds.length} items)` : ''}.
-              </p>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Penanda Tangan</label>
-                <input
-                  type="text"
-                  value={signerName}
-                  onChange={(e) => setSignerName(e.target.value)}
-                  placeholder="Masukkan nama lengkap (e.g. Budi Santoso, HRD)"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#93C5FD]"
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Catatan / Notes (Opsional)</label>
-                <textarea
-                  value={approvalNotes}
-                  onChange={(e) => setApprovalNotes(e.target.value)}
-                  placeholder="Masukkan catatan tambahan untuk payslip ini..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#93C5FD]"
-                  rows={2}
-                />
-              </div>
-
-              <div className="border-2 border-dashed border-gray-300 rounded-xl mb-4 bg-gray-50">
-                <SignatureCanvas
-                  ref={sigPad}
-                  penColor="black"
-                  canvasProps={{
-                    className: 'w-full h-48 rounded-xl cursor-crosshair'
-                  }}
-                />
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={clearSignature}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
-                >
-                  Hapus
-                </button>
-                <button
-                  onClick={handleConfirmApproval}
-                  disabled={loading}
-                  className="flex-1 px-4 py-2 bg-[#1C3ECA] text-white rounded-xl font-bold hover:bg-[#5e3d4a] transition-colors disabled:opacity-50"
-                >
-                  {loading ? 'Processing...' : 'Approve & Sign'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )
-      }
-
-          </DashboardLayout>
+      <SignatureModal
+        show={showSignatureModal}
+        onClose={() => setShowSignatureModal(false)}
+        isBulkApproval={isBulkApproval}
+        selectedIdsLength={selectedIds.length}
+        onApprove={handleConfirmApproval}
+      />
+    </DashboardLayout>
   );
 }

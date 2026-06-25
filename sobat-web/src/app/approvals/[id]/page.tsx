@@ -4,42 +4,13 @@ import DashboardLayout from '@/components/DashboardLayout';
 import ApprovalTimeline from '@/components/ApprovalTimeline';
 import { STORAGE_KEYS } from '@/lib/config';
 import { useAuthStore } from '@/store/auth-store';
-import { format, differenceInDays } from 'date-fns';
 import { Request } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef, use as ReactUse } from 'react';
-import SignatureCanvas from 'react-signature-canvas';
-
-const LiveTimer = ({ startTime, date }: { startTime: string, date: string }) => {
-    const [duration, setDuration] = useState('00:00:00');
-
-    useEffect(() => {
-        const updateTimer = () => {
-            const now = new Date();
-            const dateOnly = date.split('T')[0];
-            const startStr = `${dateOnly}T${startTime}`;
-            const start = new Date(startStr);
-            if (isNaN(start.getTime())) return;
-            
-            const diffInSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
-            if (diffInSeconds < 0) return;
-
-            const h = Math.floor(diffInSeconds / 3600);
-            const m = Math.floor((diffInSeconds % 3600) / 60);
-            const s = diffInSeconds % 60;
-            
-            setDuration(
-                `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
-            );
-        };
-        
-        updateTimer(); // Initial call
-        const interval = setInterval(updateTimer, 1000);
-        return () => clearInterval(interval);
-    }, [startTime, date]);
-
-    return <span className="font-mono text-[#1C3ECA] font-bold">{duration}</span>;
-};
+import ApprovalHeader from './components/ApprovalHeader';
+import RequestDetailCard from './components/RequestDetailCard';
+import RequestAttachments from './components/RequestAttachments';
+import ApprovalActionPanel from './components/ApprovalActionPanel';
 
 export default function ApprovalDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
@@ -194,435 +165,42 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
     return (
         <DashboardLayout>
             <div className="max-w-5xl mx-auto p-6 md:p-10 font-sans">
-                {/* Header Section */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
-                    <div>
-                        <div className="flex items-center justify-between w-full">
-                            <button
-                                onClick={() => router.back()}
-                                className="group flex items-center text-sm font-medium text-gray-500 hover:text-[#1C3ECA] mb-4 transition-colors"
-                            >
-                                <svg className="w-4 h-4 mr-1 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                </svg>
-                                Back to Inbox
-                            </button>
-                            <button
-                                onClick={handleDownloadProof}
-                                className="inline-flex items-center px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 shadow-sm transition-all mb-4"
-                            >
-                                <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                </svg>
-                                Export Proof
-                            </button>
-                        </div>
-                        <h1 className="text-3xl md:text-4xl font-extrabold text-[#1C3ECA] tracking-tight mb-2">{request.title}</h1>
-                        <div className="flex items-center gap-3 text-gray-500 text-sm">
-                            <span className="flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-md font-medium text-gray-700">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                                {request.employee?.full_name}
-                            </span>
-                            <span>•</span>
-                            <span>Submitted on {request.submitted_at ? format(new Date(request.submitted_at), 'dd MMM yyyy') : '-'}</span>
-                        </div>
-                    </div>
-
-                    <div className={`px-5 py-2 rounded-full text-sm font-bold tracking-wide uppercase shadow-sm border
-                        ${request.status === 'approved' ? 'bg-green-50 text-green-700 border-green-100' :
-                            request.status === 'spl_open' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                            request.status === 'spl_approved' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                            request.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-100' :
-                                request.status === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-gray-50 text-gray-700 border-gray-200'
-                        }`}>
-                        {request.status === 'spl_open' ? 'Lembur Berjalan' : request.status === 'spl_approved' ? 'Menunggu Mulai' : request.status}
-                    </div>
-                </div>
+                <ApprovalHeader 
+                    request={request} 
+                    onBack={() => router.back()} 
+                    onDownloadProof={handleDownloadProof} 
+                />
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                    {/* Left Column: Details */}
+                    {/* Left Column: Details & Attachments */}
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Main Detail Card */}
-                        <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100/50 p-8 overflow-hidden relative">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#1C3ECA] to-[#8a5d6e] opacity-20"></div>
-                            <h3 className="text-xl font-bold text-[#1C3ECA] mb-8 flex items-center gap-2">
-                                <svg className="w-5 h-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                Request Details
-                            </h3>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
-                                <div className="space-y-1">
-                                    <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Request Type</label>
-                                    <div className="font-semibold text-lg text-gray-900 capitalize flex items-center gap-2">
-                                        {request.type === 'leave' && '🌴'}
-                                        {request.type === 'business_trip' && '✈️'}
-                                        {request.type === 'overtime' && '⏰'}
-                                        {request.type === 'asset' && '💻'}
-                                        {request.type === 'resignation' && '🚪'}
-                                        {request.type.replace('_', ' ')}
-                                    </div>
-                                </div>
-
-                                {!['resignation', 'exit_permit'].includes(request.type) && (
-                                    <div className="space-y-1">
-                                        <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">
-                                            {request.type === 'asset' ? 'Estimated Cost' : 'Duration / Amount'}
-                                        </label>
-                                        <div className="font-semibold text-lg text-gray-900">
-                                            {request.type === 'asset'
-                                                ? `IDR ${request.amount?.toLocaleString('id-ID')}`
-                                                : (() => {
-                                                    if (request.type === 'overtime') {
-                                                        if (request.status === 'spl_open') {
-                                                            return <LiveTimer startTime={request.detail?.start_time} date={request.detail?.date} />;
-                                                        }
-                                                        if (['pending', 'spl_approved'].includes(request.status)) {
-                                                            return '-';
-                                                        }
-                                                        const val = request.amount || 0;
-                                                        const h = Math.floor(val);
-                                                        const m = Math.round((val - h) * 60);
-                                                        return (
-                                                            <span className="flex items-baseline gap-1">
-                                                                {h > 0 && <><span className="font-semibold">{h}</span><span className="text-sm text-gray-500 font-normal mr-1">h</span></>}
-                                                                {m > 0 && <><span className="font-semibold">{m}</span><span className="text-sm text-gray-500 font-normal">m</span></>}
-                                                                {h === 0 && m === 0 && <><span className="font-semibold">0</span><span className="text-sm text-gray-500 font-normal">m</span></>}
-                                                            </span>
-                                                        );
-                                                    }
-                                                    const val = request.amount || (request.start_date && request.end_date ? differenceInDays(new Date(request.end_date), new Date(request.start_date)) + 1 : 1);
-                                                    return Number(val).toLocaleString('id-ID', { maximumFractionDigits: 0 });
-                                                })()
-                                            }
-                                            <span className="text-sm text-gray-500 ml-1 font-normal">
-                                                {(() => {
-                                                    if (request.type === 'overtime') return '';
-                                                    if (['leave', 'business_trip', 'sick_leave'].includes(request.type)) return 'Days';
-                                                    if (['reimbursement', 'asset', 'resignation'].includes(request.type)) return '';
-                                                    return 'Units';
-                                                })()}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {request.type === 'resignation' && request.detail ? (
-                                    <>
-                                        <div className="space-y-1">
-                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Last Working Date</label>
-                                            <div className="font-semibold text-lg text-gray-900">
-                                                {request.detail.last_working_date ? format(new Date(request.detail.last_working_date), 'dd MMM yyyy') : '-'}
-                                            </div>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Type</label>
-                                            <div className="font-semibold text-lg text-gray-900 capitalize">
-                                                {request.detail.resign_type === '1_month_notice' ? 'One Month Notice' : 'Normal'}
-                                            </div>
-                                        </div>
-                                    </>
-                                ) : request.type === 'asset' && request.detail ? (
-                                    <>
-                                        <div className="space-y-1">
-                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Brand / Item</label>
-                                            <div className="font-semibold text-lg text-gray-900">{request.detail.brand || '-'}</div>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Specification</label>
-                                            <div className="font-semibold text-lg text-gray-900">{request.detail.specification || '-'}</div>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Urgency</label>
-                                            <div className={`font-semibold text-lg px-3 py-1 inline-flex rounded-full text-sm ${request.detail.is_urgent ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                                                {request.detail.is_urgent ? '🔥 Urgent' : 'Regular'}
-                                            </div>
-                                        </div>
-                                    </>
-                                ) : request.type === 'overtime' && request.detail ? (
-                                    <>
-                                        <div className="space-y-1">
-                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Start Time</label>
-                                            <div className="font-semibold text-lg text-gray-900">{request.detail.start_time || '-'}</div>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">End Time (Actual)</label>
-                                            <div className="font-semibold text-lg text-gray-900">{request.detail.end_time || '-'}</div>
-                                        </div>
-                                        
-
-                                    </>
-                                ) : request.type === 'exit_permit' && request.detail ? (
-                                    <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-indigo-50/80 to-blue-50/40 rounded-2xl p-6 border border-indigo-100/50 mt-2">
-                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                                            {/* Left side: Permit details */}
-                                            <div className="flex-1 space-y-6">
-                                                <div className="grid grid-cols-2 gap-6">
-                                                    <div>
-                                                        <label className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold mb-2 block">Keperluan</label>
-                                                        <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold ${request.detail.permit_type?.toLowerCase() === 'dinas' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
-                                                            {request.detail.permit_type?.toLowerCase() === 'dinas' ? '🏢 Dinas' : '👤 Pribadi'}
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold mb-1 block">Tujuan</label>
-                                                        <div className="font-bold text-gray-900 flex items-center gap-2">
-                                                            <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                                                            {request.detail.destination || '-'}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-6">
-                                                    <div>
-                                                        <label className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold mb-1 block">Waktu Keluar</label>
-                                                        <div className="font-semibold text-gray-800 flex flex-col gap-1 text-sm">
-                                                            <div className="flex items-center gap-1.5">
-                                                                <svg className="w-4 h-4 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                                                <span>{request.detail.date ? format(new Date(request.detail.date), 'dd MMM yyyy') : '-'}</span>
-                                                            </div>
-                                                            <div className="flex items-center gap-1.5">
-                                                                <svg className="w-4 h-4 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                                <span>{request.detail.start_time || '-'} - {request.detail.end_time || 'Selesai'}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold mb-1 block">No Polisi</label>
-                                                        <div className="font-semibold text-gray-800 flex items-center gap-1.5 text-sm">
-                                                            <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" /></svg>
-                                                            {request.detail.vehicle_plate || '-'}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                            {/* Right side: Signature */}
-                                            {request.detail.signature && (
-                                                <div className="shrink-0 bg-white/80 p-5 rounded-2xl border border-indigo-100/60 shadow-sm flex flex-col items-center min-w-[160px]">
-                                                    <span className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold mb-3">Tanda Tangan</span>
-                                                    <img src={request.detail.signature} alt="Signature" className="h-16 object-contain mix-blend-multiply" />
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="space-y-1">
-                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Start Date</label>
-                                            <div className="font-semibold text-lg text-gray-900">{request.start_date ? format(new Date(request.start_date), 'dd MMM yyyy') : '-'}</div>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">End Date</label>
-                                            <div className="font-semibold text-lg text-gray-900">{request.end_date ? format(new Date(request.end_date), 'dd MMM yyyy') : '-'}</div>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                            <div className="mt-8 pt-8 border-t border-gray-100">
-                                <label className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-3 block">Description / Reason</label>
-                                <div className="bg-gray-50 rounded-2xl p-6 text-gray-700 leading-relaxed text-sm md:text-base border border-gray-100">
-                                    {request.description}
-                                </div>
-                            </div>
-                            
-
-                        </div>
-
-                    {/* Attachments Card (Only show if present) */}
-                    {(() => {
-                        let attachmentsArray = request.attachments;
-                        if (typeof attachmentsArray === 'string') {
-                            try {
-                                attachmentsArray = JSON.parse(attachmentsArray);
-                            } catch (e) {
-                                attachmentsArray = [];
-                            }
-                        }
-                        return attachmentsArray && Array.isArray(attachmentsArray) && attachmentsArray.length > 0 ? (
-                        <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100/50 p-8">
-                            <h3 className="text-xl font-bold text-[#1C3ECA] mb-6 flex items-center gap-2">
-                                <svg className="w-5 h-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                </svg>
-                                Attachments
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {attachmentsArray.map((att: string, idx: number) => (
-                                    <div key={`start-${idx}`} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50 flex flex-col">
-                                        {typeof att === 'string' && att.startsWith('data:image') ? (
-                                            <img
-                                                src={att}
-                                                alt={`Attachment ${idx + 1}`}
-                                                className="w-full aspect-square object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                                onClick={() => {
-                                                    const w = window.open("");
-                                                    w?.document.write('<img src="' + att + '" style="max-width:100%"/>');
-                                                }}
-                                            />
-                                        ) : (
-                                            <a href={att} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-4 hover:bg-gray-100 transition-colors flex-1">
-                                                <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
-                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                </div>
-                                                <div className="overflow-hidden">
-                                                    <p className="text-sm font-semibold text-gray-900 truncate">Attachment {idx + 1}</p>
-                                                    <p className="text-xs text-gray-500">Click to view</p>
-                                                </div>
-                                            </a>
-                                        )}
-                                        {request.type === 'overtime' && (
-                                            <div className="bg-gray-100 p-2 text-center border-t border-gray-200 mt-auto">
-                                                <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">Bukti Mulai</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-
-                                {(() => {
-                                    let proofDoneArray = (request.type === 'overtime' && request.detail?.proof_image_done) ? request.detail.proof_image_done : [];
-                                    if (!Array.isArray(proofDoneArray)) proofDoneArray = [];
-                                    
-                                    return proofDoneArray.map((att: string, idx: number) => (
-                                        <div key={`done-${idx}`} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50 flex flex-col">
-                                            {typeof att === 'string' ? (
-                                                <img
-                                                    src={att.startsWith('data:image') ? att : `${process.env.NEXT_PUBLIC_API_URL}/storage/${att}`}
-                                                    alt={`Final Proof ${idx + 1}`}
-                                                    className="w-full aspect-square object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                                    onClick={() => {
-                                                        const imgUrl = att.startsWith('data:image') ? att : `${process.env.NEXT_PUBLIC_API_URL}/storage/${att}`;
-                                                        const w = window.open("");
-                                                        w?.document.write('<img src="' + imgUrl + '" style="max-width:100%"/>');
-                                                    }}
-                                                />
-                                            ) : null}
-                                            <div className="bg-gray-100 p-2 text-center border-t border-gray-200 mt-auto">
-                                                <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">Bukti Selesai</p>
-                                            </div>
-                                        </div>
-                                    ));
-                                })()}
-                            </div>
-                        </div>
-                        ) : null;
-                    })()}
-
+                        <RequestDetailCard request={request} />
+                        <RequestAttachments request={request} />
                     </div>
 
                     {/* Right Column: Timeline & Actions */}
                     <div className="lg:col-span-1 space-y-6 sticky top-24">
-                    {/* Timeline */}
-                    <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100/50 p-6 md:p-8">
-                        <ApprovalTimeline approvals={request.approvals || []} />
+                        <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100/50 p-6 md:p-8">
+                            <ApprovalTimeline approvals={request.approvals || []} />
+                        </div>
+                        
+                        <ApprovalActionPanel 
+                            request={request}
+                            user={user}
+                            actionNote={actionNote}
+                            setActionNote={setActionNote}
+                            isProcessing={isProcessing}
+                            handleAction={handleAction}
+                            showApproveModal={showApproveModal}
+                            setShowApproveModal={setShowApproveModal}
+                            signerName={signerName}
+                            setSignerName={setSignerName}
+                            sigCanvas={sigCanvas}
+                            submitApproval={submitApproval}
+                        />
                     </div>
-
-                    {/* Action Panel - ONLY show if it's THIS user's turn */}
-                    {['pending', 'pending_final'].includes(request.status) && (() => {
-                        const pendingStep = request.approvals?.find(a => a.status === 'pending');
-                        const isAdmin = ['super_admin', 'admin', 'hrd'].includes(
-                            (typeof user?.role === 'object' && user.role !== null && 'name' in user.role) ? (user.role as any).name : (user?.role || '')
-                        );
-                        const isMyTurn = isAdmin || (pendingStep && pendingStep.approver?.id === user?.employee?.id);
-
-                        if (!isMyTurn) {
-                            return (
-                                <div className="bg-gray-50 rounded-3xl border border-gray-100 p-6 md:p-8 text-center h-fit">
-                                    <h3 className="text-lg font-bold text-gray-400 mb-2">Waiting for Approval</h3>
-                                    <p className="text-sm text-gray-500">
-                                        Current Approver: <span className="font-semibold">{pendingStep?.approver?.full_name || 'System / Unassigned'}</span> (Level {pendingStep?.level || '-'})
-                                    </p>
-                                    {!pendingStep && (
-                                        <p className="text-xs text-red-400 mt-2">
-                                            No pending approval step found. Please contact HR.
-                                        </p>
-                                    )}
-                                </div>
-                            );
-                        }
-
-                        return (
-                            <div className="bg-white rounded-3xl shadow-[0_4px_30px_rgba(0,0,0,0.06)] border border-gray-100/50 p-6 md:p-8 h-fit">
-                                <h3 className="text-lg font-bold text-[#1C3ECA] mb-4">Take Action</h3>
-                                <textarea
-                                    className="w-full bg-gray-50 border-0 ring-1 ring-gray-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-[#1C3ECA]/20 focus:bg-white transition-all mb-6 resize-none"
-                                    rows={4}
-                                    placeholder="Add a reason or note (Required for rejection)..."
-                                    value={actionNote}
-                                    onChange={(e) => setActionNote(e.target.value)}
-                                ></textarea>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <button
-                                        onClick={() => handleAction('reject')}
-                                        disabled={isProcessing}
-                                        className="w-full bg-white text-red-600 border border-red-100 hover:bg-red-50 hover:border-red-200 py-3.5 rounded-xl font-bold transition-all disabled:opacity-50 text-sm shadow-sm"
-                                    >
-                                        Reject
-                                    </button>
-                                    <button
-                                        onClick={() => handleAction('approve')}
-                                        disabled={isProcessing}
-                                        className="w-full bg-[#1C3ECA] text-white hover:bg-[#2d1e24] py-3.5 rounded-xl font-bold shadow-lg shadow-[#1C3ECA]/20 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 text-sm"
-                                    >
-                                        Approve
-                                    </button>
-                                </div>
-                            </div>
-                        );
-                    })()}
                 </div>
             </div>
-        </div>
-
-            {showApproveModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
-                        <button onClick={() => setShowApproveModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
-                        <h3 className="text-xl font-bold text-[#1C3ECA] mb-6">Confirm Approval</h3>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Signer Name</label>
-                                <input
-                                    type="text"
-                                    value={signerName}
-                                    onChange={(e) => setSignerName(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#1C3ECA] focus:border-[#1C3ECA]"
-                                    placeholder="Enter your name"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Signature</label>
-                                <div className="border border-gray-300 rounded-lg overflow-hidden bg-gray-50 h-[200px] relative">
-                                    <SignatureCanvas
-                                        ref={sigCanvas}
-                                        penColor="black"
-                                        canvasProps={{ className: 'signature-canvas w-full h-full' }}
-                                    />
-                                    <button
-                                        onClick={() => sigCanvas.current.clear()}
-                                        className="absolute bottom-2 right-2 text-xs bg-white border border-gray-200 px-2 py-1 rounded shadow-sm hover:bg-gray-100"
-                                    >Clear</button>
-                                </div>
-                            </div>
-
-                            <div className="pt-4 flex gap-3">
-                                <button onClick={() => setShowApproveModal(false)} className="flex-1 py-3 border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
-                                <button onClick={submitApproval} disabled={isProcessing} className="flex-1 py-3 bg-[#1C3ECA] text-white rounded-xl font-bold hover:bg-[#2d1e24]">
-                                    {isProcessing ? 'Processing...' : 'Confirm Approve'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </DashboardLayout>
     );
 }

@@ -1,0 +1,40 @@
+export interface Employee {
+  id: number;
+  user_id?: number;
+  employee_code: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  position: string;
+  level?: string;
+  division?: {
+    id: number;
+    name: string;
+  };
+  track?: 'office' | 'operational';
+  status: 'active' | 'inactive' | 'resigned';
+  join_date: string;
+  birth_date?: string;
+  place_of_birth?: string;
+  gender?: 'male' | 'female';
+  religion?: string;
+  marital_status?: string;
+  ptkp_status?: string;
+  nik?: string;
+  npwp?: string;
+  bank_account_number?: string;
+  bank_account_name?: string;
+  ktp_address?: string;
+  current_address?: string;
+  father_name?: string;
+  mother_name?: string;
+  spouse_name?: string;
+  family_contact_number?: string;
+  education?: any;
+  supervisor_name?: string;
+  supervisor_position?: string;
+  basic_salary?: number;
+  mandatory_overtime_amount?: number;
+  employment_status?: string;
+  contract_end_date?: string;
+}
