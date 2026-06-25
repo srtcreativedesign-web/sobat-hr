@@ -89,9 +89,7 @@ export default function PayrollPage() {
       // Use division-specific endpoint
       let endpoint = '';
       if (selectedDivision === 'office') endpoint = '/payrolls/ho';
-      if (selectedDivision === 'fnb') endpoint = '/payrolls/fnb';
-      if (selectedDivision === 'maximum') endpoint = '/payrolls/maximum';
-      if (selectedDivision === 'tungtau') endpoint = '/payrolls/tungtau';
+      if (['fnb', 'maximum', 'tungtau'].includes(selectedDivision)) endpoint = '/payrolls/fnb';
       if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) endpoint = '/payrolls/retail';
 
       const response = await apiClient.get(endpoint, {
@@ -184,9 +182,7 @@ export default function PayrollPage() {
       } else if (pendingApprovalId) {
         // Single Approve
         let endpoint = `/payrolls/${pendingApprovalId}/status`;
-        if (selectedDivision === 'fnb') endpoint = `/payrolls/fnb/${pendingApprovalId}/status`;
-        if (selectedDivision === 'maximum') endpoint = `/payrolls/maximum/${pendingApprovalId}/status`;
-        if (selectedDivision === 'tungtau') endpoint = `/payrolls/tungtau/${pendingApprovalId}/status`;
+        if (['fnb', 'maximum', 'tungtau'].includes(selectedDivision)) endpoint = `/payrolls/fnb/${pendingApprovalId}/status`;
         if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) {
           endpoint = `/payrolls/retail/${pendingApprovalId}/status`;
         }
@@ -283,11 +279,7 @@ export default function PayrollPage() {
             <button
               onClick={async () => {
                 try {
-                  const endpoint = selectedDivision === 'maximum'
-                    ? `/payrolls/maximum/${payroll.id}/slip`
-                    : selectedDivision === 'tungtau'
-                    ? `/payrolls/tungtau/${payroll.id}/slip`
-                    : selectedDivision === 'fnb'
+                  const endpoint = ['fnb', 'maximum', 'tungtau'].includes(selectedDivision)
                     ? `/payrolls/fnb/${payroll.id}/slip`
                     : ['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)
                       ? `/payrolls/retail/${payroll.id}/slip?division_type=${selectedDivision}`

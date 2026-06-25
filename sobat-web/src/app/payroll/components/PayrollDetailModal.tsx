@@ -26,11 +26,7 @@ export default function PayrollDetailModal({
 
     const handleDownload = async () => {
         try {
-            const endpoint = selectedDivision === 'maximum'
-                ? `/payrolls/maximum/${selectedPayroll.id}/slip`
-                : selectedDivision === 'tungtau'
-                ? `/payrolls/tungtau/${selectedPayroll.id}/slip`
-                : selectedDivision === 'fnb'
+            const endpoint = ['fnb', 'maximum', 'tungtau'].includes(selectedDivision)
                 ? `/payrolls/fnb/${selectedPayroll.id}/slip`
                 : selectedDivision === 'office'
                 ? `/payrolls/ho/${selectedPayroll.id}/slip`

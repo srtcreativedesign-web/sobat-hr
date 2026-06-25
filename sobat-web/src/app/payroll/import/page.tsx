@@ -92,9 +92,9 @@ export default function ImportPayrollPage() {
       // Use division-specific endpoint
       let endpoint = '';
       if (selectedDivision === 'office') endpoint = '/payrolls/ho';
-      if (selectedDivision === 'fnb') endpoint = '/payrolls/fnb';
-      if (selectedDivision === 'maximum') endpoint = '/payrolls/maximum';
-      if (selectedDivision === 'tungtau') endpoint = '/payrolls/tungtau';
+      if (['fnb', 'maximum', 'tungtau'].includes(selectedDivision)) endpoint = '/payrolls/fnb';
+      
+      
       if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) endpoint = '/payrolls/retail';
 
       const response = await apiClient.get(endpoint, {
@@ -195,10 +195,10 @@ export default function ImportPayrollPage() {
 
       let importEndpoint = '';
       if (selectedDivision === 'office') importEndpoint = '/payrolls/ho/import';
-      if (selectedDivision === 'maximum') importEndpoint = '/payrolls/maximum/import';
-      if (selectedDivision === 'tungtau') importEndpoint = '/payrolls/tungtau/import';
+      
+      
       if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer', 'fnb'].includes(selectedDivision)) {
-        importEndpoint = selectedDivision === 'fnb' ? '/payrolls/fnb/import/parse-headers' : '/payrolls/retail/import/parse-headers';
+        importEndpoint = ['fnb', 'maximum', 'tungtau'].includes(selectedDivision) ? '/payrolls/fnb/import/parse-headers' : '/payrolls/retail/import/parse-headers';
         formData.append('division_type', selectedDivision);
       }
 
@@ -260,7 +260,7 @@ export default function ImportPayrollPage() {
       }
       
       simFormData.append('division_type', selectedDivision);
-      const simulateEndpoint = selectedDivision === 'fnb' ? '/payrolls/fnb/import/simulate' : '/payrolls/retail/import/simulate';
+      const simulateEndpoint = ['fnb', 'maximum', 'tungtau'].includes(selectedDivision) ? '/payrolls/fnb/import/simulate' : '/payrolls/retail/import/simulate';
       const simulateResponse = await apiClient.post(simulateEndpoint, simFormData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -292,9 +292,9 @@ export default function ImportPayrollPage() {
       } else if (pendingApprovalId) {
         // Single Approve
         let endpoint = `/payrolls/${pendingApprovalId}/status`;
-        if (selectedDivision === 'fnb') endpoint = `/payrolls/fnb/${pendingApprovalId}/status`;
-        if (selectedDivision === 'maximum') endpoint = `/payrolls/maximum/${pendingApprovalId}/status`;
-        if (selectedDivision === 'tungtau') endpoint = `/payrolls/tungtau/${pendingApprovalId}/status`;
+        if (['fnb', 'maximum', 'tungtau'].includes(selectedDivision)) endpoint = `/payrolls/fnb/${pendingApprovalId}/status`;
+        
+        
         if (selectedDivision === 'minimarket') endpoint = `/payrolls/mm/${pendingApprovalId}/status`;
         if (selectedDivision === 'reflexiology') endpoint = `/payrolls/ref/${pendingApprovalId}/status`;
         if (selectedDivision === 'wrapping') endpoint = `/payrolls/wrapping/${pendingApprovalId}/status`;
@@ -662,9 +662,9 @@ export default function ImportPayrollPage() {
                       try {
                         let saveEndpoint = '/payrolls/import/save';
                         if (selectedDivision === 'office') saveEndpoint = '/payrolls/ho/import/save';
-                        if (selectedDivision === 'fnb') saveEndpoint = '/payrolls/fnb/import/save';
-                        if (selectedDivision === 'maximum') saveEndpoint = '/payrolls/maximum/import/save';
-                        if (selectedDivision === 'tungtau') saveEndpoint = '/payrolls/tungtau/import/save';
+                        if (['fnb', 'maximum', 'tungtau'].includes(selectedDivision)) saveEndpoint = '/payrolls/fnb/import/save';
+                        
+                        
                         if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision)) { saveEndpoint = '/payrolls/retail/import/save'; }
 
                         const response = await apiClient.post(saveEndpoint, {
