@@ -6,9 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Jobs\ProcessPayrollImport;
 use App\Models\Employee;
 use App\Models\Payroll;
+use App\Models\Role;
+use App\Models\User;
 use App\Services\GroqAiService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -155,17 +159,9 @@ class PayrollController extends Controller
     {
         $payroll = Payroll::with('employee')->findOrFail($id);
 
-        // --- IDOR GUARD ---
-        $user = auth()->user();
-        $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR, 'admin_hr']);
-
-        if (! $isAdmin && $payroll->employee_id !== $user->employee?->id) {
-            return response()->json(['message' => 'Anda tidak memiliki akses ke data payroll ini.'], 403);
-        }
-
-        if ($roleName === 'admin_hr' && $payroll->employee && strtolower($payroll->employee->track) === 'office') {
-            return response()->json(['message' => 'Anda tidak memiliki akses ke data payroll Head Office.'], 403);
+        $response = Gate::inspect('view', $payroll);
+        if ($response->denied()) {
+            return response()->json(['message' => $response->message()], 403);
         }
 
         $responseService = app(\App\Services\PayrollResponseService::class);
@@ -178,12 +174,8 @@ class PayrollController extends Controller
     {
         $payroll = Payroll::findOrFail($id);
 
-        // --- IDOR GUARD ---
-        $user = auth()->user();
-        $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR, 'admin_hr']);
-
-        if (! $isAdmin) {
+        $response = Gate::inspect('update', $payroll);
+        if ($response->denied()) {
             return response()->json(['message' => 'Hanya Admin/HR yang dapat mengubah data payroll.'], 403);
         }
 
@@ -208,12 +200,8 @@ class PayrollController extends Controller
     {
         $payroll = Payroll::findOrFail($id);
 
-        // --- IDOR GUARD ---
-        $user = auth()->user();
-        $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR, 'admin_hr']);
-
-        if (! $isAdmin) {
+        $response = Gate::inspect('delete', $payroll);
+        if ($response->denied()) {
             return response()->json(['message' => 'Hanya Admin/HR yang dapat menghapus data payroll.'], 403);
         }
 
@@ -247,12 +235,8 @@ class PayrollController extends Controller
             return app(\App\Http\Controllers\Api\PayrollRetailController::class)->generateSlip($request, $originalId);
         }
 
-        // --- IDOR GUARD ---
-        $user = auth()->user();
-        $roleName = $user->role ? strtolower($user->role->name) : '';
-        $isAdmin = in_array($roleName, [Role::ADMIN, Role::SUPER_ADMIN, Role::HR, 'admin_hr']);
-
-        if (! $isAdmin && $payroll->employee_id !== $user->employee?->id) {
+        $response = Gate::inspect('view', $payroll);
+        if ($response->denied()) {
             return response()->json(['message' => 'Anda tidak memiliki akses ke slip gaji ini.'], 403);
         }
 
@@ -483,6 +467,11 @@ class PayrollController extends Controller
      */
     public function updateStatus(Request $request, $id)
     {
+        $response = Gate::inspect('approveAny', Payroll::class);
+        if ($response->denied()) {
+            return response()->json(['message' => $response->message()], 403);
+        }
+
         $request->validate([
             'status' => 'required|in:pending,approved,paid',
         ]);
@@ -510,6 +499,11 @@ class PayrollController extends Controller
      */
     public function approveAll(Request $request)
     {
+        $response = Gate::inspect('approveAny', Payroll::class);
+        if ($response->denied()) {
+            return response()->json(['message' => $response->message()], 403);
+        }
+
         $request->validate([
             'month' => 'required|integer|min:1|max:12',
             'year' => 'required|integer|min:2020',
@@ -574,6 +568,11 @@ class PayrollController extends Controller
      */
     public function bulkApprove(Request $request)
     {
+        $response = Gate::inspect('approveAny', Payroll::class);
+        if ($response->denied()) {
+            return response()->json(['message' => $response->message()], 403);
+        }
+
         $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'integer',
