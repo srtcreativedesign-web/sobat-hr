@@ -545,8 +545,8 @@ class PayrollController extends Controller
             $originalId = $payroll->details['original_id'];
             
             if ($originalModelClass === \App\Models\PayrollFnb::class) return app(\App\Http\Controllers\Api\PayrollFnbController::class)->generateSlip($originalId);
-            if ($originalModelClass === \App\Models\PayrollTungtau::class) return app(\App\Http\Controllers\Api\PayrollTungtauController::class)->generateSlip($originalId);
-            if ($originalModelClass === \App\Models\PayrollMaximum::class) return app(\App\Http\Controllers\Api\PayrollMaximumController::class)->generateSlip($originalId);
+            if ($originalModelClass === \App\Models\PayrollTungtau::class) return app(\App\Http\Controllers\Api\PayrollFnbController::class)->generateSlip($originalId);
+            if ($originalModelClass === \App\Models\PayrollMaximum::class) return app(\App\Http\Controllers\Api\PayrollFnbController::class)->generateSlip($originalId);
             if ($originalModelClass === \App\Models\PayrollHo::class) return app(\App\Http\Controllers\Api\PayrollHoController::class)->generatePayslip($originalId);
             
             // Retail
