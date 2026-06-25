@@ -124,130 +124,8 @@ class EmployeeController extends Controller
             'photo_path' => 'nullable|string',
         ]);
 
-        // Map incoming keys to actual DB columns where names differ
-        $data = [];
-        if (isset($validated['user_id']))
-            $data['user_id'] = $validated['user_id'];
-        if (isset($validated['role_id']))
-            $data['role_id'] = $validated['role_id'];
-        // support both employee_number and employee_code from clients
-        if (isset($validated['employee_number']))
-            $data['employee_code'] = $validated['employee_number'];
-        if (isset($validated['employee_code']))
-            $data['employee_code'] = $validated['employee_code'];
-        $data['full_name'] = $validated['full_name'];
-        if (isset($validated['email']))
-            $data['email'] = $validated['email'];
-        if (isset($validated['phone']))
-            $data['phone'] = $validated['phone'];
-        if (isset($validated['address']))
-            $data['address'] = $validated['address'];
-        if (isset($validated['date_of_birth']))
-            $data['birth_date'] = $validated['date_of_birth'];
-        if (isset($validated['birth_date']))
-            $data['birth_date'] = $validated['birth_date'];
-        if (isset($validated['join_date']))
-            $data['join_date'] = $validated['join_date'];
-        if (isset($validated['position']))
-            $data['position'] = $validated['position'];
-        if (isset($validated['level']))
-            $data['level'] = $validated['level'];
-        if (isset($validated['base_salary']))
-            $data['basic_salary'] = $validated['base_salary'];
-        if (isset($validated['basic_salary']))
-            $data['basic_salary'] = $validated['basic_salary'];
-        if (isset($validated['mandatory_overtime_amount']))
-            $data['mandatory_overtime_amount'] = $validated['mandatory_overtime_amount'];
-        if (isset($validated['contract_end_date']))
-            $data['contract_end_date'] = $validated['contract_end_date'];
-        if (isset($validated['contract_type']))
-            $data['employment_status'] = $validated['contract_type'];
-        if (isset($validated['employment_status']))
-            $data['employment_status'] = $validated['employment_status'];
-        if (isset($validated['status']))
-            $data['status'] = $validated['status'];
-        if (isset($validated['job_level']))
-            $data['job_level'] = $validated['job_level'];
-        if (isset($validated['track']))
-            $data['track'] = $validated['track'];
-
-        // Handle new Master Data logic
-        if (isset($validated['division_id'])) {
-            $data['division_id'] = $validated['division_id'];
-            $div = \App\Models\Division::find($validated['division_id']);
-            if ($div) $data['department'] = $div->name;
-        }
-        
-        if (isset($validated['job_position_id'])) {
-            $data['job_position_id'] = $validated['job_position_id'];
-            $pos = \App\Models\JobPosition::find($validated['job_position_id']);
-            if ($pos) {
-                $data['position'] = $pos->name;
-                $data['job_level'] = (string)$pos->level;
-            }
-        }
-
-        // New additional fields added by migration (same names)
-        $extraFields = [
-            'place_of_birth',
-            'ktp_address',
-            'current_address',
-            'gender',
-            'religion',
-            'marital_status',
-            'ptkp_status',
-            'nik',
-            'npwp',
-            'bank_account_number',
-            'bank_account_name',
-            'father_name',
-            'mother_name',
-            'spouse_name',
-            'family_contact_number',
-            'education',
-            'leave_quota',
-            'supervisor_name',
-            'supervisor_position',
-            'supervisor_id', // Added
-            'department',
-            'photo_path'
-        ];
-        foreach ($extraFields as $f) {
-            if (isset($validated[$f]))
-                $data[$f] = $validated[$f];
-        }
-
-        // If user_id not provided, link created employee to the authenticated user when available
-        if (empty($data['user_id'])) {
-            $authUser = $request->user();
-            if ($authUser) {
-                $data['user_id'] = $authUser->id;
-            }
-        }
-
-        // Ensure required non-null DB columns exist: generate an employee_code if missing
-        if (empty($data['employee_code'])) {
-            $authUser = $request->user();
-            $uid = $data['user_id'] ?? ($authUser ? $authUser->id : null);
-            $prefix = $uid ? ('EMP' . $uid . '-') : 'EMP-';
-            $data['employee_code'] = $prefix . substr(uniqid(), -6);
-        }
-
-        // Default division_id to first available division if not set
-        if (empty($data['division_id'])) {
-            $defaultDiv = \App\Models\Division::first();
-            if ($defaultDiv) {
-                $data['division_id'] = $defaultDiv->id;
-            }
-        }
-
-        // Default required text fields to prevent MySQL errors
-        if (empty($data['position'])) {
-            $data['position'] = '-';
-        }
-        if (empty($data['join_date'])) {
-            $data['join_date'] = now()->toDateString();
-        }
+        $employeeService = app(\App\Services\EmployeeService::class);
+        $data = $employeeService->mapEmployeeData($validated, $request);
 
         // Check if employee with same email or employee_code already exists
         // Use identity-based check instead of full_name to avoid collisions
@@ -363,38 +241,18 @@ class EmployeeController extends Controller
             'photo_path' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // 2MB Max + ADDED MIMES VALIDATION
         ]);
 
-        // Map validated to actual DB columns similar to store()
-        $data = [];
-        if (isset($validated['role_id']))
-            $data['role_id'] = $validated['role_id'];
-        if (isset($validated['employee_number']))
-            $data['employee_code'] = $validated['employee_number'];
-        if (isset($validated['employee_code']))
-            $data['employee_code'] = $validated['employee_code'];
-        if (isset($validated['full_name']))
-            $data['full_name'] = $validated['full_name'];
-        if (isset($validated['email']))
-            $data['email'] = $validated['email'];
-        if (isset($validated['phone']))
-            $data['phone'] = $validated['phone'];
-        if (isset($validated['address']))
-            $data['address'] = $validated['address'];
-        if (isset($validated['date_of_birth']))
-            $data['birth_date'] = $validated['date_of_birth'];
-        if (isset($validated['birth_date']))
-            $data['birth_date'] = $validated['birth_date'];
+        $employeeService = app(\App\Services\EmployeeService::class);
+        $data = $employeeService->mapEmployeeData($validated, $request);
+
+        // Custom join_date update limitation
         if (isset($validated['join_date'])) {
             $newDateInput = $validated['join_date'];
             $newDate = $newDateInput ? \Carbon\Carbon::parse($newDateInput)->format('Y-m-d') : null;
             $oldDate = $employee->join_date ? $employee->join_date->format('Y-m-d') : null;
 
-            // Debug logging
             \Illuminate\Support\Facades\Log::info("Join Date Check: Old={$oldDate}, New={$newDate}, Input={$newDateInput}");
 
-            // If date is changing
             if ($newDate !== $oldDate) {
-                // If old date was null, this is the first set (count remains 0)
-                // If old date was NOT null, this is an edit
                 if ($oldDate !== null) {
                     if ($employee->join_date_edit_count >= 1) {
                         return response()->json([
@@ -405,74 +263,6 @@ class EmployeeController extends Controller
                 }
                 $data['join_date'] = $newDate;
             }
-        }
-        
-        if (isset($validated['position']))
-            $data['position'] = $validated['position'];
-        if (isset($validated['level']))
-            $data['level'] = $validated['level'];
-        if (isset($validated['base_salary']))
-            $data['basic_salary'] = $validated['base_salary'];
-        if (isset($validated['basic_salary']))
-            $data['basic_salary'] = $validated['basic_salary'];
-        if (isset($validated['mandatory_overtime_amount']))
-            $data['mandatory_overtime_amount'] = $validated['mandatory_overtime_amount'];
-        if (isset($validated['contract_end_date']))
-            $data['contract_end_date'] = $validated['contract_end_date'];
-        if (isset($validated['contract_type']))
-            $data['employment_status'] = $validated['contract_type'];
-        if (isset($validated['employment_status']))
-            $data['employment_status'] = $validated['employment_status'];
-        if (isset($validated['status']))
-            $data['status'] = $validated['status'];
-        if (isset($validated['job_level']))
-            $data['job_level'] = $validated['job_level'];
-        if (isset($validated['track']))
-            $data['track'] = $validated['track'];
-
-        // Handle new Master Data logic
-        if (isset($validated['division_id'])) {
-            $data['division_id'] = $validated['division_id'];
-            $div = \App\Models\Division::find($validated['division_id']);
-            if ($div) $data['department'] = $div->name;
-        }
-        
-        if (isset($validated['job_position_id'])) {
-            $data['job_position_id'] = $validated['job_position_id'];
-            $pos = \App\Models\JobPosition::find($validated['job_position_id']);
-            if ($pos) {
-                $data['position'] = $pos->name;
-                $data['job_level'] = (string)$pos->level;
-            }
-        }
-
-        $extraFields = [
-            'place_of_birth',
-            'ktp_address',
-            'current_address',
-            'gender',
-            'religion',
-            'marital_status',
-            'ptkp_status',
-            'nik',
-            'npwp',
-            'bank_account_number',
-            'bank_account_name',
-            'father_name',
-            'mother_name',
-            'spouse_name',
-            'family_contact_number',
-            'education',
-            'leave_quota',
-            'supervisor_name',
-            'supervisor_position',
-            'supervisor_id', // Added
-            'department',
-            // 'photo_path' handled separately below
-        ];
-        foreach ($extraFields as $f) {
-            if (isset($validated[$f]))
-                $data[$f] = $validated[$f];
         }
 
         // Handle File Upload
@@ -574,134 +364,15 @@ class EmployeeController extends Controller
             $records = $modelClass::where('employee_id', $employee->id)->get();
             
             foreach ($records as $record) {
-                $data = $record->toArray();
-                $data['division_type_label'] = $type;
-                
-                // Standardize mapping for generic/HO payrolls (which use JSON 'details' column)
+                $responseService = app(\App\Services\PayrollResponseService::class);
+
                 if ($modelClass === \App\Models\Payroll::class) {
-                    if (isset($data['details']) && is_array($data['details'])) {
-                        $details = $data['details'];
-                        
-                        if (isset($details['days_present'])) {
-                            $data['attendance'] = [
-                                'Hadir' => $details['days_present'] ?? 0,
-                                'Sakit' => $details['days_sick'] ?? 0,
-                                'Ijin' => $details['days_permission'] ?? 0,
-                                'Alfa' => $details['days_alpha'] ?? 0,
-                                'Cuti' => $details['days_leave'] ?? 0,
-                            ];
-                        }
-                        
-                        $allowancesMap = [];
-                        $daysPresent = $details['days_present'] ?? 0;
-                        $formatRate = function ($amount, $defaultLabel) use ($daysPresent) {
-                            if ($daysPresent > 0 && $amount > 0 && fmod($amount, $daysPresent) == 0) {
-                                $rate = $amount / $daysPresent;
-                                if ($rate >= 1000) return $defaultLabel . ' (Rp ' . number_format($rate, 0, ',', '.') . ' /hari)';
-                            }
-                            return $defaultLabel;
-                        };
-
-                        if (($details['transport_allowance'] ?? 0) > 0) $allowancesMap[$formatRate($details['transport_allowance'], 'Transport')] = $details['transport_allowance'];
-                        if (($details['health_allowance'] ?? 0) > 0) $allowancesMap['Tunjangan Kesehatan'] = $details['health_allowance'];
-                        if (($details['position_allowance'] ?? 0) > 0) $allowancesMap['Tunjangan Jabatan'] = $details['position_allowance'];
-                        if (($details['holiday_allowance'] ?? 0) > 0) $allowancesMap['Tunjangan Hari Raya'] = $details['holiday_allowance'];
-                        if (($details['attendance_allowance'] ?? 0) > 0) $allowancesMap[$formatRate($details['attendance_allowance'], 'Kehadiran')] = $details['attendance_allowance'];
-                        if (($details['meal_allowance'] ?? 0) > 0) $allowancesMap[$formatRate($details['meal_allowance'], 'Uang Makan')] = $details['meal_allowance'];
-                        if (($details['bonus'] ?? 0) > 0) $allowancesMap['Bonus / THR'] = $details['bonus'];
-                        if (($details['target_koli'] ?? 0) > 0) $allowancesMap['Target Koli'] = $details['target_koli'];
-                        if (($details['accessory_fee'] ?? 0) > 0) $allowancesMap['Accessory Fee'] = $details['accessory_fee'];
-                        if (($details['backup'] ?? 0) > 0) $allowancesMap['Backup'] = $details['backup'];
-                        if (($details['policy_ho'] ?? 0) > 0) $allowancesMap['Kebijakan HO'] = $details['policy_ho'];
-                        if (($details['adjustment'] ?? 0) > 0) $allowancesMap['Adjustment'] = $details['adjustment'];
-                        if (($details['insentif_kehadiran'] ?? 0) > 0) $allowancesMap['Insentif Kehadiran'] = $details['insentif_kehadiran'];
-                        
-                        if (($details['overtime_hours'] ?? 0) > 0) {
-                            $allowancesMap['Lembur'] = [
-                                'amount' => $record->overtime_pay ?? 0,
-                                'hours' => $details['overtime_hours'],
-                            ];
-                        }
-                        if (!empty($allowancesMap)) $data['allowances'] = $allowancesMap;
-
-                        if (isset($details['deductions'])) {
-                            $deductionsMap = [];
-                            $d = $details['deductions'];
-                            if (($d['absent'] ?? 0) > 0) $deductionsMap['Absen'] = $d['absent'];
-                            if (($d['alfa'] ?? 0) > 0) $deductionsMap['Alfa'] = $d['alfa'];
-                            if (($d['late'] ?? 0) > 0) $deductionsMap['Terlambat'] = $d['late'];
-                            if (($d['shortage'] ?? 0) > 0) $deductionsMap['Selisih SO'] = $d['shortage'];
-                            if (($d['loan'] ?? 0) > 0) $deductionsMap['Pinjaman/Kasbon'] = $d['loan'];
-                            if (($d['bank_fee'] ?? 0) > 0) $deductionsMap['Biaya Admin Bank'] = $d['bank_fee'];
-                            if (($d['bpjs_tk'] ?? 0) > 0) $deductionsMap['BPJS Ketenagakerjaan'] = $d['bpjs_tk'];
-                            if (!empty($deductionsMap)) $data['deductions'] = $deductionsMap;
-                        }
-                        
-                        if (isset($details['deductions']['ewa']) && $details['deductions']['ewa'] > 0) {
-                             $data['ewa_amount'] = $details['deductions']['ewa'];
-                        }
-                    }
+                    $data = $responseService->formatStandardPayroll($record);
                 } else {
-                    // Standardize mapping for Retail/Services payrolls (which use direct DB columns)
-                    $data['attendance'] = [
-                        'Hadir' => $record->days_present ?? 0,
-                        'Sakit' => $record->days_sick ?? 0,
-                        'Ijin' => $record->days_permission ?? 0,
-                        'Alfa' => $record->days_alpha ?? 0,
-                        'Cuti' => $record->days_leave ?? 0,
-                    ];
-                    
-                    $allowancesMap = [];
-                    if (($record->transport_amount ?? 0) > 0) {
-                        $label = 'Transport';
-                        if (($record->transport_rate ?? 0) >= 1000) $label .= ' (Rp ' . number_format($record->transport_rate, 0, ',', '.') . ' /hari)';
-                        $allowancesMap[$label] = $record->transport_amount;
-                    }
-                    if (($record->health_allowance ?? 0) > 0) $allowancesMap['Tunjangan Kesehatan'] = $record->health_allowance;
-                    if (($record->position_allowance ?? 0) > 0) $allowancesMap['Tunjangan Jabatan'] = $record->position_allowance;
-                    if (($record->holiday_allowance ?? 0) > 0) $allowancesMap['Tunjangan Hari Raya'] = $record->holiday_allowance;
-                    
-                    $attAmt = $record->attendance_amount ?? $record->attendance_allowance ?? 0;
-                    if ($attAmt > 0) {
-                        $label = 'Kehadiran';
-                        if (($record->attendance_rate ?? 0) >= 1000) $label .= ' (Rp ' . number_format($record->attendance_rate, 0, ',', '.') . ' /hari)';
-                        $allowancesMap[$label] = $attAmt;
-                    }
-                    if (($record->meal_amount ?? 0) > 0) {
-                        $label = 'Uang Makan';
-                        if (($record->meal_rate ?? 0) >= 1000) $label .= ' (Rp ' . number_format($record->meal_rate, 0, ',', '.') . ' /hari)';
-                        $allowancesMap[$label] = $record->meal_amount;
-                    }
-                    if (($record->bonus ?? 0) > 0) $allowancesMap['Bonus / THR'] = $record->bonus;
-                    if (($record->target_koli ?? 0) > 0) $allowancesMap['Target Koli'] = $record->target_koli;
-                    if (($record->accessory_fee ?? 0) > 0) $allowancesMap['Accessory Fee'] = $record->accessory_fee;
-                    if (($record->backup ?? 0) > 0) $allowancesMap['Backup'] = $record->backup;
-                    if (($record->policy_ho ?? 0) > 0) $allowancesMap['Kebijakan HO'] = $record->policy_ho;
-                    if (($record->adjustment ?? 0) > 0) $allowancesMap['Adjustment'] = $record->adjustment;
-                    if (($record->insentif_kehadiran ?? 0) > 0) $allowancesMap['Insentif Kehadiran'] = $record->insentif_kehadiran;
-                    
-                    if (($record->overtime_hours ?? 0) > 0) {
-                        $allowancesMap['Lembur'] = [
-                            'amount' => $record->overtime_amount ?? 0,
-                            'hours' => $record->overtime_hours,
-                        ];
-                    }
-                    if (!empty($allowancesMap)) $data['allowances'] = $allowancesMap;
-
-                    $deductionsMap = [];
-                    if (($record->deduction_absent ?? 0) > 0) $deductionsMap['Potongan Absen'] = $record->deduction_absent;
-                    if (($record->deduction_late ?? 0) > 0) $deductionsMap['Terlambat'] = $record->deduction_late;
-                    $shortage = $record->deduction_shortage ?? $record->deduction_so_shortage ?? 0;
-                    if ($shortage > 0) $deductionsMap['Selisih SO'] = $shortage;
-                    if (($record->deduction_loan ?? 0) > 0) $deductionsMap['Pinjaman/Kasbon'] = $record->deduction_loan;
-                    if (($record->deduction_admin_fee ?? 0) > 0) $deductionsMap['Biaya Admin Bank'] = $record->deduction_admin_fee;
-                    if (($record->deduction_bpjs_tk ?? 0) > 0) $deductionsMap['BPJS Ketenagakerjaan'] = $record->deduction_bpjs_tk;
-                    if (!empty($deductionsMap)) $data['deductions'] = $deductionsMap;
-                    
-                    if (($record->ewa_amount ?? 0) > 0) {
-                        $data['ewa_amount'] = $record->ewa_amount;
-                    }
+                    $data = $responseService->formatRetailPayroll($record);
                 }
+                
+                $data['division_type_label'] = $type;
                 
                 $allPayrolls->push($data);
             }
