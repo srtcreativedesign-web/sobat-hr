@@ -174,90 +174,11 @@ class AttendanceController extends Controller
         }
 
         // Late/Status calculation (skip if already pending from field attendance)
-        if ($validated['status'] !== 'pending') {
-            $clockInTime = Carbon::parse($validated['date'] . ' ' . $validated['check_in']);
-
-            // Operational track with shift schedule: use shift_start_time for late calc
-            if ($trackType === 'operational' && !empty($validated['shift_start_time'])) {
-                $workStartTime = Carbon::parse($validated['date'] . ' ' . $validated['shift_start_time']);
-
-                $toleranceTime = $workStartTime->copy()->addSeconds(59);
-
-                if ($clockInTime->gt($toleranceTime)) {
-                    $lateDuration = abs($clockInTime->diffInMinutes($workStartTime));
-                    $validated['late_duration'] = $lateDuration;
-
-                    if ($lateDuration > 5) {
-                        $validated['status'] = 'pending';
-                    } else {
-                        $validated['status'] = 'late';
-                    }
-                } else {
-                    $validated['status'] = 'present';
-                }
-            } else {
-                // Check if user claimed shifting (head_office only)
-                if (isset($validated['is_shifting']) && $validated['is_shifting'] == true) {
-                    $validated['status'] = 'present';
-                    $validated['late_duration'] = 0;
-                } else {
-                    // Get employee shift
-                    $shift = $employee->shift;
-                    $defaultStartTime = '08:00:00';
-
-                    if ($shift) {
-                        // Use shift start time if available
-                        $startTimeStr = $shift->start_time instanceof Carbon
-                            ? $shift->start_time->format('H:i:s')
-                            : Carbon::parse($shift->start_time)->format('H:i:s');
-                        $workStartTime = Carbon::parse($validated['date'] . ' ' . $startTimeStr);
-                    } else {
-                        $workStartTime = Carbon::parse($validated['date'] . ' ' . $defaultStartTime);
-                    }
-
-                    $toleranceTime = $workStartTime->copy()->addSeconds(59);
-
-                    if ($clockInTime->gt($toleranceTime)) {
-                        $lateDuration = abs($clockInTime->diffInMinutes($workStartTime));
-                        $validated['late_duration'] = $lateDuration;
-
-                        if ($lateDuration > 5) {
-                            $validated['status'] = 'pending';
-                        } else {
-                            $validated['status'] = 'late';
-                        }
-                    } else {
-                        $validated['status'] = 'present';
-                    }
-                }
-            }
-        }
+        $processorService = app(\App\Services\AttendanceProcessorService::class);
+        $processorService->processCheckIn($employee, $validated, $trackType);
 
         // Calculate work hours if check_out exists
-        if (isset($validated['check_out'])) {
-            $checkIn = Carbon::parse($validated['check_in']);
-            $checkOut = Carbon::parse($validated['check_out']);
-            $validated['work_hours'] = $checkIn->floatDiffInHours($checkOut);
-
-            // Get employee shift for overtime
-            $shift = $employee->shift;
-            $defaultEndTime = '17:00:00';
-
-            if ($shift) {
-                $endTimeStr = $shift->end_time instanceof Carbon
-                    ? $shift->end_time->format('H:i:s')
-                    : Carbon::parse($shift->end_time)->format('H:i:s');
-                $workEndTime = Carbon::parse($validated['date'] . ' ' . $endTimeStr);
-            } else {
-                $workEndTime = Carbon::parse($validated['date'] . ' ' . $defaultEndTime);
-            }
-
-            $clockOutTime = Carbon::parse($validated['date'] . ' ' . $validated['check_out']);
-
-            if ($clockOutTime->gt($workEndTime)) {
-                $validated['overtime_duration'] = $clockOutTime->diffInMinutes($workEndTime);
-            }
-        }
+        $processorService->processCheckOut($employee, $validated);
 
         // Verify face synchronously for immediate feedback
         if ($needsFaceVerification) {
@@ -438,38 +359,12 @@ class AttendanceController extends Controller
 
         // Recalculate work hours if check_in or check_out changes
         if (isset($validated['check_in']) || isset($validated['check_out'])) {
-            $checkInTime = isset($validated['check_in']) ? $validated['check_in'] : $attendance->check_in;
-            $checkOutTime = isset($validated['check_out']) ? $validated['check_out'] : $attendance->check_out;
+            $validated['check_in'] = isset($validated['check_in']) ? $validated['check_in'] : $attendance->check_in;
+            $validated['check_out'] = isset($validated['check_out']) ? $validated['check_out'] : $attendance->check_out;
+            $validated['date'] = $attendance->date instanceof Carbon ? $attendance->date->format('Y-m-d') : $attendance->date;
 
-            $checkIn = Carbon::parse($checkInTime);
-            $checkOut = Carbon::parse($checkOutTime);
-
-            if ($checkOutTime) {
-                // Calculate Work Hours
-                $validated['work_hours'] = $checkIn->floatDiffInHours($checkOut);
-
-                // Calculate Overtime based on Shift
-                $shift = $attendance->employee->shift;
-                $defaultEndTime = '17:00:00';
-                $dateVal = $attendance->date instanceof Carbon ? $attendance->date->format('Y-m-d') : $attendance->date;
-
-                if ($shift) {
-                    $endTimeStr = $shift->end_time instanceof Carbon
-                        ? $shift->end_time->format('H:i:s')
-                        : Carbon::parse($shift->end_time)->format('H:i:s');
-                    $workEndTime = Carbon::parse($dateVal . ' ' . $endTimeStr);
-                } else {
-                    $workEndTime = Carbon::parse($dateVal . ' ' . $defaultEndTime);
-                }
-
-                $clockOutDateTime = Carbon::parse($dateVal . ' ' . $checkOutTime);
-
-                if ($clockOutDateTime->gt($workEndTime)) {
-                    $validated['overtime_duration'] = $clockOutDateTime->diffInMinutes($workEndTime);
-                } else {
-                    $validated['overtime_duration'] = 0;
-                }
-            }
+            $processorService = app(\App\Services\AttendanceProcessorService::class);
+            $processorService->processCheckOut($attendance->employee, $validated);
         }
 
         DB::transaction(function () use ($attendance, $validated) {
