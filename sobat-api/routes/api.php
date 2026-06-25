@@ -237,19 +237,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}/slip', [App\Http\Controllers\Api\PayrollHoController::class, 'generatePayslip']);
     });
 
-    // Payroll routes (generic)
-    Route::apiResource('payrolls', App\Http\Controllers\Api\PayrollController::class);
+    // Payroll routes (generic - bulk operations only)
+    Route::apiResource('payrolls', App\Http\Controllers\Api\PayrollController::class)->only(['index']);
     Route::get('/payrolls/template/download', [App\Http\Controllers\Api\PayrollController::class, 'downloadTemplate']);
     Route::post('/payrolls/approve-all', [App\Http\Controllers\Api\PayrollController::class, 'approveAll']);
     Route::post('/payrolls/bulk-approve', [App\Http\Controllers\Api\PayrollController::class, 'bulkApprove']);
-    Route::middleware(['throttle:10,1'])->group(function () {
-        Route::post('/payrolls/import', [App\Http\Controllers\Api\PayrollController::class, 'import']);
-        Route::post('/payrolls/import/save', [App\Http\Controllers\Api\PayrollController::class, 'saveImport']);
-    });
-    Route::post('/payrolls/calculate', [App\Http\Controllers\Api\PayrollController::class, 'calculate']);
     Route::patch('/payrolls/{id}/status', [App\Http\Controllers\Api\PayrollController::class, 'updateStatus']);
+    
     Route::middleware(['throttle:30,1'])->group(function () {
-        Route::get('/payrolls/{id}/payslip', [App\Http\Controllers\Api\PayrollController::class, 'generatePayslip']);
         Route::get('/payrolls/{id}/slip', [App\Http\Controllers\Api\PayrollController::class, 'generateSlip']);
         Route::get('/payrolls/period/{month}/{year}', [App\Http\Controllers\Api\PayrollController::class, 'periodPayrolls']);
     });
