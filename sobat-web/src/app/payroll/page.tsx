@@ -593,6 +593,7 @@ export default function PayrollPage() {
       <PayrollDetailModal
         selectedPayroll={selectedPayroll}
         selectedDivision={selectedDivision}
+        isOpen={!!selectedPayroll}
         onClose={() => setSelectedPayroll(null)}
         onApprove={(id) => {
             setPendingApprovalId(Number(id));

@@ -8,17 +8,36 @@ import {
     calculateGrossSalary, 
     calculateTotalDeductions 
 } from '../utils';
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Chip } from '@nextui-org/react';
 
 interface PayrollDetailModalProps {
     selectedPayroll: Payroll | null;
     selectedDivision: string;
+    isOpen?: boolean;
     onClose: () => void;
     onApprove: (id: number) => void;
 }
 
+const getStatusChipColor = (status: string): "warning" | "success" | "primary" | "danger" | "default" => {
+    switch (status) {
+        case 'draft':
+        case 'pending':
+            return 'warning';
+        case 'approved':
+            return 'success';
+        case 'paid':
+            return 'primary';
+        case 'rejected':
+            return 'danger';
+        default:
+            return 'default';
+    }
+};
+
 export default function PayrollDetailModal({
     selectedPayroll,
     selectedDivision,
+    isOpen,
     onClose,
     onApprove
 }: PayrollDetailModalProps) {
@@ -51,30 +70,31 @@ export default function PayrollDetailModal({
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-            <div className="bg-white rounded-2xl shadow-2xl p-0 max-w-2xl w-full my-8 flex flex-col max-h-[90vh]">
-                <div className="p-6 border-b border-gray-100 flex justify-between items-start sticky top-0 bg-white rounded-t-2xl z-10">
-                    <div>
-                        <h3 className="text-2xl font-bold text-gray-900">{selectedPayroll.employee.full_name}</h3>
-                        <p className="text-gray-500">
-                            Periode: {(selectedPayroll as any).period || new Date(selectedPayroll.period_start).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
-                        </p>
-                        <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBadge(selectedPayroll.status)}`}>
-                            {selectedPayroll.status.toUpperCase()}
-                        </span>
-                    </div>
-                    <button
-                        onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="Close"
+        <Modal
+            isOpen={isOpen ?? !!selectedPayroll}
+            onClose={onClose}
+            size="2xl"
+            scrollBehavior="inside"
+            backdrop="blur"
+            classNames={{ base: 'max-h-[90vh]' }}
+        >
+            <ModalContent>
+                <ModalHeader className="flex flex-col gap-1">
+                    <h3 className="text-2xl font-bold text-gray-900">{selectedPayroll.employee.full_name}</h3>
+                    <p className="text-gray-500 text-sm font-normal">
+                        Periode: {(selectedPayroll as any).period || new Date(selectedPayroll.period_start).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                    </p>
+                    <Chip
+                        color={getStatusChipColor(selectedPayroll.status)}
+                        size="sm"
+                        variant="flat"
+                        className="mt-1"
                     >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
+                        {selectedPayroll.status.toUpperCase()}
+                    </Chip>
+                </ModalHeader>
 
-                <div className="p-6 overflow-y-auto flex-1">
+                <ModalBody>
                     {/* Attendance Summary (for FnB/MM/Ref/Wrapping/Cellular) */}
                     {['fnb', 'minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer'].includes(selectedDivision) && (selectedPayroll as any).attendance && (
                         <div className="mb-6 bg-blue-50 p-4 rounded-xl">
@@ -322,43 +342,50 @@ export default function PayrollDetailModal({
                             </div>
                         </div>
                     </div>
-                </div>
+                </ModalBody>
 
-                <div className="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-between items-center">
+                <ModalFooter>
                     <div className="flex gap-2 w-full">
                         {/* Download Payslip Button */}
-                        <button
-                            onClick={handleDownload}
-                            className="flex-1 bg-[#1C3ECA] text-white px-4 py-3 rounded-xl font-semibold hover:bg-[#523640] transition-colors flex items-center justify-center gap-2"
+                        <Button
+                            color="primary"
+                            className="flex-1"
+                            onPress={handleDownload}
+                            startContent={
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                            }
                         >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                            </svg>
                             Download Slip Gaji (PDF)
-                        </button>
+                        </Button>
 
                         {/* Approve Button (only for draft/pending status) */}
                         {(selectedPayroll.status === 'draft' || selectedPayroll.status === 'pending') && (
-                            <button
-                                onClick={() => onApprove(selectedPayroll.id)}
-                                className="flex-1 bg-green-600 text-white px-4 py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                            <Button
+                                color="success"
+                                className="flex-1 text-white"
+                                onPress={() => onApprove(selectedPayroll.id)}
+                                startContent={
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                }
                             >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
                                 Approve
-                            </button>
+                            </Button>
                         )}
 
-                        <button
-                            onClick={onClose}
-                            className="px-6 py-3 border border-gray-300 rounded-xl font-semibold hover:bg-white transition-colors"
+                        <Button
+                            color="default"
+                            variant="bordered"
+                            onPress={onClose}
                         >
                             Tutup
-                        </button>
+                        </Button>
                     </div>
-                </div>
-            </div>
-        </div>
+                </ModalFooter>
+            </ModalContent>
+        </Modal>
     );
 }
