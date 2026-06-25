@@ -7,8 +7,8 @@ class DivisionsConfig {
   static const Map<String, String> endpoints = {
     'office': 'payrolls/ho',
     'fnb': 'payrolls/fnb',
-    'tungtau': 'payrolls/tungtau',
-    'maximum': 'payrolls/maximum',
+    'tungtau': 'payrolls/fnb',
+    'maximum': 'payrolls/fnb',
     'minimarket': 'payrolls/mm',
     'reflexiology': 'payrolls/ref',
     'wrapping': 'payrolls/wrapping',
