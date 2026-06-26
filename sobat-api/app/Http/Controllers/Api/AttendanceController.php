@@ -74,6 +74,14 @@ class AttendanceController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->has('search') && $request->search) {
+            $search = strtolower($request->search);
+            $query->whereHas('employee', function ($q) use ($search) {
+                $q->whereRaw('LOWER(full_name) LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('LOWER(employee_code) LIKE ?', ["%{$search}%"]);
+            });
+        }
+
         $perPage = $request->input('per_page', 20);
         $attendances = $query->orderBy('date', 'desc')->paginate($perPage);
 

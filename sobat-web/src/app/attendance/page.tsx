@@ -26,6 +26,7 @@ export default function AttendancePage() {
     const [filterStatus, setFilterStatus] = useState('');
     const [filterDivision, setFilterDivision] = useState('');
     const [filterOffline, setFilterOffline] = useState('');
+    const [filterSearch, setFilterSearch] = useState('');
     const [selectedAttendance, setSelectedAttendance] = useState<Attendance | null>(null);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [showBulkModal, setShowBulkModal] = useState(false);
@@ -66,6 +67,7 @@ export default function AttendancePage() {
             if (filterStatus) params.append('status', filterStatus);
             if (filterDivision) params.append('division_id', filterDivision);
             if (filterOffline) params.append('is_offline', filterOffline);
+            if (filterSearch) params.append('search', filterSearch);
             params.append('page', String(page));
             params.append('per_page', '20');
 
@@ -326,6 +328,16 @@ export default function AttendancePage() {
                 {/* Filters */}
                 <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
                     <form onSubmit={handleFilter} className="flex flex-wrap gap-4 items-end">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Pencarian</label>
+                            <input
+                                type="text"
+                                placeholder="Cari nama / NIK..."
+                                value={filterSearch}
+                                onChange={(e) => setFilterSearch(e.target.value)}
+                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#419cc3] focus:border-transparent min-w-[200px]"
+                            />
+                        </div>
                         <div className="flex gap-2">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Dari Tanggal</label>
@@ -392,10 +404,10 @@ export default function AttendancePage() {
                         </div>
                         <button
                             type="submit"
-                            disabled={!filterStartDate}
-                            className={`px-6 py-2 rounded-lg transition-colors font-medium ${!filterStartDate ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#89b4e1] text-[#419cc3] hover:bg-[#93C5FD]'}`}
+                            disabled={loading}
+                            className={`px-6 py-2 rounded-lg transition-colors font-medium ${loading ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#89b4e1] text-[#419cc3] hover:bg-[#93C5FD]'}`}
                         >
-                            Filter
+                            {loading ? 'Mencari...' : 'Filter'}
                         </button>
                         <button
                             type="button"
