@@ -35,14 +35,14 @@ export default function EmployeeDetailModal({ employee, isOpen, onClose, onReset
             {/* Modal Body */}
             <ModalBody className="space-y-6">
               {/* Basic Info */}
-              <div className="bg-gradient-to-r from-[#60A5FA] to-[#93C5FD] rounded-lg p-6 text-[#1C3ECA]">
+              <div className="bg-gradient-to-r from-[#89b4e1] to-[#93C5FD] rounded-lg p-6 text-[#419cc3]">
                 <div className="flex items-center gap-4">
                   <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center text-3xl font-bold">
                     {employee.full_name.charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <h3 className="text-2xl font-bold">{employee.full_name}</h3>
-                    <p className="text-[#1C3ECA] font-semibold">{employee.employee_code}</p>
+                    <p className="text-[#419cc3] font-semibold">{employee.employee_code}</p>
                     <p className="text-sm mt-1">{employee.position} • {employee.division?.name}</p>
                   </div>
                 </div>

@@ -121,7 +121,7 @@ export default function LoginPage() {
                 <label className="text-sm font-medium text-white/90 ml-1">Email</label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-white/50 group-focus-within:text-[#60A5FA] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-5 w-5 text-white/50 group-focus-within:text-[#89b4e1] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
                     </svg>
                   </div>
@@ -129,7 +129,7 @@ export default function LoginPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-[#60A5FA] focus:bg-white/10 focus:ring-1 focus:ring-[#60A5FA] transition-all duration-300"
+                    className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-[#89b4e1] focus:bg-white/10 focus:ring-1 focus:ring-[#89b4e1] transition-all duration-300"
                     placeholder="name@company.com"
                     required
                   />
@@ -140,7 +140,7 @@ export default function LoginPage() {
                 <label className="text-sm font-medium text-white/90 ml-1">Password</label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-white/50 group-focus-within:text-[#60A5FA] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-5 w-5 text-white/50 group-focus-within:text-[#89b4e1] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
@@ -148,7 +148,7 @@ export default function LoginPage() {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-[#60A5FA] focus:bg-white/10 focus:ring-1 focus:ring-[#60A5FA] transition-all duration-300"
+                    className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-[#89b4e1] focus:bg-white/10 focus:ring-1 focus:ring-[#89b4e1] transition-all duration-300"
                     placeholder="••••••••"
                     required
                   />
@@ -172,7 +172,7 @@ export default function LoginPage() {
               </div>
 
               <div className="flex justify-end">
-                <Link href="/forgot-password" className="text-sm font-medium text-[#60A5FA] hover:text-white transition-colors">
+                <Link href="/forgot-password" className="text-sm font-medium text-[#89b4e1] hover:text-white transition-colors">
                   Forgot Password?
                 </Link>
               </div>
@@ -180,7 +180,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 bg-[#60A5FA] text-white font-bold text-lg rounded-xl shadow-lg hover:bg-[#1C3ECA] hover:shadow-blue-500/30 active:scale-[0.98] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center isolate"
+                className="w-full py-4 bg-[#89b4e1] text-white font-bold text-lg rounded-xl shadow-lg hover:bg-[#419cc3] hover:shadow-blue-500/30 active:scale-[0.98] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center isolate"
               >
                 {loading ? (
                   <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -196,7 +196,7 @@ export default function LoginPage() {
             <div className="mt-8 text-center">
               <p className="text-white/60 text-sm">
                 Don't have an account?{' '}
-                <Link href="#" className="font-semibold text-white hover:text-[#60A5FA] transition-colors">
+                <Link href="#" className="font-semibold text-white hover:text-[#89b4e1] transition-colors">
                   Contact HR
                 </Link>
               </p>

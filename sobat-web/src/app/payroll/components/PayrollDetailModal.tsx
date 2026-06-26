@@ -115,7 +115,7 @@ export default function PayrollDetailModal({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Earnings */}
                         <div>
-                            <h4 className="text-sm font-bold text-[#93C5FD] uppercase tracking-wider mb-4 border-b border-[#60A5FA] pb-2">Pendapatan</h4>
+                            <h4 className="text-sm font-bold text-[#93C5FD] uppercase tracking-wider mb-4 border-b border-[#89b4e1] pb-2">Pendapatan</h4>
                             <div className="space-y-3">
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Gaji Pokok</span>
@@ -293,7 +293,7 @@ export default function PayrollDetailModal({
                     </div>
 
                     {/* Net Salary Summary */}
-                    <div className="mt-8 bg-[#1C3ECA] text-white p-6 rounded-xl space-y-4 shadow-lg">
+                    <div className="mt-8 bg-[#419cc3] text-white p-6 rounded-xl space-y-4 shadow-lg">
                         {selectedDivision !== 'office' && selectedDivision !== 'all' && selectedPayroll.thp !== undefined ? (
                             <>
                                 <div className="flex items-center justify-between border-b border-white/20 pb-4">

@@ -15,7 +15,7 @@ export default function ApprovalHeader({ request, onBack, onDownloadProof }: App
                 <div className="flex items-center justify-between w-full">
                     <button
                         onClick={onBack}
-                        className="group flex items-center text-sm font-medium text-gray-500 hover:text-[#1C3ECA] mb-4 transition-colors"
+                        className="group flex items-center text-sm font-medium text-gray-500 hover:text-[#419cc3] mb-4 transition-colors"
                     >
                         <svg className="w-4 h-4 mr-1 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -32,7 +32,7 @@ export default function ApprovalHeader({ request, onBack, onDownloadProof }: App
                         Export Proof
                     </button>
                 </div>
-                <h1 className="text-3xl md:text-4xl font-extrabold text-[#1C3ECA] tracking-tight mb-2">{request.title}</h1>
+                <h1 className="text-3xl md:text-4xl font-extrabold text-[#419cc3] tracking-tight mb-2">{request.title}</h1>
                 <div className="flex items-center gap-3 text-gray-500 text-sm">
                     <span className="flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-md font-medium text-gray-700">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

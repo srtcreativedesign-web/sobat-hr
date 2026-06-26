@@ -151,7 +151,7 @@ export default function DivisionsPage() {
         <DashboardLayout>
             <div className="flex justify-between items-center p-8 pb-0 animate-fade-in-up">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#1C3ECA]">Struktur Per Divisi</h1>
+                    <h1 className="text-2xl font-bold text-[#419cc3]">Struktur Per Divisi</h1>
                     <p className="text-gray-500 mt-1">Bagan organisasi untuk setiap divisi</p>
                 </div>
                 <div className="flex gap-3 items-center">
@@ -163,7 +163,7 @@ export default function DivisionsPage() {
                                 setSelectedDivisionId(Number(e.target.value));
                                 setSelectedOrg(null);
                             }}
-                            className="appearance-none bg-white border border-gray-200 text-gray-800 px-4 py-2.5 pr-10 rounded-xl text-sm font-semibold shadow-sm focus:ring-2 focus:ring-[#60A5FA] focus:border-transparent outline-none transition-all cursor-pointer"
+                            className="appearance-none bg-white border border-gray-200 text-gray-800 px-4 py-2.5 pr-10 rounded-xl text-sm font-semibold shadow-sm focus:ring-2 focus:ring-[#89b4e1] focus:border-transparent outline-none transition-all cursor-pointer"
                         >
                             <option value="" disabled>Pilih Divisi...</option>
                             {divisions.map(div => (
@@ -180,7 +180,7 @@ export default function DivisionsPage() {
                     {selectedDivision && (
                         <button
                             onClick={handleCreate}
-                            className="px-4 py-2.5 bg-[#1C3ECA] text-white font-semibold rounded-xl hover:bg-[#162ea0] shadow-lg shadow-[#1C3ECA]/20 transition-all flex items-center gap-2 text-sm"
+                            className="px-4 py-2.5 bg-[#419cc3] text-white font-semibold rounded-xl hover:bg-[#162ea0] shadow-lg shadow-[#419cc3]/20 transition-all flex items-center gap-2 text-sm"
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -194,7 +194,7 @@ export default function DivisionsPage() {
             <div className="p-8">
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
-                        <div className="w-8 h-8 border-4 border-[#60A5FA] border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-8 h-8 border-4 border-[#89b4e1] border-t-transparent rounded-full animate-spin"></div>
                     </div>
                 ) : !selectedDivision ? (
                     <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
@@ -207,9 +207,9 @@ export default function DivisionsPage() {
                     <>
                         {/* Division Header Badge */}
                         <div className="mb-4 flex items-center gap-3">
-                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#1C3ECA]/5 border border-[#1C3ECA]/10 rounded-xl">
-                                <div className="w-2 h-2 bg-[#1C3ECA] rounded-full"></div>
-                                <span className="text-sm font-bold text-[#1C3ECA]">{selectedDivision.name}</span>
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#419cc3]/5 border border-[#419cc3]/10 rounded-xl">
+                                <div className="w-2 h-2 bg-[#419cc3] rounded-full"></div>
+                                <span className="text-sm font-bold text-[#419cc3]">{selectedDivision.name}</span>
                                 <span className="text-xs text-gray-500">({divisionTree.length} unit)</span>
                             </div>
                         </div>
@@ -228,7 +228,7 @@ export default function DivisionsPage() {
                         {/* Detail Panel */}
                         <div className="mt-8 animate-fade-in-up" key={selectedOrg?.id || 'empty'}>
                             <div className="glass-card p-6 rounded-xl border border-gray-100 bg-white shadow-sm">
-                                <h3 className="text-xl font-bold text-[#1C3ECA] mb-4 flex items-center gap-2">
+                                <h3 className="text-xl font-bold text-[#419cc3] mb-4 flex items-center gap-2">
                                     <svg className="w-5 h-5 text-[#93C5FD]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
@@ -243,7 +243,7 @@ export default function DivisionsPage() {
                                                 <p className="text-sm text-gray-500 font-mono mt-1">{selectedOrg.code}</p>
                                                 <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full mt-2 uppercase font-bold">{selectedOrg.type}</span>
                                             </div>
-                                            <button onClick={() => handleEdit(selectedOrg)} className="text-[#60A5FA] hover:text-[#93C5FD] text-sm font-semibold">
+                                            <button onClick={() => handleEdit(selectedOrg)} className="text-[#89b4e1] hover:text-[#93C5FD] text-sm font-semibold">
                                                 Edit Details
                                             </button>
                                         </div>

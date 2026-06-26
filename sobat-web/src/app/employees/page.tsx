@@ -105,7 +105,7 @@ export default function EmployeesPage() {
         text: 'Ini akan mengizinkan karyawan untuk login kembali melalui perangkat baru. Lanjutkan?',
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#1C3ECA',
+        confirmButtonColor: '#419cc3',
         cancelButtonColor: '#d33',
         confirmButtonText: 'Ya, Reset',
         cancelButtonText: 'Batal'
@@ -119,7 +119,7 @@ export default function EmployeesPage() {
           title: 'Berhasil!',
           text: response.data.message || 'Device berhasil direset.',
           icon: 'success',
-          confirmButtonColor: '#1C3ECA',
+          confirmButtonColor: '#419cc3',
         });
         
         fetchEmployees(); // refresh list
@@ -131,7 +131,7 @@ export default function EmployeesPage() {
         title: 'Error!',
         text: error.response?.data?.message || 'Gagal mereset device.',
         icon: 'error',
-        confirmButtonColor: '#1C3ECA',
+        confirmButtonColor: '#419cc3',
       });
     } finally {
       setLoading(false);
@@ -155,7 +155,7 @@ export default function EmployeesPage() {
         title: 'Import Berhasil!',
         text: `Created: ${response.data.created}\nSkipped: ${response.data.skipped}`,
         icon: 'success',
-        confirmButtonColor: '#1C3ECA',
+        confirmButtonColor: '#419cc3',
       });
 
       setShowImportModal(false);
@@ -167,7 +167,7 @@ export default function EmployeesPage() {
         title: 'Error!',
         text: error.response?.data?.message || 'Gagal mengimport data.',
         icon: 'error',
-        confirmButtonColor: '#1C3ECA',
+        confirmButtonColor: '#419cc3',
       });
     } finally {
       setUploading(false);
@@ -209,7 +209,7 @@ export default function EmployeesPage() {
         title: 'Ekspor Gagal',
         text: 'Gagal mengexport data karyawan.',
         icon: 'error',
-        confirmButtonColor: '#1C3ECA',
+        confirmButtonColor: '#419cc3',
       });
     }
   };
@@ -372,7 +372,7 @@ export default function EmployeesPage() {
             </button>
             <button
               onClick={() => setShowImportModal(true)}
-              className="px-4 py-2 bg-[#1C3ECA] text-[#60A5FA] rounded-lg hover:bg-[#2d1e24] transition-colors font-medium flex items-center gap-2"
+              className="px-4 py-2 bg-[#419cc3] text-[#89b4e1] rounded-lg hover:bg-[#2d1e24] transition-colors font-medium flex items-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -393,7 +393,7 @@ export default function EmployeesPage() {
                 <Input
                   isClearable
                   classNames={{
-                    inputWrapper: "border border-gray-300 bg-white hover:bg-gray-50 focus-within:ring-2 focus-within:ring-[#1C3ECA]",
+                    inputWrapper: "border border-gray-300 bg-white hover:bg-gray-50 focus-within:ring-2 focus-within:ring-[#419cc3]",
                   }}
                   placeholder="Nama atau NIK..."
                   startContent={<Search className="text-gray-400" size={18} />}
@@ -410,7 +410,7 @@ export default function EmployeesPage() {
                 <select
                   value={filterOrg}
                   onChange={(e) => setFilterOrg(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#419cc3] focus:border-transparent"
                 >
                   <option value="">Semua Divisi</option>
                   {divisions.map(div => (
@@ -426,7 +426,7 @@ export default function EmployeesPage() {
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#419cc3] focus:border-transparent"
                 >
                   <option value="">Semua Status</option>
                   <option value="active">Aktif</option>
@@ -442,7 +442,7 @@ export default function EmployeesPage() {
                 <select
                   value={filterTrack}
                   onChange={(e) => setFilterTrack(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#419cc3] focus:border-transparent"
                 >
                   <option value="">Semua Track</option>
                   <option value="office">Head Office</option>
@@ -453,7 +453,7 @@ export default function EmployeesPage() {
               <div className="flex items-end">
                 <button
                   type="submit"
-                  className="w-full px-6 py-2 bg-[#60A5FA] text-[#1C3ECA] rounded-lg hover:bg-[#93C5FD] transition-colors"
+                  className="w-full px-6 py-2 bg-[#89b4e1] text-[#419cc3] rounded-lg hover:bg-[#93C5FD] transition-colors"
                 >
                   Cari
                 </button>

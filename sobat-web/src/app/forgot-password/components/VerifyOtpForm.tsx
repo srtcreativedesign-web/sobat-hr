@@ -50,7 +50,7 @@ export default function VerifyOtpForm({
                     {otp.map((data, index) => {
                         return (
                             <input
-                                className="w-10 h-12 sm:w-12 sm:h-14 bg-white/5 border border-white/20 rounded-lg text-white text-center text-xl font-bold focus:bg-white/10 focus:border-[#60A5FA] focus:ring-1 focus:ring-[#60A5FA] focus:outline-none transition-all"
+                                className="w-10 h-12 sm:w-12 sm:h-14 bg-white/5 border border-white/20 rounded-lg text-white text-center text-xl font-bold focus:bg-white/10 focus:border-[#89b4e1] focus:ring-1 focus:ring-[#89b4e1] focus:outline-none transition-all"
                                 type="text"
                                 name="otp"
                                 maxLength={1}
@@ -65,13 +65,13 @@ export default function VerifyOtpForm({
 
                 <div className="text-center">
                     {countdown > 0 ? (
-                        <p className="text-white/50 text-sm">Kirim ulang kode dalam <span className="text-[#60A5FA] font-bold">00:{countdown.toString().padStart(2, '0')}</span></p>
+                        <p className="text-white/50 text-sm">Kirim ulang kode dalam <span className="text-[#89b4e1] font-bold">00:{countdown.toString().padStart(2, '0')}</span></p>
                     ) : (
                         <button
                             type="button"
                             onClick={onRequestOtp}
                             disabled={loading}
-                            className="text-[#60A5FA] text-sm font-semibold hover:text-white transition-colors"
+                            className="text-[#89b4e1] text-sm font-semibold hover:text-white transition-colors"
                         >
                             Kirim Ulang Kode OTP
                         </button>
@@ -81,7 +81,7 @@ export default function VerifyOtpForm({
                 <button
                     type="submit"
                     disabled={loading || otp.join('').length !== 6}
-                    className="w-full py-4 bg-[#60A5FA] text-white font-bold text-lg rounded-xl shadow-lg hover:bg-[#1C3ECA] hover:shadow-blue-500/30 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-full py-4 bg-[#89b4e1] text-white font-bold text-lg rounded-xl shadow-lg hover:bg-[#419cc3] hover:shadow-blue-500/30 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                     {loading ? (
                         <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

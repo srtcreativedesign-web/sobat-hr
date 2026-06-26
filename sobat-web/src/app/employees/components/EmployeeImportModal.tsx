@@ -52,11 +52,11 @@ export default function EmployeeImportModal({
             <button
               type="submit"
               disabled={!importFile || uploading}
-              className="px-4 py-2 bg-[#1C3ECA] text-[#60A5FA] rounded-lg hover:bg-[#2d1e24] disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 bg-[#419cc3] text-[#89b4e1] rounded-lg hover:bg-[#2d1e24] disabled:opacity-50 flex items-center gap-2"
             >
               {uploading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-[#60A5FA] border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-[#89b4e1] border-t-transparent rounded-full animate-spin"></div>
                   Memproses...
                 </>
               ) : 'Upload & Import'}

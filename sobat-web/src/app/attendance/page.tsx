@@ -123,7 +123,7 @@ export default function AttendancePage() {
                 title: 'Ekspor Gagal',
                 text: 'Gagal mengexport data.',
                 icon: 'error',
-                confirmButtonColor: '#60A5FA',
+                confirmButtonColor: '#89b4e1',
             });
         }
     };
@@ -142,7 +142,7 @@ export default function AttendancePage() {
                 title: 'Berhasil!',
                 text: 'Status kehadiran berhasil diperbarui.',
                 icon: 'success',
-                confirmButtonColor: '#60A5FA',
+                confirmButtonColor: '#89b4e1',
             });
 
             // Refresh data
@@ -154,7 +154,7 @@ export default function AttendancePage() {
                 title: 'Gagal!',
                 text: 'Gagal memproses approval.',
                 icon: 'error',
-                confirmButtonColor: '#60A5FA',
+                confirmButtonColor: '#89b4e1',
             });
         }
     };
@@ -174,7 +174,7 @@ export default function AttendancePage() {
                 title: 'Berhasil!',
                 text: `${selectedIds.length} data absensi berhasil diproses.`,
                 icon: 'success',
-                confirmButtonColor: '#60A5FA',
+                confirmButtonColor: '#89b4e1',
             });
 
             setShowBulkModal(false);
@@ -187,7 +187,7 @@ export default function AttendancePage() {
                 title: 'Gagal!',
                 text: 'Terjadi kesalahan saat memproses bulk approval.',
                 icon: 'error',
-                confirmButtonColor: '#60A5FA',
+                confirmButtonColor: '#89b4e1',
             });
         } finally {
             setIsBulkSubmitting(false);
@@ -225,7 +225,7 @@ export default function AttendancePage() {
                 title: 'Info',
                 text: 'Tidak ditemukan data pending dengan keterlambatan di atas 08:05.',
                 icon: 'info',
-                confirmButtonColor: '#60A5FA',
+                confirmButtonColor: '#89b4e1',
             });
             return;
         }
@@ -333,7 +333,7 @@ export default function AttendancePage() {
                                     type="date"
                                     value={filterStartDate}
                                     onChange={(e) => setFilterStartDate(e.target.value)}
-                                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:border-transparent"
+                                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#419cc3] focus:border-transparent"
                                 />
                             </div>
                             <div>
@@ -342,7 +342,7 @@ export default function AttendancePage() {
                                     type="date"
                                     value={filterEndDate}
                                     onChange={(e) => setFilterEndDate(e.target.value)}
-                                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:border-transparent"
+                                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#419cc3] focus:border-transparent"
                                 />
                             </div>
                         </div>
@@ -351,7 +351,7 @@ export default function AttendancePage() {
                             <select
                                 value={filterDivision}
                                 onChange={(e) => setFilterDivision(e.target.value)}
-                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:border-transparent"
+                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#419cc3] focus:border-transparent"
                             >
                                 <option value="">Semua Divisi</option>
                                 {organizations
@@ -367,7 +367,7 @@ export default function AttendancePage() {
                             <select
                                 value={filterStatus}
                                 onChange={(e) => setFilterStatus(e.target.value)}
-                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:border-transparent"
+                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#419cc3] focus:border-transparent"
                             >
                                 <option value="">Semua Status</option>
                                 <option value="present">Hadir</option>
@@ -383,7 +383,7 @@ export default function AttendancePage() {
                             <select
                                 value={filterOffline}
                                 onChange={(e) => setFilterOffline(e.target.value)}
-                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:border-transparent"
+                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#419cc3] focus:border-transparent"
                             >
                                 <option value="">Semua Sumber</option>
                                 <option value="0">Online (Langsung)</option>
@@ -393,7 +393,7 @@ export default function AttendancePage() {
                         <button
                             type="submit"
                             disabled={!filterStartDate}
-                            className={`px-6 py-2 rounded-lg transition-colors font-medium ${!filterStartDate ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#60A5FA] text-[#1C3ECA] hover:bg-[#93C5FD]'}`}
+                            className={`px-6 py-2 rounded-lg transition-colors font-medium ${!filterStartDate ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#89b4e1] text-[#419cc3] hover:bg-[#93C5FD]'}`}
                         >
                             Filter
                         </button>
@@ -415,7 +415,7 @@ export default function AttendancePage() {
                             <button
                                 type="button"
                                 onClick={() => setShowBulkModal(true)}
-                                className="px-6 py-2 bg-[#1C3ECA] text-white rounded-lg hover:bg-[#1C3ECA]/90 transition-all font-bold animate-pulse shadow-lg ring-2 ring-white"
+                                className="px-6 py-2 bg-[#419cc3] text-white rounded-lg hover:bg-[#419cc3]/90 transition-all font-bold animate-pulse shadow-lg ring-2 ring-white"
                             >
                                 Approve Terpilih ({selectedIds.length})
                             </button>

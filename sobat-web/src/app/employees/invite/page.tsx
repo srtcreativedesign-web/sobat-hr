@@ -189,7 +189,7 @@ export default function InviteStaffPage() {
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-20">
         <div className="px-8 py-6">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-[#1C3ECA] to-[#60A5FA] bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-[#419cc3] to-[#89b4e1] bg-clip-text text-transparent">
             Invite Staff
           </h1>
           <p className="text-gray-500 mt-1">Upload Excel file or use manual form to invite new staff members.</p>
@@ -201,7 +201,7 @@ export default function InviteStaffPage() {
         {/* Manual Invitation Form */}
         <div className="glass-card p-8">
           <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-[#1C3ECA]/10 flex items-center justify-center text-[#1C3ECA]">
+            <div className="w-10 h-10 rounded-lg bg-[#419cc3]/10 flex items-center justify-center text-[#419cc3]">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             </div>
             Manual Invitation
@@ -212,7 +212,7 @@ export default function InviteStaffPage() {
               <input
                 type="text"
                 required
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#60A5FA]"
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#89b4e1]"
                 value={manualForm.name}
                 onChange={e => setManualForm({ ...manualForm, name: e.target.value })}
               />
@@ -222,7 +222,7 @@ export default function InviteStaffPage() {
               <input
                 type="email"
                 required
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#60A5FA]"
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#89b4e1]"
                 value={manualForm.email}
                 onChange={e => setManualForm({ ...manualForm, email: e.target.value })}
               />
@@ -230,7 +230,7 @@ export default function InviteStaffPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">App Role (Login Access)</label>
               <select
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#60A5FA]"
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#89b4e1]"
                 value={manualForm.role}
                 onChange={e => setManualForm({ ...manualForm, role: e.target.value })}
               >
@@ -255,7 +255,7 @@ export default function InviteStaffPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Track (Jalur Karir)</label>
               <select
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#60A5FA]"
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#89b4e1]"
                 value={manualForm.track}
                 onChange={e => setManualForm({ ...manualForm, track: e.target.value })}
               >
@@ -266,7 +266,7 @@ export default function InviteStaffPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Job Level (Jabatan)</label>
               <select
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#60A5FA]"
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#89b4e1]"
                 value={manualForm.job_level}
                 onChange={e => setManualForm({ ...manualForm, job_level: e.target.value })}
               >
@@ -292,7 +292,7 @@ export default function InviteStaffPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Division</label>
               <select
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#60A5FA]"
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#89b4e1]"
                 value={manualForm.organization_id}
                 onChange={e => setManualForm({ ...manualForm, organization_id: e.target.value })}
               >
@@ -306,7 +306,7 @@ export default function InviteStaffPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-2 bg-[#1C3ECA] text-white font-bold rounded-lg hover:bg-[#2d1e24] transition-colors disabled:opacity-50"
+                className="px-6 py-2 bg-[#419cc3] text-white font-bold rounded-lg hover:bg-[#2d1e24] transition-colors disabled:opacity-50"
               >
                 {loading ? 'Sending...' : 'Send Invitation'}
               </button>
@@ -316,16 +316,16 @@ export default function InviteStaffPage() {
 
         {/* Upload Card */}
         <div className="glass-card p-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#1C3ECA] to-[#60A5FA] opacity-10 rounded-bl-full pointer-events-none"></div>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#419cc3] to-[#89b4e1] opacity-10 rounded-bl-full pointer-events-none"></div>
 
           <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-[#60A5FA]/20 flex items-center justify-center text-[#1C3ECA]">
+            <div className="w-10 h-10 rounded-lg bg-[#89b4e1]/20 flex items-center justify-center text-[#419cc3]">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
             </div>
             Bulk Upload Excel File
           </h2>
 
-          <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 hover:border-[#60A5FA] hover:bg-[#60A5FA]/5 transition-all text-center">
+          <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 hover:border-[#89b4e1] hover:bg-[#89b4e1]/5 transition-all text-center">
             <input
               type="file"
               id="file-upload"
@@ -334,11 +334,11 @@ export default function InviteStaffPage() {
               className="hidden"
             />
             <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
-              <div className="w-16 h-16 rounded-full bg-[#60A5FA]/20 text-[#1C3ECA] flex items-center justify-center mb-4">
+              <div className="w-16 h-16 rounded-full bg-[#89b4e1]/20 text-[#419cc3] flex items-center justify-center mb-4">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               </div>
               {file ? (
-                <p className="text-lg font-semibold text-[#1C3ECA]">{file.name}</p>
+                <p className="text-lg font-semibold text-[#419cc3]">{file.name}</p>
               ) : (
                 <>
                   <p className="text-lg font-medium text-gray-600">Click to upload file</p>
@@ -352,7 +352,7 @@ export default function InviteStaffPage() {
             <button
               onClick={handleUpload}
               disabled={!file || uploading}
-              className="px-8 py-3 bg-gradient-to-r from-[#60A5FA] to-[#93C5FD] text-[#1C3ECA] font-bold rounded-xl shadow-lg hover:shadow-[#60A5FA]/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-8 py-3 bg-gradient-to-r from-[#89b4e1] to-[#93C5FD] text-[#419cc3] font-bold rounded-xl shadow-lg hover:shadow-[#89b4e1]/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {uploading ? (
                 <>
@@ -374,14 +374,14 @@ export default function InviteStaffPage() {
               <div className="flex gap-4">
                 <button
                   onClick={handleSelectAll}
-                  className="px-4 py-2 text-[#1C3ECA] font-semibold hover:bg-[#60A5FA]/20 rounded-lg transition-colors"
+                  className="px-4 py-2 text-[#419cc3] font-semibold hover:bg-[#89b4e1]/20 rounded-lg transition-colors"
                 >
                   Select All Valid
                 </button>
                 <button
                   onClick={handleInvite}
                   disabled={selectedRows.size === 0 || loading}
-                  className="px-6 py-2 bg-[#60A5FA] text-[#1C3ECA] font-semibold rounded-lg hover:bg-[#93C5FD] transition-colors disabled:opacity-50"
+                  className="px-6 py-2 bg-[#89b4e1] text-[#419cc3] font-semibold rounded-lg hover:bg-[#93C5FD] transition-colors disabled:opacity-50"
                 >
                   {loading ? 'Sending Invites...' : `Invite Selected (${selectedRows.size})`}
                 </button>
@@ -397,7 +397,7 @@ export default function InviteStaffPage() {
                         type="checkbox"
                         onChange={handleSelectAll}
                         checked={selectedRows.size === preview.filter(r => r.valid).length && preview.length > 0}
-                        className="rounded border-gray-300 text-[#60A5FA] focus:ring-[#60A5FA]"
+                        className="rounded border-gray-300 text-[#89b4e1] focus:ring-[#89b4e1]"
                       />
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
@@ -418,7 +418,7 @@ export default function InviteStaffPage() {
                             type="checkbox"
                             checked={selectedRows.has(row.rowIndex)}
                             onChange={() => handleSelectRow(row.rowIndex)}
-                            className="rounded border-gray-300 text-[#60A5FA] focus:ring-[#60A5FA]"
+                            className="rounded border-gray-300 text-[#89b4e1] focus:ring-[#89b4e1]"
                           />
                         )}
                       </td>

@@ -28,9 +28,9 @@ export default {
           ring: 'var(--sidebar-ring)',
         },
         brand: {
-          dark: '#1C3ECA', // Deep Blue (Primary)
-          sage: '#60A5FA', // Soft Blue (Secondary)
-          mint: '#93C5FD', // Light Blue (Tertiary)
+          dark: '#419cc3', // Primary Blue
+          sage: '#89b4e1', // Soft Light Blue
+          mint: '#ffffff', // White
           terracotta: '#a36c65',
         },
         primary: {
@@ -48,5 +48,24 @@ export default {
       },
     },
   },
-  plugins: [nextui()],
+  plugins: [
+    nextui({
+      themes: {
+        light: {
+          colors: {
+            primary: {
+              DEFAULT: "#419cc3",
+            },
+          },
+        },
+        dark: {
+          colors: {
+            primary: {
+              DEFAULT: "#419cc3",
+            },
+          },
+        },
+      },
+    }),
+  ],
 } satisfies Config;

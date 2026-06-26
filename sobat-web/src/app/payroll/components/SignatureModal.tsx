@@ -105,7 +105,7 @@ export default function SignatureModal({
                     <button
                         onClick={handleConfirm}
                         disabled={loading}
-                        className="flex-1 px-4 py-2 bg-[#1C3ECA] text-white rounded-xl font-bold hover:bg-[#5e3d4a] transition-colors disabled:opacity-50"
+                        className="flex-1 px-4 py-2 bg-[#419cc3] text-white rounded-xl font-bold hover:bg-[#5e3d4a] transition-colors disabled:opacity-50"
                     >
                         {loading ? 'Processing...' : 'Approve & Sign'}
                     </button>

@@ -237,7 +237,7 @@ export default function ForgotPasswordPage() {
                   
                   <Link 
                     href="/login"
-                    className="w-full py-4 bg-[#60A5FA] text-white font-bold text-lg rounded-xl shadow-lg hover:bg-[#1C3ECA] transition-all duration-300 flex items-center justify-center"
+                    className="w-full py-4 bg-[#89b4e1] text-white font-bold text-lg rounded-xl shadow-lg hover:bg-[#419cc3] transition-all duration-300 flex items-center justify-center"
                   >
                     Kembali ke Login
                   </Link>

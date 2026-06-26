@@ -37,7 +37,7 @@ export default function ResetPasswordForm({
                     <label className="text-sm font-medium text-white/90 ml-1">Password Baru</label>
                     <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <svg className="h-5 w-5 text-white/50 group-focus-within:text-[#60A5FA] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="h-5 w-5 text-white/50 group-focus-within:text-[#89b4e1] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                             </svg>
                         </div>
@@ -45,7 +45,7 @@ export default function ResetPasswordForm({
                             type={showPassword ? "text" : "password"}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-[#60A5FA] focus:bg-white/10 focus:ring-1 focus:ring-[#60A5FA] transition-all duration-300"
+                            className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-[#89b4e1] focus:bg-white/10 focus:ring-1 focus:ring-[#89b4e1] transition-all duration-300"
                             placeholder="••••••••"
                             required
                         />
@@ -67,7 +67,7 @@ export default function ResetPasswordForm({
                     <label className="text-sm font-medium text-white/90 ml-1">Konfirmasi Password</label>
                     <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <svg className="h-5 w-5 text-white/50 group-focus-within:text-[#60A5FA] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="h-5 w-5 text-white/50 group-focus-within:text-[#89b4e1] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                             </svg>
                         </div>
@@ -75,7 +75,7 @@ export default function ResetPasswordForm({
                             type={showPassword ? "text" : "password"}
                             value={passwordConfirm}
                             onChange={(e) => setPasswordConfirm(e.target.value)}
-                            className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-[#60A5FA] focus:bg-white/10 focus:ring-1 focus:ring-[#60A5FA] transition-all duration-300"
+                            className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-[#89b4e1] focus:bg-white/10 focus:ring-1 focus:ring-[#89b4e1] transition-all duration-300"
                             placeholder="••••••••"
                             required
                         />
@@ -85,7 +85,7 @@ export default function ResetPasswordForm({
                 <button
                     type="submit"
                     disabled={loading || !password || !passwordConfirm}
-                    className="w-full py-4 bg-[#60A5FA] text-white font-bold text-lg rounded-xl shadow-lg hover:bg-[#1C3ECA] hover:shadow-blue-500/30 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-full py-4 bg-[#89b4e1] text-white font-bold text-lg rounded-xl shadow-lg hover:bg-[#419cc3] hover:shadow-blue-500/30 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                     {loading ? (
                         <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

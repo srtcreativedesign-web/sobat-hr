@@ -58,9 +58,9 @@ export default function ApprovalActionPanel({
                 </div>
             ) : (
                 <div className="bg-white rounded-3xl shadow-[0_4px_30px_rgba(0,0,0,0.06)] border border-gray-100/50 p-6 md:p-8 h-fit">
-                    <h3 className="text-lg font-bold text-[#1C3ECA] mb-4">Take Action</h3>
+                    <h3 className="text-lg font-bold text-[#419cc3] mb-4">Take Action</h3>
                     <textarea
-                        className="w-full bg-gray-50 border-0 ring-1 ring-gray-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-[#1C3ECA]/20 focus:bg-white transition-all mb-6 resize-none"
+                        className="w-full bg-gray-50 border-0 ring-1 ring-gray-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-[#419cc3]/20 focus:bg-white transition-all mb-6 resize-none"
                         rows={4}
                         placeholder="Add a reason or note (Required for rejection)..."
                         value={actionNote}
@@ -78,7 +78,7 @@ export default function ApprovalActionPanel({
                         <button
                             onClick={() => handleAction('approve')}
                             disabled={isProcessing}
-                            className="w-full bg-[#1C3ECA] text-white hover:bg-[#2d1e24] py-3.5 rounded-xl font-bold shadow-lg shadow-[#1C3ECA]/20 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 text-sm"
+                            className="w-full bg-[#419cc3] text-white hover:bg-[#2d1e24] py-3.5 rounded-xl font-bold shadow-lg shadow-[#419cc3]/20 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 text-sm"
                         >
                             Approve
                         </button>
@@ -93,7 +93,7 @@ export default function ApprovalActionPanel({
                         <button onClick={() => setShowApproveModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
                             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
-                        <h3 className="text-xl font-bold text-[#1C3ECA] mb-6">Confirm Approval</h3>
+                        <h3 className="text-xl font-bold text-[#419cc3] mb-6">Confirm Approval</h3>
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Signer Name</label>
@@ -101,7 +101,7 @@ export default function ApprovalActionPanel({
                                     type="text"
                                     value={signerName}
                                     onChange={(e) => setSignerName(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#1C3ECA] focus:border-[#1C3ECA]"
+                                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#419cc3] focus:border-[#419cc3]"
                                     placeholder="Enter your name"
                                 />
                             </div>
@@ -123,7 +123,7 @@ export default function ApprovalActionPanel({
 
                             <div className="pt-4 flex gap-3">
                                 <button onClick={() => setShowApproveModal(false)} className="flex-1 py-3 border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
-                                <button onClick={submitApproval} disabled={isProcessing} className="flex-1 py-3 bg-[#1C3ECA] text-white rounded-xl font-bold hover:bg-[#2d1e24]">
+                                <button onClick={submitApproval} disabled={isProcessing} className="flex-1 py-3 bg-[#419cc3] text-white rounded-xl font-bold hover:bg-[#2d1e24]">
                                     {isProcessing ? 'Processing...' : 'Confirm Approve'}
                                 </button>
                             </div>

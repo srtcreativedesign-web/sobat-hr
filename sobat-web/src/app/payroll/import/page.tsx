@@ -332,7 +332,7 @@ export default function ImportPayrollPage() {
         <div className="px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-[#1C3ECA] to-[#93C5FD] bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-[#419cc3] to-[#93C5FD] bg-clip-text text-transparent">
                 Payroll Management
               </h1>
               <p className="text-gray-600 mt-1">Kelola data payroll dan slip gaji karyawan</p>
@@ -355,7 +355,7 @@ export default function ImportPayrollPage() {
                     alert('Gagal download template');
                   }
                 }}
-                className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-[#60A5FA] text-[#1C3ECA] rounded-xl font-semibold hover:bg-[#60A5FA] hover:text-[#1C3ECA] transition-all transform hover:scale-[1.02]"
+                className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-[#89b4e1] text-[#419cc3] rounded-xl font-semibold hover:bg-[#89b4e1] hover:text-[#419cc3] transition-all transform hover:scale-[1.02]"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -390,7 +390,7 @@ export default function ImportPayrollPage() {
             <select
               value={selectedDivision}
               onChange={(e) => setSelectedDivision(e.target.value as any)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#1C3ECA] text-sm font-medium"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#419cc3] text-sm font-medium"
             >
               <option value="all">Semua Divisi (Bulk Download)</option>
               <option value="office">Office (Pusat)</option>
@@ -410,7 +410,7 @@ export default function ImportPayrollPage() {
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#1C3ECA] text-sm"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#419cc3] text-sm"
             >
               <option value={0}>Semua Bulan</option>
               {months.map((m) => (
@@ -420,7 +420,7 @@ export default function ImportPayrollPage() {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#1C3ECA] text-sm"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#419cc3] text-sm"
             >
               <option value={0}>Semua Tahun</option>
               {[2024, 2025, 2026, 2027].map((y) => (
@@ -430,7 +430,7 @@ export default function ImportPayrollPage() {
             {/* Bulk Download Button */}
             <button
               onClick={handleBulkDownload}
-              className="ml-2 flex items-center gap-2 px-4 py-2 bg-[#1C3ECA] text-white rounded-lg hover:bg-[#2d1e24] transition-colors"
+              className="ml-2 flex items-center gap-2 px-4 py-2 bg-[#419cc3] text-white rounded-lg hover:bg-[#2d1e24] transition-colors"
               title="Download All Payslips as ZIP"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -521,7 +521,7 @@ export default function ImportPayrollPage() {
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Pilih File Excel
               </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#60A5FA] transition-colors">
+              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#89b4e1] transition-colors">
                 <input
                   type="file"
                   accept=".xlsx,.xls,.csv"
@@ -550,11 +550,11 @@ export default function ImportPayrollPage() {
               <div>
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-gray-600">Uploading...</span>
-                  <span className="text-[#1C3ECA] font-semibold">{uploadProgress}%</span>
+                  <span className="text-[#419cc3] font-semibold">{uploadProgress}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
-                    className="bg-gradient-to-r from-[#60A5FA] to-[#93C5FD] h-2 rounded-full transition-all duration-300"
+                    className="bg-gradient-to-r from-[#89b4e1] to-[#93C5FD] h-2 rounded-full transition-all duration-300"
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
@@ -576,7 +576,7 @@ export default function ImportPayrollPage() {
               <button
                 onClick={handleUpload}
                 disabled={!selectedFile || uploadProgress > 0}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-[#60A5FA] to-[#93C5FD] text-[#1C3ECA] rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-[#89b4e1] to-[#93C5FD] text-[#419cc3] rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 Upload
               </button>
@@ -612,7 +612,7 @@ export default function ImportPayrollPage() {
                         <th className="text-right py-3 px-4">Overtime</th>
                         <th className="text-right py-3 px-4 font-bold text-gray-700 bg-gray-100">Gross Salary</th>
                         <th className="text-right py-3 px-4 font-bold text-red-600 bg-red-50">Total Deductions</th>
-                        <th className="text-right py-3 px-4 font-bold text-[#1C3ECA]">Net Salary</th>
+                        <th className="text-right py-3 px-4 font-bold text-[#419cc3]">Net Salary</th>
                         <th className="text-center py-3 px-4">Status</th>
                       </tr>
                     </thead>
@@ -633,7 +633,7 @@ export default function ImportPayrollPage() {
                           <td className="py-3 px-4 text-right text-sm text-green-600">{formatCurrency(calculateOvertimePay(row, selectedDivision))}</td>
                           <td className="py-3 px-4 text-right text-sm font-bold text-gray-800 bg-gray-50">{formatCurrency(calculateGrossSalary(row, selectedDivision))}</td>
                           <td className="py-3 px-4 text-right text-sm font-bold text-red-600 bg-red-50">-{formatCurrency(calculateTotalDeductions(row, selectedDivision))}</td>
-                          <td className="py-3 px-4 text-right text-sm font-bold text-[#1C3ECA]">{formatCurrency(row.net_salary || 0)}</td>
+                          <td className="py-3 px-4 text-right text-sm font-bold text-[#419cc3]">{formatCurrency(row.net_salary || 0)}</td>
                           <td className="py-3 px-4 text-center">
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border bg-yellow-100 text-yellow-700 border-yellow-200">
                               Preview
@@ -701,7 +701,7 @@ export default function ImportPayrollPage() {
                         console.error('Save error details:', error);
                       }
                     }}
-                    className="px-4 py-2 bg-gradient-to-r from-[#60A5FA] to-[#93C5FD] text-[#1C3ECA] rounded-lg"
+                    className="px-4 py-2 bg-gradient-to-r from-[#89b4e1] to-[#93C5FD] text-[#419cc3] rounded-lg"
                   >
                     Save to DB
                   </button>

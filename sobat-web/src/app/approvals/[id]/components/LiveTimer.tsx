@@ -28,5 +28,5 @@ export default function LiveTimer({ startTime, date }: { startTime: string, date
         return () => clearInterval(interval);
     }, [startTime, date]);
 
-    return <span className="font-mono text-[#1C3ECA] font-bold">{duration}</span>;
+    return <span className="font-mono text-[#419cc3] font-bold">{duration}</span>;
 }

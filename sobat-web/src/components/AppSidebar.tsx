@@ -222,7 +222,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
           </div>
           {state !== 'collapsed' && (
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-[#1C3ECA] drop-shadow-sm">SOBAT HR</h1>
+              <h1 className="text-xl font-bold tracking-tight text-[#419cc3] drop-shadow-sm">SOBAT HR</h1>
               <p className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Admin Panel</p>
             </div>
           )}
@@ -234,14 +234,14 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
           <div className="p-4 mx-2 mt-4 mb-2 rounded-2xl bg-blue-50 border border-blue-100">
             <div className="flex items-center gap-3">
               <div className="relative shrink-0">
-                <div className="w-10 h-10 rounded-full bg-[#1C3ECA] flex items-center justify-center text-white font-bold ring-2 ring-white">
+                <div className="w-10 h-10 rounded-full bg-[#419cc3] flex items-center justify-center text-white font-bold ring-2 ring-white">
                   {user?.name?.charAt(0).toUpperCase() || 'A'}
                 </div>
                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-slate-800 truncate">{user?.name || 'Admin'}</p>
-                <p className="text-xs text-[#1C3ECA] truncate capitalize">
+                <p className="text-xs text-[#419cc3] truncate capitalize">
                   {typeof user?.role === 'string'
                     ? user.role
                     : (user?.role && typeof user.role === 'object' ? (user.role as Role).display_name : 'Administrator')}

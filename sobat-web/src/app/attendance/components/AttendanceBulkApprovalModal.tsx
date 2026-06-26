@@ -84,7 +84,7 @@ export default function AttendanceBulkApprovalModal({
                                 <textarea
                                     value={bulkNote}
                                     onChange={(e) => setBulkNote(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-[#1C3ECA] outline-none text-sm"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-[#419cc3] outline-none text-sm"
                                     rows={3}
                                     placeholder="Masukkan alasan approval..."
                                 ></textarea>
@@ -96,7 +96,7 @@ export default function AttendanceBulkApprovalModal({
                             type="button"
                             disabled={isBulkSubmitting}
                             onClick={handleBulkApprove}
-                            className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#1C3ECA] text-base font-medium text-white hover:bg-[#1C3ECA]/90 focus:outline-none sm:w-auto sm:text-sm disabled:opacity-50"
+                            className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#419cc3] text-base font-medium text-white hover:bg-[#419cc3]/90 focus:outline-none sm:w-auto sm:text-sm disabled:opacity-50"
                         >
                             {isBulkSubmitting ? 'Memproses...' : `Proses Approval (${selectedIds.length})`}
                         </button>

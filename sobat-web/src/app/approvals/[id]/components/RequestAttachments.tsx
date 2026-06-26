@@ -21,7 +21,7 @@ export default function RequestAttachments({ request }: RequestAttachmentsProps)
 
     return (
         <div className="bg-white rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100/50 p-8">
-            <h3 className="text-xl font-bold text-[#1C3ECA] mb-6 flex items-center gap-2">
+            <h3 className="text-xl font-bold text-[#419cc3] mb-6 flex items-center gap-2">
                 <svg className="w-5 h-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                 </svg>

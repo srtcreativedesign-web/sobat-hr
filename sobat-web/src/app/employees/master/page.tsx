@@ -159,12 +159,12 @@ export default function EmployeeMasterPage() {
             <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-[#1C3ECA]">Master Data Karyawan</h1>
+                        <h1 className="text-2xl font-bold text-[#419cc3]">Master Data Karyawan</h1>
                         <p className="text-gray-500">Kelola data lengkap seluruh karyawan.</p>
                     </div>
                     <button
                         onClick={handleAddNew}
-                        className="px-4 py-2 bg-[#1C3ECA] text-white rounded-lg hover:bg-[#2d1e24] font-medium flex items-center gap-2"
+                        className="px-4 py-2 bg-[#419cc3] text-white rounded-lg hover:bg-[#2d1e24] font-medium flex items-center gap-2"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                         Tambah Manual
@@ -178,7 +178,7 @@ export default function EmployeeMasterPage() {
                             isClearable
                             classNames={{
                                 base: "flex-1",
-                                inputWrapper: "border border-gray-200 bg-white hover:bg-gray-50 focus-within:ring-2 focus-within:ring-[#60A5FA] h-full",
+                                inputWrapper: "border border-gray-200 bg-white hover:bg-gray-50 focus-within:ring-2 focus-within:ring-[#89b4e1] h-full",
                             }}
                             placeholder="Cari nama atau NIK..."
                             startContent={<Search className="text-gray-400" size={18} />}
@@ -189,7 +189,7 @@ export default function EmployeeMasterPage() {
                         <Button 
                             type="submit" 
                             color="primary" 
-                            className="px-6 font-bold bg-[#60A5FA] text-[#1C3ECA]"
+                            className="px-6 font-bold bg-[#89b4e1] text-[#419cc3]"
                         >
                             Cari
                         </Button>

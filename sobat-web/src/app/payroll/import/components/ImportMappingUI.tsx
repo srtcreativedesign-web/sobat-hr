@@ -63,7 +63,7 @@ export default function ImportMappingUI({
                         <select
                             value={columnMapping[field.key] || ''}
                             onChange={(e) => setColumnMapping({ ...columnMapping, [field.key]: e.target.value })}
-                            className={`w-full text-sm p-2.5 border rounded-lg focus:ring-2 focus:ring-[#1C3ECA] focus:outline-none transition-all ${columnMapping[field.key] ? 'border-green-300 bg-white' : 'border-red-300 bg-red-50'}`}
+                            className={`w-full text-sm p-2.5 border rounded-lg focus:ring-2 focus:ring-[#419cc3] focus:outline-none transition-all ${columnMapping[field.key] ? 'border-green-300 bg-white' : 'border-red-300 bg-red-50'}`}
                         >
                             <option value="">-- [ Abaikan / Kosong ] --</option>
                             {Object.entries(excelHeaders).map(([col, title]) => (
@@ -83,7 +83,7 @@ export default function ImportMappingUI({
                 </button>
                 <button
                     onClick={onSimulate}
-                    className="px-8 py-3 bg-gradient-to-r from-[#60A5FA] to-[#93C5FD] text-[#1C3ECA] rounded-xl font-bold hover:shadow-lg transition-all"
+                    className="px-8 py-3 bg-gradient-to-r from-[#89b4e1] to-[#93C5FD] text-[#419cc3] rounded-xl font-bold hover:shadow-lg transition-all"
                 >
                     Upload (Simulasikan Data)
                 </button>

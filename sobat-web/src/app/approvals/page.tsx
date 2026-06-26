@@ -173,8 +173,8 @@ export default function ApprovalsPage() {
         <DashboardLayout>
             <div className="p-6 md:p-8">
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-[#1C3ECA]">Approval Inbox</h1>
-                    <p className="text-[#1C3ECA]/70">Manage requests awaiting your review.</p>
+                    <h1 className="text-2xl font-bold text-[#419cc3]">Approval Inbox</h1>
+                    <p className="text-[#419cc3]/70">Manage requests awaiting your review.</p>
                 </div>
 
                 <div className="mb-6">
@@ -182,7 +182,7 @@ export default function ApprovalsPage() {
                         <button
                             onClick={() => { setActiveTab('pending'); setCurrentPage(1); }}
                             className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'pending'
-                                ? 'bg-white text-[#1C3ECA] shadow-sm'
+                                ? 'bg-white text-[#419cc3] shadow-sm'
                                 : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
@@ -191,7 +191,7 @@ export default function ApprovalsPage() {
                         <button
                             onClick={() => { setActiveTab('history'); setCurrentPage(1); }}
                             className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'history'
-                                ? 'bg-white text-[#1C3ECA] shadow-sm'
+                                ? 'bg-white text-[#419cc3] shadow-sm'
                                 : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
@@ -200,7 +200,7 @@ export default function ApprovalsPage() {
                         <button
                             onClick={() => { setActiveTab('spl_open'); setCurrentPage(1); }}
                             className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'spl_open'
-                                ? 'bg-white text-[#1C3ECA] shadow-sm'
+                                ? 'bg-white text-[#419cc3] shadow-sm'
                                 : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
@@ -226,7 +226,7 @@ export default function ApprovalsPage() {
                             onClick={() => { setActiveType(type.id); setCurrentPage(1); }}
                             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all
                             ${activeType === type.id
-                                    ? 'bg-[#1C3ECA] text-white shadow-md'
+                                    ? 'bg-[#419cc3] text-white shadow-md'
                                     : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
                         >
                             {type.label}

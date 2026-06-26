@@ -313,7 +313,7 @@ export default function Sidebar() {
   });
 
   return (
-    <div className={`${isCollapsed ? 'w-20' : 'w-72'} h-screen sticky top-0 bg-[#60A5FA] text-white transition-all duration-300 flex flex-col border-r border-white/10 shadow-xl`}>
+    <div className={`${isCollapsed ? 'w-20' : 'w-72'} h-screen sticky top-0 bg-[#89b4e1] text-white transition-all duration-300 flex flex-col border-r border-white/10 shadow-xl`}>
       {/* Header */}
       <div className="p-6 flex items-center justify-between border-b border-white/10 bg-white/5 backdrop-blur-sm">
         {!isCollapsed && (
@@ -329,7 +329,7 @@ export default function Sidebar() {
               </div>
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-white drop-shadow-sm">SOBAT <span className="text-[#1C3ECA]">HR</span></h1>
+              <h1 className="text-xl font-bold tracking-tight text-white drop-shadow-sm">SOBAT <span className="text-[#419cc3]">HR</span></h1>
               <p className="text-[10px] uppercase tracking-widest text-white/90 font-semibold">Admin Panel</p>
             </div>
           </div>
@@ -348,10 +348,10 @@ export default function Sidebar() {
       <div className="p-4 mx-4 mt-6 mb-4 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-sm">
         <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
           <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold ring-2 ring-[#1C3ECA]">
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold ring-2 ring-[#419cc3]">
               {user?.name?.charAt(0).toUpperCase() || 'A'}
             </div>
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-[#1C3ECA]"></div>
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-[#419cc3]"></div>
           </div>
           {!isCollapsed && (
             <div className="flex-1 min-w-0">

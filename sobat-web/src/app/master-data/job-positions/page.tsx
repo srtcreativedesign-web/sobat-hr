@@ -192,7 +192,7 @@ export default function ManageJobPositionsPage() {
                         <Input
                             isClearable
                             classNames={{
-                                inputWrapper: "border border-gray-300 bg-white hover:bg-gray-50 focus-within:ring-2 focus-within:ring-[#1C3ECA]",
+                                inputWrapper: "border border-gray-300 bg-white hover:bg-gray-50 focus-within:ring-2 focus-within:ring-[#419cc3]",
                             }}
                             placeholder="Cari Jabatan..."
                             startContent={<Search className="text-gray-400" size={18} />}

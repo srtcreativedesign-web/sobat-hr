@@ -6,13 +6,13 @@
 
 :root {
   /* Brand Colors */
-  --forest-green: #1C3ECA;
-  /* Deep Blue */
-  --neon-mint: #93C5FD;
-  /* Light Blue */
-  --dark-forest: #0d1b40;
-  --light-mint: #60A5FA;
-  /* Soft Blue */
+  --forest-green: #419cc3;
+  /* Primary Blue */
+  --neon-mint: #89b4e1;
+  /* Soft Light Blue */
+  --dark-forest: #0c4a6e;
+  --light-mint: #ffffff;
+  /* White */
 
   /* Semantic Colors */
   /* Pale Blueish White */
@@ -29,11 +29,11 @@
 
 /* Custom Gradients */
 .gradient-text {
-  @apply bg-gradient-to-r from-[#1C3ECA] to-[#60A5FA] bg-clip-text text-transparent;
+  @apply bg-gradient-to-r from-[#419cc3] to-[#89b4e1] bg-clip-text text-transparent;
 }
 
 .gradient-bg {
-  @apply bg-gradient-to-r from-[#1C3ECA] to-[#60A5FA];
+  @apply bg-gradient-to-r from-[#419cc3] to-[#89b4e1];
 }
 
 /* Animations */
@@ -206,12 +206,12 @@
     --radius: 0.625rem;
     --sidebar: oklch(1 0 0);
     --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: #1C3ECA;
+    --sidebar-primary: #419cc3;
     --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #1C3ECA;
+    --sidebar-accent: #419cc3;
     --sidebar-accent-foreground: #FFFFFF;
     --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: #1C3ECA;
+    --sidebar-ring: #419cc3;
   }
   .dark {
     --background: oklch(0.145 0 0);

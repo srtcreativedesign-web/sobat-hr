@@ -146,7 +146,7 @@ export default function DashboardPage() {
         <div className="px-8 py-6 flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-800">
-              {getGreeting()}, <span className="bg-gradient-to-r from-[#1C3ECA] to-[#60A5FA] bg-clip-text text-transparent">{user?.name}</span> 👋
+              {getGreeting()}, <span className="bg-gradient-to-r from-[#419cc3] to-[#89b4e1] bg-clip-text text-transparent">{user?.name}</span> 👋
             </h1>
             <div className="mt-1">
               <TextType
@@ -165,7 +165,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <button onClick={handleNotifClick} className="p-2 text-gray-400 hover:text-[#1C3ECA] transition-colors relative">
+            <button onClick={handleNotifClick} className="p-2 text-gray-400 hover:text-[#419cc3] transition-colors relative">
               {stats && stats.requests.pending > lastSeenCount && (
                 <>
                   <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
@@ -175,7 +175,7 @@ export default function DashboardPage() {
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
             </button>
             <div className="h-10 w-10 rounded-full bg-gray-200 border-2 border-white shadow-sm overflow-hidden">
-              <div className="w-full h-full bg-[#1C3ECA] flex items-center justify-center text-white font-bold">
+              <div className="w-full h-full bg-[#419cc3] flex items-center justify-center text-white font-bold">
                 {user?.name?.charAt(0)}
               </div>
             </div>

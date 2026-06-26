@@ -253,7 +253,7 @@ export default function PayrollPage() {
       case "deductions":
         return <div className="text-right text-sm font-bold text-red-600">-{formatCurrency(calculateTotalDeductions(payroll, selectedDivision))}</div>;
       case "net_salary":
-        return <div className="text-right text-sm font-bold text-[#1C3ECA]">{formatCurrency(payroll.net_salary)}</div>;
+        return <div className="text-right text-sm font-bold text-[#419cc3]">{formatCurrency(payroll.net_salary)}</div>;
       case "status":
         return (
           <div className="flex justify-center">
@@ -356,7 +356,7 @@ export default function PayrollPage() {
         <div className="px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-[#1C3ECA] to-[#93C5FD] bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-[#419cc3] to-[#93C5FD] bg-clip-text text-transparent">
                 Payroll Management
               </h1>
               <p className="text-gray-600 mt-1">Kelola data payroll dan slip gaji karyawan</p>
@@ -379,7 +379,7 @@ export default function PayrollPage() {
                     alert('Gagal download template');
                   }
                 }}
-                className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-[#60A5FA] text-[#1C3ECA] rounded-xl font-semibold hover:bg-[#60A5FA] hover:text-[#1C3ECA] transition-all transform hover:scale-[1.02]"
+                className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-[#89b4e1] text-[#419cc3] rounded-xl font-semibold hover:bg-[#89b4e1] hover:text-[#419cc3] transition-all transform hover:scale-[1.02]"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -388,7 +388,7 @@ export default function PayrollPage() {
               </button>
               <button
                 onClick={() => router.push('/payroll/import')}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#60A5FA] to-[#93C5FD] text-[#1C3ECA] rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-[1.02]"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#89b4e1] to-[#93C5FD] text-[#419cc3] rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-[1.02]"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -421,7 +421,7 @@ export default function PayrollPage() {
             <select
               value={selectedDivision}
               onChange={(e) => setSelectedDivision(e.target.value as any)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#1C3ECA] text-sm font-medium"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#419cc3] text-sm font-medium"
             >
               <option value="all">Semua Divisi (Bulk Download)</option>
               {!isAdminHr && <option value="office">Office (Pusat)</option>}
@@ -440,7 +440,7 @@ export default function PayrollPage() {
                 <Input
                   isClearable
                   classNames={{
-                    inputWrapper: "border border-gray-300 bg-white hover:bg-gray-50 focus-within:ring-2 focus-within:ring-[#1C3ECA]",
+                    inputWrapper: "border border-gray-300 bg-white hover:bg-gray-50 focus-within:ring-2 focus-within:ring-[#419cc3]",
                   }}
                   placeholder="Cari nama karyawan..."
                   startContent={<Search className="text-gray-400" size={18} />}
@@ -457,7 +457,7 @@ export default function PayrollPage() {
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#1C3ECA] text-sm"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#419cc3] text-sm"
             >
               <option value={0}>Semua Bulan</option>
               {months.map((m) => (
@@ -467,7 +467,7 @@ export default function PayrollPage() {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#1C3ECA] text-sm"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#419cc3] text-sm"
             >
               <option value={0}>Semua Tahun</option>
               {[2024, 2025, 2026, 2027].map((y) => (
@@ -477,7 +477,7 @@ export default function PayrollPage() {
             {/* Bulk Download Button */}
             <button
               onClick={handleBulkDownload}
-              className="ml-2 flex items-center gap-2 px-4 py-2 bg-[#1C3ECA] text-white rounded-lg hover:bg-[#2d1e24] transition-colors"
+              className="ml-2 flex items-center gap-2 px-4 py-2 bg-[#419cc3] text-white rounded-lg hover:bg-[#2d1e24] transition-colors"
               title="Download All Payslips as ZIP"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -554,7 +554,7 @@ export default function PayrollPage() {
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-4 border-[#60A5FA] border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-8 h-8 border-4 border-[#89b4e1] border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : payrolls.length === 0 ? (
             <div className="text-center py-12">

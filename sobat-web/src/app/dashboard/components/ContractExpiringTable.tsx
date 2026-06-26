@@ -28,12 +28,12 @@ export default function ContractExpiringTable({ contractExpiring, loading }: Con
         <div className="glass-card p-6 bg-white/50">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                    <span className="w-2 h-8 bg-[#1C3ECA] rounded-full"></span>
+                    <span className="w-2 h-8 bg-[#419cc3] rounded-full"></span>
                     Contract Expiring Soon
                 </h2>
                 <button 
                     onClick={() => router.push('/employees/contracts')} 
-                    className="text-sm font-semibold text-[#1C3ECA] hover:text-[#60A5FA] transition-colors"
+                    className="text-sm font-semibold text-[#419cc3] hover:text-[#89b4e1] transition-colors"
                 >
                     View All
                 </button>
@@ -41,7 +41,7 @@ export default function ContractExpiringTable({ contractExpiring, loading }: Con
 
             {loading ? (
                 <div className="h-40 flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1C3ECA]"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#419cc3]"></div>
                 </div>
             ) : contractExpiring.length === 0 ? (
                 <div className="text-center py-8 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
@@ -62,11 +62,11 @@ export default function ContractExpiringTable({ contractExpiring, loading }: Con
                             <tr key={emp.id} className="hover:bg-green-50/30 transition-colors cursor-pointer group">
                                 <td className="px-4 py-3">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1C3ECA] to-[#93C5FD] text-white flex items-center justify-center text-xs font-bold">
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#419cc3] to-[#93C5FD] text-white flex items-center justify-center text-xs font-bold">
                                             {emp.user.name.charAt(0)}
                                         </div>
                                         <div>
-                                            <p className="text-sm font-semibold text-gray-900 group-hover:text-[#1C3ECA]">{emp.user.name}</p>
+                                            <p className="text-sm font-semibold text-gray-900 group-hover:text-[#419cc3]">{emp.user.name}</p>
                                             <p className="text-xs text-gray-500">{emp.employee_code}</p>
                                         </div>
                                     </div>
