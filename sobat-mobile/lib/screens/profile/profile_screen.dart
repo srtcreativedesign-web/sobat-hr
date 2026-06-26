@@ -142,37 +142,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
                 ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: SizedBox(
-        height: 64,
-        width: 64,
-        child: FloatingActionButton(
-          heroTag: 'profile_fab',
-          onPressed: () {
-            Navigator.pushNamed(context, '/submission/menu');
-          },
-          backgroundColor: AppTheme.colorEggplant,
-          elevation: 4,
-          shape: const CircleBorder(),
-          child: const Icon(
-            Icons.add_rounded,
-            size: 32,
-            color: Colors.white,
-          ),
-        ),
-      ),
-      bottomNavigationBar: CustomNavbar(
-        currentIndex: 4,
-        onTap: (index) {
-          if (index == 0) {
-            Navigator.pop(context, 0);
-          } else if (index == 1) {
-            Navigator.pop(context, 1);
-          } else if (index == 3) {
-            Navigator.pop(context, 3);
-          }
-        },
-      ),
     );
   }
 
@@ -204,14 +173,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF1C3ECA), // Deep Blue
-            Color(0xFF60A5FA), // Soft Blue
+            Color(0xFF419CC3), // Deep Blue
+            Color(0xFF89B4E1), // Soft Blue
           ],
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1C3ECA).withValues(alpha: 0.3),
+            color: const Color(0xFF419CC3).withValues(alpha: 0.3),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -312,7 +281,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: const Icon(
                             Icons.edit,
                             size: 16,
-                            color: Color(0xFF1C3ECA),
+                            color: Color(0xFF419CC3),
                           ),
                         ),
                       ),

@@ -12,7 +12,7 @@ class SlideActionWidget extends StatefulWidget {
     Key? key,
     required this.text,
     required this.onSubmit,
-    this.backgroundColor = const Color(0xFF1C3ECA),
+    this.backgroundColor = const Color(0xFF419CC3),
     this.thumbColor = Colors.white,
     this.thumbIcon = Icons.arrow_forward_ios_rounded,
     this.isReversed = false,

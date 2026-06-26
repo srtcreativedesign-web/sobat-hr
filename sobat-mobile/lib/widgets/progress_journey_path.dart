@@ -23,14 +23,14 @@ class ProgressJourneyPath extends StatelessWidget {
               color: const Color(0xFFEFF6FF), // blue-50
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.business_rounded, color: Color(0xFF1C3ECA), size: 24),
+            child: const Icon(Icons.business_rounded, color: Color(0xFF419CC3), size: 24),
           ),
           
           // Wavy Dotted Line
           Expanded(
             child: CustomPaint(
               painter: WavyDottedLinePainter(
-                color: isCompleted ? const Color(0xFF1C3ECA) : const Color(0xFFE2E8F0), // blue vs gray
+                color: isCompleted ? const Color(0xFF419CC3) : const Color(0xFFE2E8F0), // blue vs gray
               ),
               child: const SizedBox(height: 20),
             ),
@@ -41,7 +41,7 @@ class ProgressJourneyPath extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: isCompleted ? const Color(0xFF1C3ECA) : const Color(0xFFF1F5F9), // blue vs gray-100
+              color: isCompleted ? const Color(0xFF419CC3) : const Color(0xFFF1F5F9), // blue vs gray-100
               shape: BoxShape.circle,
             ),
             child: Icon(

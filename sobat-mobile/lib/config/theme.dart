@@ -4,11 +4,11 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   // Brand Colors
   // New Blue Identity
-  static const Color colorPrimary = Color(0xFF1C3ECA); // Deep Blue (#1c3eca)
-  static const Color colorSecondary = Color(0xFF60A5FA); // Soft Blue (#60a5fa)
+  static const Color colorPrimary = Color(0xFF419CC3); // Primary Blue
+  static const Color colorSecondary = Color(0xFF89B4E1); // Soft Light Blue
   static const Color colorTertiary = Color(
-    0xFF93C5FD,
-  ); // Lighter Blue (#93c5fd)
+    0xFFFFFFFF,
+  ); // White
 
   static const Color backgroundLight = Color(
     0xFFFAFDFF,
@@ -25,14 +25,14 @@ class AppTheme {
   // -- Attendance Gradients --
   // 1. Default / Belum Hadir (Soft Blue Gradient)
   static const List<Color> gradientDefault = [
-    Color(0xFF60A5FA), // Soft Blue
-    Color(0xFF93C5FD), // Light Blue
+    Color(0xFF89B4E1), // Soft Light Blue
+    Color(0xFFFFFFFF), // White
   ];
 
-  // 2. Working / Sedang Bekerja (Deep Blue Gradient)
+  // 2. Working / Sedang Bekerja (Primary Blue Gradient)
   static const List<Color> gradientWorking = [
-    Color(0xFF1C3ECA), // Deep Blue
-    Color(0xFF4F70E6), // Slightly Lighter Deep Blue
+    Color(0xFF419CC3), // Primary Blue
+    Color(0xFF89B4E1), // Soft Light Blue
   ];
 
   // 3. Finished / Sudah Selesai (Emerald/Green as before, or mixed?)

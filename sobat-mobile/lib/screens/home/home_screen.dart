@@ -11,12 +11,14 @@ import '../../models/user.dart';
 import '../../l10n/app_localizations.dart';
 
 import '../../screens/submission/submission_screen.dart';
+import '../../screens/submission/submission_menu_screen.dart';
 import '../../services/announcement_service.dart';
 
 
-import '../profile/enroll_face_screen.dart'; // Added
+import '../../screens/profile/profile_screen.dart';
+import '../profile/enroll_face_screen.dart';
 import '../../services/offline_attendance_service.dart';
-import '../finance/finance_coming_soon_screen.dart';
+import '../learning/learning_coming_soon_screen.dart';
 import 'widgets/recent_activity_section.dart';
 import 'widgets/sticky_header_section.dart';
 import 'widgets/banner_section.dart';
@@ -293,43 +295,17 @@ class _HomeScreenState extends State<HomeScreen> {
           ? _buildDashboardContent(user)
           : _selectedIndex == 1
           ? const SubmissionScreen()
+          : _selectedIndex == 2
+          ? const SubmissionMenuScreen(showBackButton: false)
           : _selectedIndex == 3
-          ? FinanceComingSoonScreen(onBack: () => setState(() => _selectedIndex = 0))
+          ? LearningComingSoonScreen(onBack: () => setState(() => _selectedIndex = 0))
+          : _selectedIndex == 4
+          ? const ProfileScreen()
           : Center(child: Text('Coming Soon: Index $_selectedIndex')),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: SizedBox(
-        height: 64,
-        width: 64,
-        child: FloatingActionButton(
-          onPressed: () {
-            Navigator.pushNamed(context, '/submission/menu');
-          },
-          backgroundColor: AppTheme.colorPrimary,
-          elevation: 4,
-          shape: const CircleBorder(),
-          child: const Icon(
-            Icons.add_rounded,
-            size: 32,
-            color: Colors.white,
-          ),
-        ),
-      ),
       bottomNavigationBar: CustomNavbar(
         currentIndex: _selectedIndex,
         onTap: (index) {
-          if (index == 4) {
-            Navigator.pushNamed(context, '/profile').then((result) {
-              if (mounted) {
-                if (result != null && result is int) {
-                  setState(() => _selectedIndex = result);
-                } else {
-                  setState(() => _selectedIndex = 0);
-                }
-              }
-            });
-          } else {
-            setState(() => _selectedIndex = index);
-          }
+          setState(() => _selectedIndex = index);
         },
       ),
     );

@@ -64,7 +64,7 @@ class _FinanceComingSoonScreenState extends State<FinanceComingSoonScreen> {
             child: _buildBlurBlob(
               600,
               600,
-              const Color(0xFF5F9EFB).withValues(alpha: 0.15),
+              const Color(0xFF89B4E1).withValues(alpha: 0.15),
               120,
             ),
           ),
@@ -96,7 +96,7 @@ class _FinanceComingSoonScreenState extends State<FinanceComingSoonScreen> {
                         ),
                         child: const Icon(
                           Icons.grid_view_rounded,
-                          color: Color(0xFF005EB6),
+                          color: Color(0xFF419CC3),
                           size: 24,
                         ),
                       ),
@@ -106,7 +106,7 @@ class _FinanceComingSoonScreenState extends State<FinanceComingSoonScreen> {
                         style: GoogleFonts.manrope(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
-                          color: const Color(0xFF005EB6),
+                          color: const Color(0xFF419CC3),
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -166,7 +166,7 @@ class _FinanceComingSoonScreenState extends State<FinanceComingSoonScreen> {
                               borderRadius: BorderRadius.circular(60),
                               gradient: LinearGradient(
                                 colors: [
-                                  const Color(0xFF005EB6).withValues(alpha: 0.1),
+                                  const Color(0xFF419CC3).withValues(alpha: 0.1),
                                   Colors.transparent,
                                 ],
                                 begin: Alignment.topLeft,
@@ -226,7 +226,7 @@ class _FinanceComingSoonScreenState extends State<FinanceComingSoonScreen> {
                           right: 20,
                           child: _buildFloatingIcon(
                             Icons.account_tree_outlined,
-                            const Color(0xFF005EB6),
+                            const Color(0xFF419CC3),
                           ),
                         ),
                         Positioned(
@@ -265,8 +265,8 @@ class _FinanceComingSoonScreenState extends State<FinanceComingSoonScreen> {
                                   foreground: Paint()
                                     ..shader = const LinearGradient(
                                       colors: [
-                                        Color(0xFF005EB6),
-                                        Color(0xFF5F9EFB),
+                                        Color(0xFF419CC3),
+                                        Color(0xFF89B4E1),
                                       ],
                                     ).createShader(
                                       const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0),
@@ -301,14 +301,14 @@ class _FinanceComingSoonScreenState extends State<FinanceComingSoonScreen> {
                         child: ElevatedButton(
                           onPressed: widget.onBack,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF005EB6),
+                            backgroundColor: const Color(0xFF419CC3),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(100),
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 18),
                             elevation: 20,
                             shadowColor: const Color(
-                              0xFF005EB6,
+                              0xFF419CC3,
                             ).withValues(alpha: 0.3),
                           ),
                           child: Row(
@@ -353,7 +353,7 @@ class _FinanceComingSoonScreenState extends State<FinanceComingSoonScreen> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w900,
-                                color: Color(0xFF005EB6),
+                                color: Color(0xFF419CC3),
                               ),
                             ),
                           ],
@@ -372,12 +372,12 @@ class _FinanceComingSoonScreenState extends State<FinanceComingSoonScreen> {
                                 height: 6,
                                 width: 280 * 0.50,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF005EB6),
+                                  color: const Color(0xFF419CC3),
                                   borderRadius: BorderRadius.circular(100),
                                   boxShadow: [
                                     BoxShadow(
                                       color: const Color(
-                                        0xFF005EB6,
+                                        0xFF419CC3,
                                       ).withValues(alpha: 0.4),
                                       blurRadius: 10,
                                     ),

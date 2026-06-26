@@ -77,7 +77,7 @@ class AttendanceActionPanel extends StatelessWidget {
                       width: 24,
                       height: 24,
                       decoration: const BoxDecoration(
-                          color: Color(0xFF1C3ECA), shape: BoxShape.circle),
+                          color: Color(0xFF419CC3), shape: BoxShape.circle),
                       child: const Center(
                           child: Text('1',
                               style: TextStyle(
@@ -91,7 +91,7 @@ class AttendanceActionPanel extends StatelessWidget {
                             ? 'Absen Luar'
                             : 'Absen Kantor',
                         style: const TextStyle(
-                            color: Color(0xFF1C3ECA),
+                            color: Color(0xFF419CC3),
                             fontWeight: FontWeight.bold,
                             fontSize: 14)),
                   ],
@@ -101,7 +101,7 @@ class AttendanceActionPanel extends StatelessWidget {
                     Text('Selesai',
                         style: TextStyle(
                             color: hasCheckedIn
-                                ? const Color(0xFF1C3ECA)
+                                ? const Color(0xFF419CC3)
                                 : Colors.grey,
                             fontWeight: FontWeight.bold,
                             fontSize: 14)),
@@ -111,7 +111,7 @@ class AttendanceActionPanel extends StatelessWidget {
                       height: 24,
                       decoration: BoxDecoration(
                           color: hasCheckedIn
-                              ? const Color(0xFF1C3ECA)
+                              ? const Color(0xFF419CC3)
                               : Colors.grey.shade200,
                           shape: BoxShape.circle),
                       child: Center(
@@ -170,7 +170,7 @@ class AttendanceActionPanel extends StatelessWidget {
                               style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: attendanceType == 'office'
-                                      ? const Color(0xFF1C3ECA)
+                                      ? const Color(0xFF419CC3)
                                       : Colors.grey.shade600)),
                         ),
                       ),
@@ -199,7 +199,7 @@ class AttendanceActionPanel extends StatelessWidget {
                               style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: attendanceType == 'field'
-                                      ? const Color(0xFF1C3ECA)
+                                      ? const Color(0xFF419CC3)
                                       : Colors.grey.shade600)),
                         ),
                       ),
@@ -229,7 +229,7 @@ class AttendanceActionPanel extends StatelessWidget {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF1C3ECA)),
+                    borderSide: const BorderSide(color: Color(0xFF419CC3)),
                   ),
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -259,7 +259,7 @@ class AttendanceActionPanel extends StatelessWidget {
                           ? Icons.commute
                           : Icons.store,
                       size: 16,
-                      color: const Color(0xFF1C3ECA),
+                      color: const Color(0xFF419CC3),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -268,7 +268,7 @@ class AttendanceActionPanel extends StatelessWidget {
                           : 'Mode: Absen Kantor',
                       style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1C3ECA)),
+                          color: Color(0xFF419CC3)),
                     ),
                     if (todayAttendance?['is_offline_local'] == true) ...[
                       const Spacer(),
@@ -277,7 +277,7 @@ class AttendanceActionPanel extends StatelessWidget {
                             ? Icons.cloud_done
                             : Icons.cloud_off,
                         size: 14,
-                        color: const Color(0xFF1C3ECA),
+                        color: const Color(0xFF419CC3),
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -287,7 +287,7 @@ class AttendanceActionPanel extends StatelessWidget {
                         style: const TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1C3ECA)),
+                            color: Color(0xFF419CC3)),
                       ),
                     ],
                   ],
@@ -317,7 +317,7 @@ class AttendanceActionPanel extends StatelessWidget {
                       ],
                     ),
                     child: const Icon(Icons.my_location,
-                        color: Color(0xFF1C3ECA), size: 24),
+                        color: Color(0xFF419CC3), size: 24),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -379,7 +379,7 @@ class AttendanceActionPanel extends StatelessWidget {
             if (canCheckIn)
               SlideActionWidget(
                 text: 'Geser untuk Masuk',
-                backgroundColor: const Color(0xFF1C3ECA),
+                backgroundColor: const Color(0xFF419CC3),
                 onSubmit: () {
                   if (attendanceType == 'office' &&
                       !isWithinRange &&

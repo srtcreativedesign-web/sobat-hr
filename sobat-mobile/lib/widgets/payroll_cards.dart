@@ -11,13 +11,13 @@ class _C {
   static const gray400 = Color(0xFF888780);
   static const gray600 = Color(0xFF5F5E5A);
   static const gray900 = Color(0xFF2C2C2A);
-  static const purple50 = Color(0xFFEEEDFE);
-  static const purple600 = Color(0xFF534AB7);
+  static const purple50 = Color(0xFFE6F3FB); // Light Blue background
+  static const purple600 = Color(0xFF419CC3); // Primary Blue
   static const green100 = Color(0xFFC0DD97);
   static const green600 = Color(0xFF3B6D11);
   static const amber100 = Color(0xFFFAC775);
   static const amber600 = Color(0xFFBA7517);
-  static const blue600 = Color(0xFF1565C0);
+  static const blue600 = Color(0xFF419CC3); // Primary Blue
   static const white = Colors.white;
 }
 
@@ -276,10 +276,10 @@ class SlipThrCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF0E4D92),
-            Color(0xFF1565C0),
-            Color(0xFF2979D6),
-            Color(0xFF42A5F5),
+            Color(0xFF419CC3), // Primary Dark
+            Color(0xFF5BAAD0), // Mid Dark
+            Color(0xFF72BDE0), // Mid Light
+            Color(0xFF89B4E1), // Soft Light
           ],
           stops: [0.0, 0.35, 0.65, 1.0],
         ),

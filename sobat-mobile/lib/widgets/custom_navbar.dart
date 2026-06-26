@@ -1,5 +1,5 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import '../config/theme.dart';
 
 class CustomNavbar extends StatelessWidget {
@@ -14,58 +14,33 @@ class CustomNavbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BottomAppBar(
-      color: Colors.white,
-      shape: const CircularNotchedRectangle(),
-      notchMargin: 12.0,
-      elevation: 20,
-      shadowColor: Colors.black.withValues(alpha: 0.3),
-      clipBehavior: Clip.antiAlias,
-      child: SizedBox(
-        height: 72,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildNavItem(Icons.dashboard_rounded, 'Beranda', 0, context),
-            _buildNavItem(Icons.folder_open_rounded, 'Pengajuan', 1, context),
-            const SizedBox(width: 48), // Space for the notched FAB
-            _buildNavItem(Icons.account_balance_wallet_rounded, 'Finance', 3, context),
-            _buildNavItem(Icons.person_rounded, 'Profil', 4, context),
-          ],
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label, int index, BuildContext context) {
-    final bool isActive = currentIndex == index;
-    final color = isActive ? AppTheme.colorPrimary : AppTheme.textLight;
-
-    return GestureDetector(
-      onTap: () => onTap(index),
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: color,
-              size: 26,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 10,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
+      child: CurvedNavigationBar(
+        index: currentIndex > 4 ? 0 : currentIndex,
+        height: 65.0,
+        items: <Widget>[
+          Icon(Icons.dashboard_rounded, size: 28, color: currentIndex == 0 ? Colors.white : AppTheme.textLight),
+          Icon(Icons.folder_open_rounded, size: 28, color: currentIndex == 1 ? Colors.white : AppTheme.textLight),
+          Icon(Icons.add_circle_rounded, size: 40, color: currentIndex == 2 ? Colors.white : AppTheme.colorPrimary),
+          Icon(Icons.school_rounded, size: 28, color: currentIndex == 3 ? Colors.white : AppTheme.textLight),
+          Icon(Icons.person_rounded, size: 28, color: currentIndex == 4 ? Colors.white : AppTheme.textLight),
+        ],
+        color: const Color(0xFFEBF9FF),
+        buttonBackgroundColor: AppTheme.colorPrimary,
+        backgroundColor: Colors.transparent,
+        animationCurve: Curves.easeInOutCubic,
+        animationDuration: const Duration(milliseconds: 550),
+        letIndexChange: (index) => true,
+        onTap: onTap,
       ),
     );
   }

@@ -168,11 +168,11 @@ class _AttendanceCardSectionState extends State<AttendanceCardSection> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 35, 98, 235),
+        color: const Color(0xFF89B4E1),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color.fromARGB(255, 1, 24, 119).withValues(alpha: 0.2),
+            color: const Color(0xFF419CC3).withValues(alpha: 0.2),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -294,7 +294,7 @@ class _AttendanceCardSectionState extends State<AttendanceCardSection> {
                             }
                           },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 1, 129, 249),
+                      backgroundColor: const Color(0xFF419CC3),
                       foregroundColor: const Color.fromARGB(255, 243, 243, 246),
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 14),

@@ -80,14 +80,14 @@ class _GradientHeaderDelegate extends SliverPersistentHeaderDelegate {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Color.fromARGB(255, 5, 34, 150), // AppTheme.colorPrimary
-                Color.fromARGB(255, 9, 20, 66), // Slightly lighter blue
+                Color(0xFF419CC3), // AppTheme.colorPrimary
+                Color(0xFF419CC3), // Slightly lighter blue
               ],
             ),
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF1C3ECA).withValues(alpha: 0.3),
+                color: const Color(0xFF419CC3).withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),

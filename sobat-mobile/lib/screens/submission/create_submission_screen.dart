@@ -90,8 +90,8 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
       case 'Cuti':
         return {
           'icon': Icons.calendar_month,
-          'color': const Color(0xFFEA580C),
-          'bgColor': const Color(0xFFFFF7ED),
+          'color': const Color(0xFF419CC3),
+          'bgColor': const Color(0xFFE6F3FB),
           'desc': AppLocalizations.of(context)!.cutiDesc,
           'quota': _isLoading
               ? AppLocalizations.of(context)!.loading
@@ -102,56 +102,56 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
       case 'Sakit':
         return {
           'icon': Icons.thermostat,
-          'color': const Color(0xFFE11D48),
-          'bgColor': const Color(0xFFFFF1F2),
+          'color': const Color(0xFF419CC3),
+          'bgColor': const Color(0xFFE6F3FB),
           'desc': AppLocalizations.of(context)!.sakitDesc,
           'quota': null,
         };
       case 'Reimbursement':
         return {
           'icon': Icons.attach_money,
-          'color': const Color(0xFF059669),
-          'bgColor': const Color(0xFFD1FAE5),
+          'color': const Color(0xFF419CC3),
+          'bgColor': const Color(0xFFE6F3FB),
           'desc': AppLocalizations.of(context)!.reimburseDesc,
           'quota': AppLocalizations.of(context)!.reimbursementLimit,
         };
       case 'Lembur':
         return {
           'icon': Icons.schedule,
-          'color': const Color(0xFF2563EB), // Blue 600
-          'bgColor': const Color(0xFFEFF6FF), // Blue 50
+          'color': const Color(0xFF419CC3),
+          'bgColor': const Color(0xFFE6F3FB),
           'desc': AppLocalizations.of(context)!.lemburDesc,
           'quota': null,
         };
       case 'Perjalanan Dinas':
         return {
           'icon': Icons.flight_takeoff,
-          'color': const Color(0xFF4F46E5), // Indigo 600
-          'bgColor': const Color(0xFFEEF2FF), // Indigo 50
+          'color': const Color(0xFF419CC3),
+          'bgColor': const Color(0xFFE6F3FB),
           'desc': AppLocalizations.of(context)!.dinasDesc,
           'quota': null,
         };
       case 'Pengajuan Aset':
         return {
           'icon': Icons.devices,
-          'color': const Color(0xFF7C3AED),
-          'bgColor': const Color(0xFFEDE9FE),
+          'color': const Color(0xFF419CC3),
+          'bgColor': const Color(0xFFE6F3FB),
           'desc': AppLocalizations.of(context)!.asetDesc,
           'quota': null,
         };
       case 'Resign':
         return {
           'icon': Icons.logout,
-          'color': const Color(0xFFDC2626), // Red 600
-          'bgColor': const Color(0xFFFEF2F2), // Red 50
+          'color': const Color(0xFF419CC3),
+          'bgColor': const Color(0xFFE6F3FB),
           'desc': AppLocalizations.of(context)!.resignDesc,
           'quota': null,
         };
       default:
         return {
           'icon': Icons.description,
-          'color': Colors.grey,
-          'bgColor': Colors.grey.shade100,
+          'color': const Color(0xFF419CC3),
+          'bgColor': const Color(0xFFE6F3FB),
           'desc': AppLocalizations.of(context)!.featureComingSoon,
           'quota': null,
         };

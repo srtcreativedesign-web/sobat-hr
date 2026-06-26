@@ -26,7 +26,7 @@ class ApiConfig {
   /// - Running in release mode (Xcode Archive, flutter build --release)
   static bool get _isProd => _env == 'prod' || kReleaseMode;
 
-  static const String _hostIp = '192.168.1.9';
+  static const String _hostIp = '192.168.1.39';
 
   static const String _port = '8000';
 

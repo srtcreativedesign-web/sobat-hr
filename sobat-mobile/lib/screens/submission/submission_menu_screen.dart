@@ -5,7 +5,8 @@ import '../../l10n/app_localizations.dart';
 import '../../services/request_service.dart';
 
 class SubmissionMenuScreen extends StatefulWidget {
-  const SubmissionMenuScreen({super.key});
+  final bool showBackButton;
+  const SubmissionMenuScreen({super.key, this.showBackButton = true});
 
   @override
   State<SubmissionMenuScreen> createState() => _SubmissionMenuScreenState();
@@ -60,7 +61,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
         gradient: LinearGradient(
           begin: Alignment(0.0, -1.0),
           end: Alignment(0.0, 1.0),
-          colors: [Color(0xFF1A1640), Color(0xFF2D2680), Color(0xFF4A3FA0)],
+          colors: [Color(0xFF419CC3), Color(0xFF5BAAD0), Color(0xFF72BDE0)],
           stops: [0.0, 0.45, 1.0],
         ),
       ),
@@ -95,10 +96,12 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildTopButton(
-                        Icons.chevron_left_rounded,
-                        onTap: () => Navigator.pop(context),
-                      ),
+                      widget.showBackButton
+                          ? _buildTopButton(
+                              Icons.chevron_left_rounded,
+                              onTap: () => Navigator.pop(context),
+                            )
+                          : const SizedBox(width: 34),
                       Text(
                         AppLocalizations.of(context)!.activeSubmissionTitle,
                         style: const TextStyle(
@@ -117,7 +120,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
                     AppLocalizations.of(context)!.selfService,
                     style: const TextStyle(
                       fontSize: 11,
-                      color: Color(0xFFAFA9EC),
+                      color: Color(0xFFFFFFFF),
                       letterSpacing: 1.1,
                       fontWeight: FontWeight.w600,
                     ),
@@ -128,7 +131,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
                     style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFFEEEDFE),
+                      color: Color(0xFFE6F3FB),
                       letterSpacing: -0.8,
                       height: 1.15,
                     ),
@@ -142,7 +145,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
                         width: 4,
                         height: 4,
                         decoration: const BoxDecoration(
-                          color: Color(0xFF3C3489),
+                          color: Color(0xFF419CC3),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -188,7 +191,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 0.5),
         ),
-        child: Icon(icon, color: const Color(0xFFEEEDFE), size: 18),
+        child: Icon(icon, color: const Color(0xFFE6F3FB), size: 18),
       ),
     );
   }
@@ -196,11 +199,11 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
   Widget _buildInfoBadge(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 13, color: const Color(0xFF7F77DD)),
+        Icon(icon, size: 13, color: const Color(0xFFFFFFFF)),
         const SizedBox(width: 5),
         Text(
           text,
-          style: const TextStyle(fontSize: 11, color: Color(0xFF7F77DD)),
+          style: const TextStyle(fontSize: 11, color: Color(0xFFFFFFFF)),
         ),
       ],
     );
@@ -222,8 +225,8 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           _buildMenuItem(
             context,
             assetIcon: 'assets/icons/leave.png',
-            iconColor: const Color(0xFF534AB7),
-            bgColor: const Color(0xFFEEEDFE),
+            iconColor: const Color(0xFF419CC3),
+            bgColor: const Color(0xFFE6F3FB),
             title: AppLocalizations.of(context)!.leave,
             subtitle: AppLocalizations.of(context)!.leaveMenuDesc,
             trailingText: _isLoadingBalance ? '...' : AppLocalizations.of(context)!.daysCount(_leaveBalance.toString()),
@@ -266,8 +269,8 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           _buildMenuItem(
             context,
             assetIcon: 'assets/icons/leave.png',
-            iconColor: const Color(0xFF534AB7),
-            bgColor: const Color(0xFFEEEDFE),
+            iconColor: const Color(0xFF419CC3),
+            bgColor: const Color(0xFFE6F3FB),
             title: 'Izin Keluar',
             subtitle: 'Surat jalan untuk keluar kantor saat jam kerja',
             onTap:
@@ -318,8 +321,8 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           _buildMenuItem(
             context,
             assetIcon: 'assets/icons/reimburse.png',
-            iconColor: const Color(0xFF534AB7),
-            bgColor: const Color(0xFFEEEDFE),
+            iconColor: const Color(0xFF419CC3),
+            bgColor: const Color(0xFFE6F3FB),
             title: AppLocalizations.of(context)!.reimbursement,
             subtitle: AppLocalizations.of(context)!.reimbursementMenuDesc,
             isLast: true,
@@ -343,7 +346,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           title,
           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2C2C2A)),
         ),
-        Text(count, style: const TextStyle(fontSize: 11, color: Color(0xFF534AB7))),
+        Text(count, style: const TextStyle(fontSize: 11, color: Color(0xFF419CC3))),
       ],
     );
   }
