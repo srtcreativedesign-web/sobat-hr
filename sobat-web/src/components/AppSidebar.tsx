@@ -215,6 +215,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
                 src="/logo/favicon.png"
                 alt="Logo"
                 fill
+                sizes="24px"
                 className="object-contain"
               />
             </div>

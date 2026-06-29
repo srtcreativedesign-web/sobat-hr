@@ -251,6 +251,7 @@ const OutletManagement = () => {
                                 <TableCell>
                                     <div className="flex items-center gap-3">
                                         <Progress 
+                                            aria-label="Radius Progress"
                                             size="sm"
                                             radius="full"
                                             classNames={{
