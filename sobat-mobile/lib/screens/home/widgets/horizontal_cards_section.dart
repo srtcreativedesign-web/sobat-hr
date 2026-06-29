@@ -6,7 +6,7 @@ import '../../../config/theme.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/payroll_service.dart';
-import '../../../widgets/payroll_cards.dart';
+import '../../../widgets/organisms/payroll_cards.dart';
 import '../../security/pin_screen.dart';
 import '../../submission/create_submission_screen.dart';
 

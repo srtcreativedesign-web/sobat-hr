@@ -491,12 +491,18 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
                                   _buildLabel('Jam Keluar'),
                                   _buildClickableInput(
                                     icon: Icons.access_time,
-                                    value: _startTime?.format(context) ?? 'Pilih Waktu',
+                                    value: _startTime != null ? '${_startTime!.hour.toString().padLeft(2, '0')}:${_startTime!.minute.toString().padLeft(2, '0')}' : 'Pilih Waktu',
                                     isPlaceholder: _startTime == null,
                                     onTap: () async {
                                       final picked = await showTimePicker(
                                         context: context,
                                         initialTime: TimeOfDay.now(),
+                                        builder: (context, child) {
+                                          return MediaQuery(
+                                            data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                                            child: child!,
+                                          );
+                                        },
                                       );
                                       if (picked != null) setState(() => _startTime = picked);
                                     },
@@ -512,12 +518,18 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
                                   _buildLabel('Jam Selesai'),
                                   _buildClickableInput(
                                     icon: Icons.access_time,
-                                    value: _endTime?.format(context) ?? 'Selesai',
+                                    value: _endTime != null ? '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}' : 'Selesai',
                                     isPlaceholder: _endTime == null,
                                     onTap: () async {
                                       final picked = await showTimePicker(
                                         context: context,
                                         initialTime: TimeOfDay.now(),
+                                        builder: (context, child) {
+                                          return MediaQuery(
+                                            data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                                            child: child!,
+                                          );
+                                        },
                                       );
                                       if (picked != null) setState(() => _endTime = picked);
                                     },
@@ -681,12 +693,18 @@ class _CreateSubmissionScreenState extends State<CreateSubmissionScreen> {
             Expanded(
               child: _buildClickableInput(
                 icon: Icons.access_time,
-                value: _startTime?.format(context) ?? AppLocalizations.of(context)!.startOvertime,
+                value: _startTime != null ? '${_startTime!.hour.toString().padLeft(2, '0')}:${_startTime!.minute.toString().padLeft(2, '0')}' : AppLocalizations.of(context)!.startOvertime,
                 isPlaceholder: _startTime == null,
                 onTap: () async {
                   final picked = await showTimePicker(
                     context: context,
                     initialTime: TimeOfDay.now(),
+                    builder: (context, child) {
+                      return MediaQuery(
+                        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                        child: child!,
+                      );
+                    },
                   );
                   if (picked != null) setState(() => _startTime = picked);
                 },

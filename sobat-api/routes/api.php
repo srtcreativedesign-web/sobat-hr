@@ -61,6 +61,10 @@ Route::middleware(['throttle:login'])->group(function () {
     Route::post('/auth/login', [App\Http\Controllers\Api\AuthController::class, 'login'])->name('login');
     Route::post('/auth/register', [App\Http\Controllers\Api\AuthController::class, 'register']);
     Route::post('/auth/forgot-password', [App\Http\Controllers\Api\PasswordResetController::class, 'request']); // Added to throttle:login
+
+    // Sobat Outlet Device Activation
+    Route::post('/sobat-outlet/activate', [App\Http\Controllers\Api\DeviceActivationController::class, 'activate']);
+    Route::post('/sobat-outlet/login', [App\Http\Controllers\Api\DeviceActivationController::class, 'login']);
 });
 Route::get('/announcements/active', [App\Http\Controllers\Api\AnnouncementController::class, 'getActive']);
 // Route::post('/auth/forgot-password', [App\Http\Controllers\Api\PasswordResetController::class, 'request']); // Moved above to group
@@ -89,6 +93,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/auth/profile', [App\Http\Controllers\Api\AuthController::class, 'updateProfile']);
     Route::put('/auth/password', [App\Http\Controllers\Api\AuthController::class, 'changePassword']);
     Route::post('/auth/fcm-token', [App\Http\Controllers\Api\AuthController::class, 'updateFcmToken']);
+
+    // Sobat Outlet Auto Registration
+    Route::post('/sobat-outlet/auto-register', [App\Http\Controllers\Api\DeviceActivationController::class, 'autoRegister']);
 
     // Security PIN
     Route::middleware(['throttle:6,1'])->group(function () {
@@ -140,6 +147,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/attendance/generate-qr-codes', [App\Http\Controllers\Api\OfflineSyncController::class, 'generateQrCodes']);
         Route::get('/attendance/qr-codes', [App\Http\Controllers\Api\OfflineSyncController::class, 'getQrCodes']);
         Route::post('/attendance/qr-codes/generate-single', [App\Http\Controllers\Api\OfflineSyncController::class, 'generateSingleQrCode']);
+        
+        // Outlet Devices (Dynamic QR Mode)
+        Route::apiResource('outlet-devices', App\Http\Controllers\Api\OutletDeviceController::class);
+        Route::post('/outlet-devices/{id}/token', [App\Http\Controllers\Api\OutletDeviceController::class, 'generateToken']);
     });
 
     // Shift routes

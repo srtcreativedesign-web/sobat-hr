@@ -3,6 +3,7 @@ import '../../../config/theme.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/user.dart';
 import '../../approval/approval_list_screen.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class QuickActionsSection extends StatelessWidget {
   final User? user;
@@ -36,7 +37,7 @@ class QuickActionsSection extends StatelessWidget {
         'onTap': () => Navigator.pushNamed(context, '/payroll'),
       },
       {
-        'icon': 'assets/icons/leave.png',
+        'icon': 'assets/icons/anual_leave.svg',
         'isAsset': true,
         'label': isLoadingLeave 
             ? AppLocalizations.of(context)!.leave 
@@ -53,7 +54,7 @@ class QuickActionsSection extends StatelessWidget {
         },
       },
       {
-        'icon': 'assets/icons/history.png',
+        'icon': 'assets/icons/history.svg',
         'isAsset': true,
         'label': AppLocalizations.of(context)!.history,
         'subtitle': AppLocalizations.of(context)!.attendance,
@@ -61,7 +62,7 @@ class QuickActionsSection extends StatelessWidget {
         'onTap': () => Navigator.pushNamed(context, '/attendance/history'),
       },
       {
-        'icon': 'assets/icons/overtime.png',
+        'icon': 'assets/icons/overtime.svg',
         'isAsset': true,
         'label': AppLocalizations.of(context)!.overtime,
         'subtitle': AppLocalizations.of(context)!.applyOvertime,
@@ -69,7 +70,7 @@ class QuickActionsSection extends StatelessWidget {
         'onTap': () => Navigator.pushNamed(context, '/submission/create', arguments: 'Lembur'),
       },
       {
-        'icon': 'assets/icons/bussines-trip.png',
+        'icon': 'assets/icons/exit_permit.svg',
         'isAsset': true,
         'label': AppLocalizations.of(context)!.businessTrip,
         'subtitle': AppLocalizations.of(context)!.businessTripShort,
@@ -221,7 +222,9 @@ class QuickActionsSection extends StatelessWidget {
                       width: 80,
                       height: 80,
                       child: isAsset
-                          ? Image.asset(icon as String, fit: BoxFit.contain)
+                          ? (icon as String).endsWith('.svg')
+                              ? SvgPicture.asset(icon)
+                              : Image.asset(icon, fit: BoxFit.contain)
                           : Icon(icon as IconData, size: 80, color: baseColor),
                     ),
                   ),
@@ -237,26 +240,23 @@ class QuickActionsSection extends StatelessWidget {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: baseColor.withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: isAsset
-                                  ? Image.asset(
-                                      icon as String,
-                                      errorBuilder: (context, error, stackTrace) => Icon(
-                                        Icons.error_outline_rounded,
-                                        color: baseColor,
-                                        size: 16,
-                                      ),
-                                    )
-                                  : Icon(icon as IconData, color: baseColor, size: 20),
-                            ),
+                          SizedBox(
+                            width: 36,
+                            height: 36,
+                            child: isAsset
+                                ? (icon as String).endsWith('.svg')
+                                    ? SvgPicture.asset(
+                                        icon,
+                                      )
+                                    : Image.asset(
+                                        icon,
+                                        errorBuilder: (context, error, stackTrace) => Icon(
+                                          Icons.error_outline_rounded,
+                                          color: baseColor,
+                                          size: 24,
+                                        ),
+                                      )
+                                : Icon(icon as IconData, color: baseColor, size: 36),
                           ),
                           const Spacer(),
                           if (badgeCount > 0)

@@ -3,6 +3,7 @@
 import DashboardLayout from '@/components/DashboardLayout';
 import ApprovalTimeline from '@/components/ApprovalTimeline';
 import { STORAGE_KEYS } from '@/lib/config';
+import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth-store';
 import { Request } from '@/types';
 import { useRouter } from 'next/navigation';
@@ -33,15 +34,8 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
             if (!id || id === 'undefined') return;
 
             try {
-                const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/requests/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    setRequest(data);
-                }
+                const response = await apiClient.get(`/requests/${id}`);
+                setRequest(response.data);
             } catch (error) {
                 console.error("Failed to fetch request detail", error);
             } finally {
@@ -72,37 +66,23 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
     const processAction = async (action: 'approve' | 'reject', signatureData: string | null = null, extraNote: string = '') => {
         setIsProcessing(true);
         try {
-            const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
-
             // Note logic: Rejection uses 'reason', Approval uses 'notes'
             let finalNote = actionNote;
             if (action === 'approve' && extraNote) {
                 finalNote = extraNote;
             }
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/requests/${id}/${action}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    notes: finalNote,
-                    reason: finalNote,
-                    signature: signatureData
-                })
+            await apiClient.post(`/requests/${id}/${action}`, {
+                notes: finalNote,
+                reason: finalNote,
+                signature: signatureData
             });
 
-            if (response.ok) {
-                alert(`Request ${action}d successfully`);
-                router.push('/approvals');
-            } else {
-                const err = await response.json();
-                alert(err.message || 'Action failed');
-            }
-        } catch (error) {
+            alert(`Request ${action}d successfully`);
+            router.push('/approvals');
+        } catch (error: any) {
             console.error("Action error", error);
-            alert('Failed to process action');
+            alert(error.response?.data?.message || 'Failed to process action');
         } finally {
             setIsProcessing(false);
             setShowApproveModal(false);
@@ -127,14 +107,9 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ id: s
 
     const handleDownloadProof = async () => {
         try {
-            const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/requests/${id}/proof`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Download failed');
-
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
+            const response = await apiClient.get(`/requests/${id}/proof`, { responseType: 'blob' });
+            
+            const url = window.URL.createObjectURL(response.data);
             const a = document.createElement('a');
             a.href = url;
             a.download = `Proof-REQ-${id}.pdf`;

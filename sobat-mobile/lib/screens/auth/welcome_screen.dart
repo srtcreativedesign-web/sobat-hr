@@ -5,7 +5,7 @@ import '../../services/connectivity_service.dart';
 import '../../l10n/app_localizations.dart';
 import 'login_screen.dart';
 import 'invitation_screen.dart';
-
+import '../../services/storage_service.dart';
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -146,20 +146,20 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                   child: Text(AppLocalizations.of(context)!.startNow),
                 ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () => _showInvitationDialog(context),
-                  child: Text(
-                    AppLocalizations.of(context)!.activationAccount,
-                    style: const TextStyle(
-                      color: AppTheme.colorPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () => _showInvitationDialog(context),
+                    child: Text(
+                      AppLocalizations.of(context)!.activationAccount,
+                      style: const TextStyle(
+                        color: AppTheme.colorPrimary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
-                ),
-                      const SizedBox(height: 20),
-                    ],
+                  const SizedBox(height: 20),
+                ],
                   ),
                 ),
               ),

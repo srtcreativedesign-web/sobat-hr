@@ -204,6 +204,10 @@ class OfflineSyncController extends Controller
                 $attendanceData['floor_number'] = $locationValidation['data']['floor_number'];
                 $attendanceData['latitude'] = null; // QR doesn't provide GPS
                 $attendanceData['longitude'] = null;
+
+                if (isset($locationValidation['data']['is_dynamic']) && $locationValidation['data']['is_dynamic']) {
+                    $attendanceData['validation_method'] = 'dynamic_qr';
+                }
             } else {
                 $attendanceData['latitude'] = $gpsCoords['latitude'];
                 $attendanceData['longitude'] = $gpsCoords['longitude'];

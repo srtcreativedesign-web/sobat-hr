@@ -22,11 +22,17 @@ class Organization extends Model
         'latitude',
         'longitude',
         'radius_meters',
+        'division_id',
     ];
 
     /**
      * Relationships
      */
+    public function division()
+    {
+        return $this->belongsTo(Division::class, 'division_id');
+    }
+
     public function parentOrganization()
     {
         return $this->belongsTo(Organization::class, 'parent_id');

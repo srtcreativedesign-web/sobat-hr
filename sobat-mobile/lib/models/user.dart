@@ -246,6 +246,15 @@ class User {
 
   // New helper for approval logic
   bool get canApprove => approvalLevel >= 1 || role == 'super_admin';
+
+  // Helper for SobatOutlet Access
+  bool get canActivateSobatOutlet {
+    final pos = position?.toLowerCase() ?? '';
+    final job = jobLevel?.toLowerCase() ?? '';
+    return pos.contains('manager') || pos.contains('pic') || 
+           job.contains('manager') || job.contains('pic') || 
+           role == 'super_admin' || role == 'admin';
+  }
 }
 
 DateTime? _tryParseDate(dynamic dateString) {

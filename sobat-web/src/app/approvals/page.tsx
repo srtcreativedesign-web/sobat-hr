@@ -2,8 +2,9 @@
 
 import DashboardLayout from '@/components/DashboardLayout';
 import { STORAGE_KEYS } from '@/lib/config';
+import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth-store';
-import { Approval, PaginatedResponse } from '@/types';
+import { Approval } from '@/types';
 import { format, differenceInDays } from 'date-fns';
 import { DataTable } from '@/components/ui/data-table';
 import { User, Chip, Button } from '@nextui-org/react';
@@ -24,7 +25,6 @@ export default function ApprovalsPage() {
         const fetchApprovals = async () => {
             setIsLoading(true); // Set loading to true when fetching starts
             try {
-                const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
                 // We will fetch approvals.
                 // Note: The ApprovalController needs to support filtering by "my pending action".
                 const query = new URLSearchParams();
@@ -40,28 +40,15 @@ export default function ApprovalsPage() {
                     query.append('type', activeType);
                 }
 
-                // The endpoint GET /approvals/pending is typically for this.
-                // Changed to /requests as per instruction, assuming approvals are now part of requests
-                const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/requests?${query.toString()}`;
+                const endpoint = `/requests?${query.toString()}`;
 
-                const response = await fetch(endpoint, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (response.ok) {
-                    // It might return PaginatedResponse or Array. Let's assume Array based on generic implementation often used.
-                    // If paginated, we extract .data
-                    const data = await response.json();
-                    if (Array.isArray(data)) {
-                        setApprovals(data);
-                    } else if (data.data && Array.isArray(data.data)) {
-                        setApprovals(data.data);
-                    }
-                } else {
-                    console.error("Failed to fetch approvals, status:", response.status);
-                    setApprovals([]); // Clear approvals on error
+                const response = await apiClient.get(endpoint);
+                const data = response.data;
+                
+                if (Array.isArray(data)) {
+                    setApprovals(data);
+                } else if (data.data && Array.isArray(data.data)) {
+                    setApprovals(data.data);
                 }
             } catch (error) {
                 console.error("Failed to fetch approvals", error);
@@ -249,7 +236,7 @@ export default function ApprovalsPage() {
                                     <span className="text-3xl">📭</span>
                                 </div>
                                 <h3 className="text-xl font-bold text-default-900 mb-2">No Approvals Pending</h3>
-                                <p className="text-default-500">You're all caught up! There are no requests awaiting your review.</p>
+                                <p className="text-default-500">You&apos;re all caught up! There are no requests awaiting your review.</p>
                             </div>
                         }
                     />

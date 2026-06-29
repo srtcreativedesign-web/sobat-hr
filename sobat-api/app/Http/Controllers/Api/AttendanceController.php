@@ -218,7 +218,30 @@ class AttendanceController extends Controller
         $validated['track_type'] = $trackType;
 
         // Auto-set validation method based on track type
-        $validated['validation_method'] = $trackType === 'operational' ? 'qr_code' : 'gps';
+        if ($trackType === 'operational') {
+            if (!empty($validated['qr_code_data'])) {
+                $qrService = app(\App\Services\QrCodeValidationService::class);
+                $qrValidation = $qrService->validate($validated['qr_code_data']);
+                
+                if (!$qrValidation['valid']) {
+                    return response()->json(['message' => $qrValidation['message']], 422);
+                }
+                
+                $validated['validation_method'] = isset($qrValidation['data']['is_dynamic']) && $qrValidation['data']['is_dynamic'] 
+                    ? 'dynamic_qr' 
+                    : 'qr_code';
+                    
+                $validated['location_id'] = $qrValidation['data']['qr_location_id'] ?? null;
+                $validated['location_name'] = $qrValidation['data']['location_name'] ?? null;
+                $validated['outlet_id'] = $qrValidation['data']['organization_id'] ?? null;
+                $validated['floor_number'] = $qrValidation['data']['floor_number'] ?? null;
+            } else {
+                $validated['validation_method'] = 'qr_code';
+            }
+        } else {
+            $validated['validation_method'] = 'gps';
+        }
+        
         \Log::info("Attendance Store - validation_method set to: {$validated['validation_method']} for track: {$trackType}");
 
         // Wrap in transaction for data consistency under concurrent writes

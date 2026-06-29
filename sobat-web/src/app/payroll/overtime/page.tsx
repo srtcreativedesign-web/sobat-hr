@@ -6,6 +6,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useAuthStore } from '@/store/auth-store';
 import React from 'react';
 import { STORAGE_KEYS } from '@/lib/config';
+import apiClient from '@/lib/api-client';
 
 interface Request {
     id: number;
@@ -50,9 +51,8 @@ export default function OvertimePage() {
     const fetchOvertime = async () => {
         setIsLoading(true);
         try {
-            const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
             // Fetch from new dedicated endpoint
-            let url = `${process.env.NEXT_PUBLIC_API_URL}/overtime-records?page=1`; // Start with page 1
+            let url = '/overtime-records?page=1'; // Start with page 1
 
             if (search) {
                 url += `&search=${search}`;
@@ -64,17 +64,9 @@ export default function OvertimePage() {
                 url += `&track=${activeTab}`;
             }
 
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                // Pagination handling if needed, assuming data.data if paginated
-                setRequests(data.data || data);
-            }
+            const response = await apiClient.get(url);
+            // Pagination handling if needed, assuming data.data if paginated
+            setRequests(response.data.data || response.data);
         } catch (error) {
             console.error('Failed to fetch overtime requests', error);
         } finally {
@@ -84,35 +76,21 @@ export default function OvertimePage() {
 
     const handleExport = async () => {
         try {
-            const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
-            let url = `${process.env.NEXT_PUBLIC_API_URL}/requests/export/overtime`; // Keep logic simple
-            // Better trigger download via blob
+            let url = '/requests/export/overtime'; // Keep logic simple
 
             if (search) url += `?search=${search}`;
             if (selectedOrg) url += `${search ? '&' : '?'}organization_id=${selectedOrg}`;
             url += `${search || selectedOrg ? '&' : '?'}track=${activeTab}`;
 
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                }
-            });
-
-            if (response.ok) {
-                const blob = await response.blob();
-                const downloadUrl = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = downloadUrl;
-                a.download = `overtime-report-${new Date().toISOString().split('T')[0]}.xlsx`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-            } else {
-                console.error("Export failed");
-                alert("Export failed");
-            }
-
+            const response = await apiClient.get(url, { responseType: 'blob' });
+            
+            const downloadUrl = window.URL.createObjectURL(response.data);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `overtime-report-${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
         } catch (error) {
             console.error("Export error", error);
         }
@@ -120,17 +98,8 @@ export default function OvertimePage() {
 
     const fetchOrganizations = async () => {
         try {
-            const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/organizations`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setOrganizations(data.data || data);
-            }
+            const response = await apiClient.get('/organizations');
+            setOrganizations(response.data.data || response.data);
         } catch (error) {
             console.error("Failed to fetch organizations", error);
         }

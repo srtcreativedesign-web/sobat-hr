@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/home_provider.dart';
-import '../../widgets/custom_navbar.dart';
+import '../../widgets/organisms/custom_navbar.dart';
 import '../../models/user.dart';
 import '../../l10n/app_localizations.dart';
 

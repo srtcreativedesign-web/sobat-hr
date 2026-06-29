@@ -120,8 +120,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       icon: <Store />,
       roles: ['super_admin', 'admin_cabang', 'personalia', 'admin_hr'],
       subItems: [
-        { name: 'Daftar Outlet', href: '/organizations/outlets' },
-        { name: 'QR Generator', href: '/attendance/qr-generator' }
+        { name: 'Daftar Outlet', href: '/organizations/outlets' }
       ]
     },
     {
@@ -270,8 +269,9 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
                       <>
                         <CollapsibleTrigger asChild>
                           <SidebarMenuButton 
-                            isActive={isActive} 
+                            isActive={false} 
                             tooltip={item.name}
+                            className={isActive ? "text-sidebar-primary font-semibold" : ""}
                             onClick={() => {
                               if (state === 'collapsed') {
                                 setOpen(true);

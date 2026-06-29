@@ -6,7 +6,7 @@ import '../../config/api_config.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 
-import '../../widgets/custom_navbar.dart';
+
 import '../../l10n/app_localizations.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -144,6 +144,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
     );
   }
+
+
 
   // STANDARD CARD STYLE
   Widget _buildStandardCard({required Widget child}) {

@@ -2,6 +2,7 @@
 
 import DashboardLayout from '@/components/DashboardLayout';
 import { STORAGE_KEYS } from '@/lib/config';
+import apiClient from '@/lib/api-client';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -32,17 +33,8 @@ export default function ResetRequestsPage() {
     const fetchRequests = async () => {
         setIsLoading(true);
         try {
-            const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/password-requests`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setRequests(data.data || []);
-            }
+            const response = await apiClient.get('/admin/password-requests');
+            setRequests(response.data.data || []);
         } catch (error) {
             console.error("Failed to fetch requests", error);
         } finally {
@@ -57,30 +49,17 @@ export default function ResetRequestsPage() {
     const handleApprove = async (id: number) => {
         setActionLoading(id);
         try {
-            const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/password-requests/${id}/approve`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
+            const response = await apiClient.post(`/admin/password-requests/${id}/approve`);
+            setSuccessDialog({
+                open: true,
+                tempPass: response.data.temp_password,
+                phone: response.data.phone,
+                name: response.data.user_name
             });
-
-            if (response.ok) {
-                const data = await response.json();
-                setSuccessDialog({
-                    open: true,
-                    tempPass: data.temp_password,
-                    phone: data.phone,
-                    name: data.user_name
-                });
-                fetchRequests(); // Refresh list
-            } else {
-                alert('Failed to approve request');
-            }
-        } catch (error) {
+            fetchRequests(); // Refresh list
+        } catch (error: any) {
             console.error(error);
-            alert('Error processing request');
+            alert(error.response?.data?.message || 'Error processing request');
         } finally {
             setActionLoading(null);
         }
@@ -91,18 +70,8 @@ export default function ResetRequestsPage() {
 
         setActionLoading(id);
         try {
-            const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/password-requests/${id}/reject`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.ok) {
-                fetchRequests();
-            }
+            await apiClient.post(`/admin/password-requests/${id}/reject`);
+            fetchRequests();
         } catch (error) {
             console.error(error);
         } finally {

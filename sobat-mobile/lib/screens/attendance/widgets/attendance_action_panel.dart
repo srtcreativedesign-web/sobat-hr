@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../widgets/progress_journey_path.dart';
-import '../../../widgets/slide_action_button.dart';
+import '../../../widgets/molecules/progress_journey_path.dart';
+import '../../../widgets/molecules/slide_action_button.dart';
 import '../../../providers/attendance_provider.dart';
 
 class AttendanceActionPanel extends StatelessWidget {

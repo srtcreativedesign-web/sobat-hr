@@ -51,6 +51,7 @@ export interface Organization {
   code: string;
   type: 'headquarters' | 'branch' | 'division' | 'department';
   parent_id?: number;
+  division_id?: number | null;
   address?: string;
   phone?: string;
   email?: string;
@@ -60,8 +61,24 @@ export interface Organization {
   description?: string;
   parent_organization?: Organization;
   child_organizations?: Organization[];
+  division?: { id: number; name: string; code?: string };
   created_at?: string;
   updated_at?: string;
+}
+
+export interface OutletDevice {
+  id: number;
+  organization_id: number;
+  device_name: string;
+  device_code?: string;
+  pin?: string;
+  device_uid: string | null;
+  activation_token?: string | null;
+  status: 'pending' | 'active' | 'revoked';
+  last_active_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  organization?: Organization;
 }
 
 // Role Types

@@ -2,7 +2,7 @@ name: sobat_hr
 description: "SOBAT HR - Human Resource Management System Mobile App"
 publish_to: 'none'
 
-version: 1.1.4+33
+version: 1.1.5+34
 
 environment:
   sdk: ^3.10.0
@@ -61,6 +61,8 @@ dependencies:
   # Background Sync
   workmanager: ^0.9.0
 
+  flutter_svg: ^2.0.10
+
   # Connectivity
   connectivity_plus: ^7.0.0
   
@@ -71,6 +73,9 @@ dependencies:
   awesome_dialog: ^3.3.0
   mapcn_flutter: ^1.0.2
   curved_navigation_bar: ^1.0.6
+  qr_flutter: ^4.1.0
+  crypto: ^3.0.7
+  wakelock_plus: ^1.5.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -108,6 +113,12 @@ flutter:
     - assets/icons/payslip.png
     - assets/icons/sick.png
     - assets/icons/reimburse.png
+    - assets/icons/anual_leave.svg
+    - assets/icons/exit_permit.svg
+    - assets/icons/history.svg
+    - assets/icons/overtime.svg
+    - assets/icons/reimbursement.svg
+    - assets/icons/sick_leave.svg
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

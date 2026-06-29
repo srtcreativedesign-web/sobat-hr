@@ -6,12 +6,13 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Organization;
 use App\Models\Employee;
+use App\Models\OutletDevice;
 
 class OrganizationController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Organization::with('parentOrganization');
+        $query = Organization::with(['parentOrganization', 'division']);
         
         // Filter by specific division sub-tree
         if ($request->has('division_id')) {
@@ -69,13 +70,27 @@ class OrganizationController extends Controller
             'type' => 'required|string|max:50',
             'line_style' => 'nullable|in:solid,dashed,dotted',
             'parent_id' => 'nullable|exists:organizations,id',
+            'division_id' => 'nullable|exists:divisions,id',
             'address' => 'nullable|string',
             'description' => 'nullable|string',
             'phone' => 'nullable|string',
             'email' => 'nullable|email',
+            'device_code' => 'nullable|string|unique:outlet_devices,device_code',
+            'device_pin' => 'nullable|string|size:6',
         ]);
 
-        $organization = Organization::create($validated);
+        $organization = Organization::create($request->except(['device_code', 'device_pin']));
+
+        // If device_pin is provided, create a device automatically
+        if ($request->filled('device_pin')) {
+            OutletDevice::create([
+                'organization_id' => $organization->id,
+                'device_name' => 'Device ' . $organization->name,
+                'device_code' => $request->device_code ?? null, // Will be auto-generated if null
+                'pin' => $request->device_pin,
+                'status' => 'pending',
+            ]);
+        }
 
         return response()->json($organization, 201);
     }
@@ -118,6 +133,7 @@ class OrganizationController extends Controller
             'type' => 'sometimes|string|max:50',
             'line_style' => 'nullable|in:solid,dashed,dotted',
             'parent_id' => 'nullable|exists:organizations,id',
+            'division_id' => 'nullable|exists:divisions,id',
             'address' => 'nullable|string',
             'description' => 'nullable|string',
             'phone' => 'nullable|string',

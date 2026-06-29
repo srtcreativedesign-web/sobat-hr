@@ -12,7 +12,6 @@ import {
   Plus, 
   Edit3, 
   Trash2, 
-  Loader2,
   Monitor,
   LayoutGrid,
   Filter,
@@ -20,7 +19,12 @@ import {
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import OutletForm from './OutletForm';
+import OutletDevicesManager from './OutletDevicesManager';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Table, TableHeader, TableColumn, TableBody, TableRow, TableCell,
+  Input, Button, Tooltip, Spinner, Progress, Chip
+} from "@nextui-org/react";
 
 const OutletManagement = () => {
     const router = useRouter();
@@ -29,6 +33,7 @@ const OutletManagement = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [showForm, setShowForm] = useState(false);
     const [editingOutlet, setEditingOutlet] = useState<Organization | null>(null);
+    const [managingDevicesForOutlet, setManagingDevicesForOutlet] = useState<Organization | null>(null);
 
     useEffect(() => {
         fetchOutlets();
@@ -112,52 +117,51 @@ const OutletManagement = () => {
     );
 
     const stats = [
-        { label: 'Total Outlets', value: outlets.length, color: 'indigo', icon: Building2 },
-        { label: 'Active Regions', value: [...new Set(outlets.map(o => o.parent_id))].length, color: 'blue', icon: LayoutGrid },
+        { label: 'Total Outlets', value: outlets.length, colorClass: 'bg-white/20 text-white', icon: Building2 },
+        { label: 'Active Regions', value: [...new Set(outlets.map(o => o.division_id))].length, colorClass: 'bg-white/20 text-white', icon: LayoutGrid },
     ];
 
     return (
         <div className="max-w-[1600px] mx-auto space-y-8 select-none">
             {/* Super Premium Header */}
-            <div className="relative overflow-hidden bg-slate-900 rounded-[2.5rem] p-10 shadow-2xl shadow-indigo-500/10">
-                <div className="absolute top-0 right-0 p-12 opacity-10 blur-2xl">
-                    <Building2 className="w-64 h-64 text-indigo-500 rotate-12" />
+            <div className="relative overflow-hidden bg-gradient-to-r from-[#419CC3] to-[#89B4E1] rounded-[2.5rem] p-10 shadow-2xl shadow-[#419CC3]/30">
+                <div className="absolute top-0 right-0 p-12 opacity-20 blur-2xl">
+                    <Building2 className="w-64 h-64 text-white rotate-12" />
                 </div>
                 
                 <div className="relative flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
                     <div className="space-y-3">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em]">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 border border-white/30 text-white text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur-md">
                             <Monitor className="w-3 h-3" />
                             Operational Logistics
                         </div>
                         <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight">
-                            Outlet <span className="text-indigo-400">Hub</span>
+                            Outlet <span className="text-[#e0f2fe]">Hub</span>
                         </h1>
-                        <p className="text-slate-400 text-lg font-medium max-w-xl leading-relaxed">
+                        <p className="text-white/90 text-lg font-medium max-w-xl leading-relaxed">
                             Pusat kendali lokasi strategis dan parameter geofencing untuk sistem kehadiran global.
                         </p>
                     </div>
-                    <motion.button
-                        whileHover={{ scale: 1.05, y: -2 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={handleCreate}
-                        className="group px-8 py-5 bg-indigo-600 text-white font-black rounded-[1.5rem] shadow-xl shadow-indigo-600/30 hover:shadow-indigo-600/40 transition-all flex items-center gap-3 border border-indigo-500/50"
+                    <Button
+                        size="lg"
+                        onPress={handleCreate}
+                        startContent={<Plus className="w-5 h-5" />}
+                        className="bg-white text-[#419CC3] font-black tracking-wide rounded-[1rem] shadow-xl shadow-black/10 px-8 hover:scale-105 transition-transform"
                     >
-                        <Plus className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
                         Tambah Cabang Baru
-                    </motion.button>
+                    </Button>
                 </div>
 
                 {/* Micro Stats Grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mt-10 max-w-3xl">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mt-10 max-w-3xl relative z-10">
                     {stats.map((stat, i) => (
-                        <div key={i} className="flex items-center gap-4 bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10">
-                            <div className={`p-2 rounded-xl bg-${stat.color}-500/10 text-${stat.color}-400`}>
+                        <div key={i} className="flex items-center gap-4 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 hover:bg-white/20 transition-colors">
+                            <div className={`p-3 rounded-xl ${stat.colorClass}`}>
                                 <stat.icon className="w-5 h-5" />
                             </div>
                             <div>
-                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{stat.label}</div>
-                                <div className="text-xl font-black text-white">{stat.value}</div>
+                                <div className="text-[10px] font-black text-white/80 uppercase tracking-widest">{stat.label}</div>
+                                <div className="text-2xl font-black text-white">{stat.value}</div>
                             </div>
                         </div>
                     ))}
@@ -166,159 +170,135 @@ const OutletManagement = () => {
 
             {/* Filter Hub */}
             <div className="flex flex-col md:flex-row items-center gap-4">
-                <div className="relative flex-1 group w-full">
-                    <div className="absolute inset-y-0 left-5 flex items-center text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-                        <Search className="w-5 h-5 transition-transform group-focus-within:scale-110" />
-                    </div>
-                    <input 
-                        type="text" 
-                        placeholder="Search by brand, code, or address details..." 
-                        className="w-full pl-14 pr-6 py-5 bg-white border border-slate-100 rounded-[1.5rem] shadow-sm focus:ring-4 focus:ring-indigo-50 focus:border-indigo-100 transition-all outline-none text-sm font-bold text-slate-700 placeholder:text-slate-300"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </div>
-                <button className="p-5 bg-white border border-slate-100 rounded-[1.5rem] text-slate-400 hover:text-indigo-600 transition-all shadow-sm">
-                    <Filter className="w-6 h-6" />
-                </button>
+                <Input 
+                    isClearable
+                    className="w-full"
+                    placeholder="Search by brand, code, or address details..."
+                    startContent={<Search className="text-slate-400" />}
+                    value={searchQuery}
+                    onClear={() => setSearchQuery("")}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    size="lg"
+                    radius="full"
+                    classNames={{
+                        inputWrapper: "h-14 bg-white hover:bg-white focus-within:!bg-white border border-slate-100 shadow-sm",
+                    }}
+                />
+                <Button 
+                    isIconOnly 
+                    size="lg"
+                    radius="full"
+                    className="bg-white border border-slate-100 text-slate-400 shadow-sm"
+                >
+                    <Filter className="w-5 h-5" />
+                </Button>
             </div>
 
-            {/* Premium Table Container */}
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden min-h-[400px]">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-50/50 border-b border-slate-100">
-                                <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Cabang & Brand</th>
-                                <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Logistic Info</th>
-                                <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Radius</th>
-                                <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">QR Code</th>
-                                <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Settings</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                            {loading ? (
-                                Array(5).fill(0).map((_, i) => (
-                                    <tr key={i} className="animate-pulse">
-                                        <td colSpan={5} className="px-8 py-8">
-                                            <div className="flex gap-4">
-                                                <div className="w-12 h-12 bg-slate-50 rounded-2xl"></div>
-                                                <div className="flex-1 space-y-3">
-                                                    <div className="h-4 bg-slate-50 rounded-lg w-1/3"></div>
-                                                    <div className="h-3 bg-slate-50 rounded-lg w-1/4"></div>
-                                                </div>
+            {/* NextUI Table Container */}
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 p-4">
+                <Table 
+                    aria-label="Outlet Management Table"
+                    removeWrapper
+                    classNames={{
+                        th: "bg-slate-50 text-slate-400 font-black uppercase tracking-wider py-4 text-[11px]",
+                        td: "py-4 border-b border-slate-50/80",
+                    }}
+                >
+                    <TableHeader>
+                        <TableColumn>CABANG & BRAND</TableColumn>
+                        <TableColumn>LOGISTIC INFO</TableColumn>
+                        <TableColumn>RADIUS</TableColumn>
+                        <TableColumn align="center">PERANGKAT MESIN</TableColumn>
+                        <TableColumn align="end">ACTIONS</TableColumn>
+                    </TableHeader>
+                    <TableBody 
+                        items={filteredOutlets} 
+                        isLoading={loading}
+                        loadingContent={<Spinner color="primary" />}
+                        emptyContent={!loading && "No Operational Outlets Found"}
+                    >
+                        {(outlet) => (
+                            <TableRow key={outlet.id} className="hover:bg-slate-50/50 transition-colors">
+                                <TableCell>
+                                    <div className="flex items-center gap-4">
+                                        <div className="relative w-12 h-12 shrink-0 flex items-center justify-center bg-indigo-50 rounded-2xl text-indigo-600">
+                                            <Building2 className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <div className="font-black text-slate-900 text-sm">{outlet.name}</div>
+                                            <Chip size="sm" className="mt-1 bg-slate-100 text-slate-500 font-black uppercase tracking-wider text-[9px] h-5">
+                                                {outlet.code}
+                                            </Chip>
+                                        </div>
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="space-y-1.5">
+                                        {outlet.address && (
+                                            <div className="flex items-start gap-2 text-xs font-bold text-slate-500 max-w-[200px]">
+                                                <MapPin className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
+                                                <span className="line-clamp-2">{outlet.address}</span>
                                             </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : filteredOutlets.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="px-8 py-32 text-center">
-                                        <motion.div 
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            className="space-y-4"
-                                        >
-                                            <div className="w-24 h-24 bg-slate-50 rounded-[2rem] mx-auto flex items-center justify-center text-slate-200">
-                                                <Building2 className="w-12 h-12" />
+                                        )}
+                                        {outlet.phone && (
+                                            <div className="flex items-center gap-2 text-[10px] font-black text-slate-400">
+                                                <Phone className="w-3.5 h-3.5 text-indigo-400" />
+                                                {outlet.phone}
                                             </div>
-                                            <div className="space-y-1">
-                                                <p className="text-slate-900 font-black tracking-tight">No Operational Outlets Found</p>
-                                                <p className="text-slate-400 text-sm font-medium">Try adjusting your search or add a new location configuration.</p>
-                                            </div>
-                                        </motion.div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                <AnimatePresence mode="popLayout">
-                                    {filteredOutlets.map((outlet, index) => (
-                                        <motion.tr 
-                                            key={outlet.id}
-                                            initial={{ opacity: 0, x: -10 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: index * 0.03 }}
-                                            className="group hover:bg-slate-50/80 transition-all duration-300"
-                                        >
-                                            <td className="px-8 py-6">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="relative w-14 h-14 shrink-0">
-                                                        <div className="absolute inset-0 bg-indigo-600/5 rotate-12 group-hover:rotate-0 transition-transform duration-500 rounded-2xl"></div>
-                                                        <div className="relative w-full h-full rounded-2xl bg-white border border-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm group-hover:shadow-md transition-all">
-                                                            <Building2 className="w-6 h-6" />
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-black text-slate-900 tracking-tight text-[15px]">{outlet.name}</div>
-                                                        <div className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md inline-block mt-1 font-black uppercase tracking-wider">{outlet.code}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <div className="space-y-2">
-                                                    {outlet.address && (
-                                                        <div className="flex items-start gap-2.5 text-xs font-bold text-slate-500 max-w-[250px] leading-relaxed">
-                                                            <MapPin className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
-                                                            <span className="line-clamp-2">{outlet.address}</span>
-                                                        </div>
-                                                    )}
-                                                    {outlet.phone && (
-                                                        <div className="flex items-center gap-2.5 text-[11px] font-black text-slate-400">
-                                                            <Phone className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                                                            {outlet.phone}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                                        <motion.div 
-                                                            initial={{ width: 0 }}
-                                                            animate={{ width: `${Math.min(100, (outlet.radius_meters || 100) / 4)}%` }}
-                                                            className="h-full bg-indigo-600 rounded-full" 
-                                                        />
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                        <span className="text-sm font-black text-slate-900">{outlet.radius_meters || 100}</span>
-                                                        <span className="text-[10px] font-black text-slate-400">meters</span>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6 text-center">
-                                                <button 
-                                                    onClick={() => router.push(`/attendance/qr-generator?outlet=${outlet.id}`)}
-                                                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-50 text-cyan-700 text-[11px] font-black hover:bg-cyan-600 hover:text-white transition-all shadow-sm border border-cyan-100"
-                                                    title="Kelola QR Code"
-                                                >
-                                                    <QrCode className="w-4 h-4" />
-                                                    QR
-                                                </button>
-                                            </td>
-                                            <td className="px-8 py-6 text-right">
-                                                <div className="flex items-center justify-end gap-3 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">
-                                                    <button 
-                                                        onClick={() => handleEdit(outlet)}
-                                                        className="p-3 bg-white text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl shadow-sm border border-slate-100 transition-all active:scale-95"
-                                                        title="Edit Parameter"
-                                                    >
-                                                        <Edit3 className="w-4 h-4" />
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => handleDelete(outlet.id)}
-                                                        className="p-3 bg-white text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl shadow-sm border border-slate-100 transition-all active:scale-95"
-                                                        title="Remove Outlet"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </motion.tr>
-                                    ))}
-                                </AnimatePresence>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                                        )}
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex items-center gap-3">
+                                        <Progress 
+                                            size="sm"
+                                            radius="full"
+                                            classNames={{
+                                                base: "max-w-xs w-24",
+                                                indicator: "bg-indigo-500"
+                                            }}
+                                            value={Math.min(100, (outlet.radius_meters || 100) / 4)} 
+                                        />
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-sm font-black text-slate-900">{outlet.radius_meters || 100}</span>
+                                            <span className="text-[9px] font-black text-slate-400 uppercase">m</span>
+                                        </div>
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex items-center justify-center">
+                                        <Tooltip content="Kelola Perangkat Sobat Outlet (Mesin Absensi)" placement="top" classNames={{ content: "font-bold text-xs" }}>
+                                            <Button 
+                                                size="sm" 
+                                                color="secondary" 
+                                                variant="flat"
+                                                startContent={<Monitor className="w-4 h-4" />}
+                                                onPress={() => setManagingDevicesForOutlet(outlet)}
+                                                className="font-bold text-[10px] uppercase tracking-wider px-4"
+                                            >
+                                                Daftar Mesin
+                                            </Button>
+                                        </Tooltip>
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex items-center justify-end gap-2">
+                                        <Tooltip content="Edit Outlet" color="primary">
+                                            <Button isIconOnly variant="light" color="primary" onPress={() => handleEdit(outlet)}>
+                                                <Edit3 className="w-4 h-4" />
+                                            </Button>
+                                        </Tooltip>
+                                        <Tooltip content="Hapus Outlet" color="danger">
+                                            <Button isIconOnly variant="light" color="danger" onPress={() => handleDelete(outlet.id)}>
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </Tooltip>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
             </div>
 
             <OutletForm 
@@ -330,6 +310,13 @@ const OutletManagement = () => {
                 }}
                 initialData={editingOutlet}
             />
+
+            {managingDevicesForOutlet && (
+                <OutletDevicesManager 
+                    outlet={managingDevicesForOutlet} 
+                    onClose={() => setManagingDevicesForOutlet(null)} 
+                />
+            )}
         </div>
     );
 };

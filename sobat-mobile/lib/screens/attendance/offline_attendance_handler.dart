@@ -4,8 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:geolocator_android/geolocator_android.dart';
-import 'package:geolocator_apple/geolocator_apple.dart';
+
 import 'package:dio/dio.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
@@ -342,7 +341,10 @@ class OfflineAttendanceHandler {
                                 primary: AppTheme.colorCyan,
                               ),
                             ),
-                            child: child!,
+                            child: MediaQuery(
+                              data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                              child: child!,
+                            ),
                           ),
                         );
                         if (picked != null) {
@@ -370,7 +372,7 @@ class OfflineAttendanceHandler {
                                   Text('Jam Mulai Shift', style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w500)),
                                   const SizedBox(height: 2),
                                   Text(
-                                    startTime.format(context),
+                                    '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}',
                                     style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.textDark),
                                   ),
                                 ],
@@ -396,7 +398,10 @@ class OfflineAttendanceHandler {
                                 primary: AppTheme.colorCyan,
                               ),
                             ),
-                            child: child!,
+                            child: MediaQuery(
+                              data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                              child: child!,
+                            ),
                           ),
                         );
                         if (picked != null) {
@@ -424,7 +429,7 @@ class OfflineAttendanceHandler {
                                   Text('Jam Selesai Shift', style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w500)),
                                   const SizedBox(height: 2),
                                   Text(
-                                    endTime.format(context),
+                                    '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}',
                                     style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.textDark),
                                   ),
                                 ],
@@ -1090,6 +1095,15 @@ class OfflineAttendanceHandler {
   ///   - JSON format: {"code": "...", "name": "..."}
   ///   - Pipe-delimited: code:XXX|name:YYY
   bool _isValidQrFormat(String qrData) {
+    // Dynamic SobatOutlet QR: device_uid|timestamp|hmac
+    final dynamicParts = qrData.split('|');
+    if (dynamicParts.length == 3) {
+      // Check if timestamp is a valid ISO8601 date
+      if (DateTime.tryParse(dynamicParts[1]) != null) {
+        return true;
+      }
+    }
+
     // Named format: {CODE}-LT{FLOOR}-{RANDOM} (e.g. KINGTECH-T3F-CGK-LT1-A3B2)
     // Must contain -LT followed by a digit
     final namedPattern = RegExp(r'^[A-Za-z0-9\-]+-LT\d+-[A-Za-z0-9]+$');

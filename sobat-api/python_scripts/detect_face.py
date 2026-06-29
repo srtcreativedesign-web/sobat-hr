@@ -68,3 +68,4 @@ if __name__ == "__main__":
 
     result = detect_face(sys.argv[1])
     print(json.dumps(result))
+    

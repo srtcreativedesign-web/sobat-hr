@@ -15,7 +15,49 @@ class QrCodeValidationService
      */
     public function validate(string $qrCodeData): array
     {
-        // Check if QR code exists in database
+        // Check for Dynamic QR Format (contains |)
+        if (str_contains($qrCodeData, '|')) {
+            $parts = explode('|', $qrCodeData);
+            if (count($parts) === 3) {
+                $deviceUid = $parts[0];
+                $outletDevice = \App\Models\OutletDevice::where('device_uid', $deviceUid)
+                    ->with('organization')
+                    ->first();
+                
+                if (!$outletDevice) {
+                    return [
+                        'valid' => false,
+                        'message' => 'Perangkat absensi tidak terdaftar.',
+                        'data' => null,
+                    ];
+                }
+
+                $validationResult = $outletDevice->validateDynamicQr($qrCodeData);
+                if (!$validationResult['valid']) {
+                    return [
+                        'valid' => false,
+                        'message' => $validationResult['message'],
+                        'data' => null,
+                    ];
+                }
+
+                return [
+                    'valid' => true,
+                    'message' => 'Dynamic QR Code valid',
+                    'data' => [
+                        'qr_location_id' => null,
+                        'organization_id' => $outletDevice->organization_id,
+                        'organization_name' => $outletDevice->organization->name ?? null,
+                        'floor_number' => 1,
+                        'location_name' => $outletDevice->device_name,
+                        'qr_code' => $qrCodeData,
+                        'is_dynamic' => true,
+                    ],
+                ];
+            }
+        }
+
+        // Check if QR code exists in database (Static QR)
         $qrLocation = QrCodeLocation::where('qr_code', $qrCodeData)
             ->where('is_active', true)
             ->with('organization')

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../config/theme.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../widgets/attendance_badge.dart';
+import '../../../widgets/organisms/attendance_badge.dart';
 
 class RecentActivitySection extends StatelessWidget {
   final List<Map<String, dynamic>> activities;

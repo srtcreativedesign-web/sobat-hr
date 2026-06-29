@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'submission_detail_screen.dart';
 import '../../config/theme.dart';
 import '../../l10n/app_localizations.dart';
-import '../../widgets/submission_card.dart';
+import '../../widgets/organisms/submission_card.dart';
 import '../../services/request_service.dart';
 
 class SubmissionScreen extends StatefulWidget {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/request_service.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class SubmissionMenuScreen extends StatefulWidget {
   final bool showBackButton;
@@ -224,7 +225,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           const SizedBox(height: 14),
           _buildMenuItem(
             context,
-            assetIcon: 'assets/icons/leave.png',
+            assetIcon: 'assets/icons/anual_leave.svg',
             iconColor: const Color(0xFF419CC3),
             bgColor: const Color(0xFFE6F3FB),
             title: AppLocalizations.of(context)!.leave,
@@ -240,7 +241,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           ),
           _buildMenuItem(
             context,
-            assetIcon: 'assets/icons/sick.png',
+            assetIcon: 'assets/icons/sick_leave.svg',
             iconColor: const Color(0xFFA32D2D),
             bgColor: const Color(0xFFFFE4E4),
             title: AppLocalizations.of(context)!.sick,
@@ -254,7 +255,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           ),
           _buildMenuItem(
             context,
-            assetIcon: 'assets/icons/overtime.png',
+            assetIcon: 'assets/icons/overtime.svg',
             iconColor: const Color(0xFF854F0B),
             bgColor: const Color(0xFFFAEEDA),
             title: AppLocalizations.of(context)!.overtime,
@@ -268,7 +269,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           ),
           _buildMenuItem(
             context,
-            assetIcon: 'assets/icons/leave.png',
+            assetIcon: 'assets/icons/exit_permit.svg',
             iconColor: const Color(0xFF419CC3),
             bgColor: const Color(0xFFE6F3FB),
             title: 'Izin Keluar',
@@ -282,7 +283,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           ),
           _buildMenuItem(
             context,
-            assetIcon: 'assets/icons/history.png',
+            assetIcon: 'assets/icons/history.svg',
             iconColor: const Color(0xFF3B6D11),
             bgColor: const Color(0xFFEAF3DE),
             title: AppLocalizations.of(context)!.history,
@@ -320,7 +321,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           ),
           _buildMenuItem(
             context,
-            assetIcon: 'assets/icons/reimburse.png',
+            assetIcon: 'assets/icons/reimbursement.svg',
             iconColor: const Color(0xFF419CC3),
             bgColor: const Color(0xFFE6F3FB),
             title: AppLocalizations.of(context)!.reimbursement,
@@ -382,13 +383,15 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
               width: 44,
               height: 44,
               child: assetIcon != null
-                  ? Image.asset(
-                      assetIcon,
-                      width: 44,
-                      height: 44,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Icon(Icons.error_outline_rounded, color: iconColor, size: 24),
-                    )
+                  ? assetIcon.endsWith('.svg')
+                      ? SvgPicture.asset(assetIcon, width: 44, height: 44)
+                      : Image.asset(
+                          assetIcon,
+                          width: 44,
+                          height: 44,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Icon(Icons.error_outline_rounded, color: iconColor, size: 24),
+                        )
                   : Container(
                       decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(14)),
                       child: Icon(icon, color: iconColor, size: 20),

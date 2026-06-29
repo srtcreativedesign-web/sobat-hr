@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import 'dart:math';
+
 
 class ProgressJourneyPath extends StatelessWidget {
   final bool isCompleted;

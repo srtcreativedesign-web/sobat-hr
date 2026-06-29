@@ -111,4 +111,42 @@ class StorageService {
     await deleteToken();
     await deleteUser();
   }
+
+  // --- Sobat Outlet Storage ---
+
+  static const String _sobatOutletUidKey = 'sobatOutlet_device_uid';
+  static const String _sobatOutletSecretKey = 'sobatOutlet_secret_key';
+
+  static Future<void> saveSobatOutletData(String deviceUid, String secretKey) async {
+    try {
+      await _secureStorage.write(key: _sobatOutletUidKey, value: deviceUid);
+      await _secureStorage.write(key: _sobatOutletSecretKey, value: secretKey);
+    } catch (e) {
+      await _secureStorage.deleteAll();
+      await _secureStorage.write(key: _sobatOutletUidKey, value: deviceUid);
+      await _secureStorage.write(key: _sobatOutletSecretKey, value: secretKey);
+    }
+  }
+
+  static Future<Map<String, String>?> getSobatOutletData() async {
+    try {
+      final uid = await _secureStorage.read(key: _sobatOutletUidKey);
+      final secret = await _secureStorage.read(key: _sobatOutletSecretKey);
+      if (uid != null && secret != null) {
+        return {'device_uid': uid, 'secret_key': secret};
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<void> clearSobatOutletData() async {
+    try {
+      await _secureStorage.delete(key: _sobatOutletUidKey);
+      await _secureStorage.delete(key: _sobatOutletSecretKey);
+    } catch (e) {
+      // Ignore
+    }
+  }
 }

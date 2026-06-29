@@ -321,7 +321,15 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                     ] else ...[
                       const SizedBox(height: 10),
                       Text(
-                        status == 'spl_approved' ? 'MENUNGGU MULAI' : 'SELESAI',
+                        status == 'spl_approved' 
+                            ? 'MENUNGGU MULAI' 
+                            : (status == 'pending' || status == 'pending_final')
+                                ? 'MENUNGGU PERSETUJUAN'
+                                : status == 'approved'
+                                    ? 'SELESAI'
+                                    : status == 'rejected'
+                                        ? 'DITOLAK'
+                                        : 'SELESAI',
                         style: const TextStyle(
                           color: Colors.black87,
                           fontWeight: FontWeight.bold,
