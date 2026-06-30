@@ -119,6 +119,8 @@ flutter:
     - assets/icons/overtime.svg
     - assets/icons/reimbursement.svg
     - assets/icons/sick_leave.svg
+    - assets/icons/BUSINESS TRIP.svg
+    - assets/icons/THR.svg
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

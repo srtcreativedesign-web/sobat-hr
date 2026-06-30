@@ -26,4 +26,7 @@ export interface Attendance {
     shift_start_time?: string | null;
     shift_end_time?: string | null;
     notes?: string | null;
+    latitude?: number | string | null;
+    longitude?: number | string | null;
+    location_address?: string | null;
 }

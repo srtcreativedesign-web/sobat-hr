@@ -66,6 +66,14 @@ Route::middleware(['throttle:login'])->group(function () {
     Route::post('/sobat-outlet/activate', [App\Http\Controllers\Api\DeviceActivationController::class, 'activate']);
     Route::post('/sobat-outlet/login', [App\Http\Controllers\Api\DeviceActivationController::class, 'login']);
 });
+
+// Sobat Outlet History (requires x-device-uid and x-secret-key headers)
+Route::middleware(['throttle:api'])->group(function () {
+    Route::get('/sobat-outlet/history', [App\Http\Controllers\Api\OutletHistoryController::class, 'history']);
+    Route::get('/sobat-outlet/history/pdf', [App\Http\Controllers\Api\OutletHistoryController::class, 'downloadPdf']);
+    Route::get('/sobat-outlet/history/excel', [App\Http\Controllers\Api\OutletHistoryController::class, 'downloadExcel']);
+});
+
 Route::get('/announcements/active', [App\Http\Controllers\Api\AnnouncementController::class, 'getActive']);
 // Route::post('/auth/forgot-password', [App\Http\Controllers\Api\PasswordResetController::class, 'request']); // Moved above to group
 // Route::get('/divisions', [App\Http\Controllers\Api\DivisionController::class, 'index']); // Moved to protected resources

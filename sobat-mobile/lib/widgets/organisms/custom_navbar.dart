@@ -14,34 +14,50 @@ class CustomNavbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+    // iOS has a large bottom safe area (34px) but only a thin pill, 
+    // so 0 padding looks better because the navbar's 65px height is enough to clear the pill.
+    // Android needs the padding to clear software navigation buttons.
+    final bool isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final bottomPadding = isIOS ? 0.0 : MediaQuery.of(context).padding.bottom;
+
+    return Column(
+      key: ValueKey(bottomPadding),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: CurvedNavigationBar(
-        index: currentIndex > 4 ? 0 : currentIndex,
-        height: 65.0,
-        items: <Widget>[
-          Icon(Icons.dashboard_rounded, size: 28, color: currentIndex == 0 ? Colors.white : AppTheme.textLight),
-          Icon(Icons.folder_open_rounded, size: 28, color: currentIndex == 1 ? Colors.white : AppTheme.textLight),
-          Icon(Icons.add_circle_rounded, size: 40, color: currentIndex == 2 ? Colors.white : AppTheme.colorPrimary),
-          Icon(Icons.school_rounded, size: 28, color: currentIndex == 3 ? Colors.white : AppTheme.textLight),
-          Icon(Icons.person_rounded, size: 28, color: currentIndex == 4 ? Colors.white : AppTheme.textLight),
-        ],
-        color: const Color(0xFFEBF9FF),
-        buttonBackgroundColor: AppTheme.colorPrimary,
-        backgroundColor: Colors.transparent,
-        animationCurve: Curves.easeInOutCubic,
-        animationDuration: const Duration(milliseconds: 550),
-        letIndexChange: (index) => true,
-        onTap: onTap,
-      ),
+          child: CurvedNavigationBar(
+            index: currentIndex > 4 ? 0 : currentIndex,
+            height: 65.0,
+            items: <Widget>[
+              Icon(Icons.dashboard_rounded, size: 28, color: currentIndex == 0 ? Colors.white : AppTheme.textLight),
+              Icon(Icons.folder_open_rounded, size: 28, color: currentIndex == 1 ? Colors.white : AppTheme.textLight),
+              Icon(Icons.add_circle_rounded, size: 40, color: currentIndex == 2 ? Colors.white : AppTheme.colorPrimary),
+              Icon(Icons.school_rounded, size: 28, color: currentIndex == 3 ? Colors.white : AppTheme.textLight),
+              Icon(Icons.person_rounded, size: 28, color: currentIndex == 4 ? Colors.white : AppTheme.textLight),
+            ],
+            color: const Color(0xFFEBF9FF),
+            buttonBackgroundColor: AppTheme.colorPrimary,
+            backgroundColor: Colors.transparent,
+            animationCurve: Curves.easeInOutCubic,
+            animationDuration: const Duration(milliseconds: 550),
+            letIndexChange: (index) => true,
+            onTap: onTap,
+          ),
+        ),
+        Container(
+          height: bottomPadding,
+          color: const Color(0xFFEBF9FF),
+        ),
+      ],
     );
   }
 }

@@ -83,6 +83,16 @@ export default function OperasionalDetailModal({
                         </div>
                     )}
 
+                    {(selectedAttendance.latitude || selectedAttendance.location_address) && (
+                        <div>
+                            <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Validasi GPS / Lokasi</label>
+                            <div className="mt-1 bg-gray-50 p-3 rounded-lg text-sm text-gray-600 space-y-1">
+                                <p><span className="font-medium">Koordinat:</span> {selectedAttendance.latitude || '-'}, {selectedAttendance.longitude || '-'}</p>
+                                <p><span className="font-medium">Alamat:</span> {selectedAttendance.location_address || '-'}</p>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Waktu Check In</label>

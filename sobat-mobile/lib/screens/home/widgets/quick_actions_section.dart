@@ -70,7 +70,7 @@ class QuickActionsSection extends StatelessWidget {
         'onTap': () => Navigator.pushNamed(context, '/submission/create', arguments: 'Lembur'),
       },
       {
-        'icon': 'assets/icons/exit_permit.svg',
+        'icon': 'assets/icons/BUSINESS TRIP.svg',
         'isAsset': true,
         'label': AppLocalizations.of(context)!.businessTrip,
         'subtitle': AppLocalizations.of(context)!.businessTripShort,

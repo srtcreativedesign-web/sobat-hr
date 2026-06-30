@@ -102,7 +102,7 @@ class RecentActivitySection extends StatelessWidget {
                         color = const Color(0xFF854F0B);
                       } else if (lowerType == 'business_trip' || lowerType == 'perjalanan dinas') {
                         typeLabel = AppLocalizations.of(context)!.businessTrip;
-                        assetIcon = 'assets/icons/bussines-trip.png';
+                        assetIcon = 'assets/icons/BUSINESS TRIP.svg';
                         color = const Color(0xFF3B6D11);
                       } else if (lowerType == 'reimbursement') {
                         typeLabel = AppLocalizations.of(context)!.reimbursement;

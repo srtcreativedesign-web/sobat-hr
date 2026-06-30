@@ -44,13 +44,24 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F6F2),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildHeroSection(context),
-            _buildWhiteSheet(context),
-          ],
-        ),
+      body: Column(
+        children: [
+          _buildHeroSection(context),
+          Expanded(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  top: -28,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: _buildWhiteSheet(context),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -212,16 +223,17 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
 
   Widget _buildWhiteSheet(BuildContext context) {
     return Container(
-      transform: Matrix4.translationValues(0, -28, 0),
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+      clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(
         color: Color(0xFFF7F6F2),
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader(AppLocalizations.of(context)!.attendanceAndTime, AppLocalizations.of(context)!.servicesCount('4')),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionHeader(AppLocalizations.of(context)!.attendanceAndTime, AppLocalizations.of(context)!.servicesCount('4')),
           const SizedBox(height: 14),
           _buildMenuItem(
             context,
@@ -296,7 +308,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           const SizedBox(height: 14),
           _buildMenuItem(
             context,
-            assetIcon: 'assets/icons/payslip.png',
+            assetIcon: 'assets/icons/THR.svg',
             iconColor: const Color(0xFF854F0B),
             bgColor: const Color(0xFFFAEEDA),
             title: AppLocalizations.of(context)!.thr,
@@ -307,7 +319,7 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
           ),
           _buildMenuItem(
             context,
-            assetIcon: 'assets/icons/bussines-trip.png',
+            assetIcon: 'assets/icons/BUSINESS TRIP.svg',
             iconColor: const Color(0xFF3B6D11),
             bgColor: const Color(0xFFEAF3DE),
             title: AppLocalizations.of(context)!.businessTrip,
@@ -334,10 +346,12 @@ class _SubmissionMenuScreenState extends State<SubmissionMenuScreen> {
                   arguments: 'Reimbursement',
                 ),
           ),
+          const SizedBox(height: 100), // Extra padding to avoid navbar overlap
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildSectionHeader(String title, String count) {
     return Row(

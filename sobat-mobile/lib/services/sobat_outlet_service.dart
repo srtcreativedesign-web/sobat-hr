@@ -55,4 +55,65 @@ class SobatOutletService extends BaseService {
       throw Exception(e.response?.data['message'] ?? 'Gagal login outlet.');
     }
   }
+
+  /// Get Outlet Attendance History
+  Future<List<dynamic>> getHistory(String deviceUid, String secretKey, {String? date}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (date != null) queryParams['date'] = date;
+
+      final response = await dio.get('/sobat-outlet/history', 
+        queryParameters: queryParams,
+        options: Options(
+          headers: {
+            'x-device-uid': deviceUid,
+            'x-secret-key': secretKey,
+          }
+        )
+      );
+      return response.data['data'] ?? [];
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Gagal mengambil riwayat absensi.');
+    }
+  }
+
+  /// Download PDF History
+  Future<void> downloadPdf(String deviceUid, String secretKey, String savePath, {String? date}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (date != null) queryParams['date'] = date;
+
+      await dio.download('/sobat-outlet/history/pdf', savePath, 
+        queryParameters: queryParams,
+        options: Options(
+          headers: {
+            'x-device-uid': deviceUid,
+            'x-secret-key': secretKey,
+          }
+        )
+      );
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Gagal mengunduh PDF.');
+    }
+  }
+
+  /// Download Excel History
+  Future<void> downloadExcel(String deviceUid, String secretKey, String savePath, {String? date}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (date != null) queryParams['date'] = date;
+
+      await dio.download('/sobat-outlet/history/excel', savePath, 
+        queryParameters: queryParams,
+        options: Options(
+          headers: {
+            'x-device-uid': deviceUid,
+            'x-secret-key': secretKey,
+          }
+        )
+      );
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Gagal mengunduh Excel.');
+    }
+  }
 }
