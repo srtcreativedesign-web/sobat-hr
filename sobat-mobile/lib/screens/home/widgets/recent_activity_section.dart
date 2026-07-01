@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../../config/theme.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../widgets/organisms/attendance_badge.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class RecentActivitySection extends StatelessWidget {
   final List<Map<String, dynamic>> activities;
@@ -90,15 +91,15 @@ class RecentActivitySection extends StatelessWidget {
                       final lowerType = reqType.toString().toLowerCase();
                       if (lowerType == 'leave' || lowerType == 'cuti') {
                         typeLabel = AppLocalizations.of(context)!.leave;
-                        assetIcon = 'assets/icons/leave.png';
+                        assetIcon = 'assets/icons/anual_leave.svg';
                         color = const Color(0xFF534AB7);
                       } else if (lowerType == 'sick_leave' || lowerType == 'sick' || lowerType == 'sakit') {
                         typeLabel = AppLocalizations.of(context)!.sick;
-                        assetIcon = 'assets/icons/sick.png';
+                        assetIcon = 'assets/icons/sick_leave.svg';
                         color = const Color(0xFFA32D2D);
                       } else if (lowerType == 'overtime' || lowerType == 'lembur') {
                         typeLabel = AppLocalizations.of(context)!.overtime;
-                        assetIcon = 'assets/icons/overtime.png';
+                        assetIcon = 'assets/icons/overtime.svg';
                         color = const Color(0xFF854F0B);
                       } else if (lowerType == 'business_trip' || lowerType == 'perjalanan dinas') {
                         typeLabel = AppLocalizations.of(context)!.businessTrip;
@@ -106,8 +107,12 @@ class RecentActivitySection extends StatelessWidget {
                         color = const Color(0xFF3B6D11);
                       } else if (lowerType == 'reimbursement') {
                         typeLabel = AppLocalizations.of(context)!.reimbursement;
-                        assetIcon = 'assets/icons/reimburse.png';
+                        assetIcon = 'assets/icons/reimbursement.svg';
                         color = const Color(0xFF534AB7);
+                      } else if (lowerType == 'exit_permit' || lowerType == 'exit permit') {
+                        typeLabel = 'Exit Permit';
+                        assetIcon = 'assets/icons/exit_permit.svg';
+                        color = const Color(0xFFFBB03B);
                       } else if (lowerType == 'asset' || lowerType == 'pengajuan aset') {
                         typeLabel = AppLocalizations.of(context)!.assetLabel;
                         icon = Icons.description;
@@ -180,7 +185,9 @@ class RecentActivitySection extends StatelessWidget {
                             ? SizedBox(
                                 width: 40,
                                 height: 40,
-                                child: Image.asset(assetIcon, fit: BoxFit.contain),
+                                child: assetIcon.endsWith('.svg')
+                                    ? SvgPicture.asset(assetIcon)
+                                    : Image.asset(assetIcon, fit: BoxFit.contain),
                               )
                             : Icon(icon, color: color, size: 24),
                         const SizedBox(width: 16),

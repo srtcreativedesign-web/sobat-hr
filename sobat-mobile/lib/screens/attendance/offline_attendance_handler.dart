@@ -13,6 +13,7 @@ import 'attendance_qr_scanner_screen.dart';
 import 'offline_selfie_screen.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/attendance_service.dart';
+import 'package:intl/intl.dart';
 
 /// Handler for offline attendance operations
 /// This is called from the main AttendanceScreen when internet is not available
@@ -25,7 +26,7 @@ class OfflineAttendanceHandler {
   OfflineAttendanceHandler({required this.context});
 
   /// Start offline attendance flow
-  Future<void> startOfflineAttendance() async {
+  Future<void> startOfflineAttendance({bool isClockOut = false, int? attendanceId}) async {
     final user = context.read<AuthProvider>().user;
     if (user == null || user.employeeRecordId == null) {
       _showError('Data karyawan tidak valid. Silakan login ulang.');
@@ -35,15 +36,14 @@ class OfflineAttendanceHandler {
     // Determine track type
     final trackType = user.trackType;
 
-    debugPrint('Starting offline attendance for track: $trackType');
+    debugPrint('Starting offline attendance for track: $trackType, isClockOut: $isClockOut');
 
     // Show track-specific instructions (has its own "Mulai Absen" button)
-    _showTrackInstructions(trackType, user.track == 'operational');
+    _showTrackInstructions(trackType, user.track == 'operational', isClockOut, attendanceId);
   }
 
-
   /// Show instructions based on track type
-  void _showTrackInstructions(String trackType, [bool isDirect = false]) {
+  void _showTrackInstructions(String trackType, [bool isDirect = false, bool isClockOut = false, int? attendanceId]) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -167,9 +167,13 @@ class OfflineAttendanceHandler {
                         onPressed: () {
                           Navigator.pop(ctx);
                           if (trackType == 'operational') {
-                            _showShiftPicker();
+                            if (isClockOut) {
+                              _navigateToQrScanner(isClockOut: isClockOut, attendanceId: attendanceId);
+                            } else {
+                              _showShiftPicker();
+                            }
                           } else {
-                            _captureGpsAndSelfie();
+                            _captureGpsAndSelfie(isClockOut: isClockOut, attendanceId: attendanceId);
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -536,7 +540,7 @@ class OfflineAttendanceHandler {
   }
 
   /// Navigate to QR scanner for operational track
-  void _navigateToQrScanner({String? shiftStartTime, String? shiftEndTime}) async {
+  void _navigateToQrScanner({String? shiftStartTime, String? shiftEndTime, bool isClockOut = false, int? attendanceId}) async {
     try {
       _showLoading('Menyiapkan Kamera...');
       await Future.delayed(const Duration(milliseconds: 500));
@@ -589,6 +593,8 @@ class OfflineAttendanceHandler {
           gpsLongitude: lng,
           shiftStartTime: shiftStartTime,
           shiftEndTime: shiftEndTime,
+          isClockOut: isClockOut,
+          attendanceId: attendanceId,
         );
       }
     } catch (e) {
@@ -598,7 +604,7 @@ class OfflineAttendanceHandler {
   }
 
   /// Capture GPS and proceed to selfie for HO track
-  void _captureGpsAndSelfie() async {
+  void _captureGpsAndSelfie({bool isClockOut = false, int? attendanceId}) async {
     try {
       // Show loading while getting GPS
       _showLoading('Mengambil lokasi GPS...');
@@ -625,6 +631,8 @@ class OfflineAttendanceHandler {
         qrCodeData: null,
         gpsLatitude: position.latitude,
         gpsLongitude: position.longitude,
+        isClockOut: isClockOut,
+        attendanceId: attendanceId,
       );
     } catch (e) {
       if (!context.mounted) return;
@@ -642,6 +650,8 @@ class OfflineAttendanceHandler {
     double? gpsLongitude,
     String? shiftStartTime,
     String? shiftEndTime,
+    bool isClockOut = false,
+    int? attendanceId,
   }) async {
     final user = context.read<AuthProvider>().user;
     final trackType = user?.trackType ?? 'head_office';
@@ -674,6 +684,8 @@ class OfflineAttendanceHandler {
           locationAddress: result['address'],
           shiftStartTime: shiftStartTime,
           shiftEndTime: shiftEndTime,
+          isClockOut: isClockOut,
+          attendanceId: attendanceId,
         );
       }
     } catch (e) {
@@ -696,6 +708,8 @@ class OfflineAttendanceHandler {
     String? locationAddress,
     String? shiftStartTime,
     String? shiftEndTime,
+    bool isClockOut = false,
+    int? attendanceId,
   }) async {
     try {
       _showLoading('Memproses absensi...');
@@ -715,19 +729,29 @@ class OfflineAttendanceHandler {
       if (isOnline) {
         try {
           debugPrint('Server reachable, trying direct submission with 30s timeout...');
-          await _attendanceService.checkIn(
-            employeeId: employeeId,
-            latitude: gpsLatitude ?? 0,
-            longitude: gpsLongitude ?? 0,
-            photo: File(photoPath),
-            status: 'present',
-            address: locationAddress,
-            qrCodeData: qrCodeData,
-            attendanceType: 'office',
-            trackType: trackType,
-            shiftStartTime: shiftStartTime,
-            shiftEndTime: shiftEndTime,
-          ).timeout(const Duration(seconds: 30));
+          if (isClockOut && attendanceId != null) {
+            await _attendanceService.checkOut(
+              attendanceId: attendanceId,
+              checkOutTime: DateFormat('HH:mm:ss').format(DateTime.now()),
+              photo: File(photoPath),
+              status: 'present',
+              attendanceType: 'office',
+            ).timeout(const Duration(seconds: 30));
+          } else {
+            await _attendanceService.checkIn(
+              employeeId: employeeId,
+              latitude: gpsLatitude ?? 0,
+              longitude: gpsLongitude ?? 0,
+              photo: File(photoPath),
+              status: 'present',
+              address: locationAddress,
+              qrCodeData: qrCodeData,
+              attendanceType: 'office',
+              trackType: trackType,
+              shiftStartTime: shiftStartTime,
+              shiftEndTime: shiftEndTime,
+            ).timeout(const Duration(seconds: 30));
+          }
 
           if (!context.mounted) return;
           Navigator.pop(context); // Close loading
@@ -820,6 +844,8 @@ class OfflineAttendanceHandler {
     double? gpsLongitude,
     String? shiftStartTime,
     String? shiftEndTime,
+    bool isClockOut = false,
+    int? attendanceId,
   }) async {
     String outletName = 'Outlet Tidak Diketahui';
     String outletCode = '-';
@@ -973,9 +999,9 @@ class OfflineAttendanceHandler {
                 ],
               ),
             ),
+
             const SizedBox(height: 24),
 
-            // Buttons
             Row(
               children: [
                 Expanded(
@@ -983,12 +1009,9 @@ class OfflineAttendanceHandler {
                     onPressed: () => Navigator.pop(ctx),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: BorderSide(color: Colors.grey[300]!),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+                    child: const Text('Batal'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1003,15 +1026,14 @@ class OfflineAttendanceHandler {
                         gpsLongitude: gpsLongitude,
                         shiftStartTime: shiftStartTime,
                         shiftEndTime: shiftEndTime,
+                        isClockOut: isClockOut,
+                        attendanceId: attendanceId,
                       );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.colorCyan,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,

@@ -288,7 +288,13 @@ class _AttendanceCardSectionState extends State<AttendanceCardSection> {
                         ? null
                         : () {
                             if (widget.user!.track == 'operational') {
-                              OfflineAttendanceHandler(context: context).startOfflineAttendance();
+                              bool isClockOut = false;
+                              int? attendanceId;
+                              if (widget.todayAttendance != null && widget.todayAttendance!['check_in'] != null && widget.todayAttendance!['check_out'] == null) {
+                                isClockOut = true;
+                                attendanceId = widget.todayAttendance!['id'];
+                              }
+                              OfflineAttendanceHandler(context: context).startOfflineAttendance(isClockOut: isClockOut, attendanceId: attendanceId);
                             } else {
                               Navigator.pushNamed(context, '/attendance').then((_) => widget.onRefreshAttendance());
                             }

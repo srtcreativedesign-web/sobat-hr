@@ -29,14 +29,6 @@ class QuickActionsSection extends StatelessWidget {
 
     final List<Map<String, dynamic>> menuItems = [
       {
-        'icon': 'assets/icons/payslip.png',
-        'isAsset': true,
-        'label': AppLocalizations.of(context)!.payslip,
-        'subtitle': AppLocalizations.of(context)!.viewPayslipShort,
-        'color': const Color(0xFF667EEA),
-        'onTap': () => Navigator.pushNamed(context, '/payroll'),
-      },
-      {
         'icon': 'assets/icons/anual_leave.svg',
         'isAsset': true,
         'label': isLoadingLeave 
