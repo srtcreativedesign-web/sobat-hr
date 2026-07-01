@@ -42,7 +42,7 @@ export default function Sidebar() {
     const fetchPendingCount = async () => {
       try {
         // Only fetch if user has access (Super Admin & Admin Cabang likely)
-        if (user?.role === 'super_admin' || (typeof user?.role === 'object' && (user.role as Role).name === 'admin_cabang')) {
+        if (user?.role === 'super_admin' || (user?.role && typeof user.role === 'object' && (user.role as Role).name === 'admin_cabang')) {
           const response = await apiClient.get('/attendance/pending-count');
           setPendingAttendanceCount(response.data.count);
         }

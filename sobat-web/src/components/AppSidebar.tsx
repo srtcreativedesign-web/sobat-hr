@@ -67,7 +67,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   useEffect(() => {
     const fetchPendingCount = async () => {
       try {
-        if (user?.role === 'super_admin' || (typeof user?.role === 'object' && (user.role as Role).name === 'admin_cabang')) {
+        if (user?.role === 'super_admin' || (user?.role && typeof user.role === 'object' && (user.role as Role).name === 'admin_cabang')) {
           const token = localStorage.getItem('token');
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/attendance/pending-count`, {
             headers: {
