@@ -19,8 +19,9 @@ class CheckRole
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
 
-        $userRole = $request->user()->role->name ?? null;
-
+        $userRole = strtolower($request->user()->role->name ?? '');
+        $roles = array_map('strtolower', $roles);
+        
         if (!in_array($userRole, $roles)) {
             \Illuminate\Support\Facades\Log::warning('Unauthorized Role Access', [
                 'user_id' => $request->user()->id,
