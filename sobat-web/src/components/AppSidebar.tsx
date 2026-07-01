@@ -200,8 +200,8 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const filteredMenuItems = menuItems.filter(item => {
     if (!item.roles) return true;
     const roleName = typeof user?.role === 'string'
-      ? user.role
-      : (user?.role && typeof user.role === 'object' ? (user.role as Role).name : '');
+      ? user.role.toLowerCase()
+      : (user?.role && typeof user.role === 'object' ? (user.role as Role).name.toLowerCase() : '');
     return item.roles.includes(roleName || '');
   });
 

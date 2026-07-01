@@ -287,8 +287,8 @@ export default function Sidebar() {
   const filteredMenuItems = menuItems.filter(item => {
     if (!item.roles) return true;
     const roleName = typeof user?.role === 'string'
-      ? user.role
-      : (user?.role && typeof user.role === 'object' ? (user.role as Role).name : '');
+      ? user.role.toLowerCase()
+      : (user?.role && typeof user.role === 'object' ? (user.role as Role).name.toLowerCase() : '');
 
     // DEBUG: Check what's happening
     // console.log('Sidebar Debug:', { roleName, item: item.name, allowed: item.roles, hasAccess: item.roles.includes(roleName || '') });
