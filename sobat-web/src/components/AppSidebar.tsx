@@ -158,7 +158,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       name: 'THR (Holiday Bonus)',
       href: '/payroll/thr',
       icon: <Gift />,
-      roles: ['super_admin', 'admin_cabang', 'personalia', 'admin_hr'],
+      roles: ['super_admin', 'admin_cabang', 'admin_hr'],
     },
     {
       name: 'Approvals',
