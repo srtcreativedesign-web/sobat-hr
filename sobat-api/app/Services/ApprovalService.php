@@ -262,6 +262,17 @@ class ApprovalService
             $approvers[] = $requester->supervisor_id;
             Log::info("Added Direct Supervisor: {$requester->supervisor_id}");
             $hasSpv = true;
+        } elseif (!empty($requester->supervisor_name)) {
+            // Fallback: If user/HR only filled the text name but not the ID, try to find them by name
+            $supervisorByName = Employee::where('full_name', 'LIKE', '%' . $requester->supervisor_name . '%')->first();
+            if ($supervisorByName) {
+                $approvers[] = $supervisorByName->id;
+                Log::info("Added Direct Supervisor by Name ({$requester->supervisor_name}): {$supervisorByName->id}");
+                $hasSpv = true;
+                
+                // Auto-heal the database so next time it uses ID
+                $requester->update(['supervisor_id' => $supervisorByName->id]);
+            }
         }
 
         if (!$hasSpv) {
