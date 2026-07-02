@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:intl/intl.dart';
 import '../../config/api_config.dart';
 import '../../config/theme.dart';
@@ -50,9 +51,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         maxWidth: 800,
       );
       if (picked != null) {
-        setState(() {
-          _photoFile = File(picked.path);
-        });
+        final CroppedFile? croppedFile = await ImageCropper().cropImage(
+          sourcePath: picked.path,
+          aspectRatioPresets: [CropAspectRatioPreset.square],
+          compressQuality: 70,
+          maxWidth: 800,
+          maxHeight: 800,
+          uiSettings: [
+            AndroidUiSettings(
+                toolbarTitle: 'Potong Foto',
+                toolbarColor: AppTheme.colorCyan,
+                toolbarWidgetColor: Colors.white,
+                initAspectRatio: CropAspectRatioPreset.square,
+                lockAspectRatio: true),
+            IOSUiSettings(
+              title: 'Potong Foto',
+              aspectRatioLockEnabled: true,
+            ),
+          ],
+        );
+
+        if (croppedFile != null) {
+          setState(() {
+            _photoFile = File(croppedFile.path);
+          });
+        }
       }
     } catch (e) {
       // Silent fail - error already handled by AppErrorHandler

@@ -2,7 +2,7 @@ name: sobat_hr
 description: "SOBAT HR - Human Resource Management System Mobile App"
 publish_to: 'none'
 
-version: 1.1.5+34
+version: 1.1.6+35
 
 environment:
   sdk: ^3.10.0
@@ -76,6 +76,7 @@ dependencies:
   qr_flutter: ^4.1.0
   crypto: ^3.0.7
   wakelock_plus: ^1.5.2
+  image_cropper: ^12.2.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
