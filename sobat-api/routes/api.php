@@ -109,6 +109,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware(['throttle:6,1'])->group(function () {
         Route::post('/security/pin/setup', [App\Http\Controllers\Api\SecurityController::class, 'setupPin']);
         Route::post('/security/pin/verify', [App\Http\Controllers\Api\SecurityController::class, 'verifyPin']);
+        Route::post('/security/password/verify', [App\Http\Controllers\Api\SecurityController::class, 'verifyPassword']);
     });
 
     // Employee routes

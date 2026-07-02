@@ -35,4 +35,20 @@ class SecurityService extends BaseService {
       throw Exception(AppErrorHandler.getErrorMessage(e));
     }
   }
+  Future<bool> verifyPassword(String password) async {
+    try {
+      await dio.post(
+        'security/password/verify',
+        data: {'password': password},
+      );
+      return true;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        return false;
+      }
+      throw Exception(AppErrorHandler.getErrorMessage(e));
+    } catch (e) {
+      throw Exception(AppErrorHandler.getErrorMessage(e));
+    }
+  }
 }

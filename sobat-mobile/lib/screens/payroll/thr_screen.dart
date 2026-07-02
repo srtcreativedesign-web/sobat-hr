@@ -29,7 +29,7 @@ class _ThrScreenState extends State<ThrScreen> {
     _enableScreenshotProtection();
     // Load THRs first to check if they exist
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadThrs();
+      _showPinVerification();
     });
   }
 
@@ -47,18 +47,24 @@ class _ThrScreenState extends State<ThrScreen> {
     final user = Provider.of<AuthProvider>(context, listen: false).user;
     if (user == null) return;
 
-    Navigator.push(
+    Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => PinScreen(
           mode: user.hasPin ? PinMode.verify : PinMode.setup,
           onSuccess: () {
-            Navigator.pop(context); // Close PIN Screen
-            setState(() => _pinVerified = true);
+            Navigator.pop(context, true); // Close PIN Screen
           },
         ),
       ),
-    );
+    ).then((verified) {
+      if (verified == true) {
+        setState(() => _pinVerified = true);
+        _loadThrs(); // Fetch data ONLY after verified
+      } else {
+        Navigator.pop(context); // Kick user out if not verified
+      }
+    });
   }
 
   Future<void> _loadThrs() async {
@@ -69,14 +75,6 @@ class _ThrScreenState extends State<ThrScreen> {
         _thrs = data;
         _isLoading = false;
       });
-      
-      if (!_pinVerified) {
-        if (_thrs.isEmpty) {
-          setState(() => _pinVerified = true);
-        } else {
-          _showPinVerification();
-        }
-      }
     } catch (e) {
       setState(() => _isLoading = false);
       if (!mounted) return;

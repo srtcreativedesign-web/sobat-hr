@@ -280,6 +280,12 @@ class EmployeeController extends Controller
             $data['photo_path'] = $path;
         }
 
+        if ($request->boolean('remove_photo')) {
+            if ($employee->photo_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($employee->photo_path);
+            }
+            $data['photo_path'] = null;
+        }
         $employee->update($data);
 
         // Reload fresh data with relations

@@ -69,4 +69,18 @@ class SecurityController extends Controller
 
         return response()->json(['message' => 'PIN salah.'], 401);
     }
+    public function verifyPassword(Request $request)
+    {
+        $request->validate([
+            'password' => 'required',
+        ]);
+
+        $user = auth()->user();
+
+        if (Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'Password valid.']);
+        }
+
+        return response()->json(['message' => 'Password salah.'], 401);
+    }
 }

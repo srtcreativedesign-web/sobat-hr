@@ -181,6 +181,83 @@ class _PinScreenState extends State<PinScreen> {
     ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
+  void _showForgotPasswordDialog() {
+    final passwordCtrl = TextEditingController();
+    bool isSubmitting = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Lupa PIN?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Masukkan kata sandi (password) akun Anda untuk mengatur ulang PIN keamanan.'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordCtrl,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.lock),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSubmitting ? null : () => Navigator.pop(ctx),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      if (passwordCtrl.text.isEmpty) return;
+                      setState(() => isSubmitting = true);
+                      try {
+                        final success = await _securityService.verifyPassword(passwordCtrl.text);
+                        if (success) {
+                          if (!mounted) return;
+                          Navigator.pop(ctx); // Close dialog
+                          
+                          // Launch new setup pin screen
+                          Navigator.pushReplacement(
+                            this.context,
+                            MaterialPageRoute(
+                              builder: (_) => PinScreen(
+                                mode: PinMode.setup,
+                                onSuccess: widget.onSuccess,
+                              ),
+                            ),
+                          );
+                        } else {
+                          setState(() => isSubmitting = false);
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            const SnackBar(content: Text('Password salah'), backgroundColor: Colors.red),
+                          );
+                        }
+                      } catch (e) {
+                        setState(() => isSubmitting = false);
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+                        );
+                      }
+                    },
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.colorCyan),
+              child: isSubmitting
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Lanjut', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -193,9 +270,12 @@ class _PinScreenState extends State<PinScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+      body: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
           Icon(Icons.lock_outline, size: 48, color: AppTheme.colorEggplant),
           const SizedBox(height: 24),
           Text(
@@ -230,6 +310,8 @@ class _PinScreenState extends State<PinScreen> {
 
           if (_isLoading) const CircularProgressIndicator() else _buildNumpad(),
         ],
+      ),
+      ),
       ),
     );
   }
@@ -288,6 +370,19 @@ class _PinScreenState extends State<PinScreen> {
             _buildBackspaceBtn(),
           ],
         ),
+        if (widget.mode == PinMode.verify) ...[
+          const SizedBox(height: 32),
+          TextButton(
+            onPressed: _showForgotPasswordDialog,
+            child: const Text(
+              'Lupa PIN?',
+              style: TextStyle(
+                color: AppTheme.colorCyan,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }

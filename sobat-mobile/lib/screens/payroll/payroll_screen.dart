@@ -28,7 +28,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
     super.initState();
     _enableScreenshotProtection();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadPayrolls();
+      _showPinVerification();
     });
   }
 
@@ -36,18 +36,24 @@ class _PayrollScreenState extends State<PayrollScreen> {
     final user = Provider.of<AuthProvider>(context, listen: false).user;
     if (user == null) return;
 
-    Navigator.push(
+    Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => PinScreen(
           mode: user.hasPin ? PinMode.verify : PinMode.setup,
           onSuccess: () {
-            Navigator.pop(context); // Close PIN Screen
-            setState(() => _pinVerified = true);
+            Navigator.pop(context, true); // Close PIN Screen
           },
         ),
       ),
-    );
+    ).then((verified) {
+      if (verified == true) {
+        setState(() => _pinVerified = true);
+        _loadPayrolls(); // Fetch data ONLY after verified
+      } else {
+        Navigator.pop(context); // Kick user out if not verified
+      }
+    });
   }
 
   Future<void> _enableScreenshotProtection() async {
@@ -68,14 +74,6 @@ class _PayrollScreenState extends State<PayrollScreen> {
         _payrolls = data;
         _isLoading = false;
       });
-      
-      if (!_pinVerified) {
-        if (_payrolls.isEmpty) {
-          setState(() => _pinVerified = true);
-        } else {
-          _showPinVerification();
-        }
-      }
     } catch (e) {
       setState(() => _isLoading = false);
       if (!mounted) return;

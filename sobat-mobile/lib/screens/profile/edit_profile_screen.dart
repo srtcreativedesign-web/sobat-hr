@@ -42,6 +42,46 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   File? _photoFile;
   String? _photoUrl;
   final ImagePicker _picker = ImagePicker();
+  bool _removePhoto = false;
+
+  void _showPhotoOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: AppTheme.colorCyan),
+                title: const Text('Pilih Foto Baru'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage();
+                },
+              ),
+              if (_photoFile != null || _photoUrl != null)
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text('Hapus Foto Profil', style: TextStyle(color: Colors.red)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      _photoFile = null;
+                      _photoUrl = null;
+                      _removePhoto = true;
+                    });
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   Future<void> _pickImage() async {
     try {
@@ -53,7 +93,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (picked != null) {
         final CroppedFile? croppedFile = await ImageCropper().cropImage(
           sourcePath: picked.path,
-          aspectRatioPresets: [CropAspectRatioPreset.square],
           compressQuality: 70,
           maxWidth: 800,
           maxHeight: 800,
@@ -527,6 +566,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'supervisor_id': _supervisorId,
       };
 
+      if (_removePhoto) {
+        map['remove_photo'] = 1;
+      }
+
       // Only add _method: PUT if we are updating (not creating)
       if (_employeeRecordId != null) {
         map['_method'] = 'PUT';
@@ -600,6 +643,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'supervisor_name': _supervisorNameCtrl.text.trim(),
         'supervisor_position': _supervisorPositionCtrl.text.trim(),
         'supervisor_id': _supervisorId,
+        if (_removePhoto) 'remove_photo': 1,
       };
     }
 
@@ -710,7 +754,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       bottom: 0,
                       right: 0,
                       child: InkWell(
-                        onTap: _pickImage,
+                        onTap: _showPhotoOptions,
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(

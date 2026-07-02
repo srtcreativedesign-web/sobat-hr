@@ -20,12 +20,14 @@ class ContractTemplateController extends Controller
         if (!$template) {
             return response()->json([
                 'content' => '',
+                'settings' => null,
                 'variables' => $this->getAvailableVariables()
             ]);
         }
 
         return response()->json([
             'content' => $template->content,
+            'settings' => $template->settings,
             'variables' => $this->getAvailableVariables()
         ]);
     }
@@ -37,16 +39,21 @@ class ContractTemplateController extends Controller
     {
         $request->validate([
             'content' => 'required|string',
+            'settings' => 'nullable|array',
         ]);
 
         $template = ContractTemplate::where('is_active', true)->first();
 
         if ($template) {
-            $template->update(['content' => $request->content]);
+            $template->update([
+                'content' => $request->content,
+                'settings' => $request->settings ?? null,
+            ]);
         } else {
             $template = ContractTemplate::create([
                 'name' => 'Custom Template',
                 'content' => $request->content,
+                'settings' => $request->settings ?? null,
                 'is_active' => true
             ]);
         }
