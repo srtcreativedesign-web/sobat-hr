@@ -54,7 +54,16 @@ export default function OutletDeviceList({ devices, loading = false, onDelete, o
                     <TableRow key={device.id.toString()}>
                         <TableCell>
                             <div className="font-bold text-slate-800 text-sm">{device.device_name}</div>
-                            <div className="text-[10px] font-medium text-slate-400 mt-0.5">Klik untuk lihat detail (ID & PIN)</div>
+                            {device.hardware_model ? (
+                                <div className="text-[11px] font-medium text-indigo-600 mt-1 flex items-center gap-1">
+                                    <Smartphone className="w-3 h-3" />
+                                    Terikat pada: {device.hardware_model}
+                                </div>
+                            ) : (
+                                <div className="text-[11px] font-medium text-slate-400 mt-1">
+                                    Belum terikat ke perangkat apapun
+                                </div>
+                            )}
                         </TableCell>
                         <TableCell>
                             {device.status === 'active' ? (

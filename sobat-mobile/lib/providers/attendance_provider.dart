@@ -180,13 +180,13 @@ class AttendanceProvider with ChangeNotifier {
         Position position = await Geolocator.getCurrentPosition(
           locationSettings: Platform.isIOS
               ? AppleSettings(
-                  accuracy: LocationAccuracy.high,
+                  accuracy: LocationAccuracy.best,
                   distanceFilter: 10,
                   pauseLocationUpdatesAutomatically: true,
                 )
               : AndroidSettings(
-                  accuracy: LocationAccuracy.high,
-                  forceLocationManager: true,
+                  accuracy: LocationAccuracy.best,
+                  forceLocationManager: false,
                   timeLimit: const Duration(seconds: 10),
                 ),
         ).timeout(const Duration(seconds: 15));

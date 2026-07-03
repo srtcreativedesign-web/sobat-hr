@@ -570,13 +570,13 @@ class OfflineAttendanceHandler {
           final position = await Geolocator.getCurrentPosition(
             locationSettings: Platform.isIOS
                 ? AppleSettings(
-                    accuracy: LocationAccuracy.medium,
-                    timeLimit: const Duration(seconds: 5),
+                    accuracy: LocationAccuracy.best,
+                    timeLimit: const Duration(seconds: 10),
                   )
                 : AndroidSettings(
-                    accuracy: LocationAccuracy.medium,
-                    forceLocationManager: true,
-                    timeLimit: const Duration(seconds: 5),
+                    accuracy: LocationAccuracy.best,
+                    forceLocationManager: false,
+                    timeLimit: const Duration(seconds: 10),
                   ),
           );
           lat = position.latitude;
@@ -612,13 +612,13 @@ class OfflineAttendanceHandler {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: Platform.isIOS
             ? AppleSettings(
-                accuracy: LocationAccuracy.high,
+                accuracy: LocationAccuracy.best,
                 timeLimit: const Duration(seconds: 30),
                 distanceFilter: 10,
               )
             : AndroidSettings(
-                accuracy: LocationAccuracy.high,
-                forceLocationManager: true,
+                accuracy: LocationAccuracy.best,
+                forceLocationManager: false,
                 timeLimit: const Duration(seconds: 30),
               ),
       );

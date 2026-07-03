@@ -194,10 +194,9 @@ export default function ImportPayrollPage() {
       setParsedRows([]);
 
       let importEndpoint = '';
-      if (selectedDivision === 'office') importEndpoint = '/payrolls/ho/import';
-      
-      
-      if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer', 'fnb'].includes(selectedDivision)) {
+      if (selectedDivision === 'office') {
+        importEndpoint = '/payrolls/ho/import/parse-headers';
+      } else if (['minimarket', 'reflexiology', 'wrapping', 'hans', 'cellular', 'money_changer', 'fnb'].includes(selectedDivision)) {
         importEndpoint = ['fnb'].includes(selectedDivision) ? '/payrolls/fnb/import/parse-headers' : '/payrolls/retail/import/parse-headers';
         formData.append('division_type', selectedDivision);
       }
@@ -260,7 +259,12 @@ export default function ImportPayrollPage() {
       }
       
       simFormData.append('division_type', selectedDivision);
-      const simulateEndpoint = ['fnb'].includes(selectedDivision) ? '/payrolls/fnb/import/simulate' : '/payrolls/retail/import/simulate';
+      let simulateEndpoint = '/payrolls/retail/import/simulate';
+      if (selectedDivision === 'office') {
+          simulateEndpoint = '/payrolls/ho/import/simulate';
+      } else if (selectedDivision === 'fnb') {
+          simulateEndpoint = '/payrolls/fnb/import/simulate';
+      }
       const simulateResponse = await apiClient.post(simulateEndpoint, simFormData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });

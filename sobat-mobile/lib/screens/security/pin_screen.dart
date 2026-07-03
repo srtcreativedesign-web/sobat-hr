@@ -28,14 +28,17 @@ class _PinScreenState extends State<PinScreen> {
   final LocalAuthentication auth = LocalAuthentication();
   bool _canCheckBiometrics = false;
 
+  late PinMode _currentMode;
+
   @override
   void initState() {
     super.initState();
-    _message = widget.mode == PinMode.setup
+    _currentMode = widget.mode;
+    _message = _currentMode == PinMode.setup
         ? 'Buat PIN Keamanan Baru'
         : 'Masukkan PIN Keamanan';
 
-    if (widget.mode == PinMode.verify) {
+    if (_currentMode == PinMode.verify) {
       _checkBiometrics();
     }
   }
@@ -99,7 +102,7 @@ class _PinScreenState extends State<PinScreen> {
   }
 
   Future<void> _onSubmit() async {
-    if (widget.mode == PinMode.setup) {
+    if (_currentMode == PinMode.setup) {
       if (!_isConfirming) {
         // Switch to confirmation
         setState(() {
@@ -189,7 +192,7 @@ class _PinScreenState extends State<PinScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
+        builder: (context, setDialogState) => AlertDialog(
           title: const Text('Lupa PIN?'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -217,31 +220,29 @@ class _PinScreenState extends State<PinScreen> {
                   ? null
                   : () async {
                       if (passwordCtrl.text.isEmpty) return;
-                      setState(() => isSubmitting = true);
+                      setDialogState(() => isSubmitting = true);
                       try {
                         final success = await _securityService.verifyPassword(passwordCtrl.text);
                         if (success) {
                           if (!mounted) return;
                           Navigator.pop(ctx); // Close dialog
                           
-                          // Launch new setup pin screen
-                          Navigator.pushReplacement(
-                            this.context,
-                            MaterialPageRoute(
-                              builder: (_) => PinScreen(
-                                mode: PinMode.setup,
-                                onSuccess: widget.onSuccess,
-                              ),
-                            ),
-                          );
+                          // Change mode to setup without pushing new route
+                          this.setState(() {
+                            _currentMode = PinMode.setup;
+                            _pin = '';
+                            _firstPin = '';
+                            _isConfirming = false;
+                            _message = 'Buat PIN Keamanan Baru';
+                          });
                         } else {
-                          setState(() => isSubmitting = false);
+                          setDialogState(() => isSubmitting = false);
                           ScaffoldMessenger.of(ctx).showSnackBar(
                             const SnackBar(content: Text('Password salah'), backgroundColor: Colors.red),
                           );
                         }
                       } catch (e) {
-                        setState(() => isSubmitting = false);
+                        setDialogState(() => isSubmitting = false);
                         ScaffoldMessenger.of(ctx).showSnackBar(
                           SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
                         );

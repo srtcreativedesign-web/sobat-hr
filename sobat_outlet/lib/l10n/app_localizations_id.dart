@@ -1,0 +1,1146 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for Indonesian (`id`).
+class AppLocalizationsId extends AppLocalizations {
+  AppLocalizationsId([String locale = 'id']) : super(locale);
+
+  @override
+  String get loginTitle => 'Selamat Datang';
+
+  @override
+  String get loginSubtitle => 'Masuk untuk melanjutkan';
+
+  @override
+  String get emailLabel => 'Alamat Email';
+
+  @override
+  String get passwordLabel => 'Kata Sandi';
+
+  @override
+  String get loginButton => 'Masuk';
+
+  @override
+  String get emailHint => 'Masukkan email anda';
+
+  @override
+  String get emailRequired => 'Wajib diisi';
+
+  @override
+  String get emailInvalid => 'Email tidak valid';
+
+  @override
+  String get passwordHint => 'Masukkan password anda';
+
+  @override
+  String get passwordRequired => 'Wajib diisi';
+
+  @override
+  String get forgotPassword => 'Lupa Password?';
+
+  @override
+  String get offlineBannerLogin =>
+      'Mode Offline — Login memerlukan koneksi internet';
+
+  @override
+  String get activationAccount => 'Aktivasi Akun';
+
+  @override
+  String get invitationTitle => 'Masukkan Link Undangan';
+
+  @override
+  String get invitationDescription =>
+      'Tempel link yang Anda terima dari Admin untuk mengaktifkan akun Anda.';
+
+  @override
+  String get invitationHint => 'https://...';
+
+  @override
+  String get proceed => 'Lanjutkan';
+
+  @override
+  String get welcomeTitle => 'Mudah Kelola Karirmu';
+
+  @override
+  String get welcomeSubtitle =>
+      'Manajemen HR yang lebih simpel,\nefisien, dan transparan.';
+
+  @override
+  String get startNow => 'Mulai Sekarang';
+
+  @override
+  String get homeTitle => 'Beranda';
+
+  @override
+  String get attendance => 'Absensi';
+
+  @override
+  String get history => 'Riwayat';
+
+  @override
+  String get profile => 'Profil';
+
+  @override
+  String get language => 'Bahasa';
+
+  @override
+  String get logout => 'Keluar';
+
+  @override
+  String get changeLanguage => 'Ganti Bahasa';
+
+  @override
+  String get english => 'Inggris';
+
+  @override
+  String get indonesian => 'Indonesia';
+
+  @override
+  String get error => 'Kesalahan';
+
+  @override
+  String get success => 'Berhasil';
+
+  @override
+  String get myProfile => 'Profil Saya';
+
+  @override
+  String get account => 'Akun';
+
+  @override
+  String get editProfile => 'Edit Profil';
+
+  @override
+  String get editProfileDesc => 'Ubah informasi pribadi Anda';
+
+  @override
+  String get changePassword => 'Ubah Password';
+
+  @override
+  String get changePasswordDesc => 'Perbarui kata sandi Anda';
+
+  @override
+  String get application => 'Aplikasi';
+
+  @override
+  String get theme => 'Tema';
+
+  @override
+  String get lightMode => 'Light Mode';
+
+  @override
+  String get helpSupport => 'Bantuan & Dukungan';
+
+  @override
+  String get helpCenter => 'Pusat Bantuan';
+
+  @override
+  String get helpCenterDesc => 'FAQ dan panduan penggunaan';
+
+  @override
+  String get sendFeedback => 'Kirim Masukan';
+
+  @override
+  String get sendFeedbackDesc => 'Bantu kami untuk lebih baik';
+
+  @override
+  String get privacyPolicy => 'Kebijakan Privasi';
+
+  @override
+  String get privacyPolicyDesc => 'Perlindungan data Anda';
+
+  @override
+  String get termsConditions => 'Syarat & Ketentuan';
+
+  @override
+  String get termsConditionsDesc => 'Ketentuan penggunaan aplikasi';
+
+  @override
+  String get selectLanguage => 'Pilih Bahasa';
+
+  @override
+  String get logoutConfirm => 'Apakah Anda yakin ingin keluar dari aplikasi?';
+
+  @override
+  String get cancel => 'Batal';
+
+  @override
+  String get madeWithLove => 'Developed by Tech Team of SRT';
+
+  @override
+  String get welcome => 'Selamat Datang';
+
+  @override
+  String get goodMorning => 'Selamat Pagi';
+
+  @override
+  String get goodAfternoon => 'Selamat Siang';
+
+  @override
+  String get goodEvening => 'Selamat Malam';
+
+  @override
+  String get greetingHello => 'Halo,';
+
+  @override
+  String get clockInNow => 'Clock In';
+
+  @override
+  String get clockOutNow => 'Clock Out';
+
+  @override
+  String get attendanceDone => 'Selesai';
+
+  @override
+  String get waitingApproval => 'Menunggu Approval';
+
+  @override
+  String get attendanceRejected => 'Ditolak';
+
+  @override
+  String get dayOff => 'Libur';
+
+  @override
+  String get workDuration => 'Durasi Kerja';
+
+  @override
+  String get shiftLabel => 'Shift';
+
+  @override
+  String get leaveBalance => 'Sisa Cuti';
+
+  @override
+  String get salary => 'Gaji';
+
+  @override
+  String get thr => 'THR';
+
+  @override
+  String get faceEnrollTitle => 'Registrasi Wajah Diperlukan';
+
+  @override
+  String get faceEnrollDesc =>
+      'Untuk melakukan absensi, Anda wajib mendaftarkan wajah terlebih dahulu.';
+
+  @override
+  String get faceEnrollLater => 'Nanti';
+
+  @override
+  String get faceEnrollNow => 'Daftarkan Sekarang';
+
+  @override
+  String get attendanceCheckIn => 'Absen Masuk';
+
+  @override
+  String get attendanceCheckOut => 'Absen Keluar';
+
+  @override
+  String attendanceCheckInDesc(Object time) {
+    return 'Anda melakukan absen masuk pada $time';
+  }
+
+  @override
+  String attendanceCheckOutDesc(Object time) {
+    return 'Anda melakukan absen keluar pada $time';
+  }
+
+  @override
+  String get payslipPublished => 'Slip gaji telah diterbitkan.';
+
+  @override
+  String get submitted => 'Diajukan';
+
+  @override
+  String get applyLeave => 'Ajukan cuti';
+
+  @override
+  String get applyOvertime => 'Ajukan lembur';
+
+  @override
+  String get businessTrip => 'Dinas';
+
+  @override
+  String submissionOf(Object type, Object date) {
+    return 'Pengajuan $type tanggal $date';
+  }
+
+  @override
+  String salaryTitle(Object month) {
+    return 'Gaji Bulan $month';
+  }
+
+  @override
+  String leaveTotal(Object quota) {
+    return 'Total jatah: $quota hari';
+  }
+
+  @override
+  String get leaveBalanceLabel => 'Sisa Cuti';
+
+  @override
+  String durationHourMinute(Object hours, Object minutes) {
+    return '${hours}j ${minutes}m';
+  }
+
+  @override
+  String get quickActions => 'Aksi Cepat';
+
+  @override
+  String get leave => 'Cuti';
+
+  @override
+  String get sick => 'Sakit';
+
+  @override
+  String get overtime => 'Lembur';
+
+  @override
+  String get reimbursement => 'Reimburse';
+
+  @override
+  String get checkIn => 'Masuk';
+
+  @override
+  String get checkOut => 'Keluar';
+
+  @override
+  String get viewHistory => 'Lihat Riwayat';
+
+  @override
+  String get todayAttendance => 'Absensi Hari Ini';
+
+  @override
+  String get notCheckedIn => 'Belum Absen';
+
+  @override
+  String get checkedIn => 'Sudah Absen';
+
+  @override
+  String get location => 'Lokasi';
+
+  @override
+  String get time => 'Waktu';
+
+  @override
+  String get status => 'Status';
+
+  @override
+  String get pending => 'Menunggu';
+
+  @override
+  String get approved => 'Disetujui';
+
+  @override
+  String get rejected => 'Ditolak';
+
+  @override
+  String get submit => 'Kirim';
+
+  @override
+  String get save => 'Simpan';
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get delete => 'Hapus';
+
+  @override
+  String get view => 'Lihat';
+
+  @override
+  String get details => 'Detail';
+
+  @override
+  String get date => 'Tanggal';
+
+  @override
+  String get reason => 'Alasan';
+
+  @override
+  String get notes => 'Catatan';
+
+  @override
+  String get attachment => 'Lampiran';
+
+  @override
+  String get uploadPhoto => 'Upload Foto';
+
+  @override
+  String get takePhoto => 'Ambil Foto';
+
+  @override
+  String get selectFromGallery => 'Pilih dari Galeri';
+
+  @override
+  String get submissions => 'Pengajuan';
+
+  @override
+  String get approvals => 'Persetujuan';
+
+  @override
+  String get mySubmissions => 'Pengajuan Saya';
+
+  @override
+  String get pendingApproval => 'Menunggu Persetujuan';
+
+  @override
+  String get approve => 'Setujui';
+
+  @override
+  String get reject => 'Tolak';
+
+  @override
+  String get announcements => 'Pengumuman';
+
+  @override
+  String get notifications => 'Notifikasi';
+
+  @override
+  String get readAll => 'Baca Semua';
+
+  @override
+  String get markAsRead => 'Tandai Sudah Dibaca';
+
+  @override
+  String get payroll => 'Penggajian';
+
+  @override
+  String get payslip => 'Slip Gaji';
+
+  @override
+  String get viewPayslip => 'Lihat Slip Gaji';
+
+  @override
+  String get month => 'Bulan';
+
+  @override
+  String get year => 'Tahun';
+
+  @override
+  String get grossSalary => 'Gaji Kotor';
+
+  @override
+  String get netSalary => 'Gaji Bersih';
+
+  @override
+  String get deductions => 'Potongan';
+
+  @override
+  String get allowances => 'Tunjangan';
+
+  @override
+  String get name => 'Nama';
+
+  @override
+  String get phone => 'Telepon';
+
+  @override
+  String get address => 'Alamat';
+
+  @override
+  String get department => 'Departemen';
+
+  @override
+  String get position => 'Posisi';
+
+  @override
+  String get joinDate => 'Tanggal Bergabung';
+
+  @override
+  String get updateProfile => 'Perbarui Profil';
+
+  @override
+  String get currentPassword => 'Password Saat Ini';
+
+  @override
+  String get newPassword => 'Password Baru';
+
+  @override
+  String get confirmPassword => 'Konfirmasi Password';
+
+  @override
+  String get passwordUpdated => 'Password Berhasil Diperbarui';
+
+  @override
+  String get enrollFace => 'Daftarkan Wajah';
+
+  @override
+  String get faceRecognition => 'Pengenalan Wajah';
+
+  @override
+  String get capturePhoto => 'Ambil Foto';
+
+  @override
+  String get retake => 'Ulangi';
+
+  @override
+  String get confirm => 'Konfirmasi';
+
+  @override
+  String get startDate => 'Tanggal Mulai';
+
+  @override
+  String get endDate => 'Tanggal Selesai';
+
+  @override
+  String get duration => 'Durasi';
+
+  @override
+  String get days => 'Hari';
+
+  @override
+  String get requestDate => 'Tanggal Pengajuan';
+
+  @override
+  String get approvedBy => 'Disetujui Oleh';
+
+  @override
+  String get rejectedBy => 'Ditolak Oleh';
+
+  @override
+  String get viewDetails => 'Lihat Detail';
+
+  @override
+  String get submissionType => 'Jenis Pengajuan';
+
+  @override
+  String get amount => 'Jumlah';
+
+  @override
+  String get description => 'Deskripsi';
+
+  @override
+  String get receipt => 'Bukti';
+
+  @override
+  String get submittedOn => 'Diajukan Pada';
+
+  @override
+  String get noData => 'Tidak Ada Data';
+
+  @override
+  String get loading => 'Memuat...';
+
+  @override
+  String get refresh => 'Refresh';
+
+  @override
+  String get search => 'Cari';
+
+  @override
+  String get filter => 'Filter';
+
+  @override
+  String get all => 'Semua';
+
+  @override
+  String get today => 'Hari Ini';
+
+  @override
+  String get thisWeek => 'Minggu Ini';
+
+  @override
+  String get thisMonth => 'Bulan Ini';
+
+  @override
+  String get close => 'Tutup';
+
+  @override
+  String get back => 'Kembali';
+
+  @override
+  String get next => 'Selanjutnya';
+
+  @override
+  String get finish => 'Selesai';
+
+  @override
+  String get required => 'Wajib';
+
+  @override
+  String get optional => 'Opsional';
+
+  @override
+  String get comingSoon => 'Segera Hadir';
+
+  @override
+  String get featureComingSoon => 'Fitur ini akan segera hadir!';
+
+  @override
+  String get onboardingWelcomeTitle => 'Selamat Datang di SOBAT HR';
+
+  @override
+  String get onboardingWelcomeDesc =>
+      'Smart Operations & Business Administrative Tool untuk manajemen SDM yang modern';
+
+  @override
+  String get onboardingAttendanceTitle => 'Absensi Wajah Digital';
+
+  @override
+  String get onboardingAttendanceDesc =>
+      'Clock in/out dengan pengenalan wajah dan verifikasi GPS - tanpa kartu manual lagi!';
+
+  @override
+  String get onboardingSubmissionsTitle => 'Pengajuan Digital';
+
+  @override
+  String get onboardingSubmissionsDesc =>
+      'Ajukan cuti, sakit, lembur, dan reimbursement dengan tracking persetujuan real-time';
+
+  @override
+  String get onboardingConnectedTitle => 'Slip Gaji Anda, Kapan Saja';
+
+  @override
+  String get onboardingConnectedDesc =>
+      'Akses dan unduh slip gaji bulanan secara instan, plus tetap update dengan pengumuman perusahaan';
+
+  @override
+  String get skip => 'Lewati';
+
+  @override
+  String get getStarted => 'Mulai';
+
+  @override
+  String get feedbackSubject => 'Judul';
+
+  @override
+  String get feedbackCategory => 'Kategori';
+
+  @override
+  String get feedbackDescription => 'Deskripsi';
+
+  @override
+  String get feedbackScreenshot => 'Lampirkan Screenshot (Opsional)';
+
+  @override
+  String get feedbackSubmit => 'Kirim Masukan';
+
+  @override
+  String get feedbackSuccess => 'Masukan berhasil dikirim!';
+
+  @override
+  String get feedbackBug => 'Laporan Bug';
+
+  @override
+  String get feedbackFeature => 'Permintaan Fitur';
+
+  @override
+  String get feedbackComplaint => 'Keluhan';
+
+  @override
+  String get feedbackQuestion => 'Pertanyaan';
+
+  @override
+  String get feedbackOther => 'Lainnya';
+
+  @override
+  String get rememberMe => 'Ingat Saya';
+
+  @override
+  String get errorLoadData => 'Gagal memuat data:';
+
+  @override
+  String get errorDownload => 'Gagal download:';
+
+  @override
+  String get slipDownloaded => 'Slip gaji berhasil diunduh dan dibuka';
+
+  @override
+  String get slipThrDownloaded => 'Slip THR berhasil diunduh';
+
+  @override
+  String get signFirst => 'Mohon tanda tangan terlebih dahulu';
+
+  @override
+  String get downloadPdf => 'Download PDF';
+
+  @override
+  String get downloadPayslip => 'Download Slip Gaji';
+
+  @override
+  String get scanQrCodeTitle => 'Scan QR Code Absensi';
+
+  @override
+  String get permissionBlocked => 'Izin Akses Terblokir';
+
+  @override
+  String get workHourConfirmation => 'Konfirmasi Jam Kerja';
+
+  @override
+  String get noImLate => 'Tidak, Saya Terlambat';
+
+  @override
+  String get yesImShifting => 'Ya, Saya Shifting';
+
+  @override
+  String get startAttendance => 'Mulai Absen';
+
+  @override
+  String get shiftStartTime => 'Jam Mulai Shift';
+
+  @override
+  String get shiftEndTime => 'Jam Selesai Shift';
+
+  @override
+  String get continueScanQr => 'Lanjut Scan QR';
+
+  @override
+  String get confirmApproval => 'Konfirmasi Persetujuan';
+
+  @override
+  String get yesApprove => 'Ya, Setujui';
+
+  @override
+  String get approvalSuccess => 'Pengajuan berhasil disetujui';
+
+  @override
+  String get confirmRejection => 'Konfirmasi Penolakan';
+
+  @override
+  String get provideRejectionReason => 'Berikan alasan penolakan:';
+
+  @override
+  String get rejectionSuccess => 'Pengajuan ditolak';
+
+  @override
+  String get tryAgain => 'Coba Lagi';
+
+  @override
+  String get backToLogin => 'Kembali ke Login';
+
+  @override
+  String get resendOtp => 'Kirim Ulang OTP';
+
+  @override
+  String get selfiePhoto => 'Foto Selfie';
+
+  @override
+  String get holdPhoneSteady => 'Pegang HP dengan stabil (gambar buram)';
+
+  @override
+  String get validUntilDec => 'Valid s/d Des';
+
+  @override
+  String get notEligible => 'Belum Eligible';
+
+  @override
+  String get leaveType => 'Cuti';
+
+  @override
+  String get latestInformation => 'Informasi Terbaru';
+
+  @override
+  String get seeAll => 'Lihat Semua';
+
+  @override
+  String get noLatestAnnouncement => 'Belum ada pengumuman terbaru';
+
+  @override
+  String get newsLabel => 'Berita';
+
+  @override
+  String get importantLabel => 'Penting';
+
+  @override
+  String get announcementLabel => 'Pengumuman';
+
+  @override
+  String get readMore => 'Baca selengkapnya';
+
+  @override
+  String get viewPayslipShort => 'Lihat slip';
+
+  @override
+  String get businessTripShort => 'Perjalanan';
+
+  @override
+  String get approvalLabel => 'Approval';
+
+  @override
+  String get approvalSubtitle => 'Persetujuan';
+
+  @override
+  String get quickMenu => 'Menu Cepat';
+
+  @override
+  String get allLabel => 'Semua';
+
+  @override
+  String get recentActivity => 'Aktivitas Terkini';
+
+  @override
+  String get noRecentActivity => 'Belum ada aktivitas terkini.';
+
+  @override
+  String get doneLabel => 'Selesai';
+
+  @override
+  String contractExpiringIn(Object days, Object date) {
+    return 'Kontrak kerja Anda akan berakhir dalam $days hari ($date). Silahkan hubungi HRD.';
+  }
+
+  @override
+  String contractExpiringUrgent(Object days) {
+    return 'URGENT: Kontrak berakhir dalam $days hari!';
+  }
+
+  @override
+  String contractExpired(Object date) {
+    return 'Kontrak kerja Anda telah berakhir pada $date. Silahkan hubungi HRD.';
+  }
+
+  @override
+  String get contractExpiredToday => 'KONTRAK KERJA ANDA BERAKHIR HARI INI!';
+
+  @override
+  String pendingCountText(Object count) {
+    return '$count pending';
+  }
+
+  @override
+  String get lastPayslip => 'SLIP GAJI TERAKHIR';
+
+  @override
+  String get dataNotAvailable => 'Belum ada data';
+
+  @override
+  String get dataAvailable => 'Data tersedia';
+
+  @override
+  String get basicSalary => 'Gaji pokok';
+
+  @override
+  String get allowance => 'Tunjangan';
+
+  @override
+  String get totalAmount => 'Total';
+
+  @override
+  String get statusProcess => 'Proses';
+
+  @override
+  String get statusNotAvailable => 'Belum ada';
+
+  @override
+  String get updatedAt => 'Diperbarui';
+
+  @override
+  String get thrBonusTitle => 'TUNJANGAN HARI RAYA';
+
+  @override
+  String get yearPrefix => 'Tahun';
+
+  @override
+  String get checkThrSlip => 'Cek Slip THR';
+
+  @override
+  String get tapToViewHistory => '*Ketuk untuk melihat riwayat';
+
+  @override
+  String get annualBonus => 'Bonus Tahunan';
+
+  @override
+  String get available => 'Tersedia';
+
+  @override
+  String get selfService => 'LAYANAN MANDIRI';
+
+  @override
+  String get manageWorkNeeds => 'Kelola kebutuhan\nkerja kamu';
+
+  @override
+  String servicesCount(Object count) {
+    return '$count layanan';
+  }
+
+  @override
+  String get attendanceAndTime => 'Kehadiran & Waktu';
+
+  @override
+  String get alignment => 'Alignment';
+
+  @override
+  String get administration => 'Administrasi';
+
+  @override
+  String get leaveMenuDesc => 'Ajukan cuti tahunan atau izin';
+
+  @override
+  String get sickMenuDesc => 'Cuti sakit';
+
+  @override
+  String get overtimeMenuDesc => 'Ajukan lembur';
+
+  @override
+  String get historyMenuDesc => 'Riwayat pengajuan';
+
+  @override
+  String get thrMenuDesc => 'Tunjangan Hari Raya';
+
+  @override
+  String get businessTripMenuDesc => 'Perjalanan Dinas';
+
+  @override
+  String get reimbursementMenuDesc => 'Klaim pengeluaran';
+
+  @override
+  String daysCount(Object count) {
+    return '$count hari';
+  }
+
+  @override
+  String get newLabel => 'Baru';
+
+  @override
+  String noSubmissionWithStatus(Object status) {
+    return 'Tidak ada pengajuan $status';
+  }
+
+  @override
+  String get submissionTypeLabel => 'Jenis Pengajuan';
+
+  @override
+  String get permitLabel => 'Izin';
+
+  @override
+  String get resignationLabel => 'Resign';
+
+  @override
+  String get activeSubmissionTitle => 'Pengajuan';
+
+  @override
+  String get dateRangeSeparator => 's/d';
+
+  @override
+  String get photoSourceTitle => 'Pilih Sumber Foto';
+
+  @override
+  String get camera => 'Kamera';
+
+  @override
+  String get gallery => 'Galeri';
+
+  @override
+  String get document => 'Dokumen';
+
+  @override
+  String get signatureDigital => 'Tanda Tangan Digital';
+
+  @override
+  String get uploadProofLabel => 'Upload Bukti / Struk';
+
+  @override
+  String get doctorCertificate => 'Surat Dokter';
+
+  @override
+  String get photoDoctorCertificate => 'Foto Surat Dokter';
+
+  @override
+  String get photoItemOptional => 'Foto Barang (Opsional)';
+
+  @override
+  String get pleaseUploadDoctorCert => 'Harap upload surat dokter.';
+
+  @override
+  String get pleaseSignSubmission =>
+      'Harap tanda tangani pengajuan sebelum mengirim.';
+
+  @override
+  String get submissionSuccess => 'Pengajuan berhasil dikirim';
+
+  @override
+  String submissionFail(Object error) {
+    return 'Gagal mengirim pengajuan: $error';
+  }
+
+  @override
+  String get selectDate => 'Pilih Tanggal';
+
+  @override
+  String get overtimeHours => 'Jam Lembur';
+
+  @override
+  String get startOvertime => 'Mulai';
+
+  @override
+  String get endOvertime => 'Selesai';
+
+  @override
+  String get requiredField => 'Wajib diisi';
+
+  @override
+  String get brandOrMake => 'Barang / Merek';
+
+  @override
+  String get specification => 'Spesifikasi';
+
+  @override
+  String get urgency => 'Urgensi';
+
+  @override
+  String get urgentCheckbox => 'Urgent / Mendesak';
+
+  @override
+  String get urgentDesc => 'Centang jika barang dibutuhkan segera';
+
+  @override
+  String get ineligibilityTitle => 'Belum Eligible';
+
+  @override
+  String get ineligibilityReasonDefault => 'Anda tidak memenuhi syarat cuti.';
+
+  @override
+  String get ineligibilityCantSubmit => 'Anda tidak dapat mengajukan cuti.';
+
+  @override
+  String get iUnderstand => 'Saya Mengerti';
+
+  @override
+  String get writeSubmissionDetail => 'Tuliskan detail pengajuan di sini...';
+
+  @override
+  String photoUploadError(Object error) {
+    return 'Gagal mengambil gambar: $error';
+  }
+
+  @override
+  String fileUploadError(Object error) {
+    return 'Gagal mengambil file: $error';
+  }
+
+  @override
+  String get resignationType => 'Tipe Resign';
+
+  @override
+  String get lastWorkingDate => 'Tanggal Terakhir Bekerja';
+
+  @override
+  String get nominalLabel => 'Nominal (Rp)';
+
+  @override
+  String get downloadProofButton => 'Download Bukti Approval';
+
+  @override
+  String get downloading => 'Mengunduh...';
+
+  @override
+  String downloadFailed(Object error) {
+    return 'Gagal mengunduh: $error';
+  }
+
+  @override
+  String get approvalHistory => 'Riwayat Persetujuan';
+
+  @override
+  String get urgencyUrgent => 'Mendesak (Urgent)';
+
+  @override
+  String get urgencyNormal => 'Normal';
+
+  @override
+  String get resignationDefaultType => 'Normal One Month Notice';
+
+  @override
+  String get cutiDesc => 'Ajukan cuti tahunan atau cuti khusus.';
+
+  @override
+  String get sakitDesc => 'Upload surat dokter untuk cuti sakit.';
+
+  @override
+  String get reimburseDesc => 'Klaim biaya medis, kacamata, dll.';
+
+  @override
+  String get lemburDesc => 'Catat jam lembur untuk persetujuan.';
+
+  @override
+  String get dinasDesc => 'Pengajuan perjalanan bisnis luar kota.';
+
+  @override
+  String get asetDesc => 'Ajukan pengadaan barang atau aset kantor.';
+
+  @override
+  String get resignDesc => 'Pengajuan pengunduran diri.';
+
+  @override
+  String sisaCutiLabel(Object balance) {
+    return 'Sisa Cuti: $balance Hari';
+  }
+
+  @override
+  String get reimbursementLimit => 'Limit: Rp 5.000.000';
+
+  @override
+  String get reimbursementTitleHint =>
+      'Contoh: Kacamata, Makan Siang Client, dll';
+
+  @override
+  String get brandHint => 'Contoh: Macbook, Dell, Logitech';
+
+  @override
+  String get specHint => 'Jelaskan spesifikasi yang dibutuhkan...';
+
+  @override
+  String get purposeLabel => 'Kebutuhan (Untuk Apa)';
+
+  @override
+  String get assetLabel => 'Pengajuan Aset';
+
+  @override
+  String get submissionDetailTitle => 'Detail Pengajuan';
+
+  @override
+  String get onTimeLabel => 'Tepat Waktu';
+
+  @override
+  String get earlyLeaveLabel => 'Keluar Lebih Awal';
+
+  @override
+  String get lateLabel => 'Terlambat';
+
+  @override
+  String get absentLabel => 'Tidak Hadir';
+
+  @override
+  String get inProgressLabel => 'Sedang Berlangsung';
+
+  @override
+  String get markAllAsRead => 'Tandai Semua Dibaca';
+
+  @override
+  String get noNotifications => 'Belum ada notifikasi';
+
+  @override
+  String get financeTitle => 'Keuangan';
+
+  @override
+  String get featureUnderDevelopmentPart1 => 'Fitur Masih Dalam ';
+
+  @override
+  String get featureUnderDevelopmentPart2 => 'Pengembangan';
+
+  @override
+  String get featureUnderDevelopmentDesc =>
+      'Kami sedang merancang fitur masa depan untuk meningkatkan produktivitas Anda. Segera hadir di genggaman Anda.';
+
+  @override
+  String get systemReadiness => 'KESIAPAN SISTEM';
+
+  @override
+  String get createSubmission => 'Buat Pengajuan';
+
+  @override
+  String get overtimeHistoryTitle => 'Riwayat Lembur';
+
+  @override
+  String get selectPeriod => 'Pilih Periode';
+
+  @override
+  String get clearPeriod => 'Hapus Periode';
+
+  @override
+  String get downloadPdfSummary => 'Unduh Rekap PDF';
+}

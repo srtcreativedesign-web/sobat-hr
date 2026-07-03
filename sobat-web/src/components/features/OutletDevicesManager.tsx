@@ -63,11 +63,11 @@ export default function OutletDevicesManager({ outlet, onClose }: Props) {
 
   const handleResetToken = async (id: number) => {
       const result = await Swal.fire({
-          title: 'Reset Activation Token?',
-          text: 'Token lama akan kedaluwarsa. Perangkat yang sudah dipairing harus dipairing ulang.',
+          title: 'Unbind / Reset Perangkat?',
+          text: 'Data perangkat yang terikat saat ini akan dihapus. Perangkat baru harus login ulang menggunakan ID dan PIN.',
           icon: 'question',
           showCancelButton: true,
-          confirmButtonText: 'Reset',
+          confirmButtonText: 'Reset & Unbind',
       });
 
       if (result.isConfirmed) {

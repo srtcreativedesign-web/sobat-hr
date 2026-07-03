@@ -12,6 +12,7 @@ class OutletDevice extends Model
         'device_code',
         'pin',
         'device_uid',
+        'hardware_model',
         'activation_token',
         'secret_key',
         'status',
@@ -47,6 +48,7 @@ class OutletDevice extends Model
         $this->activation_token = \Illuminate\Support\Str::random(32);
         $this->status = 'pending';
         $this->device_uid = null;
+        $this->hardware_model = null;
         $this->save();
         
         return $this->activation_token;

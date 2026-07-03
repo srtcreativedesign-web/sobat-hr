@@ -1,0 +1,35 @@
+name: sobat_outlet
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.10.7
+
+dependencies:
+  awesome_dialog: ^3.3.0
+  connectivity_plus: ^7.2.0
+  crypto: ^3.0.7
+  device_info_plus: ^13.2.0
+  dio: ^5.10.0
+  flutter:
+    sdk: flutter
+  flutter_secure_storage: ^10.3.1
+  flutter_localizations:
+    sdk: flutter
+  google_fonts: ^8.1.0
+  intl: ^0.20.2
+  open_file: ^3.5.11
+  path_provider: ^2.1.6
+  provider: ^6.1.5+1
+  qr_flutter: ^4.1.0
+  shared_preferences: ^2.5.5
+  wakelock_plus: ^1.6.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

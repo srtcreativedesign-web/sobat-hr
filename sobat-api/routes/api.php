@@ -250,6 +250,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('payrolls/ho')->group(function () {
         Route::get('/', [App\Http\Controllers\Api\PayrollHoController::class, 'index']);
         Route::post('/import', [App\Http\Controllers\Api\PayrollHoController::class, 'import']);
+        Route::post('/import/parse-headers', [App\Http\Controllers\Api\PayrollHoController::class, 'parseHeaders']);
+        Route::post('/import/simulate', [App\Http\Controllers\Api\PayrollHoController::class, 'simulateImport']);
         Route::post('/import/save', [App\Http\Controllers\Api\PayrollHoController::class, 'saveImport']);
         Route::get('/{id}', [App\Http\Controllers\Api\PayrollHoController::class, 'show']);
         Route::patch('/{id}/status', [App\Http\Controllers\Api\PayrollHoController::class, 'updateStatus']);

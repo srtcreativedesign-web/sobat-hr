@@ -156,414 +156,292 @@ class PayrollHoController extends Controller implements HasMiddleware
         return $formatted;
     }
 
-    /**
-     * Import HO payroll
-     */
-    public function import(Request $request)
+        public function parseHeaders(Request $request)
     {
         $request->validate(['file' => 'required|file|mimes:xlsx,xls']);
-        $file = $request->file('file');
+        
+        // Exact column mapping based on "ho utk payslip.xlsx"
+        $headers = [
+            'A' => 'No',
+            'B' => 'NIK',
+            'C' => 'NAMA',
+            'D' => 'Nomor Rekening',
+            'E' => 'GP (Gaji Pokok)',
+            'F' => 'JML HR MASUK',
+            'G' => 'IJIN',
+            'H' => 'Transport @hari',
+            'I' => 'Transport (Total)',
+            'J' => 'Uang Kehadiran @hari',
+            'K' => 'Uang Kehadiran (Total)',
+            'L' => 'JAM LBR',
+            'M' => 'Lembur @ jam',
+            'N' => 'Uang Lembur (Total)',
+            'O' => 'Gaji (Subtotal)',
+            'P' => 'Tunjangan Jabatan',
+            'Q' => 'Tunjangan Kesehatan',
+            'R' => 'Insentif Luar Kota',
+            'S' => 'Insentif Kehadiran',
+            'T' => 'Adj gaji',
+            'U' => 'Piket dan UM sabtu',
+            'V' => 'Gaji diterima (Bruto)',
+            'W' => 'Kasbon',
+            'X' => 'BPJS',
+            'Y' => 'Admin bank dan ewa',
+            'Z' => 'Total (Netto)'
+        ];
+        
+        $default_mapping = [
+            'employee_name' => 'C',
+            'account_number' => 'D',
+            'basic_salary' => 'E',
+            'days_present' => 'F',
+            'days_permission' => 'G',
+            'transport_rate' => 'H',
+            'transport_allowance' => 'I',
+            'attendance_rate' => 'J',
+            'attendance_allowance' => 'K',
+            'overtime_hours' => 'L',
+            'overtime_rate' => 'M',
+            'overtime_amount' => 'N',
+            'position_allowance' => 'P',
+            'health_allowance' => 'Q',
+            'insentif_luar_kota' => 'R',
+            'insentif_kehadiran' => 'S',
+            'adjustment' => 'T',
+            'piket_um_sabtu' => 'U',
+            'deduction_kasbon' => 'W',
+            'deduction_bpjs' => 'X',
+            'deduction_admin' => 'Y',
+            'gross_salary' => 'V',
+            'net_salary' => 'Z'
+        ];
+        
+        return response()->json([
+            'requiresMapping' => true,
+            'headers' => $headers,
+            'default_mapping' => $default_mapping,
+            'headerRowIndex' => 7,
+            'file_name' => $request->file('file')->getClientOriginalName()
+        ]);
+    }
 
+    public function simulateImport(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls',
+            'mapping' => 'required|string',
+            'headerRowIndex' => 'required|integer',
+        ]);
+        
+        $mapping = json_decode($request->mapping, true);
+        $file = $request->file('file');
+        
         try {
             $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
             $reader->setReadDataOnly(true);
             $spreadsheet = $reader->load($file->getRealPath());
             $sheet = $spreadsheet->getSheet(0);
+            
+            $dataRows = [];
             $highestRow = $sheet->getHighestRow();
-            $highestColumn = $sheet->getHighestColumn();
-
-            // Robust Value Getter
-            $getCellValue = function($col, $row) use ($sheet) {
-                $cell = $sheet->getCell($col . $row);
-                $value = $cell->getCalculatedValue();
-                if (is_numeric($value)) return (float) $value;
-                if (is_string($value)) {
-                    $clean = preg_replace('/[^0-9\.\,\-]/', '', $value);
-                    $clean = str_replace(',', '.', $clean); // Force dot decimal
-                    // Handle trailing negative sign if any, or parentheses
-                    if (strpos($value, '(') !== false && strpos($value, ')') !== false) {
-                        return -(float) $clean;
-                    }
-                    return (float) $clean;
+            
+            $startRow = 8;
+            for ($r = $startRow; $r <= $highestRow; $r++) {
+                $nameCol = $mapping['employee_name'] ?? 'C';
+                $nameVal = trim((string)$sheet->getCell($nameCol . $r)->getCalculatedValue());
+                if (!empty($nameVal) && !is_numeric($nameVal) && strtolower($nameVal) !== 'nama') {
+                    $startRow = $r;
+                    break;
                 }
+            }
+            
+            $getVal = function($col, $row) use ($sheet) {
+                if (!$col) return 0;
+                $val = $sheet->getCell($col . $row)->getCalculatedValue();
+                if (is_numeric($val)) return (float)$val;
                 return 0;
             };
 
-            // Detect Header
-            $headerRowIndex = -1;
-            $maxSearchRow = min(20, $highestRow);
-            
-            for ($row = 1; $row <= $maxSearchRow; $row++) {
-                $rowIterator = $sheet->getRowIterator($row, $row)->current();
-                $cellIterator = $rowIterator->getCellIterator();
-                $cellIterator->setIterateOnlyExistingCells(false);
-                
-                foreach ($cellIterator as $cell) {
-                    $val = $cell->getValue();
-                    if ($val instanceof \PhpOffice\PhpSpreadsheet\RichText\RichText) {
-                        $val = $val->getPlainText();
-                    }
-                    $val = trim((string)$val);
-
-                    if ($val) {
-                        $normalized = strtolower($val);
-                        if (str_contains($normalized, 'nama karyawan') || 
-                            str_contains($normalized, 'employee name') || 
-                            str_contains($normalized, 'nama pegawai') ||
-                            ($normalized === 'nama')) { // Strict check for short 'nama'
-                            
-                            $headerRowIndex = $row;
-                            Log::info("Header found at Row $row, Col " . $cell->getColumn() . " ($val)");
-                            break 2;
-                        }
-                    }
-                }
-                
-                // Debug log first column of row
-                 Log::info("Scanning Row $row: " . $sheet->getCell('A'.$row)->getValue() . " | " . $sheet->getCell('B'.$row)->getValue());
-            }
-
-            if ($headerRowIndex === -1) {
-                return response()->json(['message' => 'Format Excel tidak dikenali. Kolom "Nama Karyawan" tidak ditemukan.'], 422);
-            }
-
-            // Map Headers dynamically
-            // -------------------------------------------------------------------------
-            // ROBUST HEADER MAPPING (Combined Keys: Parent + Subheader)
-            // -------------------------------------------------------------------------
-            $finalMapping = [];
-            $normalize = function($str) {
-                return strtolower(trim(preg_replace('/\s+/', ' ', $str)));
-            };
-            
-            // Row 1 (Parents)
-            $parentMap = [];
-            $iter1 = $sheet->getRowIterator($headerRowIndex)->current()->getCellIterator();
-            $iter1->setIterateOnlyExistingCells(true);
-            foreach ($iter1 as $cell) {
-                $val = trim((string)$cell->getValue());
-                if ($val) {
-                    $col = $cell->getColumn();
-                    $parentMap[$col] = $val;
-                    $finalMapping[$normalize($val)] = $col; // Add parent key
-                }
-            }
-
-            // Detect Merged Parent Headers (e.g., "Uang Lembur" spanning multiple cols)
-            foreach ($sheet->getMergeCells() as $range) {
-                $cells = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::extractAllCellReferencesInRange($range);
-                $topLeft = $cells[0]; 
-                $val = $sheet->getCell($topLeft)->getValue();
-                
-                if ($val) {
-                     foreach ($cells as $cellRef) {
-                         // Check if cell is in Header Row
-                         if (strpos($cellRef, (string)$headerRowIndex) !== false) {
-                             $col = preg_replace('/[0-9]+/', '', $cellRef);
-                             // Only assign parent if not already explicitly set by a value in that cell
-                             if (!isset($parentMap[$col])) {
-                                 $parentMap[$col] = $val;
-                             }
-                         }
-                     }
-                }
-            }
-            
-            // Row 2 (Subheaders) - COMBINE with Parent
-            $subHeaderRow = $headerRowIndex + 1;
-            if ($subHeaderRow <= $highestRow) {
-                $iter2 = $sheet->getRowIterator($subHeaderRow)->current()->getCellIterator();
-                $iter2->setIterateOnlyExistingCells(true);
-                foreach ($iter2 as $cell) {
-                     $val = trim((string)$cell->getValue());
-                     $col = $cell->getColumn();
-                     
-                     if ($val) {
-                         // Add generic subheader key (beware ambiguities like 'total')
-                         $finalMapping[$normalize($val)] = $col; 
-                         
-                         // Add Combined Key (Parent + Subheader) -> HIGH PRIORITY
-                         if (isset($parentMap[$col])) {
-                             $parent = $parentMap[$col];
-                             $combined = $parent . ' ' . $val;
-                             $finalMapping[$normalize($combined)] = $col;
-                         } else {
-                             // Try to find parent from previous columns (heuristic for unmerged visual grouping)
-                             $cIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($col);
-                             for ($search = $cIndex - 1; $search >= 1; $search--) {
-                                 $searchCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($search);
-                                 if (isset($parentMap[$searchCol])) {
-                                     $parent = $parentMap[$searchCol];
-                                     $combined = $parent . ' ' . $val;
-                                     $finalMapping[$normalize($combined)] = $col;
-                                     break; // Found nearest left parent
-                                 }
-                             }
-                         }
-                     }
-                }
-            }
-
-            // Helper to find column
-            $findCol = function($patterns, $default = null) use ($finalMapping, $normalize) {
-                foreach ((array)$patterns as $pat) {
-                    $nPat = $normalize($pat);
-                    if (isset($finalMapping[$nPat])) return $finalMapping[$nPat];
-                }
-                return $default;
-            };
-
-            // Define Columns Configuration (Once, outside loop)
-            $cols = [
-                'account' => $findCol(['no rekening', 'account number', 'rekening', 'nomor rekening'], 'C'),
-                'present' => $findCol(['jml hr masuk', 'hadir', 'jml hr'], 'E'),
-                'basic' => $findCol(['gaji pokok', 'gp'], null),
-                'transport_amt' => $findCol(['transport total', 'uang transport', 'transport'], null),
-                'transport_rate' => $findCol(['transport @hari', 'rate transport'], null),
-                'attend_amt' => $findCol(['uang kehadiran total', 'uang kehadiran'], null), 
-                'attend_rate' => $findCol(['uang kehadiran @hari', 'rate kehadiran'], null),
-                'health' => $findCol(['tunjangan kesehatan', 'tunjangan'], null), 
-                'position' => $findCol(['tunjangan jabatan'], null),
-                'overtime_hr' => $findCol(['jam lbr', 'jam lembur'], null),
-                'overtime_amt' => $findCol(['uang lembur total', 'uang lembur', 'uang  lembur'], null),
-                'overtime_rate' => $findCol(['uang lembur @hari', 'uang lembur @ jam', 'rate lembur'], null), 
-                'loan' => $findCol(['potongan kasbon', 'kasbon'], null), 
-                'alfa' => $findCol(['potongan alfa', 'alfa'], null),
-                'pot_ewa' => $findCol(['potongan ewa', 'admin bank dan ewa'], null),
-                'payroll' => $findCol(['net salary', 'gaji transfer', 'grand total'], null),
-                
-                // Keep other standard fields just in case
-                'incentive' => $findCol(['insentif', 'incentive'], null),
-                'incentive_city' => $findCol(['insentif luar kota', 'city incentive'], null),
-                'incentive_attend' => $findCol(['insentif kehadiran', 'attendance incentive'], null), 
-                'piket' => $findCol(['piket', 'piket um sabtu', 'piket dan um sabtu'], null),
-                'adj' => $findCol(['adj', 'adjustment', 'adj gaji'], null),
-                'total_gaji' => $findCol(['gaji diterima', 'gross salary', 'total gaji', 'gaji'], null),
-                'net_received' => $findCol(['net salary', 'gaji transfer', 'grand total'], null),
-                'late' => $findCol(['terlambat', 'late'], null),
-                'shortage' => $findCol(['selisih', 'shortage'], null),
-                'bank' => $findCol(['adm bank', 'bank fee'], null),
-                'bpjs_tk' => $findCol(['bpjs tk', 'bpjs employment', 'bpjs ketenagakerjaan', 'bpjs'], null),
-                'ewa' => $findCol(['ewa'], null),
-                'grand_total' => $findCol(['grand total'], null),
-            ];
-
-            Log::info("Payroll Ho Import: Mapped Columns Resolved", ['cols' => $cols]);
-
-
-            $dataRows = [];
-            $startRow = $headerRowIndex + 2; // Skip header + unit row
-
-            for ($row = $startRow; $row <= $highestRow; $row++) {
-                $name = $sheet->getCell('B' . $row)->getValue();
-                // Check mapped column for name if B is empty
-                if (empty($name)) {
-                    $nameCol = $findCol(['nama karyawan', 'employee name', 'nama pegawai', 'nama'], 'B');
-                    $name = $sheet->getCell($nameCol . $row)->getValue();
-                }
-                
-                $name = trim((string)$name);
+            for ($row = $startRow; $row <= min($startRow + 10, $highestRow); $row++) {
+                $nameCol = $mapping['employee_name'] ?? 'C';
+                $name = trim((string)$sheet->getCell($nameCol . $row)->getCalculatedValue());
                 if (empty($name) || is_numeric($name)) continue;
-
-                // Helper for cell value
-                $getCellValue = function($col, $dataRow) use ($sheet) {
-                    if (!$col) return 0;
-                    $val = $sheet->getCell($col . $dataRow)->getCalculatedValue(); 
-                    return is_numeric($val) ? $val : 0;
-                };
-
-                // Helper for safe cell access
-                $safeGet = function($colKey) use ($cols, $getCellValue, $row) {
-                    if (empty($cols[$colKey])) return 0;
-                    return $getCellValue($cols[$colKey], $row);
-                };
-
-                // Extract Values
-                $parsed = [
+                
+                $dataRows[] = [
                     'employee_name' => $name,
-                    'period' => $request->period ?? date('Y-m'), // Use period from request if provided
-                    'account_number' => !empty($cols['account']) ? $sheet->getCell($cols['account'] . $row)->getValue() : '',
-                    'basic_salary' => $safeGet('basic'),
-                    'days_present' => $safeGet('present'),
-                    
-                    'transport_allowance' => $safeGet('transport_amt'),
-                    'transport_rate' => $safeGet('transport_rate'),
-                    
-                    'attendance_allowance' => $safeGet('attend_amt'),
-                    'attendance_rate' => $safeGet('attend_rate'),
-                    
-                    'health_allowance' => $safeGet('health'),
-                    'position_allowance' => $safeGet('position'),
-                    
-                    'insentif_luar_kota' => $safeGet('incentive_city'),
-                    'insentif_kehadiran' => $safeGet('incentive_attend'),
-                    'piket_um_sabtu' => $safeGet('piket'),
-                    
-                    'overtime_hours' => $safeGet('overtime_hr'),
-                    // 'overtime_rate' => $safeGet('overtime_rate'),
-                    'overtime_amount' => $safeGet('overtime_amt'),
-                    
-                    'holiday_allowance' => $safeGet('incentive'),
-                    'adjustment' => $safeGet('adj'),
-                    
-                    'total_gaji' => $safeGet('total_gaji'),
-                    'gaji_diterima' => $safeGet('net_received'),
-                    
+                    'period' => $request->period ?? date('Y-m'),
+                    'account_number' => $mapping['account_number'] ? trim((string)$sheet->getCell($mapping['account_number'] . $row)->getCalculatedValue()) : '',
+                    'basic_salary' => $getVal($mapping['basic_salary'] ?? null, $row),
+                    'days_present' => $getVal($mapping['days_present'] ?? null, $row),
+                    'days_permission' => $getVal($mapping['days_permission'] ?? null, $row),
+                    'transport_allowance' => $getVal($mapping['transport_allowance'] ?? null, $row),
+                    'attendance_allowance' => $getVal($mapping['attendance_allowance'] ?? null, $row),
+                    'overtime_amount' => $getVal($mapping['overtime_amount'] ?? null, $row),
+                    'position_allowance' => $getVal($mapping['position_allowance'] ?? null, $row),
+                    'health_allowance' => $getVal($mapping['health_allowance'] ?? null, $row),
+                    'insentif_luar_kota' => $getVal($mapping['insentif_luar_kota'] ?? null, $row),
+                    'insentif_kehadiran' => $getVal($mapping['insentif_kehadiran'] ?? null, $row),
+                    'adjustment' => $getVal($mapping['adjustment'] ?? null, $row),
+                    'piket_um_sabtu' => $getVal($mapping['piket_um_sabtu'] ?? null, $row),
                     'deductions' => [
-                        'absent' => $safeGet('absent'),
-                        'late' => $safeGet('late'),
-                        'alfa' => $safeGet('alfa'),
-                        'shortage' => $safeGet('shortage'),
-                        'loan' => $safeGet('loan'),
-                        'bank_fee' => $safeGet('bank'),
-                        'bpjs_tk' => $safeGet('bpjs_tk'),
+                        'kasbon' => $getVal($mapping['deduction_kasbon'] ?? null, $row),
+                        'bpjs' => $getVal($mapping['deduction_bpjs'] ?? null, $row),
+                        'admin' => $getVal($mapping['deduction_admin'] ?? null, $row)
                     ],
-                    'ewa' => $safeGet('ewa'),
-                    'pot_ewa' => $safeGet('pot_ewa'),
-                    'grand_total' => $safeGet('grand_total'),
-                    'net_salary' => $safeGet('payroll'),
+                    'gross_salary' => $getVal($mapping['gross_salary'] ?? null, $row),
+                    'net_salary' => $getVal($mapping['net_salary'] ?? null, $row),
                 ];
-
-                // Auto-calculate Overtime Amount if missing
-                if ($parsed['overtime_amount'] == 0 && $parsed['overtime_hours'] > 0) {
-                     $rate = $safeGet('overtime_rate');
-                     if ($rate > 0) {
-                         $parsed['overtime_amount'] = $parsed['overtime_hours'] * $rate;
-                     }
-                }
-                
-                // Final logic for ambiguity
-                if ($parsed['deductions']['loan'] == 0) {
-                     // Try kasbon column if found separately
-                }
-                
-                // DEBUG LOGGING
-                if (count($dataRows) === 0) {
-                     Log::info("Mapping Used: " . json_encode($cols));
-                     Log::info("Row $row Parsed: " . json_encode($parsed));
-                }
-
-                $dataRows[] = $parsed;
             }
-
+            
             return response()->json([
-                'message' => 'File parsed successfully',
-                'file_name' => $file->getClientOriginalName(),
-                'rows_count' => count($dataRows),
+                'message' => 'Simulasi berhasil',
                 'rows' => $dataRows,
+                'total_rows' => $highestRow - $startRow + 1
             ]);
-
+            
         } catch (\Exception $e) {
-            Log::error('HO Payroll Import Error: ' . $e->getMessage());
+            return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+        }
+    }
+    
+    public function import(Request $request)
+    {
+        return response()->json(['message' => 'Gunakan alur parse-headers dan save.'], 400);
+    }
+    
+    public function saveImport(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls',
+            'mapping' => 'required|string',
+            'headerRowIndex' => 'required|integer',
+        ]);
+        
+        $mapping = json_decode($request->mapping, true);
+        $file = $request->file('file');
+        
+        try {
+            $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
+            $reader->setReadDataOnly(true);
+            $spreadsheet = $reader->load($file->getRealPath());
+            $sheet = $spreadsheet->getSheet(0);
+            
+            $highestRow = $sheet->getHighestRow();
+            $startRow = 8;
+            for ($r = $startRow; $r <= $highestRow; $r++) {
+                $nameCol = $mapping['employee_name'] ?? 'C';
+                $nameVal = trim((string)$sheet->getCell($nameCol . $r)->getCalculatedValue());
+                if (!empty($nameVal) && !is_numeric($nameVal) && strtolower($nameVal) !== 'nama') {
+                    $startRow = $r;
+                    break;
+                }
+            }
+            
+            $getVal = function($col, $row) use ($sheet) {
+                if (!$col) return 0;
+                $val = $sheet->getCell($col . $row)->getCalculatedValue();
+                if (is_numeric($val)) return (float)$val;
+                return 0;
+            };
+
+            $saved = 0;
+            $errors = [];
+            
+            for ($row = $startRow; $row <= $highestRow; $row++) {
+                $nameCol = $mapping['employee_name'] ?? 'C';
+                $name = trim((string)$sheet->getCell($nameCol . $row)->getCalculatedValue());
+                if (empty($name) || is_numeric($name)) continue;
+                
+                $employee = \App\Models\Employee::whereRaw('LOWER(full_name) = ?', [strtolower($name)])->first();
+                if (!$employee) {
+                    $errors[] = "Baris $row: Karyawan '$name' tidak ditemukan di database.";
+                    continue;
+                }
+                
+                $currentPeriod = $request->period ?? date('Y-m');
+                
+                $transport = $getVal($mapping['transport_allowance'] ?? null, $row);
+                $attendance = $getVal($mapping['attendance_allowance'] ?? null, $row);
+                $position = $getVal($mapping['position_allowance'] ?? null, $row);
+                $health = $getVal($mapping['health_allowance'] ?? null, $row);
+                $insentif_luar = $getVal($mapping['insentif_luar_kota'] ?? null, $row);
+                $insentif_hadir = $getVal($mapping['insentif_kehadiran'] ?? null, $row);
+                $adj = $getVal($mapping['adjustment'] ?? null, $row);
+                $piket = $getVal($mapping['piket_um_sabtu'] ?? null, $row);
+                
+                $allowancesTotal = $transport + $attendance + $position + $health + $insentif_luar + $insentif_hadir + $adj + $piket;
+                
+                $kasbon = abs($getVal($mapping['deduction_kasbon'] ?? null, $row));
+                $bpjs = abs($getVal($mapping['deduction_bpjs'] ?? null, $row));
+                $admin = abs($getVal($mapping['deduction_admin'] ?? null, $row));
+                
+                $deductionsTotal = $kasbon + $bpjs + $admin;
+                
+                $grossExcel = $getVal($mapping['gross_salary'] ?? null, $row);
+                $netExcel = $getVal($mapping['net_salary'] ?? null, $row);
+                $basic = $getVal($mapping['basic_salary'] ?? null, $row);
+                $overtime = $getVal($mapping['overtime_amount'] ?? null, $row);
+                
+                $gross = $grossExcel > 0 ? $grossExcel : ($basic + $allowancesTotal + $overtime);
+                $net = $netExcel > 0 ? $netExcel : ($gross - $deductionsTotal);
+                
+                $details = [
+                    'account_number' => $mapping['account_number'] ? trim((string)$sheet->getCell($mapping['account_number'] . $row)->getCalculatedValue()) : '',
+                    'days_present' => $getVal($mapping['days_present'] ?? null, $row),
+                    'days_permission' => $getVal($mapping['days_permission'] ?? null, $row),
+                    'transport_rate' => $getVal($mapping['transport_rate'] ?? null, $row),
+                    'transport_allowance' => $transport,
+                    'attendance_rate' => $getVal($mapping['attendance_rate'] ?? null, $row),
+                    'attendance_allowance' => $attendance,
+                    'overtime_hours' => $getVal($mapping['overtime_hours'] ?? null, $row),
+                    'overtime_rate' => $getVal($mapping['overtime_rate'] ?? null, $row),
+                    'overtime_amount' => $overtime,
+                    'position_allowance' => $position,
+                    'health_allowance' => $health,
+                    'insentif_luar_kota' => $insentif_luar,
+                    'insentif_kehadiran' => $insentif_hadir,
+                    'piket_um_sabtu' => $piket,
+                    'adjustment' => $adj,
+                    'deduction_kasbon' => $kasbon,
+                    'deduction_bpjs' => $bpjs,
+                    'deduction_admin' => $admin,
+                ];
+                
+                \App\Models\Payroll::updateOrCreate(
+                    ['employee_id' => $employee->id, 'period' => $currentPeriod],
+                    [
+                        'type' => 'HO',
+                        'outlet_name' => 'Head Office',
+                        'basic_salary' => $basic,
+                        'allowances' => $allowancesTotal,
+                        'overtime_pay' => $overtime,
+                        'gross_salary' => $gross,
+                        'bpjs_kesehatan' => $bpjs,
+                        'bpjs_ketenagakerjaan' => 0,
+                        'other_deductions' => $kasbon + $admin,
+                        'total_deductions' => $deductionsTotal,
+                        'net_salary' => $net,
+                        'details' => $details,
+                        'status' => 'pending',
+                    ]
+                );
+                
+                $saved++;
+            }
+            
+            return response()->json([
+                'message' => 'Import berhasil diselesaikan.',
+                'saved' => $saved,
+                'errors' => $errors
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('HO Payroll Save Error: ' . $e->getMessage());
             return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
 
-    /**
-     * Save imported payroll
-     */
-    public function saveImport(Request $request)
-    {
-        $request->validate(['rows' => 'required|array', 'rows.*.employee_name' => 'required|string']);
-        
-        $saved = 0;
-        $errors = [];
-
-        Log::info("HO Payroll Import: Received " . count($request->rows) . " rows");
-        if (count($request->rows) > 0) {
-             Log::info("Row 1 Raw Deductions: " . json_encode($request->rows[0]['deductions'] ?? 'NULL'));
-        }
-
-        foreach ($request->rows as $index => $row) {
-            $employee = Employee::whereRaw('LOWER(full_name) = ?', [strtolower($row['employee_name'])])->first();
-            if (!$employee) {
-                // Try fuzzy/partial match or log error
-                $errors[] = "Row " . ($index+1) . ": Employee {$row['employee_name']} not found";
-                continue;
-            }
-
-            $currentPeriod = $row['period'] ?? date('Y-m');
-            
-            // Normalize deductions (handle string/JSON input)
-            if (isset($row['deductions']) && is_string($row['deductions'])) {
-                $row['deductions'] = json_decode($row['deductions'], true) ?? [];
-            }
-            // Ensure values are numeric for array_sum and ALWAYS POSITIVE
-            if (isset($row['deductions']) && is_array($row['deductions'])) {
-                 $row['deductions'] = array_map(function($v) { 
-                     return is_numeric($v) ? abs((float)$v) : 0; 
-                 }, $row['deductions']);
-            }
-
-            // Calculate final fields
-            $allowancesTotal = $row['transport_allowance'] + $row['attendance_allowance'] + 
-                               $row['health_allowance'] + $row['position_allowance'] + 
-                               $row['insentif_luar_kota'] + $row['insentif_kehadiran'] + 
-                               $row['piket_um_sabtu'];
-            
-            $deductionsTotal = array_sum($row['deductions']);
-
-            // Merge EWA: use pot_ewa if ewa is 0 (Excel column might be labeled "Potongan EWA")
-            $ewaAmount = (!empty($row['ewa'])) ? abs((float)$row['ewa']) : abs((float)($row['pot_ewa'] ?? 0));
-            
-            // Include EWA in total deductions
-            $deductionsTotal += $ewaAmount;
-            
-            $gross = $row['total_gaji'] > 0 ? $row['total_gaji'] : 
-                     ($row['basic_salary'] + $allowancesTotal + $row['overtime_amount'] + $row['holiday_allowance'] + $row['adjustment']);
-            
-            $net = $row['net_salary'] > 0 ? $row['net_salary'] : ($gross - $deductionsTotal);
-
-            Log::info("Row $index Check: Gross=$gross, DedTotal=$deductionsTotal, Net=$net, RawDed=".json_encode($row['deductions']));
-
-            // Prepare Details JSON
-            $details = [
-                'account_number' => $row['account_number'],
-                'days_present' => $row['days_present'],
-                'transport_rate' => $row['transport_rate'],
-                'transport_allowance' => $row['transport_allowance'],
-                'attendance_rate' => $row['attendance_rate'],
-                'attendance_allowance' => $row['attendance_allowance'],
-                'health_allowance' => $row['health_allowance'],
-                'position_allowance' => $row['position_allowance'],
-                'insentif_luar_kota' => $row['insentif_luar_kota'],
-                'insentif_kehadiran' => $row['insentif_kehadiran'],
-                'piket_um_sabtu' => $row['piket_um_sabtu'],
-                'overtime_hours' => $row['overtime_hours'],
-                'overtime_amount' => $row['overtime_amount'],
-                'holiday_allowance' => $row['holiday_allowance'], // THR/Bonus/Insentif
-                'adjustment' => $row['adjustment'],
-                'deductions' => is_string($row['deductions']) ? json_decode($row['deductions'], true) : $row['deductions'],
-                'ewa' => $ewaAmount
-            ];
-
-            Payroll::updateOrCreate(
-                ['employee_id' => $employee->id, 'period' => $currentPeriod],
-                [
-                    'basic_salary' => $row['basic_salary'],
-                    'allowances' => $allowancesTotal,
-                    'overtime_pay' => $row['overtime_amount'],
-                    'gross_salary' => $gross,
-                    'total_deductions' => $deductionsTotal,
-                    'net_salary' => $net,
-                    'details' => $details,
-                    'status' => 'draft',
-                ]
-            );
-            $saved++;
-        }
-
-        return response()->json([
-            'message' => "Successfully saved $saved payroll records",
-            'saved' => $saved,
-            'errors' => $errors
-        ]);
-    }
-
-    /**
-     * Generate Payslip PDF
-     */
-    public function generatePayslip($id)
+public function generatePayslip($id)
     {
         $payroll = Payroll::with(['employee'])->findOrFail($id);
 

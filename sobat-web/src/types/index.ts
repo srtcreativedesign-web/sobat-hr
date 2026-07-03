@@ -73,6 +73,7 @@ export interface OutletDevice {
   device_code?: string;
   pin?: string;
   device_uid: string | null;
+  hardware_model?: string;
   activation_token?: string | null;
   status: 'pending' | 'active' | 'revoked';
   last_active_at?: string | null;

@@ -90,6 +90,7 @@ class DeviceActivationController extends Controller
             'device_code' => 'required|string',
             'pin' => 'required|string',
             'device_uid' => 'required|string',
+            'device_name' => 'sometimes|string',
         ]);
 
         $device = \App\Models\OutletDevice::with('organization')
@@ -114,8 +115,20 @@ class DeviceActivationController extends Controller
             ], 403);
         }
 
+        // Hardware Binding Validation
+        if (!empty($device->device_uid) && $device->device_uid !== $validated['device_uid']) {
+            return response()->json([
+                'message' => 'Akses ditolak: Kode perangkat ini telah dikunci pada tablet/HP lain. Harap hubungi Admin untuk melakukan reset perangkat.',
+            ], 403);
+        }
+
         // Bind new device uid and set active
-        $device->activateWithDeviceUid($validated['device_uid']);
+        $device->device_uid = $validated['device_uid'];
+        if (isset($validated['device_name'])) {
+            $device->hardware_model = $validated['device_name'];
+        }
+        $device->status = 'active';
+        $device->save();
 
         return response()->json([
             'message' => 'Login Sobat Outlet berhasil.',
