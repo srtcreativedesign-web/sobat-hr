@@ -36,6 +36,7 @@ export default function ImportPayrollPage() {
   const [excelHeaders, setExcelHeaders] = useState<Record<string, string>>({});
   const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
   const [headerRowIndex, setHeaderRowIndex] = useState<number>(0);
+  const [expectedFields, setExpectedFields] = useState<{key: string, label: string}[] | null>(null);
 
   // Signature Modal State
   const [showSignatureModal, setShowSignatureModal] = useState(false);
@@ -219,6 +220,11 @@ export default function ImportPayrollPage() {
         setExcelHeaders(data.headers || {});
         setColumnMapping(data.default_mapping || {});
         setHeaderRowIndex(data.headerRowIndex || 0);
+        if (data.expected_fields) {
+            setExpectedFields(data.expected_fields);
+        } else {
+            setExpectedFields(null);
+        }
         setShowMappingUI(true);
         setUploadProgress(100);
         return; // Stop upload flow and wait for manual mapping
@@ -592,6 +598,7 @@ export default function ImportPayrollPage() {
                   columnMapping={columnMapping}
                   setColumnMapping={setColumnMapping}
                   excelHeaders={excelHeaders}
+                  expectedFields={expectedFields}
                   onSimulate={handleSimulate}
                   onCancel={() => {
                       setShowMappingUI(false);

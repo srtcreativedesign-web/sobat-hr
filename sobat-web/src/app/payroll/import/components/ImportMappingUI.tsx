@@ -4,6 +4,7 @@ interface ImportMappingUIProps {
     columnMapping: Record<string, string>;
     setColumnMapping: (mapping: Record<string, string>) => void;
     excelHeaders: Record<string, string>;
+    expectedFields?: {key: string, label: string}[] | null;
     onSimulate: () => void;
     onCancel: () => void;
 }
@@ -12,6 +13,7 @@ export default function ImportMappingUI({
     columnMapping,
     setColumnMapping,
     excelHeaders,
+    expectedFields,
     onSimulate,
     onCancel
 }: ImportMappingUIProps) {
@@ -25,7 +27,7 @@ export default function ImportMappingUI({
                 Silakan periksa dan pilih <span className="font-semibold italic">Abaikan / Kosong</span> jika ada kolom yang memang tidak relevan.
             </p>
             <div className="border rounded-xl p-6 bg-gray-50 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 max-h-[400px] overflow-y-auto">
-                {[
+                {(expectedFields || [
                     { key: 'employee_name', label: 'Nama Karyawan' },
                     { key: 'basic_salary', label: 'Gaji Pokok' },
                     { key: 'days_present', label: 'Total Hadir (Hari)' },
@@ -50,7 +52,7 @@ export default function ImportMappingUI({
                     { key: 'thp', label: 'Grand Total (Sblm EWA)' },
                     { key: 'ewa_amount', label: 'Pinjaman Stafbook (EWA)' },
                     { key: 'net_salary', label: 'Payroll (THP Akhir)' },
-                ].map(field => (
+                ]).map(field => (
                     <div key={field.key} className="flex flex-col gap-1">
                         <div className="flex justify-between items-center">
                             <span className="text-sm font-semibold text-gray-700">{field.label}</span>

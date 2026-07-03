@@ -216,10 +216,37 @@ class PayrollHoController extends Controller implements HasMiddleware
             'net_salary' => 'Z'
         ];
         
+        $expected_fields = [
+            ['key' => 'employee_name', 'label' => 'Nama Karyawan'],
+            ['key' => 'account_number', 'label' => 'Nomor Rekening'],
+            ['key' => 'basic_salary', 'label' => 'Gaji Pokok'],
+            ['key' => 'days_present', 'label' => 'Jml Hr Masuk'],
+            ['key' => 'days_permission', 'label' => 'Ijin'],
+            ['key' => 'transport_rate', 'label' => 'Transport @hari'],
+            ['key' => 'transport_allowance', 'label' => 'Transport (Total)'],
+            ['key' => 'attendance_rate', 'label' => 'Uang Kehadiran @hari'],
+            ['key' => 'attendance_allowance', 'label' => 'Uang Kehadiran (Total)'],
+            ['key' => 'overtime_hours', 'label' => 'Jam Lembur'],
+            ['key' => 'overtime_rate', 'label' => 'Lembur @ Jam'],
+            ['key' => 'overtime_amount', 'label' => 'Uang Lembur (Total)'],
+            ['key' => 'position_allowance', 'label' => 'Tunjangan Jabatan'],
+            ['key' => 'health_allowance', 'label' => 'Tunjangan Kesehatan'],
+            ['key' => 'insentif_luar_kota', 'label' => 'Insentif Luar Kota'],
+            ['key' => 'insentif_kehadiran', 'label' => 'Insentif Kehadiran'],
+            ['key' => 'adjustment', 'label' => 'Adj Gaji'],
+            ['key' => 'piket_um_sabtu', 'label' => 'Piket dan UM Sabtu'],
+            ['key' => 'gross_salary', 'label' => 'Gaji Diterima (Bruto)'],
+            ['key' => 'deduction_kasbon', 'label' => 'Kasbon'],
+            ['key' => 'deduction_bpjs', 'label' => 'BPJS'],
+            ['key' => 'deduction_admin', 'label' => 'Admin Bank dan EWA'],
+            ['key' => 'net_salary', 'label' => 'Total (Netto)']
+        ];
+        
         return response()->json([
             'requiresMapping' => true,
             'headers' => $headers,
             'default_mapping' => $default_mapping,
+            'expected_fields' => $expected_fields,
             'headerRowIndex' => 7,
             'file_name' => $request->file('file')->getClientOriginalName()
         ]);
